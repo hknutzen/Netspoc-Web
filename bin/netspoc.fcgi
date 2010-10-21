@@ -82,12 +82,12 @@ sub setup_policy_info {
     for my $key (sort keys %policies) {
 	my $policy = $policies{$key};
 	my $pname = $policy->{name};
-	# 'user' objects.
-	my $users = Netspoc::expand_group($policy->{user}, "user of $pname");
+
 	# Non 'user' objects.
 	my @objects;
-	# 'user' is src, dst or both.
-	my %user_is;
+
+	# Check, if all rules have "user" or any|network:[user] in src and dst.
+	my $only_user = 1;
 	for my $rule (@{ $policy->{rules} }) {
 	    for my $what (qw(src dst)) {
 		for my $parts (@{ $rule->{$what} }) {
@@ -167,25 +167,22 @@ sub setup_policy_info {
 			Netspoc::warn_msg 
 			    "Can't resolve '$type:$name' in $context";
 		    }
-		    # Remember, if user is src and/or dst.
-		    # But ignore user if service is echo or echo reply.
-		    if ($is_user) {
-			my $services = 
-			    Netspoc::expand_services($rule->{srv}, $context);
-			my $only_ping = 1;
-			for my $service (@$services) {
-			    if(not ($service->{proto} eq 'icmp' and
-				    defined $service->{type} and
-				    ($service->{type} == 0 or 
-				     $service->{type} == 8)))
-			    {
-				$only_ping = 0;
-			    }
-			}
-			$only_ping or $user_is{$what} = 1;
-		    }
+
+		    $only_user = 0 if not $is_user;
 		}
 	    }
+	}
+
+	my $owner;
+	if ($only_user) {
+
+	    # Take elements of 'user' object, if rules only reference 'user'.
+	    my $users = 
+		Netspoc::expand_group($policy->{user}, "user of $pname");
+	    push @objects, @$users;
+	}
+	elsif (not @objects) {
+	    $owner = 'empty';
 	}
 
 	# Remove duplicate objects;
@@ -196,7 +193,6 @@ sub setup_policy_info {
 	# Now find IPs and owner for those objects.
 	$pname =~ s/policy://;
 	my $all_ips;
-	my $owner;
 	for my $object ( @objects ) {
 	    my $ip = ip_for_object( $object );
 	    push @$all_ips, $ip if $ip;
@@ -320,7 +316,7 @@ sub handle_request {
 	     ? $sub->($cgi) || return
 	     : error_data("Unknown path '$path'");
     $request->respond(
-		      #encode_json($dat),
+#		      encode_json($data),
 		      to_json($data, {utf8 => 1, pretty => 1}), 
 		      'Content-Type' => 'application/x-json');
 }
