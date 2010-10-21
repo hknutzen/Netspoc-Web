@@ -22,7 +22,6 @@ Readonly::Scalar my $NETSPOC_DATA => '/home/heinz/netspoc';
 my $program = "Netspoc JSON service";
 my $VERSION = ( split ' ',
  '$Id$' )[2];
-my $policy_info;
 
 sub say ( @ ) { print @_, "\n"; }
 
@@ -31,6 +30,44 @@ sub say ( @ ) { print @_, "\n"; }
 ####################################################################
 my %email2admin;
 my %admin2owners;
+my $policy_info;
+
+sub propagate_owner {
+    for my $area (values %areas) {
+	my $owner = $area->{owner};
+	for my $any (@{ $area->{anys} }) {
+	    my $owner = $any->{owner} ||= $owner;
+	    for my $network (@{ $any->{networks} }) {
+		my $owner = $network->{owner} ||= $owner;
+		for my $host (@{ $network->{hosts} }) {
+		    $host->{owner} ||= $owner;
+		}
+		for my $interface (@{ $network->{interfaces} }) {
+		    if (not $interface->{router}->{managed}) {
+			$interface->{owner} ||= $owner;
+		    }
+		}
+	    }
+	}
+    }
+}	
+
+sub setup_admin2owners {
+    for my $name ( keys %owners ) {
+	my $owner = $owners{$name};
+	for my $admin ( @{$owner->{admins}} ) {
+	    my $admin_email = $admin->{email};
+	    $admin2owners{$admin_email}->{$name} = 1;
+	}
+    }
+}
+
+sub setup_email2admin {
+    for my $admin ( values %admins ) {
+	$email2admin{$admin->{email}} = $admin;
+    }
+}
+
 my %name2object = 
     (
      host      => \%hosts,
@@ -41,17 +78,7 @@ my %name2object =
      area      => \%areas,
      );
 
-sub fill_hashes {
-    for my $name ( keys %owners ) {
-	my $owner = $owners{$name};
-	for my $admin ( @{$owner->{admins}} ) {
-	    my $admin_email = $admin->{email};
-	    $admin2owners{$admin_email}->{$name} = 1;
-	}
-    }
-    for my $admin ( values %admins ) {
-	$email2admin{$admin->{email}} = $admin;
-    }
+sub setup_policy_info {
     for my $key (sort keys %policies) {
 	my $policy = $policies{$key};
 	my $pname = $policy->{name};
@@ -170,19 +197,12 @@ sub fill_hashes {
 	$pname =~ s/policy://;
 	my $all_ips;
 	my $owner;
-	my %seen_owners;
 	for my $object ( @objects ) {
 	    my $ip = ip_for_object( $object );
 	    push @$all_ips, $ip if $ip;
-	    if ( my $obj = $object->{owner} ) {
-		(my $name = $obj->{name}) =~ s/^owner://;
-		if ( $seen_owners{$name} ) {
-		    $owner = 'multiple owners';
-		}
-		else {
-		    $owner = $name;
-		    $seen_owners{$owner} = $owner;
-		}
+	    if ( my $owner_obj = $object->{owner}) {
+		(my $name = $owner_obj->{name}) =~ s/^owner://;
+		$owner = $owner && $owner ne $name ? 'multiple owners' : $name;
 	    }
 	}
 	$owner ||= 'unknown';
@@ -299,7 +319,10 @@ sub handle_request {
     my $data = $sub 
 	     ? $sub->($cgi) || return
 	     : error_data("Unknown path '$path'");
-    $request->respond(encode_json($data), 'Content-Type' => 'application/x-json');
+    $request->respond(
+		      #encode_json($dat),
+		      to_json($data, {utf8 => 1, pretty => 1}), 
+		      'Content-Type' => 'application/x-json');
 }
 
 my $reload_fifo = '/home/heinz/policy-shop/reload.socket';
@@ -316,7 +339,10 @@ sub init_data {
     find_subnets();
     setany();
     setpath();
-    fill_hashes();
+    setup_admin2owners();
+    setup_email2admin();
+    propagate_owner();
+    setup_policy_info();
 }
 
 sub daemonize {
