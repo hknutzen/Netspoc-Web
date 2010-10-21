@@ -231,6 +231,14 @@ sub ip_for_object {
 ####################################################################
 # Handle FCGI requests, serving back json for URL requests.
 ####################################################################
+
+sub error_data {
+    my ($msg) = @_;
+    return { success => 'false',
+	     msg => $msg,
+	 };
+}
+
 sub search {
     my ($type, $crit) = @_;
     my $result = [];
@@ -260,8 +268,8 @@ sub create_search_sub {
 sub find_admin {
     my ($cgi) = @_;
     my $user = $cgi->param( 'user' );
-    my $admin = $email2admin{$user};
-    return unless $admin;
+    my $admin = $email2admin{$user} or
+	return error_data("Unknown admin '$user'");
 #    my $pass = $cgi->param( 'pass' );
 #    return unless $admin->{pass} eq $pass;
     my $owner_hash = $admin2owners{$user};
@@ -287,8 +295,10 @@ sub handle_request {
     CGI::Minimal->reset_globals;
     my $cgi = CGI::Minimal->new;
     my $path = $ENV{PATH_INFO};
-    my $sub = $path2sub{$path} or die "Unknown path $path\n";
-    my $data = $sub->($cgi) or return;
+    my $sub = $path2sub{$path};
+    my $data = $sub 
+	     ? $sub->($cgi) || return
+	     : error_data("Unknown path '$path'");
     $request->respond(encode_json($data), 'Content-Type' => 'application/x-json');
 }
 
