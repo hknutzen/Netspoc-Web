@@ -217,8 +217,6 @@ sub ip_for_object {
     elsif ( Netspoc::is_interface( $object ) ) {
 	if ( is_numeric( $object->{ip} ) ) {
 	    return print_ip( $object->{ip} );
-	} elsif ( $object->{ip} ) {
-	    return $object->{ip};
 	}
     }
     elsif ( Netspoc::is_any( $object ) ) {
