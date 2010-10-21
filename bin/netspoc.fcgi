@@ -46,7 +46,7 @@ sub fill_hashes {
 	my $owner = $owners{$name};
 	for my $admin ( @{$owner->{admins}} ) {
 	    my $admin_email = $admin->{email};
-	    $admin2owners{$admin_email} = $owner;
+	    $admin2owners{$admin_email}->{$name} = 1;
 	}
     }
     for my $admin ( values %admins ) {
@@ -260,12 +260,12 @@ sub create_search_sub {
 sub find_admin {
     my ($cgi) = @_;
     my $user = $cgi->param( 'user' );
-    my $pass = $cgi->param( 'pass' );
     my $admin = $email2admin{$user};
     return unless $admin;
-    return unless $admin->{pass} eq $pass;
-    my $owner = $admin2owners{$user};
-    return { owner => [ keys %$owner ] };
+#    my $pass = $cgi->param( 'pass' );
+#    return unless $admin->{pass} eq $pass;
+    my $owner_hash = $admin2owners{$user};
+    return { owner => [ keys %$owner_hash ] };
 }
 
 my %path2sub = 
