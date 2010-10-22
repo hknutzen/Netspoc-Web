@@ -33,20 +33,33 @@ my %admin2owners;
 my $policy_info;
 
 sub propagate_owner {
-    for my $area (values %areas) {
-	my $owner = $area->{owner};
+
+    # Take named any objects and additionally 
+    # unnamed any objects from areas.
+    my %all_anys = map { $_ => $_ } values %anys;
+
+    # Areas can be nested. Proceed from small to larger ones.
+    for my $area (sort { @{$a->{anys}} <=> @{$b->{anys}} } values %areas) {
+	my $owner = $area->{owner} or next;
 	for my $any (@{ $area->{anys} }) {
-	    my $owner = $any->{owner} ||= $owner;
-	    for my $network (@{ $any->{networks} }) {
-		my $owner = $network->{owner} ||= $owner;
-		for my $host (@{ $network->{hosts} }) {
-		    $host->{owner} ||= $owner;
-		}
-		for my $interface (@{ $network->{interfaces} }) {
-		    if (not $interface->{router}->{managed}) {
-			$interface->{owner} ||= $owner;
-		    }
-		}
+	    $all_anys{$any} = $any;
+	    $any->{owner} ||= $owner;
+	}
+    }
+    for my $any (values %all_anys) {
+	my $owner = $any->{owner} or next;
+	for my $network (@{ $any->{networks} }) {
+	    $network->{owner} ||= $owner;
+	}
+    }
+    for my $network (values %networks) {
+	my $owner = $network->{owner} or next;
+	for my $host (@{ $network->{hosts} }) {
+	    $host->{owner} ||= $owner;
+	}
+	for my $interface (@{ $network->{interfaces} }) {
+	    if (not $interface->{router}->{managed}) {
+		$interface->{owner} ||= $owner;
 	    }
 	}
     }
