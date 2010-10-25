@@ -63,6 +63,12 @@ sub propagate_owner {
 	    }
 	}
     }
+    for my $router (values %routers) {
+	my $owner = $router->{owner} or next;
+	for my $interface (@{ $router->{interfaces} }) {
+	    $interface->{owner} = $owner;
+	}
+    }
 }	
 
 sub setup_admin2owners {
