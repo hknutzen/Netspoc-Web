@@ -192,16 +192,12 @@ sub setup_policy_info {
 	    }
 	}
 
-	my $owner;
 	if ($only_user) {
 
 	    # Take elements of 'user' object, if rules only reference 'user'.
 	    my $users = 
 		Netspoc::expand_group($policy->{user}, "user of $pname");
 	    push @objects, @$users;
-	}
-	elsif (not @objects) {
-	    $owner = 'empty';
 	}
 
 	# Remove duplicate objects;
@@ -212,20 +208,39 @@ sub setup_policy_info {
 	# Now find IPs and owner for those objects.
 	$pname =~ s/policy://;
 	my $all_ips;
+	my %owner;
 	for my $object ( @objects ) {
 	    my $ip = ip_for_object( $object );
 	    push @$all_ips, $ip if $ip;
-	    if ( my $owner_obj = $object->{owner}) {
-		(my $name = $owner_obj->{name}) =~ s/^owner://;
-		$owner = $owner && $owner ne $name ? 'multiple owners' : $name;
+	    my $name = 'unknown';
+	    my $owner_obj;
+	    if (Netspoc::is_autointerface($object)) {
+		my $obj = $object->{object};
+		my $managed = $object->{managed};
+		if (is_router($obj)) {
+		    $owner_obj = $obj->{owner} if $managed;
+		}
+
+		# Network: 
+		else {
+		    $owner_obj = $obj->{owner} if not $managed;
+		}
 	    }
+	    else {
+		$owner_obj = $object->{owner};
+	    }
+	    if ($owner_obj) {
+		($name = $owner_obj->{name}) =~ s/^owner://;
+	    }
+	    $owner{$name} = $name;
 	}
-	$owner ||= 'unknown';
+	my $owner = join (',', keys %owner);
+	$owner = "multi:$owner" if keys %owner > 1;
 	$policy_info->{$pname} = {
 	    name => $pname,
 	    ips => $all_ips,
-	    owner => $owner
-	    };
+	    owner => $owner,
+	};
     }
 }
 
@@ -256,6 +271,8 @@ sub ip_for_object {
     }
     elsif ( Netspoc::is_any( $object ) ) {
 	return print_ip( 0 );
+    }
+    elsif ( Netspoc::is_autointerface( $object ) ) {
     }
     else {
 	warn "NO IP FOR $object";
