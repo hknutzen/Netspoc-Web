@@ -135,7 +135,7 @@ sub owners_for_objects {
 
 	    # Owner remains "unkown" if router & unmanaged or network & managed
 	    if (is_router($obj)) {
-		$owner_obj = $obj->{owner} if $managed;
+		$owner_obj = $obj->{owner} if $obj->{managed};
 	    }
 
 	    # Network: 
