@@ -87,6 +87,73 @@ sub setup_email2admin {
     }
 }
 
+sub is_numeric { 
+    my ($value) = @_;
+    $value =~ /^\d+$/; 
+}
+
+sub ip_for_object {
+    my ($object) = @_;
+    if ( Netspoc::is_network( $object ) ) {
+	if ( is_numeric($object->{ip}) ) {
+	    return print_ip($object->{ip});
+	}
+    }
+    elsif ( Netspoc::is_host( $object ) ) {
+	if ( my $range = $object->{range} ) {
+	    return join '-', map { print_ip( $_ ) } @$range;
+	}
+	else {
+	    return print_ip($object->{ip});
+	}
+    }
+    elsif ( Netspoc::is_interface( $object ) ) {
+	if ( is_numeric( $object->{ip} ) ) {
+	    return print_ip( $object->{ip} );
+	}
+    }
+    elsif ( Netspoc::is_any( $object ) ) {
+	return print_ip( 0 );
+    }
+    elsif ( Netspoc::is_autointerface( $object ) ) {
+    }
+    else {
+	warn "NO IP FOR $object";
+    }
+    return;
+}
+
+sub owners_for_objects {	
+    my ($objects) = @_;
+    my %owners;
+    for my $object ( @$objects ) {
+	my $name = 'unknown';
+	my $owner_obj;
+	if (Netspoc::is_autointerface($object)) {
+	    my $obj = $object->{object};
+	    my $managed = $object->{managed};
+
+	    # Owner remains "unkown" if router & unmanaged or network & managed
+	    if (is_router($obj)) {
+		$owner_obj = $obj->{owner} if $managed;
+	    }
+
+	    # Network: 
+	    else {
+		$owner_obj = $obj->{owner} if not $managed;
+	    }
+	}
+	else {
+	    $owner_obj = $object->{owner};
+	}
+	if ($owner_obj) {
+	    ($name = $owner_obj->{name}) =~ s/^owner://;
+	}
+	$owners{$name} = $name;
+    }
+    return [ values %owners ];
+}
+
 my %name2object = 
     (
      host      => \%hosts,
@@ -192,11 +259,10 @@ sub setup_policy_info {
 	    }
 	}
 
-	if ($only_user) {
+	my $users = Netspoc::expand_group($policy->{user}, "user of $pname");
 
-	    # Take elements of 'user' object, if rules only reference 'user'.
-	    my $users = 
-		Netspoc::expand_group($policy->{user}, "user of $pname");
+	# Take elements of 'user' object, if rules only reference 'user'.
+	if ($only_user) {
 	    push @objects, @$users;
 	}
 
@@ -207,77 +273,25 @@ sub setup_policy_info {
 	# We have non-user objects for this policy.
 	# Now find IPs and owner for those objects.
 	$pname =~ s/policy://;
-	my $all_ips;
-	my %owner;
-	for my $object ( @objects ) {
-	    my $ip = ip_for_object( $object );
-	    push @$all_ips, $ip if $ip;
-	    my $name = 'unknown';
-	    my $owner_obj;
-	    if (Netspoc::is_autointerface($object)) {
-		my $obj = $object->{object};
-		my $managed = $object->{managed};
-		if (is_router($obj)) {
-		    $owner_obj = $obj->{owner} if $managed;
-		}
+	my $all_ips = [ map { ip_for_object($_) } @objects ];
 
-		# Network: 
-		else {
-		    $owner_obj = $obj->{owner} if not $managed;
-		}
-	    }
-	    else {
-		$owner_obj = $object->{owner};
-	    }
-	    if ($owner_obj) {
-		($name = $owner_obj->{name}) =~ s/^owner://;
-	    }
-	    $owner{$name} = $name;
+	my $owners = owners_for_objects(\@objects);
+	my $owner = join (',', @$owners);
+	$owner = "multi:$owner" if keys @$owners > 1;
+
+	my $uowner = '';
+	if (not $only_user) {
+	    my $uowners = owners_for_objects($users);
+	    $uowner = join (',', @$uowners);
 	}
-	my $owner = join (',', keys %owner);
-	$owner = "multi:$owner" if keys %owner > 1;
+
 	$policy_info->{$pname} = {
 	    name => $pname,
 	    ips => $all_ips,
 	    owner => $owner,
+	    uowner => $uowner,
 	};
     }
-}
-
-sub is_numeric { 
-    my ($value) = @_;
-    $value =~ /^\d+$/; 
-}
-
-sub ip_for_object {
-    my ($object) = @_;
-    if ( Netspoc::is_network( $object ) ) {
-	if ( is_numeric($object->{ip}) ) {
-	    return print_ip($object->{ip});
-	}
-    }
-    elsif ( Netspoc::is_host( $object ) ) {
-	if ( my $range = $object->{range} ) {
-	    return join '-', map { print_ip( $_ ) } @$range;
-	}
-	else {
-	    return print_ip($object->{ip});
-	}
-    }
-    elsif ( Netspoc::is_interface( $object ) ) {
-	if ( is_numeric( $object->{ip} ) ) {
-	    return print_ip( $object->{ip} );
-	}
-    }
-    elsif ( Netspoc::is_any( $object ) ) {
-	return print_ip( 0 );
-    }
-    elsif ( Netspoc::is_autointerface( $object ) ) {
-    }
-    else {
-	warn "NO IP FOR $object";
-    }
-    return;
 }
 
 ####################################################################
