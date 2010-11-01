@@ -123,11 +123,19 @@ sub ip_for_object {
     return;
 }
 
+my %unknown;
+# Check if all arguments are 'eq'.
+sub equal {
+    return 1 if not @_;
+    my $first = $_[0];
+    return not grep { $_ ne $first } @_[ 1 .. $#_ ];
+}
+
 sub owners_for_objects {	
     my ($objects) = @_;
     my %owners;
     for my $object ( @$objects ) {
-	my $name = 'unknown';
+	my $name;
 	my $owner_obj;
 	if (Netspoc::is_autointerface($object)) {
 	    my $obj = $object->{object};
@@ -135,7 +143,16 @@ sub owners_for_objects {
 
 	    # Owner remains "unkown" if router & unmanaged or network & managed
 	    if (is_router($obj)) {
-		$owner_obj = $obj->{owner} if $obj->{managed};
+		if ($obj->{managed}) {
+		    $owner_obj = $obj->{owner};
+		}
+		else {
+		    if (equal(map { $_->{owner} || 0 } 
+			      @{ $obj->{interfaces} })) 
+		    {
+			$owner_obj = $obj->{interfaces}->[0]->{owner};
+		    }
+		}
 	    }
 
 	    # Network: 
@@ -148,6 +165,10 @@ sub owners_for_objects {
 	}
 	if ($owner_obj) {
 	    ($name = $owner_obj->{name}) =~ s/^owner://;
+	}
+	if (not $name) {
+	    $name = 'unknown';
+	    $unknown{$object->{name}} = 1;
 	}
 	$owners{$name} = $name;
     }
@@ -168,6 +189,7 @@ sub setup_policy_info {
     for my $key (sort keys %policies) {
 	my $policy = $policies{$key};
 	my $pname = $policy->{name};
+	next if $pname =~ /^policy:ping_local/;
 
 	# Non 'user' objects.
 	my @objects;
@@ -292,6 +314,11 @@ sub setup_policy_info {
 	    uowner => $uowner,
 	};
     }
+    $policy_info->{unknown} = {
+	name => 'unknown',
+	unknown => [ keys %unknown ],
+	ucount => scalar keys %unknown,
+    };
 }
 
 ####################################################################
