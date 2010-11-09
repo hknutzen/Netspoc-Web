@@ -222,6 +222,7 @@ my %name2object =
      );
 
 sub setup_policy_info {
+    Netspoc::info("Setup policy info");
     for my $key (sort keys %policies) {
 	my $policy = $policies{$key};
 	my $pname = $policy->{name};
@@ -357,6 +358,7 @@ sub setup_policy_info {
 	unknown => [ keys %unknown ],
 	ucount => scalar keys %unknown,
     };
+    Netspoc::info("Ready policy info");
 }
 
 ####################################################################
