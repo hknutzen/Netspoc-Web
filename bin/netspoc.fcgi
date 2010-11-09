@@ -175,6 +175,42 @@ sub owners_for_objects {
     return [ values %owners ];
 }
 
+
+sub find_visibility {
+    my ($owners, $uowners) = @_;
+    $owners = [ grep { $_ ne 'unknown' } @$owners ];
+    $uowners = [ grep { $_ ne 'unknown' } @$uowners ];
+    my $visibility;
+    my %hash = map { $_ => 1} @$owners;
+    my @extra_uowners = grep { not $hash{$_} } @$uowners;
+    my @DA_extra = grep({ $_ =~ /^DA_/ } @extra_uowners);
+    my @other_extra = grep({ $_ !~ /^DA_/ } @extra_uowners);
+			   
+    # No known owner or owner of users.
+    if (not @$owners and not @$uowners) {
+	$visibility = [ 'none' ];
+    }
+    # Set of uowners is subset of owners.
+    elsif (not @extra_uowners) {
+	$visibility = [ 'private' ];
+    }
+    # Restricted visibility
+    elsif (@other_extra <= 2) {
+	$visibility = [];
+	if (@DA_extra >= 3) {
+	    push @$visibility, 'DA_*';
+	}
+	else {
+	    push @$visibility, 'DA-'.@DA_extra if @DA_extra;
+	}
+	push @$visibility, 'priv-'.@other_extra;
+    }
+    else {
+	$visibility = [ 'public' ];
+    }
+    join(',', @$visibility);	
+}
+
 my %name2object = 
     (
      host      => \%hosts,
@@ -300,18 +336,20 @@ sub setup_policy_info {
 	my $owners = owners_for_objects(\@objects);
 	my $owner = join (',', @$owners);
 	$owner = "multi:$owner" if keys @$owners > 1;
+	$owner = "kopplung:$owner" if $only_user;
 
-	my $uowner = '';
-	if (not $only_user) {
-	    my $uowners = owners_for_objects($users);
-	    $uowner = join (',', @$uowners);
-	}
+	my $uowners = $only_user ? [] : owners_for_objects($users);
+	my $uowner = join (',', @$uowners);
+
+	# Find visibility for each policy.
+	my $visibility = find_visibility($owners, $uowners);
 
 	$policy_info->{$pname} = {
 	    name => $pname,
 	    ips => $all_ips,
 	    owner => $owner,
 	    uowner => $uowner,
+	    visibility => $visibility,
 	};
     }
     $policy_info->{unknown} = {
@@ -370,10 +408,11 @@ sub find_admin {
 }
 
 my %path2sub = 
-    ( '/owner'   => create_search_sub( 'owner' ),
-      '/service' => create_search_sub( 'name' ),
-      '/ips'     => create_search_sub( 'ips' ),
-      '/user'    => \&find_admin,
+    ( '/owner'      => create_search_sub( 'owner' ),
+      '/service'    => create_search_sub( 'name' ),
+      '/ips'        => create_search_sub( 'ips' ),
+      '/visibility' => create_search_sub( 'visibility' ),
+      '/user'       => \&find_admin,
 
       # For testing purposes.
       '/test'   => sub { my ($cgi) = @_; return { params => $cgi->raw()  } },
