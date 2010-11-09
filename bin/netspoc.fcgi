@@ -115,8 +115,6 @@ sub ip_for_object {
     elsif ( Netspoc::is_any( $object ) ) {
 	return print_ip( 0 );
     }
-    elsif ( Netspoc::is_autointerface( $object ) ) {
-    }
     else {
 	warn "NO IP FOR $object";
     }
@@ -137,32 +135,7 @@ sub owners_for_objects {
     for my $object ( @$objects ) {
 	my $name;
 	my $owner_obj;
-	if (Netspoc::is_autointerface($object)) {
-	    my $obj = $object->{object};
-	    my $managed = $object->{managed};
-
-	    # Owner remains "unkown" if router & unmanaged or network & managed
-	    if (is_router($obj)) {
-		if ($obj->{managed}) {
-		    $owner_obj = $obj->{owner};
-		}
-		else {
-		    if (equal(map { $_->{owner} || 0 } 
-			      @{ $obj->{interfaces} })) 
-		    {
-			$owner_obj = $obj->{interfaces}->[0]->{owner};
-		    }
-		}
-	    }
-
-	    # Network: 
-	    else {
-		$owner_obj = $obj->{owner} if not $managed;
-	    }
-	}
-	else {
-	    $owner_obj = $object->{owner};
-	}
+	$owner_obj = $object->{owner};
 	if ($owner_obj) {
 	    ($name = $owner_obj->{name}) =~ s/^owner://;
 	}
@@ -173,6 +146,21 @@ sub owners_for_objects {
 	$owners{$name} = $name;
     }
     return [ values %owners ];
+}
+
+sub expand_auto_intf {
+    my ($src_aref, $dst_aref) = @_;
+    for (my $i = 0; $i < @$src_aref; $i++) {
+	my $src = $src_aref->[$i];
+	next if not is_autointerface($src);
+	my @new;
+	for my $dst (@$dst_aref) {
+	    push @new, Netspoc::path_auto_interfaces($src, $dst);
+	}
+
+	# Substitute auto interface by real interface.
+	splice(@$src_aref, $i, 1, @new)
+    }
 }
 
 
@@ -228,100 +216,33 @@ sub setup_policy_info {
 	my $pname = $policy->{name};
 	next if $pname =~ /^policy:ping_local/;
 
+	my $users = Netspoc::expand_group($policy->{user}, "user of $pname");
+
 	# Non 'user' objects.
 	my @objects;
 
-	# Check, if all rules have "user" or any|network:[user] in src and dst.
-	my $only_user = 1;
-	for my $rule (@{ $policy->{rules} }) {
-	    for my $what (qw(src dst)) {
-		for my $parts (@{ $rule->{$what} }) {
-		    my $context = "$what of $pname";
-		    my ($type, $name, $ext) = @$parts;
-		    my $is_user; 
-		    # user
-		    if ( $type eq 'user') {
-			$is_user = 1;
-		    }
-		    # any:[user], network:[user]
-		    elsif (ref $name and @$name == 1 and 
-			   $name->[0]->[0] eq 'user') 
-		    {
-			$is_user = 1;
-		    }
-		    # any:[..]
-		    elsif ($type eq 'any' and ref $name) {
-			my $sub_objects = 
-			    Netspoc::expand_group1([ $parts ], 
-						   "$type:[..] of $context");
-			push @objects, @$sub_objects
-			}
-		    # interface:...
-		    elsif ($type eq 'interface') {
-			# interface:[..].[all|auto]
-			if (ref $ext) {
-			    my ($selector, $managed) = @$ext;
-			    if (my $router = $routers{$name}) {
-				if ($selector eq 'all') {
-				    push @objects, @{ $router->{interfaces} };
-				}
-				else {
-				    push @objects, 
-				    Netspoc::get_auto_intf $router;
-				}
-			    }
-			    else {
-				Netspoc::warn_msg
-				    "Can't resolve '$type:$name.[$selector]'",
-				    " in $context";
-			    }
-			}
-			elsif (my $interface = $interfaces{"$name.$ext"}) {
-			    push @objects, $interface;
-			}
-			else {
-			    Netspoc::warn_msg 
-				"Can't resolve '$type:$name.$ext' in $context";
-			}
-		    }
-		    # type:name
-		    elsif (my $object = $name2object{$type}->{$name}) {
-			if (is_network $object or is_host $object) {
-			    push @objects, $object;
-			}
-			elsif (is_group $object) {
-			    my $elements;
-			    if ($object->{is_used}) {
-				$elements = $object->{expanded_clean};
-			    }
-			    else {
-				$object->{is_used} = 1;
-				$elements = 
-				    Netspoc::expand_group1 $object->{elements}, 
-				    "$type:$name", 'clean_autogrp';
-				$object->{expanded_clean} = $elements;
-			    }
-			    push @objects, @$elements if $elements;
-			}
-			else {
-			    Netspoc::warn_msg 
-				"Unexpected $object->{name} in $context";
-			}
-		    }
-		    else {
-			Netspoc::warn_msg 
-			    "Can't resolve '$type:$name' in $context";
-		    }
+	# Check, if policy contains a coupling rule with only "user" elements.
+	my $is_coupling = 0;
 
-		    $only_user = 0 if not $is_user;
-		}
+	for my $rule (@{ $policy->{rules} }) {
+	    my $has_user = $rule->{has_user};
+	    if ($has_user eq 'both') {
+		$is_coupling = 1;
+		next;
+	    }
+	    for my $what (qw(src dst)) {
+		next if $what eq $has_user;
+		push(@objects, @{ Netspoc::expand_group($rule->{$what}, 
+							"$what of $pname") });
 	    }
 	}
 
-	my $users = Netspoc::expand_group($policy->{user}, "user of $pname");
+	# Expand auto interface to set of real interfaces.
+	expand_auto_intf(\@objects, $users);
+	expand_auto_intf($users, \@objects);
 
-	# Take elements of 'user' object, if rules only reference 'user'.
-	if ($only_user) {
+	# Take elements of 'user' object, if policy has coupling rule.
+	if ($is_coupling) {
 	    push @objects, @$users;
 	}
 
@@ -329,17 +250,16 @@ sub setup_policy_info {
 	my %objects = map { $_ => $_ } @objects;
 	@objects = values %objects;
 
-	# We have non-user objects for this policy.
-	# Now find IPs and owner for those objects.
+	# Find IPs and owner for @objects.
 	$pname =~ s/policy://;
 	my $all_ips = [ map { ip_for_object($_) } @objects ];
 
 	my $owners = owners_for_objects(\@objects);
 	my $owner = join (',', @$owners);
 	$owner = "multi:$owner" if keys @$owners > 1;
-	$owner = "kopplung:$owner" if $only_user;
+	$owner = "coupling:$owner" if $is_coupling;
 
-	my $uowners = $only_user ? [] : owners_for_objects($users);
+	my $uowners = $is_coupling ? [] : owners_for_objects($users);
 	my $uowner = join (',', @$uowners);
 
 	# Find visibility for each policy.
