@@ -32,45 +32,6 @@ my %email2admin;
 my %admin2owners;
 my $policy_info;
 
-sub propagate_owner {
-
-    # Take named any objects and additionally 
-    # unnamed any objects from areas.
-    my %all_anys = map { $_ => $_ } values %anys;
-
-    # Areas can be nested. Proceed from small to larger ones.
-    for my $area (sort { @{$a->{anys}} <=> @{$b->{anys}} } values %areas) {
-	my $owner = $area->{owner} or next;
-	for my $any (@{ $area->{anys} }) {
-	    $all_anys{$any} = $any;
-	    $any->{owner} ||= $owner;
-	}
-    }
-    for my $any (values %all_anys) {
-	my $owner = $any->{owner} or next;
-	for my $network (@{ $any->{networks} }) {
-	    $network->{owner} ||= $owner;
-	}
-    }
-    for my $network (values %networks) {
-	my $owner = $network->{owner} or next;
-	for my $host (@{ $network->{hosts} }) {
-	    $host->{owner} ||= $owner;
-	}
-	for my $interface (@{ $network->{interfaces} }) {
-	    if (not $interface->{router}->{managed}) {
-		$interface->{owner} ||= $owner;
-	    }
-	}
-    }
-    for my $router (values %routers) {
-	my $owner = $router->{owner} or next;
-	for my $interface (@{ $router->{interfaces} }) {
-	    $interface->{owner} = $owner;
-	}
-    }
-}	
-
 sub setup_admin2owners {
     for my $name ( keys %owners ) {
 	my $owner = $owners{$name};
@@ -214,7 +175,6 @@ sub setup_policy_info {
     for my $key (sort keys %policies) {
 	my $policy = $policies{$key};
 	my $pname = $policy->{name};
-	next if $pname =~ /^policy:ping_local/;
 
 	my $users = Netspoc::expand_group($policy->{user}, "user of $pname");
 
@@ -254,8 +214,8 @@ sub setup_policy_info {
 	$pname =~ s/policy://;
 	my $all_ips = [ map { ip_for_object($_) } @objects ];
 
-	my $owners = owners_for_objects(\@objects);
-	my $owner = join (',', @$owners);
+	my $owners = $policy->{owners};
+	my $owner = join (',', map { $_->{name} } @$owners);
 	$owner = "multi:$owner" if keys @$owners > 1;
 	$owner = "coupling:$owner" if $is_coupling;
 
@@ -373,9 +333,9 @@ sub init_data {
     find_subnets();
     setany();
     setpath();
+    set_policy_owner();
     setup_admin2owners();
     setup_email2admin();
-    propagate_owner();
     setup_policy_info();
 }
 
