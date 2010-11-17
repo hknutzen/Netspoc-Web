@@ -349,17 +349,16 @@ sub daemonize {
     open STDERR, '>&STDOUT' or die "Can't dup stdout: $!";
 }
 
-my $child_ok;
-
 # Start a child process.
 # STDOUT of child process is connected to $child_fh of parent process.
 # The parent waits for input from the child.
 # If child sends the string "OK", the parent knows that the child has
 # initialized successfully.
 
-my $child_fh;
 my $forking;
 sub do_fork {
+    my ($child_ok) = @_;
+    my $child_fh;
     defined(my $pid = open($child_fh, "-|")) or die "Can't fork child: $!\n";
     if ($pid) {			
 
@@ -403,7 +402,7 @@ print 'OK';
 
 # Start event handling after parent has got the "OK" message.
 # The parent is now terminating and doesn't process events any more.
-$child_ok = AnyEvent->condvar;
+my $child_ok = AnyEvent->condvar;
 
 # Create the reload fifo special file.
 if (not -p $reload_fifo) {    
@@ -416,9 +415,11 @@ if (not -p $reload_fifo) {
       }
 }
 
-# Open a unix filehandle to the reload fifo file for AnyEvent
+# Open a unix filehandle to the reload fifo file for AnyEvent.
+# Use O_RDWR, not O_RDONLY. Otherwise, the socket will get in EOF state
+# when the writer closes the socket.
 my $reload_fh;
-sysopen($reload_fh, $reload_fifo, O_NONBLOCK | O_RDONLY) 
+sysopen($reload_fh, $reload_fifo, O_NONBLOCK | O_RDWR) 
     or die "Can't read $reload_fifo: $!";
 
 # Register two event handlers.
@@ -427,13 +428,16 @@ sysopen($reload_fh, $reload_fifo, O_NONBLOCK | O_RDONLY)
 my $reload_watcher = AnyEvent->io ( 
     fh => $reload_fh, poll => 'r', 
     cb => sub {
-    <$reload_fh>;
-    if(not $forking) {
-        $forking = 1;
-        warn "do_fork\n";
-        do_fork();
-    }
-});
+	my $msg = <$reload_fh>;
+	if(not $forking) {
+	    $forking = 1;
+	    warn "do_fork\n";
+	    do_fork($child_ok);
+	} 
+	else {
+	    warn "Ignoring reload request: still forking\n";
+	}
+    });
 
 # Handle FCGI request.
 my $fcgi = new AnyEvent::FCGI
