@@ -224,7 +224,7 @@ sub create_search_sub {
 	my $result = search($type, $crit);
 	return {
 	    success => 'true',
-	    totalCount => @$result,
+	    totalCount => scalar @$result,
 	    records => $result
 	    };
     }
