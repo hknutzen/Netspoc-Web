@@ -1,18 +1,11 @@
-#!/usr/local/bin/perl
+#!/usr/local/bin/perl -I /home/heinz/Netspoc/misc
 
 use strict;
 use warnings;
-use AnyEvent;
-use AnyEvent::FCGI;
-use AnyEvent::Strict;
+use ReloadingFCGI;
 use JSON;
 use CGI::Minimal;
-use POSIX ();
-use POSIX 'setsid';
-use Fcntl;
 use Readonly;
-use File::Spec ();
-use File::Basename ();
 use Netspoc;
 
 # Constants.
@@ -22,31 +15,6 @@ Readonly::Scalar my $NETSPOC_DATA => '/home/heinz/netspoc';
 my $program = "Netspoc JSON service";
 my $VERSION = ( split ' ',
  '$Id$' )[2];
-
-sub say ( @ ) { print @_, "\n"; }
-
-####################################################################
-# Fill policy_info hash containing policies, IPs and owners.
-####################################################################
-my %email2admin;
-my %admin2owners;
-my $policy_info;
-
-sub setup_admin2owners {
-    for my $name ( keys %owners ) {
-	my $owner = $owners{$name};
-	for my $admin ( @{$owner->{admins}} ) {
-	    my $admin_email = $admin->{email};
-	    $admin2owners{$admin_email}->{$name} = 1;
-	}
-    }
-}
-
-sub setup_email2admin {
-    for my $admin ( values %admins ) {
-	$email2admin{$admin->{email}} = $admin;
-    }
-}
 
 sub is_numeric { 
     my ($value) = @_;
@@ -77,7 +45,7 @@ sub ip_for_object {
 	return print_ip( 0 );
     }
     else {
-	warn "NO IP FOR $object";
+	warn "NO IP FOR $object->{name}";
     }
     return;
 }
@@ -160,15 +128,7 @@ sub find_visibility {
     join(',', @$visibility);	
 }
 
-my %name2object = 
-    (
-     host      => \%hosts,
-     network   => \%networks,
-     interface => \%interfaces,
-     any       => \%anys,
-     group     => \%groups,
-     area      => \%areas,
-     );
+my $policy_info;
 
 sub setup_policy_info {
     Netspoc::info("Setup policy info");
@@ -238,19 +198,11 @@ sub setup_policy_info {
 	unknown => [ keys %unknown ],
 	ucount => scalar keys %unknown,
     };
-    Netspoc::info("Ready policy info");
 }
 
 ####################################################################
 # Handle FCGI requests, serving back json for URL requests.
 ####################################################################
-
-sub error_data {
-    my ($msg) = @_;
-    return { success => 'false',
-	     msg => $msg,
-	 };
-}
 
 sub search {
     my ($type, $crit) = @_;
@@ -272,9 +224,31 @@ sub create_search_sub {
 	my $result = search($type, $crit);
 	return {
 	    success => 'true',
-	    totalCount => scalar( @$result ),
+	    totalCount => @$result,
 	    records => $result
 	    };
+    }
+}
+
+####################################################################
+# Email -> Admin -> Owner
+####################################################################
+my %email2admin;
+my %admin2owners;
+
+sub setup_admin2owners {
+    for my $name ( keys %owners ) {
+	my $owner = $owners{$name};
+	for my $admin ( @{$owner->{admins}} ) {
+	    my $admin_email = $admin->{email};
+	    $admin2owners{$admin_email}->{$name} = 1;
+	}
+    }
+}
+
+sub setup_email2admin {
+    for my $admin ( values %admins ) {
+	$email2admin{$admin->{email}} = $admin;
     }
 }
 
@@ -289,6 +263,10 @@ sub find_admin {
     return { owner => [ keys %$owner_hash ] };
 }
 
+
+####################################################################
+# FCGI request handling
+####################################################################
 my %path2sub = 
     ( '/owner'      => create_search_sub( 'owner' ),
       '/service'    => create_search_sub( 'name' ),
@@ -319,10 +297,15 @@ sub handle_request {
 		      'Content-Type' => 'application/x-json');
 }
 
-my $reload_fifo = '/home/heinz/policy-shop/reload.socket';
+sub error_data {
+    my ($msg) = @_;
+    return { success => 'false',
+	     msg => $msg,
+	 };
+}
 
 ####################################################################
-# Initialize Netspoc.
+# Initialize Netspoc data
 ####################################################################
 sub init_data {
     read_file_or_dir( $NETSPOC_DATA );
@@ -337,116 +320,17 @@ sub init_data {
     setup_admin2owners();
     setup_email2admin();
     setup_policy_info();
+    Netspoc::info("Ready");
 }
 
-sub daemonize {
-    chdir '/' or die "Can't chdir to /: $!";
-    open STDIN, '/dev/null' or die "Can't read /dev/null: $!";
-    open STDOUT, '>/dev/null' or die "Can't write to /dev/null: $!";
-    defined(my $pid = fork) or die "Can't fork: $!";
-    exit if $pid;
-    die "Can't start a new session: $!" if setsid == -1;
-    open STDERR, '>&STDOUT' or die "Can't dup stdout: $!";
-}
-
-# Start a child process.
-# STDOUT of child process is connected to $child_fh of parent process.
-# The parent waits for input from the child.
-# If child sends the string "OK", the parent knows that the child has
-# initialized successfully.
-
-my $forking;
-sub do_fork {
-    my ($child_ok) = @_;
-    my $child_fh;
-    defined(my $pid = open($child_fh, "-|")) or die "Can't fork child: $!\n";
-    if ($pid) {			
-
-	# Parent process.
-	# Register a third event handler, which waits for input from the child.
-	# If input is "OK", terminate the event loop and exit.
-	# On any other input, the child is assumed to have failed.
-        my $child_watcher;
-	$child_watcher = AnyEvent->io ( fh => $child_fh, poll => 'r', 
-					   cb => sub {
-					       my $text = <$child_fh>;
-					       if ($text && $text eq 'OK') {
-						   $child_ok->send;
-					       }
-					       else {
-						   $forking = 0;
-						   $child_watcher = undef;
-					       }
-					   });
-    }
-    else {
-			
-	# Child process.
-	# Start a fresh copy of this program which reads the changed data.
-        exec($0) or die "Can't exec myself ($0): $!\n";
-    }
-}
-
-# Read data into memory.
-# Data is used to answer FCGI requests.
+####################################################################
+# Start server
+####################################################################
 init_data();
-
-# print should work unbuffered.
-$| = 1;
-
-# Send message to parent process on STDOUT,
-# telling that this process was initialized successfully.
-print 'OK';
-
-#daemonize();
-
-# Start event handling after parent has got the "OK" message.
-# The parent is now terminating and doesn't process events any more.
-my $child_ok = AnyEvent->condvar;
-
-# Create the reload fifo special file.
-if (not -p $reload_fifo) {    
-    if (-e $reload_fifo) {	# but a something else
-        die "Won't overwrite $reload_fifo\n";
-    } 
-    else {
-        POSIX::mkfifo($reload_fifo, 0666) 
-            or die "can't mknod $reload_fifo: $!";
-      }
-}
-
-# Open a unix filehandle to the reload fifo file for AnyEvent.
-# Use O_RDWR, not O_RDONLY. Otherwise, the socket will get in EOF state
-# when the writer closes the socket.
-my $reload_fh;
-sysopen($reload_fh, $reload_fifo, O_NONBLOCK | O_RDWR) 
-    or die "Can't read $reload_fifo: $!";
-
-# Register two event handlers.
-
-# Handle reload request.
-my $reload_watcher = AnyEvent->io ( 
-    fh => $reload_fh, poll => 'r', 
-    cb => sub {
-	my $msg = <$reload_fh>;
-	if(not $forking) {
-	    $forking = 1;
-	    warn "do_fork\n";
-	    do_fork($child_ok);
-	} 
-	else {
-	    warn "Ignoring reload request: still forking\n";
-	}
-    });
-
-# Handle FCGI request.
-my $fcgi = new AnyEvent::FCGI
+ReloadingFCGI->run
     (
-     socket => '/var/lib/apache2/fastcgi/test.sock',
-     on_request => \&handle_request,
+     reload_fifo => '/home/heinz/policy-shop/reload.socket',
+     daemonize => 0,
+     fcgi_socket =>'/var/lib/apache2/fastcgi/test.sock',
+     request_handler => \&handle_request,
      );
-
-# Start the event loop.
-# This program terminates if the do_fork() sends to $child_ok.
-$child_ok->recv;
-warn "Terminating\n";
