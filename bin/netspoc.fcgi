@@ -4,7 +4,7 @@ use strict;
 use warnings;
 use ReloadingFCGI;
 use JSON;
-use CGI::Minimal;
+use CGI::Simple;
 use Readonly;
 use Netspoc;
 
@@ -283,10 +283,8 @@ sub handle_request {
     local *STDIN; open STDIN, '<', \$request->read_stdin;
     local %ENV = %{$request->params};
 
-    # Reset cached values of previous call.
-    CGI::Minimal->reset_globals;
-    my $cgi = CGI::Minimal->new;
-    my $path = $ENV{PATH_INFO};
+    my $cgi = CGI::Simple->new;
+    my $path = $cgi->path_info();
     my $sub = $path2sub{$path};
     my $data = $sub 
 	     ? $sub->($cgi) || return
