@@ -5,11 +5,13 @@ use warnings;
 use ReloadingFCGI;
 use JSON;
 use CGI::Simple;
+use CGI::Session;
 use Readonly;
 use Netspoc;
 
 # Constants.
-Readonly::Scalar my $NETSPOC_DATA => '/home/heinz/netspoc';
+#Readonly::Scalar my $NETSPOC_DATA => '/home/heinz/netspoc';
+Readonly::Scalar my $NETSPOC_DATA => '/home/heinz/cut';
 
 # Global variables.
 my $program = "Netspoc JSON service";
@@ -221,58 +223,99 @@ sub create_search_sub {
     return sub {
 	my ($cgi) = @_;
 	my $crit = $cgi->param( 'criteria' ) || '.*';
-	my $result = search($type, $crit);
-	return {
-	    success => 'true',
-	    totalCount => scalar @$result,
-	    records => $result
-	    };
+	return search($type, $crit);
     }
 }
 
 ####################################################################
-# Email -> Admin -> Owner
+# Save session data
+####################################################################
+
+my %saveparam = ( owner => 1 );
+
+sub set_session_data {
+    my ($cgi, $session) = @_;
+    for my $param ($cgi->param()) {
+	if ($saveparam{$param}) {
+	    $session->save_param($cgi, [$param]);
+	}
+	else {
+	    return error_data("Invalid param $param");
+	}
+    }
+    return [];
+}
+
+####################################################################
+# Login, find Email -> Admin -> Owner
 ####################################################################
 my %email2admin;
-my %admin2owners;
+my %email2owners;
 
-sub setup_admin2owners {
+sub setup_email2owners {
     for my $name ( keys %owners ) {
 	my $owner = $owners{$name};
-	for my $admin ( @{$owner->{admins}} ) {
-	    my $admin_email = $admin->{email};
-	    $admin2owners{$admin_email}->{$name} = 1;
+	for my $admin ( @{ $owner->{admins} } ) {
+	    push @{ $email2owners{$admin->{email}} },$name;
 	}
     }
 }
 
+# Netspoc.pm already checks, that one email addresses isn't used 
+# at multiple admins.
 sub setup_email2admin {
     for my $admin ( values %admins ) {
 	$email2admin{$admin->{email}} = $admin;
     }
 }
 
-sub find_admin {
-    my ($cgi) = @_;
-    my $user = $cgi->param( 'user' );
-    my $admin = $email2admin{$user} or
-	return error_data("Unknown admin '$user'");
-#    my $pass = $cgi->param( 'pass' );
-#    return unless $admin->{pass} eq $pass;
-    my $owner_hash = $admin2owners{$user};
-    return { owner => [ keys %$owner_hash ] };
+sub get_owner {
+    my ($cgi, $session) = @_;
+    my $user = $session->param('user');
+    my $active_owner = $session->param('owner');
+    my $owners = $email2owners{$user};
+    return [ map { { name => $_, 
+		     active => $_ eq $active_owner ? 'true' : 'false' } }
+	     @$owners ];
 }
 
+####################################################################
+# Login
+####################################################################
+sub login {
+    my ($cgi, $session) = @_;
+    my $user = $cgi->param( 'user' );
+    my $admin = $email2admin{$user} or
+	return error_data("Unknown user '$user'");
+#    my $pass = $cgi->param( 'pass' );
+#    return error_data("Login failed") unless $admin->{pass} eq $pass;
+    my $s_user = $session->param('user');
+    if ($s_user ne $user) {
+	$session->clear('owner');
+	$session->param('user', $user);
+    }
+    $session->param('logged_in', 1);
+    $session->expire('logged_in', '30m');
+    return [];
+}
+
+sub logged_in {
+    my ($session) = @_;
+    return $session->param('logged_in');
+}
 
 ####################################################################
 # FCGI request handling
 ####################################################################
 my %path2sub = 
-    ( '/owner'      => create_search_sub( 'owner' ),
+    ( 
+     #'/login'      => \&login,		# Handled separately.
+      '/owner'      => create_search_sub( 'owner' ),
       '/service'    => create_search_sub( 'name' ),
       '/ips'        => create_search_sub( 'ips' ),
       '/visibility' => create_search_sub( 'visibility' ),
-      '/user'       => \&find_admin,
+      '/get_owner'  => \&get_owner,
+      '/set'        => \&set_session_data,
 
       # For testing purposes.
       '/test'   => sub { my ($cgi) = @_; return { params => $cgi->raw()  } },
@@ -283,16 +326,37 @@ sub handle_request {
     local *STDIN; open STDIN, '<', \$request->read_stdin;
     local %ENV = %{$request->params};
 
-    my $cgi = CGI::Simple->new;
+    my $cgi = CGI::Simple->new();    
+    my $session = new CGI::Session ($cgi);
     my $path = $cgi->path_info();
-    my $sub = $path2sub{$path};
-    my $data = $sub 
-	     ? $sub->($cgi) || return
+    my $data;
+    if ($path eq '/login') {
+	$data = login($cgi, $session);
+    }
+    elsif (logged_in($session)) {
+	my $sub = $path2sub{$path};
+	$data = $sub 
+	     ? $sub->($cgi, $session)
 	     : error_data("Unknown path '$path'");
+    }
+    else {
+	$data = error_data("Login required");
+    }
+    if (ref $data eq 'ARRAY') {
+	$data = {
+	    success => 'true',
+	    totalCount => scalar @$data,
+	    records => $data
+	    };
+    }
+    my $cookie = $cgi->cookie( -name   => $session->name,
+			       -value  => $session->id );
     $request->respond(
 #		      encode_json($data),
 		      to_json($data, {utf8 => 1, pretty => 1}), 
-		      'Content-Type' => 'application/x-json');
+		      'Content-Type' => 'application/x-json',
+		      'Set-Cookie' => $cookie,
+		      );
 }
 
 sub error_data {
@@ -315,7 +379,7 @@ sub init_data {
     setany();
     setpath();
     set_policy_owner();
-    setup_admin2owners();
+    setup_email2owners();
     setup_email2admin();
     setup_policy_info();
     Netspoc::info("Ready");
