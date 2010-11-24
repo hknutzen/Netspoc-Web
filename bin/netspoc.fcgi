@@ -217,8 +217,59 @@ sub check_owner {
 }
 
 sub proto_descr {
-    my ($protos) = @_;
-    [ map { $_->{name} } @$protos ];
+    my ($protocols) = @_;
+    my @result;
+    for my $proto0 (@$protocols) {
+	my $protocol = $proto0;
+	$protocol = $protocol->{main} if $protocol->{main};
+	my $desc = my $ptype = $protocol->{proto};
+	if ($ptype eq 'tcp' or $ptype eq 'udp') {
+	    my $port_code = sub ( $$ ) {
+		my ($v1, $v2) = @_;
+		if ($v1 == $v2) {
+		    return $v1;
+		}
+		elsif ($v1 == 1 and $v2 == 65535) {
+		    return '';
+		}
+		else {
+		    return "$v1-$v2";
+		}
+	    };
+	    my $sport  = $port_code->(@{ $protocol->{src_range}->{range} });
+	    my $dport  = $port_code->(@{ $protocol->{dst_range}->{range} });
+	    if ($sport) {
+		$desc .= " $sport:$dport";
+	    }
+	    elsif ($dport) {
+		$desc .= " $dport";
+	    }
+	}
+	elsif ($ptype eq 'icmp') {
+	    if (defined(my $type = $protocol->{type})) {
+		if (defined(my $code = $protocol->{code})) {
+		    $desc .= " $type/$code";
+		}
+		else {
+		    $desc .= " $type";
+		}
+	    }
+	}
+	if (my $flags = $protocol->{flags}) {
+	    for my $key (sort keys %$flags) {
+		if ($key eq 'src' or $key eq 'dst') {
+		    for my $part (sort keys %{$flags->{$key}}) {
+			$desc .= ", ${key}_$part";
+		    }
+		}
+		else {
+		    $desc .= ", $key";
+		}
+	    }
+	}
+	push @result, $desc;
+    }
+    \@result;
 }
 
 sub get_rules {
