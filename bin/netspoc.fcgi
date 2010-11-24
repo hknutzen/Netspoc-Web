@@ -10,8 +10,8 @@ use Readonly;
 use Netspoc;
 
 # Constants.
-#Readonly::Scalar my $NETSPOC_DATA => '/home/heinz/netspoc';
-Readonly::Scalar my $NETSPOC_DATA => '/home/heinz/cut';
+Readonly::Scalar my $NETSPOC_DATA => '/home/heinz/netspoc';
+#Readonly::Scalar my $NETSPOC_DATA => '/home/heinz/cut';
 
 # Global variables.
 my $program = "Netspoc JSON service";
@@ -23,33 +23,34 @@ sub is_numeric {
     $value =~ /^\d+$/; 
 }
 
-sub ip_for_object {
-    my ($object) = @_;
-    if ( Netspoc::is_network( $object ) ) {
-	if ( is_numeric($object->{ip}) ) {
-	    return print_ip($object->{ip});
+sub ip_for_objects {
+    my ($objects) = @_;
+    [ map {
+	if ( Netspoc::is_network( $_ ) ) {
+	    if ( is_numeric($_->{ip}) ) {
+		print_ip($_->{ip});
+	    }
 	}
-    }
-    elsif ( Netspoc::is_host( $object ) ) {
-	if ( my $range = $object->{range} ) {
-	    return join '-', map { print_ip( $_ ) } @$range;
+	elsif ( Netspoc::is_host( $_ ) ) {
+	    if ( my $range = $_->{range} ) {
+		join('-', map { print_ip( $_ ) } @$range);
+	    }
+	    else {
+		print_ip($_->{ip});
+	    }
+	}
+	elsif ( Netspoc::is_interface( $_ ) ) {
+	    if ( is_numeric( $_->{ip} ) ) {
+		print_ip( $_->{ip} );
+	    }
+	}
+	elsif ( Netspoc::is_any( $_ ) ) {
+	    print_ip( 0 );
 	}
 	else {
-	    return print_ip($object->{ip});
+	    "$_->{name}";
 	}
-    }
-    elsif ( Netspoc::is_interface( $object ) ) {
-	if ( is_numeric( $object->{ip} ) ) {
-	    return print_ip( $object->{ip} );
-	}
-    }
-    elsif ( Netspoc::is_any( $object ) ) {
-	return print_ip( 0 );
-    }
-    else {
-	warn "NO IP FOR $object->{name}";
-    }
-    return;
+    } @$objects ];
 }
 
 my %unknown;
@@ -64,17 +65,10 @@ sub owners_for_objects {
     my ($objects) = @_;
     my %owners;
     for my $object ( @$objects ) {
-	my $name;
-	my $owner_obj;
-	$owner_obj = $object->{owner};
-	if ($owner_obj) {
-	    ($name = $owner_obj->{name}) =~ s/^owner://;
+	if (my $owner_obj = $object->{owner}) {
+	    (my $name = $owner_obj->{name}) =~ s/^owner://;
+	    $owners{$name} = $name;
 	}
-	if (not $name) {
-	    $name = 'unknown';
-	    $unknown{$object->{name}} = 1;
-	}
-	$owners{$name} = $name;
     }
     return [ values %owners ];
 }
@@ -97,8 +91,6 @@ sub expand_auto_intf {
 
 sub find_visibility {
     my ($owners, $uowners) = @_;
-    $owners = [ grep { $_ ne 'unknown' } @$owners ];
-    $uowners = [ grep { $_ ne 'unknown' } @$uowners ];
     my $visibility;
     my %hash = map { $_ => 1} @$owners;
     my @extra_uowners = grep { not $hash{$_} } @$uowners;
@@ -107,38 +99,33 @@ sub find_visibility {
 			   
     # No known owner or owner of users.
     if (not @$owners and not @$uowners) {
-	$visibility = [ 'none' ];
+	# Default: private
     }
     # Set of uowners is subset of owners.
     elsif (not @extra_uowners) {
-	$visibility = [ 'private' ];
+	# Default: private
     }
     # Restricted visibility
     elsif (@other_extra <= 2) {
-	$visibility = [];
 	if (@DA_extra >= 3) {
-	    push @$visibility, 'DA_*';
+	    $visibility = 'DA_*';
 	}
-	else {
-	    push @$visibility, 'DA-'.@DA_extra if @DA_extra;
-	}
-	push @$visibility, 'priv-'.@other_extra;
     }
     else {
-	$visibility = [ 'public' ];
+	$visibility = '*';
     }
-    join(',', @$visibility);	
+    $visibility;
 }
 
 my $policy_info;
 
 sub setup_policy_info {
     Netspoc::info("Setup policy info");
-    for my $key (sort keys %policies) {
-	my $policy = $policies{$key};
+    for my $policy (values %policies) {
 	my $pname = $policy->{name};
 
-	my $users = Netspoc::expand_group($policy->{user}, "user of $pname");
+	my $users = $policy->{expanded_user} =
+	    Netspoc::expand_group($policy->{user}, "user of $pname");
 
 	# Non 'user' objects.
 	my @objects;
@@ -153,9 +140,12 @@ sub setup_policy_info {
 		next;
 	    }
 	    for my $what (qw(src dst)) {
+
 		next if $what eq $has_user;
-		push(@objects, @{ Netspoc::expand_group($rule->{$what}, 
-							"$what of $pname") });
+		my $all = 
+		    $rule->{"expanded_$what"} =
+		    Netspoc::expand_group($rule->{$what}, "$what of $pname");
+		push(@objects, @$all);
 	    }
 	}
 
@@ -172,59 +162,89 @@ sub setup_policy_info {
 	my %objects = map { $_ => $_ } @objects;
 	@objects = values %objects;
 
-	# Find IPs and owner for @objects.
-	$pname =~ s/policy://;
-	my $all_ips = [ map { ip_for_object($_) } @objects ];
-
+	$policy->{all_ip} = ip_for_objects(\@objects);
+	map { ($_ = $_->{name}) =~ s/^owner://; } @{ $policy->{owners} };
 	my $owners = $policy->{owners};
-	my $owner = join (',', map { $_->{name} } @$owners);
-	$owner = "multi:$owner" if keys @$owners > 1;
-	$owner = "coupling:$owner" if $is_coupling;
-
 	my $uowners = $is_coupling ? [] : owners_for_objects($users);
-	my $uowner = join (',', @$uowners);
+	$policy->{uowners} = $uowners;
 
-	# Find visibility for each policy.
-	my $visibility = find_visibility($owners, $uowners);
-
-	$policy_info->{$pname} = {
-	    name => $pname,
-	    ips => $all_ips,
-	    owner => $owner,
-	    uowner => $uowner,
-	    visibility => $visibility,
-	};
+	# Für Übergangszeit aus aktueller Benutzung bestimmen.
+	$policy->{visible} ||= find_visibility($owners, $uowners);
+	$policy->{visible} and $policy->{visible} =~ s/\*$/.*/;
     }
-    $policy_info->{unknown} = {
-	name => 'unknown',
-	unknown => [ keys %unknown ],
-	ucount => scalar keys %unknown,
-    };
 }
 
 ####################################################################
-# Handle FCGI requests, serving back json for URL requests.
+# Services, rules, users
 ####################################################################
 
-sub search {
-    my ($type, $crit) = @_;
-    my $result = [];
-    for my $key ( sort keys %{$policy_info} ) {
-	my $value = $policy_info->{$key};
-	if ( $value->{$type} =~ /$crit/ ) {
-	    push @$result, $value;
+sub is_visible {
+    my ($owner, $policy) = @_;
+    grep({ $_ eq $owner } @{ $policy->{owners} }, @{ $policy->{uowners} })
+	or $policy->{visible} and $owner =~ /^$policy->{visible}/;
+}
+
+sub service_list {
+    my ($cgi, $session) = @_;
+    my $active_owner = $session->param('owner');
+    my @result;
+    for my $policy (values %policies) {
+	if (is_visible($active_owner, $policy)) {
+	    (my $pname = $policy->{name}) =~ s/policy://;
+	    my $owner = join (',', @{ $policy->{owners} });
+	    push(@result, 
+		 {
+		     name => $pname,
+		     ips => $policy->{all_ip},
+		     owner => $owner,
+		 });
 	}
     }
-    return $result;
+    \@result;
 }
 
-sub create_search_sub {
-    my ($type) = @_;
-    return sub {
-	my ($cgi) = @_;
-	my $crit = $cgi->param( 'criteria' ) || '.*';
-	return search($type, $crit);
+sub check_owner {
+    my ($cgi, $session) = @_;
+    my $active_owner = $session->param('owner');
+    my $pname = $cgi->param('service') 
+	or return (undef, error_data("Missing parameter 'service'"));
+    my $policy = $policies{$pname}
+    or return (undef, error_data ("Unknown policy"));
+    if (not is_visible($active_owner, $policy)) {
+	return (undef, error_data("Policy not visible for owner"));
     }
+    return $policy;
+}
+
+sub proto_descr {
+    my ($protos) = @_;
+    [ map { $_->{name} } @$protos ];
+}
+
+sub get_rules {
+    my ($cgi, $session) = @_;
+    my ($policy, $err) = check_owner($cgi, $session);
+    return $err if (not $policy);
+    [ 
+      map {
+	  { 
+	      action => $_->{action},
+	      has_user => $_->{has_user},
+	      
+	      # ToDo: Expand auto_interfaces.
+	      src => ip_for_objects($_->{expanded_src}),
+	      dst => ip_for_objects($_->{expanded_dst}),
+	      srv => proto_descr(Netspoc::expand_services($_->{srv}, 						      "rule in $_")),
+	  }
+      } @{ $policy->{rules} }
+      ];
+}
+
+sub get_user {
+    my ($cgi, $session) = @_;
+    my ($policy, $err) = check_owner($cgi, $session);
+    return $err if (not $policy);
+    ip_for_objects($policy->{expanded_user});
 }
 
 ####################################################################
@@ -274,9 +294,15 @@ sub get_owner {
     my $user = $session->param('user');
     my $active_owner = $session->param('owner');
     my $owners = $email2owners{$user};
-    return [ map { { name => $_, 
-		     active => $_ eq $active_owner ? 'true' : 'false' } }
-	     @$owners ];
+    [ map({ { name => $_, active => $_ eq $active_owner ? 'true' : 'false' } }
+	  @$owners) ];
+}
+
+sub get_emails {
+    my ($cgi, $session) = @_;
+    my $active_owner = $session->param('owner');
+    my $owner = $owners{$active_owner};
+    [ map { $_->{email } } @{ $owner->{admins} } ];
 }
 
 ####################################################################
@@ -284,15 +310,19 @@ sub get_owner {
 ####################################################################
 sub login {
     my ($cgi, $session) = @_;
-    my $user = $cgi->param( 'user' );
+    my $user = $cgi->param( 'user' ) or
+	return error_data("Missing param 'user'");
     my $admin = $email2admin{$user} or
 	return error_data("Unknown user '$user'");
 #    my $pass = $cgi->param( 'pass' );
 #    return error_data("Login failed") unless $admin->{pass} eq $pass;
-    my $s_user = $session->param('user');
+    my $s_user = $session->param('user') || '';
     if ($s_user ne $user) {
-	$session->clear('owner');
+	$session->param('owner', '');
 	$session->param('user', $user);
+    }
+    elsif (not defined $session->param('owner')) {
+	$session->param('owner', '');
     }
     $session->param('logged_in', 1);
     $session->expire('logged_in', '30m');
@@ -309,13 +339,13 @@ sub logged_in {
 ####################################################################
 my %path2sub = 
     ( 
-     #'/login'      => \&login,		# Handled separately.
-      '/owner'      => create_search_sub( 'owner' ),
-      '/service'    => create_search_sub( 'name' ),
-      '/ips'        => create_search_sub( 'ips' ),
-      '/visibility' => create_search_sub( 'visibility' ),
-      '/get_owner'  => \&get_owner,
-      '/set'        => \&set_session_data,
+     #'/login'        => \&login,		# Handled separately.
+      '/get_owner'    => \&get_owner,
+      '/set'          => \&set_session_data,
+      '/service_list' => \&service_list,
+      '/get-emails'   => \&get_emails,
+      '/get_rules'    => \&get_rules,
+      '/get_user'     => \&get_user,
 
       # For testing purposes.
       '/test'   => sub { my ($cgi) = @_; return { params => $cgi->raw()  } },
