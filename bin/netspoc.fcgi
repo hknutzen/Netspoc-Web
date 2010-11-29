@@ -385,12 +385,19 @@ sub logged_in {
     return $session->param('logged_in');
 }
 
+sub logout {
+    my ($cgi, $session) = @_;
+    $session->clear('logged_in');
+    return [];
+}
+
 ####################################################################
 # FCGI request handling
 ####################################################################
 my %path2sub = 
     ( 
      #'/login'        => \&login,		# Handled separately.
+      '/logout'       => \&logout,
       '/get_owner'    => \&get_owner,
       '/set'          => \&set_session_data,
       '/service_list' => \&service_list,
