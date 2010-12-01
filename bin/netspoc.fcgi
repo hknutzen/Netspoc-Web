@@ -345,7 +345,7 @@ sub get_owner {
     my $user = $session->param('user');
     my $active_owner = $session->param('owner');
     my $owners = $email2owners{$user};
-    [ map({ { name => $_, active => $_ eq $active_owner ? 'true' : 'false' } }
+    [ map({ { name => $_, active => $_ eq $active_owner ? JSON::true : JSON::false } }
 	  @$owners) ];
 }
 
@@ -401,7 +401,7 @@ my %path2sub =
       '/get_owner'    => \&get_owner,
       '/set'          => \&set_session_data,
       '/service_list' => \&service_list,
-      '/get-emails'   => \&get_emails,
+      '/get_emails'   => \&get_emails,
       '/get_rules'    => \&get_rules,
       '/get_user'     => \&get_user,
 
@@ -432,7 +432,7 @@ sub handle_request {
     }
     if (ref $data eq 'ARRAY') {
 	$data = {
-	    success => 'true',
+	    success => JSON::true,
 	    totalCount => scalar @$data,
 	    records => $data
 	    };
@@ -449,7 +449,7 @@ sub handle_request {
 
 sub error_data {
     my ($msg) = @_;
-    return { success => 'false',
+    return { success => JSON::false,
 	     msg => $msg,
 	 };
 }
