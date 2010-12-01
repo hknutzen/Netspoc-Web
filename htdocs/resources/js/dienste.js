@@ -222,12 +222,12 @@ function proxy4path ( path ) {
 Ext.ns( "NetspocWeb" );
 
 NetspocWeb.workspace = function () {
-    var viewport, loginWindow;
+    var viewport, loginWindow, ownerWindow;
 
     return {
 	
 	init : function () {
-	    /* Automatic login:
+	    // Automatic login:
 	    Ext.Ajax.request(
 		{
 		    url          : 'http://10.3.28.111/netspoc/login',
@@ -239,17 +239,17 @@ NetspocWeb.workspace = function () {
 		    succCallback : this.onLoginSuccess
 		}
 	    );
-	     */
+/*
 	    if ( ! loginWindow ) {
 		loginWindow = this.buildLoginWindow();
 	    }
 	    loginWindow.show();
+*/
         },
 
 	buildLoginWindow : function() {
 	    return new NetspocWeb.window.UserLoginWindow(
 		{
-		    title   : 'Am Netspoc Webinterface anmelden',
 		    scope   : this,
 		    handler : this.onLogin
 		}
@@ -272,15 +272,11 @@ NetspocWeb.workspace = function () {
 	},
 
 	onLoginSuccess : function( form, action ) {
-	    loginWindow.el.unmask();
-	    Ext.Ajax.request(
-		{
-		    url      : 'http://10.3.28.111/netspoc/get_owner',
-		    scope        : this,
-		    callback     : this.onAfterAjaxReq,
-		    succCallback : this.onGetOwnerSuccess()
-		}
-	    );
+	    //loginWindow.el.unmask();
+	    if ( ! ownerWindow ) {
+		ownerWindow = this.buildOwnerWindow();
+	    }
+	    ownerWindow.show();
 	},
 
 	onLoginFailure : function( form, action ) {
@@ -305,27 +301,105 @@ NetspocWeb.workspace = function () {
 	    );
 	},
 
-	onGetOwnerSuccess : function( scope, jsonData, options ) {
-	    if ( jsonData ) {
-		Dumper.popup( jsonData );
-		if ( jsonData.success === true ) { 
-		    this.buildViewport();
-		    loginWindow.destroy();
-		    loginWindow = null;
+	buildOwnerWindow : function() {
+	    var remoteJsonStore = new Ext.data.JsonStore(
+		{
+		    totalProperty : 'totalCount',
+		    root          : 'records',
+		    baseParams    : {
+			column : 'name'
+		    },
+		    fields     : [ 
+			{
+			    name    : 'name',
+			    mapping : 'name'
+			},
+			{
+			    name    : 'id',
+			    mapping : 'id'
+			}
+		    ],
+		    autoload : true,
+		    proxy : new Ext.data.HttpProxy(
+			{
+			    url : 'http://10.3.28.111/netspoc/get_owner'
+			}
+		    )   
 		}
-		else {
-		    this.onGetOwnerFailure();
+	    );
+
+	    var cbOwner = {
+		xtype          : 'combo',
+		fieldLabel     : 'Verantwortungsbereich',
+		forceSelection : true, 
+		autoselect     : true,
+		lazyInit       : false,
+		editable       : false,
+		allowblank     : false,
+		displayField   : 'name',
+		valueField     : 'name',
+		hiddenName     : 'chosenOwner',
+		loadingText    : 'Abfrage l&auml;uft ...',
+		minChars       : 1,
+		mode           : 'remote',
+		triggerAction  : 'all',
+		store          : remoteJsonStore,
+		listeners:{
+		    scope    : this,
+		    'select' : this.onOwnerChosen
 		}
-	    }
+		
+	    };	    
+
+	    var formItemDefaults = {
+		allowBlank : false,
+		anchor     : '-5'
+            };
+	    return new Ext.Window(
+		{
+		    id       : 'myWindow', 
+		    title    : 'Combo Test',
+		    width    : 400, 
+		    height   : 80,
+		    layout   : 'fit', 
+		    items    : {
+			xtype       : 'form',
+			id          : 'fmChooseOwnerId',
+			labelWidth  : 150,
+			frame       : true,
+			labelAlign  : 'right',
+			defaults    : formItemDefaults,
+			items       : cbOwner
+		    }
+		}
+	    );   
+/*
+	    return new NetspocWeb.window.ChooseOwnerWindow(
+		{
+		    scope   : this,
+		    handler : this.onOwnerChosen
+		}
+	    );
+*/
 	},
 
-	onGetOwnerFailure : function() {
-//	    Dumper.popup( 'OWNER FAILURE!' );
+	onOwnerChosen : function() {
+	    var form = Ext.getCmp( 'fmChooseOwnerId' );
+	    form.el.mask( 'Bitte warten ... ', 'x-mask-loading' );
+	    form.getForm().submit(
+		{
+		    url     : 'http://10.3.28.111/netspoc/set?owner=',
+		    success : this.setOwner,
+		    failure : this.setOwner
+		}
+	    );	    
+	    Dumper.popup( 'OWNER CHOSEN!' );
 	},
+
 
 	onAfterAjaxReq : function( options, success, result ) {
 	    Ext.getBody().unmask();
-	    if ( success === true ) { // HTML success, NOT JSON-success!
+	    if ( success === true ) {
 		var jsonData;
 		try {
 		    jsonData = Ext.decode( result.responseText );
@@ -336,19 +410,17 @@ NetspocWeb.workspace = function () {
 			'Daten können nicht dekodiert werden (kein JSON?)!'
 		    );
 		}
-		// If JSON data returned, was it successful?
-		if ( jsonData ) {
-		    if ( jsonData.success == 'true' ) { 
-			options.succCallback.call( options.scope, 
-						   jsonData, options );
-		    }
-		    else {
-			Ext.MessageBox.alert( 'Fehler!', jsonData.msg );
-		    }
-		}
+		options.succCallback.call( options.scope, 
+					   jsonData, options );
 	    }
 	    else {
-		var m = 'HTML get fehlgeschlagen!';
+		var m;
+		if ( jsonData.msg ) {
+		    m = jsonData.msg;
+		    }
+		else {
+		    m = 'Unhandled exception?!';
+		}
 		Ext.MessageBox.alert( 'Fehler!', m );
 	    }
 	},
