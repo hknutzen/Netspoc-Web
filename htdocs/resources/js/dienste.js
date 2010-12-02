@@ -295,7 +295,7 @@ NetspocWeb.workspace = function () {
 		    title   : 'Login fehlgeschlagen!',
 		    msg     : msg,
 		    buttons : Ext.Msg.OK,
-		    fn      : this.destroy(),
+		    fn      : this.destroy_and_init(),
 		    icon    : Ext.Msg.ERROR
 		}
 	    );
@@ -330,17 +330,15 @@ NetspocWeb.workspace = function () {
 
 	    var cbOwner = {
 		xtype          : 'combo',
+		id             : 'cbOwnerId',
 		fieldLabel     : 'Verantwortungsbereich',
 		forceSelection : true, 
 		autoselect     : true,
-		lazyInit       : false,
 		editable       : false,
 		allowblank     : false,
 		displayField   : 'name',
 		valueField     : 'name',
-		hiddenName     : 'chosenOwner',
 		loadingText    : 'Abfrage l&auml;uft ...',
-		minChars       : 1,
 		mode           : 'remote',
 		triggerAction  : 'all',
 		store          : remoteJsonStore,
@@ -351,26 +349,25 @@ NetspocWeb.workspace = function () {
 		
 	    };	    
 
-	    var formItemDefaults = {
-		allowBlank : false,
-		anchor     : '-5'
-            };
 	    return new Ext.Window(
 		{
 		    id       : 'myWindow', 
-		    title    : 'Combo Test',
+		    title    : 'Verantwortungsbereich ausw&auml;hlen',
 		    width    : 400, 
 		    height   : 80,
 		    layout   : 'fit', 
-		    items    : {
-			xtype       : 'form',
-			id          : 'fmChooseOwnerId',
-			labelWidth  : 150,
-			frame       : true,
-			labelAlign  : 'right',
-			defaults    : formItemDefaults,
-			items       : cbOwner
-		    }
+		    items    : [
+			{
+			    xtype  : 'panel',
+			    frame  : true,
+			    layout : {
+				type    : 'fit',
+				padding : '5',
+				align   : 'center'
+			    },
+			    items : cbOwner
+			}
+		    ]
 		}
 	    );   
 /*
@@ -384,18 +381,28 @@ NetspocWeb.workspace = function () {
 	},
 
 	onOwnerChosen : function() {
-	    var form = Ext.getCmp( 'fmChooseOwnerId' );
-	    form.el.mask( 'Bitte warten ... ', 'x-mask-loading' );
-	    form.getForm().submit(
+	    var combo = Ext.getCmp( 'cbOwnerId' );
+	    var url   = 'http://10.3.28.111/netspoc/set';
+	    Ext.Ajax.request(
 		{
-		    url     : 'http://10.3.28.111/netspoc/set?owner=',
-		    success : this.setOwner,
-		    failure : this.setOwner
+		    url          : url,
+		    params       : {
+			owner : combo.getValue()
+		    },
+		    scope        : this,
+		    callback     : this.onAfterAjaxReq,
+		    succCallback : this.onSetOwnerSuccess
 		}
-	    );	    
-	    Dumper.popup( 'OWNER CHOSEN!' );
+	    );
 	},
 
+	onSetOwnerSuccess : function() {
+	    if ( ownerWindow ) {
+		ownerWindow.destroy();
+		ownerWindow = null;
+	    }
+	    this.buildViewport();
+	},
 
 	onAfterAjaxReq : function( options, success, result ) {
 	    Ext.getBody().unmask();
@@ -451,9 +458,11 @@ NetspocWeb.workspace = function () {
 		}
 	    );
 	},
+
 	onAfterLogout : function(jsonData) {
-	    this.destroy();
+	    this.destroy_and_init();
 	},
+
 	destroy : function() {
 	    if ( viewport ) {
 		viewport.destroy();
@@ -463,6 +472,14 @@ NetspocWeb.workspace = function () {
 		loginWindow.destroy();
 		loginWindow = null;
 	    }
+	    if ( ownerWindow ) {
+		ownerWindow.destroy();
+		ownerWindow = null;
+	    }
+	},
+
+	destroy_and_init : function() {
+	    this.destroy();
 	    this.init();
 	},
 
@@ -488,14 +505,25 @@ NetspocWeb.workspace = function () {
 		storeId       : 'policyDvStoreId',
 		proxy         : all_services_proxy,
 		fields        : [
-		    { name : 'name', mapping : 'name' }
-		]
+		    { name : 'name', mapping : 'name'        },
+		    { name : 'desc', mapping : 'description' }
+		],
+		listeners : {
+		    load : function( thisStore, records, options ) {
+			var lvPolicies =
+			    Ext.getCmp('policyLVId');
+			// Select first policy after store has loaded.
+			lvPolicies.select( 0 );
+		    }
+		}
 	    };
+
 	    var policyLV = new Ext.ListView(
 		{
+		    id            : 'policyLVId',
 		    store         : policyLvStore,
 		    singleSelect  : true,
-//		    style         : 'background-color: #FFFFFF;',
+//		    style         : 'background-color: #A0A0A0;',
 		    autoscroll    : true,
 		    columns       : [
 			{
@@ -504,18 +532,53 @@ NetspocWeb.workspace = function () {
 			}
 		    ],
 		    listeners : {
-			click : function(thisView, index) {
+			click : function( thisView, index ) {
 			    var record = thisView.store.getAt( index );
 			    if ( record ) {
 				var dvDetails =
 				    Ext.StoreMgr.get('srvDvStoreId');
-				var service = record.get('name');
+				var service = record.get( 'name' );
+				var desc    = record.get( 'desc' );
 				var url = 'get_rules?service=' + service;
 				var proxy = proxy4path( url );
 				dvDetails.proxy = proxy;
-//				Dumper.popup( dvDetails );
 				dvDetails.load();
+				var p  = Ext.getCmp( 'pPolNameId' );
+				var mp = Ext.getCmp( 'mainPanelId' );
+				p.html = '<p> ' + service + '</p>';
+				p.render();
+/*
+				var arrayData = [
+				    ['Jay Garcia',    'MD'],
+				    ['Aaron Baker',   'VA'],
+				    ['Susan Smith',   'DC'],
+				    ['Mary Stein',    'DE'],
+				    ['Bryan Shanley', 'NJ'],
+				    ['Nyri Selgado',  'CA']
+				];
+				var nameRecord = Ext.data.Record.create(
+				    [
+					{  name : 'name',  mapping : 1  },
+					{  name : 'state', mapping : 2  }
+				    ]);
+				var arrayReader = new Ext.data.ArrayReader(
+				    {}, nameRecord );
+				var memoryProxy  = new Ext.data.MemoryProxy(
+				    arrayData);
+				var store = new Ext.data.Store(
+				    {
+					reader : arrayReader,
+					proxy  : memoryProxy
+				    }
+				);
+*/
 			    }
+			},
+			selectionchange : function( thisView, selectedNodes ) {
+			    // Single select is on, so we have only one node.
+			    // TODO: make initial (automatic) selection
+			    // after store load display details in DataView.
+			    var node = selectedNodes[0];
 			}
 		    }
 		}
@@ -527,10 +590,16 @@ NetspocWeb.workspace = function () {
 	    
 	    var srvDvTpl = new Ext.XTemplate(
 		'<tpl for=".">',   // rules-loop
-		'<div class="title">',  // div for one rule
+		'<div class="rule">',  // div for one rule
 		'<span> {action} </span> ',
+		'<tpl if="has_user==src">',		    
+		'<span> User    </span>',
+		'<span> {dst}   </span>',
+		'</tpl>', // end tpl-if
+		'<tpl if="has_user==dst">',		    
 		'<span> {src}    </span>',
-		'<span> {dst}    </span>',
+		'<span> User     </span>',
+		'</tpl>', // end tpl-if
 		'<span> {srv}    </span>',
 		'</div>',
 		'</tpl>'   // end rules-loop
@@ -542,10 +611,11 @@ NetspocWeb.workspace = function () {
 		autoLoad : false,
 		storeId  : 'srvDvStoreId',
 		fields   : [
-		    { name : 'action', mapping : 'action' },
-		    { name : 'src',    mapping : 'src'    },
-		    { name : 'dst',    mapping : 'dst'    },
-		    { name : 'srv',    mapping : 'srv'    }
+		    { name : 'has_user', mapping : 'hasuser' },
+		    { name : 'action',   mapping : 'action'  },
+		    { name : 'src',      mapping : 'src'     },
+		    { name : 'dst',      mapping : 'dst'     },
+		    { name : 'srv',      mapping : 'srv'     }
 		]
 	    };
 
@@ -611,7 +681,8 @@ NetspocWeb.workspace = function () {
 
 	    var mainPanel = new Ext.Panel(
 		{
-		    layout : 'hbox',
+		    id      : 'mainPanelId',
+		    layout  : 'hbox',
                     layoutConfig : {
 			type  : 'hbox',
 			align : 'stretch'
@@ -625,7 +696,8 @@ NetspocWeb.workspace = function () {
 			{
 			    xtype  : 'panel',
 			    layout : 'anchor',
-			    title  : 'Details und Regeln des ausgew&auml;hlten Diensts',
+			    title  : 'Details und Regeln des'
+				     + ' ausgew&auml;hlten Diensts',
 			    items  : [
 				pPolName,
 				pPolDesc,
@@ -636,6 +708,15 @@ NetspocWeb.workspace = function () {
 			}
 		    ],
 		    tbar     : [
+			{
+			    text    : 'Verantwortungsbereich',
+			    iconCls : 'icon-door_in',
+			    scope   : this,
+			    handler : function() {
+				this.destroy();
+				this.onLoginSuccess();
+			    }
+			},
 			'->',
 			{
 			    text    : 'Abmelden',
@@ -644,8 +725,9 @@ NetspocWeb.workspace = function () {
 			    handler : this.onLogout
 			}
 		    ]
-		});
-	    
+		}
+	    ); // end of main panel definition
+
 	    viewport = new Ext.Viewport(
 		{
 		    layout       : 'fit',
@@ -656,6 +738,10 @@ NetspocWeb.workspace = function () {
 		    items : mainPanel
 		}
 	    );
+
+	    // Select first item in policy-Listview.
+	    policyLV.select( 1 );
+	    
 	} // end buildViewport
     }; // end of return-closure
 }(); // end of NetspocWeb.workspace function
