@@ -318,7 +318,7 @@ sub set_session_data {
 }
 
 ####################################################################
-# Login, find Email -> Admin -> Owner
+# find Email -> Admin -> Owner
 ####################################################################
 my %email2admin;
 my %email2owners;
@@ -352,7 +352,7 @@ sub get_owner {
 sub get_emails {
     my ($cgi, $session) = @_;
     my $active_owner = $session->param('owner');
-    my $owner = $owners{$active_owner};
+    my $owner = $owners{$active_owner} || [];
     [ map { $_->{email } } @{ $owner->{admins} } ];
 }
 
@@ -382,6 +382,14 @@ sub login {
 
 sub logged_in {
     my ($session) = @_;
+
+    # Validate active owner. 
+    # User could be removed from any owner role at any time.
+    my $user = $session->param('user');
+    my $active_owner = $session->param('owner');
+    if (not grep { $active_owner eq $_ } @{ $email2owners{$user} }) {
+	$session->param('owner', '');
+    }
     return $session->param('logged_in');
 }
 
