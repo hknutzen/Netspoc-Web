@@ -195,6 +195,7 @@ sub service_list {
 	    push(@result, 
 		 {
 		     name => $pname,
+		     description => $policy->{description},
 		     ips => $policy->{all_ip},
 		     owner => $owner,
 		 });
@@ -466,6 +467,9 @@ sub error_data {
 # Initialize Netspoc data
 ####################################################################
 sub init_data {
+
+    # Set global config variable of Netspoc to store attribute 'description'.
+    $store_description = 1;
     read_file_or_dir( $NETSPOC_DATA );
     order_services();
     link_topology();
