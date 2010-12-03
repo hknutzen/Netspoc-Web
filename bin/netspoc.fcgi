@@ -18,6 +18,14 @@ my $program = "Netspoc JSON service";
 my $VERSION = ( split ' ',
  '$Id$' )[2];
 
+# Setting $SIG{CHLD} to 'IGNORE' has the effect of not creating
+# zombie processes when the parent process fails to wait() on its child
+# processes.
+# On Linux 2.6 kernels if you auto. reap zombies by setting $SIG{CHLD} 
+# to 'IGNORE', then you can't trust the return code from 'system' 
+# as it will always be '-1'.
+$SIG{CHLD} = 'IGNORE';
+
 sub is_numeric { 
     my ($value) = @_;
     $value =~ /^\d+$/; 
