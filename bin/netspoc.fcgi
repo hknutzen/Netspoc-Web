@@ -6,6 +6,7 @@ use ReloadingFCGI;
 use JSON;
 use CGI::Simple;
 use CGI::Session;
+use Encode;
 use Readonly;
 use Netspoc;
 
@@ -217,6 +218,7 @@ sub check_owner {
     my $active_owner = $session->param('owner');
     my $pname = $cgi->param('service') 
 	or return (undef, error_data("Missing parameter 'service'"));
+    $pname = Encode::decode('UTF-8', $pname);
     my $policy = $policies{$pname}
     or return (undef, error_data ("Unknown policy"));
     if (not is_visible($active_owner, $policy)) {
