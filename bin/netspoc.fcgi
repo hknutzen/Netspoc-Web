@@ -319,7 +319,8 @@ sub set_session_data {
     my ($cgi, $session) = @_;
     for my $param ($cgi->param()) {
 	if ($saveparam{$param}) {
-	    $session->save_param($cgi, [$param]);
+	    my $val =  Encode::decode('UTF-8', $cgi->param($param));
+	    $session->param($param, $val);
 	}
 	else {
 	    return error_data("Invalid param $param");
