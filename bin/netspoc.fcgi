@@ -306,7 +306,8 @@ sub get_user {
     my ($cgi, $session) = @_;
     my ($policy, $err) = check_owner($cgi, $session);
     return $err if (not $policy);
-    ip_for_objects($policy->{expanded_user});
+    return [ map { { ip =>  $_ } } 
+	     @{ ip_for_objects($policy->{expanded_user}) } ];
 }
 
 ####################################################################
