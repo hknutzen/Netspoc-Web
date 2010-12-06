@@ -505,8 +505,10 @@ NetspocWeb.workspace = function () {
 		storeId       : 'policyDvStoreId',
 		proxy         : all_services_proxy,
 		fields        : [
-		    { name : 'name', mapping : 'name'        },
-		    { name : 'desc', mapping : 'description' }
+		    { name : 'name',  mapping : 'name'         },
+		    { name : 'desc',  mapping : 'description'  },
+		    { name : 'ping',  mapping : 'pingallowed' },
+		    { name : 'owner', mapping : 'owner'        }
 		],
 		listeners : {
 		    load : function( thisStore, records, options ) {
@@ -535,51 +537,55 @@ NetspocWeb.workspace = function () {
 			click : function( thisView, index ) {
 			    var record = thisView.store.getAt( index );
 			    if ( record ) {
+				var dvRules =
+				    Ext.StoreMgr.get('dvRulesStoreId');
 				var dvDetails =
-				    Ext.StoreMgr.get('srvDvStoreId');
-				var service = record.get( 'name' );
-				var desc    = record.get( 'desc' );
-				var url = 'get_rules?service=' + service;
+				    Ext.getCmp('dvDetailsId');
+				var policy = record.get( 'name' );
+				var desc   = record.get( 'desc' );
+				var owner  = record.get( 'owner' );
+				var ping   = record.get( 'ping' );
+				var url = 'get_rules?service=' + policy;
 				var proxy = proxy4path( url );
-				dvDetails.proxy = proxy;
-				dvDetails.load();
-				var p  = Ext.getCmp( 'pPolNameId' );
-				var mp = Ext.getCmp( 'mainPanelId' );
-				p.html = '<p> ' + service + '</p>';
-				p.render();
-/*
+				dvRules.proxy = proxy;
+
 				var arrayData = [
-				    ['Jay Garcia',    'MD'],
-				    ['Aaron Baker',   'VA'],
-				    ['Susan Smith',   'DC'],
-				    ['Mary Stein',    'DE'],
-				    ['Bryan Shanley', 'NJ'],
-				    ['Nyri Selgado',  'CA']
+				    [ policy, desc, ping, owner ]
 				];
 				var nameRecord = Ext.data.Record.create(
 				    [
-					{  name : 'name',  mapping : 1  },
-					{  name : 'state', mapping : 2  }
-				    ]);
+					{  name : 'name',  mapping : 0  },
+					{  name : 'desc',  mapping : 1  },
+					{  name : 'ping',  mapping : 2  },
+					{  name : 'owner', mapping : 3  }
+				    ]
+				);
 				var arrayReader = new Ext.data.ArrayReader(
 				    {}, nameRecord );
 				var memoryProxy  = new Ext.data.MemoryProxy(
-				    arrayData);
+				    arrayData );
 				var store = new Ext.data.Store(
 				    {
 					reader : arrayReader,
 					proxy  : memoryProxy
 				    }
 				);
-*/
+
+				// Render both dataviews.
+				dvDetails.bindStore( store );
+				dvDetails.getStore().reload();
+				dvRules.load();
+
 			    }
-			},
+			}
+/*
 			selectionchange : function( thisView, selectedNodes ) {
 			    // Single select is on, so we have only one node.
 			    // TODO: make initial (automatic) selection
 			    // after store load display details in DataView.
 			    var node = selectedNodes[0];
 			}
+*/
 		    }
 		}
 	    );
@@ -588,28 +594,43 @@ NetspocWeb.workspace = function () {
 	    // Define Dataview to display rules of selected service.
 	    /****************************************************************/
 	    
-	    var srvDvTpl = new Ext.XTemplate(
+	    var dvRulesTpl = new Ext.XTemplate(
 		'<tpl for=".">',   // rules-loop
 		'<div class="rule">',  // div for one rule
 		'<span> {action} </span> ',
 		'<tpl if="has_user==src">',		    
-		'<span> User    </span>',
-		'<span> {dst}   </span>',
+		'<span class="user"> User    </span>',
+		'<span> {dst}                </span>',
 		'</tpl>', // end tpl-if
 		'<tpl if="has_user==dst">',		    
-		'<span> {src}    </span>',
-		'<span> User     </span>',
+		'<span> {src}                </span>',
+		'<span class="user"> User    </span>',
 		'</tpl>', // end tpl-if
 		'<span> {srv}    </span>',
 		'</div>',
 		'</tpl>'   // end rules-loop
 	    );
     
-	    var srvDvStore = {
+/*
+record : 'node',
+fields: [
+    {name: 'document_name', mapping: function (node) {
+        while (node && node.tagName.toLowerCase() != 'document') {
+            node = node.parentNode;
+        }
+        return Ext.DomQuery.selectValue('document_name', node.parentNode);
+    }},
+    {name: 'id', mapping: '@node_id'},
+    'title',
+    'subtitle',
+    'node_content'
+],
+*/
+	    var dvRulesStore = {
 		xtype    : 'jsonstore',
 		root     : 'records',
 		autoLoad : false,
-		storeId  : 'srvDvStoreId',
+		storeId  : 'dvRulesStoreId',
 		fields   : [
 		    { name : 'has_user', mapping : 'hasuser' },
 		    { name : 'action',   mapping : 'action'  },
@@ -619,65 +640,44 @@ NetspocWeb.workspace = function () {
 		]
 	    };
 
-	    var srvDv = new Ext.DataView(
+	    var dvRules = new Ext.DataView(
 		{
-		    tpl           : srvDvTpl,
-		    store         : srvDvStore,
-		    singleSelect  : true,
-		    itemSelector  : 'div.emplWrap',
-		    selectedClass : 'emplSelected',
-		    overClass     : 'emplOver',
-		    style         : 'overflow:auto; background-color: #FFFFFF;'
+		    tpl   : dvRulesTpl,
+		    store : dvRulesStore
 		}
 	    ); 
 
 
 	    /****************************************************************/
-	    // Define viewport and main panel
+	    // Define Dataview to display details of selected service.
 	    /****************************************************************/
+	    
+	    var dvDetailsTpl = new Ext.XTemplate(
+		'<tpl for=".">',
+//		'<div class="policy-container">', // start container
 
-	    var pPolName = new Ext.Panel(
-		{
-		    id       : 'pPolNameId',
-		    anchor   : '100%, 7%',
-		    html     : 'Name des Dienstes .........',
-		    items    : []
-		}
-	    );
+		'<div class="policy"> {name} </div>',
+		'<div class="policy"> {desc} </div>',
 
-	    var pPolDesc = new Ext.Panel(
-		{
-		    id       : 'pPolDescId',
-		    anchor   : '100%, 7%',
-		    html     : 'Beschreibung des Dienstes .........',
-		    items    : []
-		}
-	    );
+		'<div class="ping-and-owner">',
+		'<span class="left50p"> Ping auf Netz erlaubt: ja  </span>',
+		'<span class="fifty-p"> Verantwortlich: {owner}    </span>',
+		'</div>',
 
-	    var pPingAllowed = new Ext.Panel(
-		{
-		    id       : 'pPingAllowedId',
-		    anchor   : '100%, 10%',
-		    layout   : 'hbox',
-                    layoutConfig : {
-			type  : 'hbox',
-			align : 'top'
-		    },
-		    defaults : {
-			flex      : 1
-		    },
-		    items    : [
-			{
-			    xtype  : 'panel',
-			    html  : 'Ping auf Netz erlaubt: '
-			},
-			{
-			    xtype  : 'panel',
-			    html  : 'Verantwortlich: '
-			}
-		    ]
-		}
+//		'</div>', // end container
+		'</tpl>'   
 	    );
+    
+	    var dvDetails = new Ext.DataView(
+		{
+		    id  : 'dvDetailsId',
+		    tpl : dvDetailsTpl
+		}
+	    ); 
+
+	    /****************************************************************/
+	    // Define viewport and main panel.
+	    /****************************************************************/
 
 	    var mainPanel = new Ext.Panel(
 		{
@@ -699,10 +699,8 @@ NetspocWeb.workspace = function () {
 			    title  : 'Details und Regeln des'
 				     + ' ausgew&auml;hlten Diensts',
 			    items  : [
-				pPolName,
-				pPolDesc,
-				pPingAllowed,
-				srvDv
+				dvDetails,
+				dvRules
 			    ],
 			    flex   : 3
 			}
