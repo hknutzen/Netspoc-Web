@@ -595,37 +595,28 @@ NetspocWeb.workspace = function () {
 	    /****************************************************************/
 	    
 	    var dvRulesTpl = new Ext.XTemplate(
+		'<div class="rule-container">',  // div for one rule
+		'<table>',
+
 		'<tpl for=".">',   // rules-loop
-		'<div class="rule">',  // div for one rule
-		'<span> {action} </span> ',
+		'<tr>',    // new row
+		'<td class="action"> {action} </td> ',
 		'<tpl if="has_user==src">',		    
-		'<span class="user"> User    </span>',
-		'<span> {dst}                </span>',
-		'</tpl>', // end tpl-if
+		'<td class="user"> User  </td>',
+		'<td class="dst" > {dst} </td>',
+		'</tpl>',  // end tpl-if
 		'<tpl if="has_user==dst">',		    
-		'<span> {src}                </span>',
-		'<span class="user"> User    </span>',
-		'</tpl>', // end tpl-if
-		'<span> {srv}    </span>',
-		'</div>',
-		'</tpl>'   // end rules-loop
+		'<td class="src" > {src} </td>',
+		'<td class="user"> User  </td>',
+		'</tpl>',  // end tpl-if
+		'<td class="srv"> {srv}  </td>',
+		'</tr>',    // end row
+		'</tpl>',  // end rules-loop
+
+		'</table>',
+		'</div>'
 	    );
     
-/*
-record : 'node',
-fields: [
-    {name: 'document_name', mapping: function (node) {
-        while (node && node.tagName.toLowerCase() != 'document') {
-            node = node.parentNode;
-        }
-        return Ext.DomQuery.selectValue('document_name', node.parentNode);
-    }},
-    {name: 'id', mapping: '@node_id'},
-    'title',
-    'subtitle',
-    'node_content'
-],
-*/
 	    var dvRulesStore = {
 		xtype    : 'jsonstore',
 		root     : 'records',
@@ -634,9 +625,18 @@ fields: [
 		fields   : [
 		    { name : 'has_user', mapping : 'hasuser' },
 		    { name : 'action',   mapping : 'action'  },
-		    { name : 'src',      mapping : 'src'     },
-		    { name : 'dst',      mapping : 'dst'     },
-		    { name : 'srv',      mapping : 'srv'     }
+		    { name : 'src',      mapping : function( node ) {
+			  return node.src.join( '<br>' );
+		      }
+		    },
+		    { name : 'dst',      mapping : function( node ) {
+			  return node.dst.join( '<br>' );
+		      }
+		    },
+		    { name : 'srv',      mapping : function( node ) {
+			  return node.srv.join( '<br>' );
+		      }
+		    }
 		]
 	    };
 
@@ -654,17 +654,15 @@ fields: [
 	    
 	    var dvDetailsTpl = new Ext.XTemplate(
 		'<tpl for=".">',
-//		'<div class="policy-container">', // start container
 
 		'<div class="policy"> {name} </div>',
 		'<div class="policy"> {desc} </div>',
 
 		'<div class="ping-and-owner">',
-		'<span class="left50p"> Ping auf Netz erlaubt: ja  </span>',
-		'<span class="fifty-p"> Verantwortlich: {owner}    </span>',
+		'<div class="ping-left">   Ping auf Netz erlaubt: ja  </div>',
+		'<div class="owner-right"> Verantwortlich: {owner}    </div>',
 		'</div>',
 
-//		'</div>', // end container
 		'</tpl>'   
 	    );
     
@@ -696,8 +694,6 @@ fields: [
 			{
 			    xtype  : 'panel',
 			    layout : 'anchor',
-			    title  : 'Details und Regeln des'
-				     + ' ausgew&auml;hlten Diensts',
 			    items  : [
 				dvDetails,
 				dvRules
