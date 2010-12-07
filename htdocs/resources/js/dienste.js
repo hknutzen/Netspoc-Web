@@ -537,18 +537,26 @@ NetspocWeb.workspace = function () {
 			click : function( thisView, index ) {
 			    var record = thisView.store.getAt( index );
 			    if ( record ) {
+				// Name of selected policy.
+				var policy = record.get( 'name' );
+
+				// Set URLs of proxy-attribute of the
+				// stores loading rules and user-details.
+				var stUserDetails =
+				    Ext.StoreMgr.get('stUserLvId');
 				var dvRules =
 				    Ext.StoreMgr.get('dvRulesStoreId');
-				var dvDetails =
-				    Ext.getCmp('dvDetailsId');
-				var policy = record.get( 'name' );
+				var url = 'get_rules?service=' + policy;
+				var rulesProxy = proxy4path( url );
+				dvRules.proxy = rulesProxy;
+				url = 'get_user?service=' + policy;
+				stUserDetails.proxy = proxy4path( url );
+
+				// Set values of rules-DataView to values
+				// of selected policy (stored in record).
 				var desc   = record.get( 'desc' );
 				var owner  = record.get( 'owner' );
 				var ping   = record.get( 'ping' );
-				var url = 'get_rules?service=' + policy;
-				var proxy = proxy4path( url );
-				dvRules.proxy = proxy;
-
 				var arrayData = [
 				    [ policy, desc, ping, owner ]
 				];
@@ -571,11 +579,13 @@ NetspocWeb.workspace = function () {
 				    }
 				);
 
-				// Render both dataviews.
+				// Load stores of both policy-detail-dataviews.
 				dvDetails.bindStore( store );
 				dvDetails.getStore().reload();
 				dvRules.load();
-
+				
+				// Load store showing user-details.
+				stUserDetails.load();
 			    }
 			}
 /*
@@ -674,6 +684,49 @@ NetspocWeb.workspace = function () {
 	    ); 
 
 	    /****************************************************************/
+	    /* Define Listview containing User-details for selected policy.
+	     */
+	    /****************************************************************/
+
+	    var stUserLv = {
+		id            : 'stUserLvId',
+		xtype         : 'jsonstore',
+		totalProperty : 'totalCount',
+		root          : 'records',
+		autoLoad      : false,
+		remoteSort    : false,
+		sortInfo      : { field: 'ip', direction: "ASC" },
+		storeId       : 'stUserLvId',
+		fields        : [
+		    { name : 'ip', mapping : 'ip'        }
+		],
+		listeners : {
+		    load : function( thisStore, records, options ) {
+			var lvUserIPs =
+			    Ext.getCmp('lvUserId');
+			// Select first policy after store has loaded.
+			lvUserIPs.select( 0 );
+		    }
+		}
+	    };
+
+	    var lvUser = new Ext.ListView(
+		{
+		    id            : 'lvUserId',
+		    store         : stUserLv,
+		    singleSelect  : true,
+		    autoscroll    : true,
+		    boxMinWidth   : 200,
+		    columns       : [
+			{
+			    header    : 'IP-Adressen',
+			    dataIndex : 'ip'
+			}
+		    ]
+		}
+	    );
+
+	    /****************************************************************/
 	    // Define viewport as BorderLayout.
 	    /****************************************************************/
 
@@ -681,9 +734,6 @@ NetspocWeb.workspace = function () {
 		{
 		    title        : 'NetspocWeb -- Web Interface For Netspoc',
 		    layout       : 'border',
-		    defaults     : {
-			flex  : 1
-		    },
 		    items: [
 			{
 			    id     : 'pNorthId',
@@ -715,16 +765,29 @@ NetspocWeb.workspace = function () {
 			    region : 'center',
 			    xtype  : 'container',
 			    layout : 'fit',
-			    items    : [
-				lvPolicy,
+			    items  : [
 				{
-				    xtype  : 'panel',
-				    layout : 'anchor',
-				    items  : [
-					dvDetails,
-					dvRules
-				    ],
-				    flex   : 3
+				    xtype  : 'tabpanel',
+				    activeTab: 0,
+				    items: [
+					{
+					    title  : 'Dienstedetails',
+					    xtype  : 'panel',
+					    layout : 'anchor',
+					    items  : [
+						dvDetails,
+						dvRules
+					    ]
+					},
+					{
+					    title  : 'User',
+					    xtype  : 'panel',
+					    layout : 'fit',
+					    items  : [
+						lvUser
+					    ]
+					}
+				    ]
 				}
 			    ]
 			},
@@ -732,16 +795,13 @@ NetspocWeb.workspace = function () {
 			    // xtype: 'panel' implied by default
 			    id     : 'pLvPolicyId',
 			    region : 'west',
-			    width  : 300,
-			    split  : true,
+			    width  : 300,  // initial size
+			    split  : true, // resizable
 			    items  : lvPolicy
 			}
 		    ]
 		}
 	    );
-	    
-	    // Select first item in policy-Listview.
-	    lvPolicy.select( 1 );
 	    
 	} // end buildViewport
     }; // end of return-closure
