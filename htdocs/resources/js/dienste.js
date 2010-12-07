@@ -513,16 +513,16 @@ NetspocWeb.workspace = function () {
 		listeners : {
 		    load : function( thisStore, records, options ) {
 			var lvPolicies =
-			    Ext.getCmp('policyLVId');
+			    Ext.getCmp('lvPolicyId');
 			// Select first policy after store has loaded.
 			lvPolicies.select( 0 );
 		    }
 		}
 	    };
 
-	    var policyLV = new Ext.ListView(
+	    var lvPolicy = new Ext.ListView(
 		{
-		    id            : 'policyLVId',
+		    id            : 'lvPolicyId',
 		    store         : policyLvStore,
 		    singleSelect  : true,
 //		    style         : 'background-color: #A0A0A0;',
@@ -674,72 +674,79 @@ NetspocWeb.workspace = function () {
 	    ); 
 
 	    /****************************************************************/
-	    // Define viewport and main panel.
+	    // Define viewport as BorderLayout.
 	    /****************************************************************/
-
-	    var mainPanel = new Ext.Panel(
-		{
-		    id      : 'mainPanelId',
-		    layout  : 'hbox',
-                    layoutConfig : {
-			type  : 'hbox',
-			align : 'stretch'
-		    },
-		    frame    : true,
-		    defaults : {
-			flex      : 1
-		    },
-		    items    : [
-			policyLV,
-			{
-			    xtype  : 'panel',
-			    layout : 'anchor',
-			    items  : [
-				dvDetails,
-				dvRules
-			    ],
-			    flex   : 3
-			}
-		    ],
-		    tbar     : [
-			{
-			    text    : 'Verantwortungsbereich',
-			    iconCls : 'icon-door_in',
-			    scope   : this,
-			    handler : function() {
-				this.destroy();
-				this.onLoginSuccess();
-			    }
-			},
-			'->',
-			{
-			    text    : 'Abmelden',
-			    iconCls : 'icon-door_out',
-			    scope   : this,
-			    handler : this.onLogout
-			}
-		    ]
-		}
-	    ); // end of main panel definition
 
 	    viewport = new Ext.Viewport(
 		{
-		    layout       : 'fit',
+		    title        : 'NetspocWeb -- Web Interface For Netspoc',
+		    layout       : 'border',
 		    defaults     : {
-			frame : false,
 			flex  : 1
 		    },
-		    items : mainPanel
+		    items: [
+			{
+			    id     : 'pNorthId',
+			    region : 'north',
+			    layout : 'fit',
+			    layout : 'fit',
+			    frame  : false,
+			    tbar   : [
+				{
+				    text    : 'Verantwortungsbereich',
+				    iconCls : 'icon-door_in',
+				    scope   : this,
+				    handler : function() {
+					this.destroy();
+					this.onLoginSuccess();
+				    }
+				},
+				'->',
+				{
+				    text    : 'Abmelden',
+				    iconCls : 'icon-door_out',
+				    scope   : this,
+				    handler : this.onLogout
+				}
+			    ]
+			},
+			{
+			    id     : 'pCenterId',
+			    region : 'center',
+			    xtype  : 'container',
+			    layout : 'fit',
+			    items    : [
+				lvPolicy,
+				{
+				    xtype  : 'panel',
+				    layout : 'anchor',
+				    items  : [
+					dvDetails,
+					dvRules
+				    ],
+				    flex   : 3
+				}
+			    ]
+			},
+			{
+			    // xtype: 'panel' implied by default
+			    id     : 'pLvPolicyId',
+			    region : 'west',
+			    width  : 300,
+			    split  : true,
+			    items  : lvPolicy
+			}
+		    ]
 		}
 	    );
-
+	    
 	    // Select first item in policy-Listview.
-	    policyLV.select( 1 );
+	    lvPolicy.select( 1 );
 	    
 	} // end buildViewport
     }; // end of return-closure
 }(); // end of NetspocWeb.workspace function
-	
+
 	    
 Ext.onReady( NetspocWeb.workspace.init, NetspocWeb.workspace );
 
