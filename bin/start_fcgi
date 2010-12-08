@@ -1,0 +1,112 @@
+#!/usr/local/bin/perl
+
+use strict;
+use warnings;
+use AnyEvent;
+
+my $VERSION = ( split ' ',
+ '$Id$' )[2];
+
+# Start a child process.
+# STDOUT of child process is connected to $child_fh of parent process.
+# The parent waits for input from the child.
+# If child sends the string "OK", the parent knows that the child has
+# initialized successfully.
+
+my $restart;
+my $active_child;
+my $new_child;
+my $forking;
+sub do_fork {
+    my ($cmd) = @_;
+    if ($forking) {
+	warn "Still forking\n";
+	return;
+    }
+    my $child_fh;
+    warn "Forking child\n";
+    defined(my $pid = open($child_fh, "-|")) or die "Can't fork child: $!\n";
+    if ($pid) {			
+
+	
+	# Parent process.
+
+	$new_child = $pid;
+	# Wait for input from the child.
+	# If input is "OK", terminate the event loop and exit.
+	# On any other input, the child is assumed to have failed.
+        my $child_watcher;
+	$child_watcher = AnyEvent->io ( fh => $child_fh, poll => 'r', 
+					cb => sub {
+					    warn "Got input from child\n";
+					    my $text = <$child_fh>;
+					    chomp $text if $text;
+					    if ($text && $text =~ /^OK/) {
+						warn "Got OK from child\n";
+						if ($active_child) {
+						    kill 'TERM', $active_child;
+						}
+						$active_child = $pid;
+					    }
+					    else {
+						$forking = 0;
+					    }
+					    #$child_watcher = undef;
+					});
+	# wait for child to die.
+#	my $w;
+#	$w = AnyEvent->child (
+#				 pid => $pid,
+#				 cb  => sub {
+#				     my ($pid, $status) = @_;
+#				     warn "pid $pid exited with status $status";
+#				     $w = undef;
+#				     if ($pid eq $active_child) {
+#					 $active_child = undef;
+#					 $restart->send;
+#				     }
+#				     else {
+#					 $forking = 0;
+#				     }
+#				 },
+#				 );
+
+	return;
+    }
+    else {
+			
+	# Child process.
+	# Start a fresh copy of this program which reads the changed data.
+        exec($cmd) or die "Can't exec '$cmd': $!\n";
+    }
+}
+
+sub close_server {
+    for my $pid ($active_child, $new_child) {
+	kill 'TERM', $pid if $pid;
+    }
+    $restart->send('quit');
+}
+
+my $cmd = shift @ARGV or die "Usage: $0 <cmd>\n";
+
+
+while (1) {
+    $restart = AnyEvent->condvar;
+my $hup_watcher = AnyEvent->signal (signal => "HUP", 
+				    cb => sub {
+					warn "Got HUP\n";
+					$restart->send });
+my $int_watcher  = AnyEvent->signal (signal => "INT",  cb => \&close_server);
+my $quit_watcher = AnyEvent->signal (signal => "QUIT", cb => \&close_server);
+my $term_watcher = AnyEvent->signal (signal => "TERM", cb => \&close_server);
+
+    do_fork($cmd);
+    my $val = $restart->recv;
+    if ($val and $val eq 'quit') {
+	warn "Terminating\n";
+	exit 0; 
+    }
+    warn "Restarting\n";
+}
+
