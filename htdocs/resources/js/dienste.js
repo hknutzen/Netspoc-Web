@@ -797,6 +797,7 @@ NetspocWeb.workspace = function () {
 			    region : 'west',
 			    width  : 300,  // initial size
 			    split  : true, // resizable
+			    layout : 'fit',
 			    items  : lvPolicy
 			}
 		    ]
