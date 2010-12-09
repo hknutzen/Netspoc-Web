@@ -3,110 +3,121 @@
 use strict;
 use warnings;
 use AnyEvent;
+use FCGI;
+use POSIX 'setsid';
 
 my $VERSION = ( split ' ',
  '$Id$' )[2];
 
-# Start a child process.
-# STDOUT of child process is connected to $child_fh of parent process.
-# The parent waits for input from the child.
-# If child sends the string "OK", the parent knows that the child has
-# initialized successfully.
+sub usage {
+    die "Usage: $0 [IP]:PORT CMD ...\n";
+}
+
+my $listen = shift @ARGV or usage();
+@ARGV or usage();
+my $cmd = join(' ', @ARGV);
 
 my $restart;
-my $active_child;
+my $old_child;
 my $new_child;
-my $forking;
+
 sub do_fork {
-    my ($cmd) = @_;
-    if ($forking) {
+    if ($new_child->{pid}) {
 	warn "Still forking\n";
 	return;
     }
+    my $ppid = $$;
     my $child_fh;
     warn "Forking child\n";
-    defined(my $pid = open($child_fh, "-|")) or die "Can't fork child: $!\n";
-    if ($pid) {			
-
+    defined (my $pid = fork) or die "Can't fork child: $!\n";
+    if ($pid) {
 	
 	# Parent process.
+	$new_child->{pid} = $pid;
 
-	$new_child = $pid;
-	# Wait for input from the child.
-	# If input is "OK", terminate the event loop and exit.
-	# On any other input, the child is assumed to have failed.
-        my $child_watcher;
-	$child_watcher = AnyEvent->io ( fh => $child_fh, poll => 'r', 
-					cb => sub {
-					    warn "Got input from child\n";
-					    my $text = <$child_fh>;
-					    chomp $text if $text;
-					    if ($text && $text =~ /^OK/) {
-						warn "Got OK from child\n";
-						if ($active_child) {
-						    kill 'TERM', $active_child;
-						}
-						$active_child = $pid;
-					    }
-					    else {
-						$forking = 0;
-					    }
-					    #$child_watcher = undef;
-					});
-	# wait for child to die.
-#	my $w;
-#	$w = AnyEvent->child (
-#				 pid => $pid,
-#				 cb  => sub {
-#				     my ($pid, $status) = @_;
-#				     warn "pid $pid exited with status $status";
-#				     $w = undef;
-#				     if ($pid eq $active_child) {
-#					 $active_child = undef;
-#					 $restart->send;
-#				     }
-#				     else {
-#					 $forking = 0;
-#				     }
-#				 },
-#				 );
+	# Wait for new child to be initialized.
+	my $child_OK;
+	$child_OK = AnyEvent->signal 
+	    ( signal => "USR2", 
+	      cb => sub {
+		  warn "Got SIGUSR2 child\n";
+		  if (my $pid = $old_child->{pid}) {
+		      kill 'TERM', $pid;
+		      delete $old_child->{pid};
+		  }
+		  # this deletes $old_child->{w}; still needed?
+		  $old_child = $new_child;
+		  $new_child = undef;
+		  $child_OK = undef;
+	      });
 
-	return;
+ 	# wait for new child to die.
+	$new_child->{w} = AnyEvent->child 
+	    (
+	     pid => $pid,
+	     cb  => sub {
+		 my ($pid, $status) = @_;
+		 warn "pid $pid exited with status $status";
+		 if ($old_child->{pid} && $pid eq $old_child->{pid}) {
+		     delete $old_child->{pid};
+		     delete $old_child->{w};
+		     $restart->send;
+		 }
+		 elsif ($new_child->{pid} && $pid eq $new_child->{pid}) {
+		     delete $new_child->{pid};
+		     delete $new_child->{w};
+		     $restart->send if not $old_child->{pid};
+		     
+		 }
+	     },
+	     );
+
+ 	return;
     }
     else {
 			
 	# Child process.
 	# Start a fresh copy of this program which reads the changed data.
+	warn "Child $$ exec $cmd\n";
+	$ENV{PPID} = $ppid;
         exec($cmd) or die "Can't exec '$cmd': $!\n";
     }
 }
 
-sub close_server {
-    for my $pid ($active_child, $new_child) {
-	kill 'TERM', $pid if $pid;
-    }
-    $restart->send('quit');
+# Link STDIO with FCGI socket, will be used by child.
+sub fcgi2stdin {
+    my $sock = FCGI::OpenSocket($listen, 100)
+	or die "failed to open FastCGI socket '$listen': $!"; 
+    close STDIN;
+    close STDOUT;
+    open STDIN, "<&$sock" or die "Couldn't open STDIN to $listen: $!";
+    open STDOUT, ">&$sock" or die "Couldn't open STDOUT to $listen: $!";
+    select(STDOUT);
 }
 
-my $cmd = shift @ARGV or die "Usage: $0 <cmd>\n";
+sub terminate {
+    kill 'TERM', $old_child->{pid} if $old_child->{pid};
+    kill 'TERM', $new_child->{pid} if $new_child->{pid};
+    exit;
+}
 
+# Daemonize.
+fork && exit;
 
+warn "FastCGI started (pid $$)\n";
+fcgi2stdin();
+POSIX::setsid();
 while (1) {
     $restart = AnyEvent->condvar;
-my $hup_watcher = AnyEvent->signal (signal => "HUP", 
-				    cb => sub {
-					warn "Got HUP\n";
-					$restart->send });
-my $int_watcher  = AnyEvent->signal (signal => "INT",  cb => \&close_server);
-my $quit_watcher = AnyEvent->signal (signal => "QUIT", cb => \&close_server);
-my $term_watcher = AnyEvent->signal (signal => "TERM", cb => \&close_server);
-
+    my $hup_watcher = AnyEvent->signal (signal => "HUP", 
+					cb => sub {
+					    warn "Got HUP\n";
+					    $restart->send });
+    my $term_watcher = AnyEvent->signal (signal => 'TERM', cb => \&terminate);
+    my $quit_watcher = AnyEvent->signal (signal => 'QUIT', cb => \&terminate);
+    my $int_watcher  = AnyEvent->signal (signal => 'INT', cb => \&terminate);
     do_fork($cmd);
     my $val = $restart->recv;
-    if ($val and $val eq 'quit') {
-	warn "Terminating\n";
-	exit 0; 
-    }
     warn "Restarting\n";
 }
 
