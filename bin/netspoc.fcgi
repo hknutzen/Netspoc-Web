@@ -63,6 +63,15 @@ sub equal {
     return not grep { $_ ne $first } @_[ 1 .. $#_ ];
 }
 
+sub owner_for_object {	
+    my ($object) = @_;
+    if (my $owner_obj = $object->{owner}) {
+	(my $name = $owner_obj->{name}) =~ s/^owner://;
+	return $name;
+    }
+    return;
+}
+
 sub owners_for_objects {	
     my ($objects) = @_;
     my %owners;
@@ -299,8 +308,24 @@ sub get_user {
     my ($cgi, $session) = @_;
     my ($policy, $err) = check_owner($cgi, $session);
     return $err if (not $policy);
-    return [ map { { ip =>  $_ } } 
-	     @{ ip_for_objects($policy->{expanded_user}) } ];
+
+    # User is owner of policy.
+    my $active_owner = $session->param('owner');
+    if (grep({ $_ eq $active_owner } @{ $policy->{owners} })) {
+	return [ map { { ip =>  $_ } } 
+		 @{ ip_for_objects($policy->{expanded_user}) } ];
+    }
+
+    # User isn't owner but only uses policy.
+    else {
+	[ map { { ip =>  $_ } } 
+	  @{ ip_for_objects
+		 [
+		  grep { my $owner = owner_for_object($_); 
+			 $owner && $owner eq $active_owner }
+		  @{ $policy->{expanded_user} } ] } ];
+    }
+	
 }
 
 ####################################################################
@@ -554,10 +579,11 @@ if (my $ppid = $ENV{PPID}) {
 }
 
 run (
-# Don't listen itself but read from STDIN.
+# Don't listen itself but read from STDIN 
+# when started by external proc manager
 #     listen => ':8080',
 
-     # Start FCGI::ProcManager with 2 n processes.
+     # Start FCGI::ProcManager with n processes.
      nproc => 2,
      request_handler => \&handle_request,
      );
