@@ -213,7 +213,7 @@ var Dumper = (function(){
 function proxy4path ( path ) {
     return new Ext.data.HttpProxy(
 	{
-	    url : 'http://10.3.28.111/netspoc/' + path
+	    url : '/netspoc/' + path
 	}
     );
 }
@@ -231,7 +231,7 @@ NetspocWeb.workspace = function () {
 	    // Automatic login:
 	    Ext.Ajax.request(
 		{
-		    url          : 'http://10.3.28.111/netspoc/login',
+		    url          : '/netspoc/login',
 		    params       : {
 			user : 'rolf.niedziella@dataport.de'
 		    },
@@ -323,7 +323,7 @@ NetspocWeb.workspace = function () {
 		    autoload : true,
 		    proxy : new Ext.data.HttpProxy(
 			{
-			    url : 'http://10.3.28.111/netspoc/get_owner'
+			    url : '/netspoc/get_owner'
 			}
 		    )   
 		}
@@ -383,7 +383,7 @@ NetspocWeb.workspace = function () {
 
 	onOwnerChosen : function() {
 	    var combo = Ext.getCmp( 'cbOwnerId' );
-	    var url   = 'http://10.3.28.111/netspoc/set';
+	    var url   = '/netspoc/set';
 	    Ext.Ajax.request(
 		{
 		    url          : url,
@@ -452,7 +452,7 @@ NetspocWeb.workspace = function () {
 	    Ext.getBody().mask('Sie werden abgemeldet ...', 'x-mask-loading');
 	    Ext.Ajax.request(
 		{
-		    url          : 'http://10.3.28.111/netspoc/logout',
+		    url          : '/netspoc/logout',
 		    scope        : this,
 		    callback     : this.onAfterAjaxReq,
 		    succCallback : this.onAfterLogout
