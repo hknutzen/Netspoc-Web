@@ -1,5 +1,7 @@
 #!/usr/local/bin/perl -I /home/heinz/Netspoc/misc -I /home/heinz/Netspoc/lib
 
+# Usage: $0 [:PORT | 0 [#PROC]]\n";
+
 use strict;
 use warnings;
 use FCGI;
@@ -44,6 +46,11 @@ sub ip_for_objects {
 	elsif ( Netspoc::is_interface( $_ ) ) {
 	    if ( is_numeric( $_->{ip} ) ) {
 		print_ip( $_->{ip} );
+	    }
+
+	    # 'negotiated'
+	    else {
+		"$_->{ip}: $_->{name}";
 	    }
 	}
 	elsif ( Netspoc::is_any( $_ ) ) {
@@ -595,13 +602,17 @@ if (my $ppid = $ENV{PPID}) {
     kill 'USR2', $ppid;
 }
 
+my $listen = shift @ARGV;
+my $nproc  = shift @ARGV;
+
 run (
-# Don't listen itself but read from STDIN 
-# when started by external proc manager
-#     listen => ':8080',
+     # - listen on Port or 
+     # - read from STDIN when started by external proc manager
+     listen => $listen,
 
      # Start FCGI::ProcManager with n processes.
-     nproc => 2,
+     nproc => $nproc,
+
      request_handler => \&handle_request,
      );
      
