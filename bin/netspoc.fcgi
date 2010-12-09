@@ -197,10 +197,27 @@ sub is_visible {
 
 sub service_list {
     my ($cgi, $session) = @_;
-    my $active_owner = $session->param('owner');
+    my $owner = $session->param('owner');
     my @result;
+    my $relation = $cgi->param('relation');
     for my $policy (values %policies) {
-	if (is_visible($active_owner, $policy)) {
+	my $is_owner = grep({ $_ eq $owner } @{ $policy->{owners} });
+	my $is_user = grep({ $_ eq $owner } @{ $policy->{uowners} });
+	my $is_visible = $policy->{visible} and $owner =~ /^$policy->{visible}/;
+	my $add;
+	if (not $relation) {
+	    $add = $is_owner || $is_user || $is_visible;
+	}
+	elsif ($is_owner) {
+	    $add = $relation eq 'owner';
+	}
+	elsif ($is_user) {
+	    $add = $relation eq 'user';
+	}
+	elsif ($is_visible) {
+	    $add = $relation eq 'visible';
+	}
+	if ($add) {
 	    (my $pname = $policy->{name}) =~ s/policy://;
 	    my $owner = join (',', @{ $policy->{owners} });
 	    push(@result, 
@@ -217,13 +234,13 @@ sub service_list {
 
 sub check_owner {
     my ($cgi, $session) = @_;
-    my $active_owner = $session->param('owner');
+    my $owner = $session->param('owner');
     my $pname = $cgi->param('service') 
 	or return (undef, error_data("Missing parameter 'service'"));
     $pname = Encode::decode('UTF-8', $pname);
     my $policy = $policies{$pname}
     or return (undef, error_data ("Unknown policy"));
-    if (not is_visible($active_owner, $policy)) {
+    if (not is_visible($owner, $policy)) {
 	return (undef, error_data("Policy not visible for owner"));
     }
     return $policy;
