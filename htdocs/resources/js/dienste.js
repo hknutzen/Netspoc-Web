@@ -227,6 +227,7 @@ NetspocWeb.workspace = function () {
     return {
 	
 	init : function () {
+/*
 	    // Automatic login:
 	    Ext.Ajax.request(
 		{
@@ -239,12 +240,11 @@ NetspocWeb.workspace = function () {
 		    succCallback : this.onLoginSuccess
 		}
 	    );
-/*
+*/
 	    if ( ! loginWindow ) {
 		loginWindow = this.buildLoginWindow();
 	    }
 	    loginWindow.show();
-*/
         },
 
 	buildLoginWindow : function() {
@@ -272,7 +272,8 @@ NetspocWeb.workspace = function () {
 	},
 
 	onLoginSuccess : function( form, action ) {
-	    //loginWindow.el.unmask();
+	    loginWindow.destroy();
+	    loginWindow = null;
 	    if ( ! ownerWindow ) {
 		ownerWindow = this.buildOwnerWindow();
 	    }
@@ -748,7 +749,8 @@ NetspocWeb.workspace = function () {
 				    scope   : this,
 				    handler : function() {
 					this.destroy();
-					this.onLoginSuccess();
+					ownerWindow = this.buildOwnerWindow();
+					ownerWindow.show();
 				    }
 				},
 				'->',
@@ -771,7 +773,9 @@ NetspocWeb.workspace = function () {
 				    activeTab: 0,
 				    items: [
 					{
-					    title  : 'Dienstedetails',
+					    title  : 'Details des '
+						+ 'ausgew&auml;hlten'
+						+ ' Diensts',
 					    xtype  : 'panel',
 					    layout : 'anchor',
 					    items  : [
@@ -780,7 +784,7 @@ NetspocWeb.workspace = function () {
 					    ]
 					},
 					{
-					    title  : 'User',
+					    title  : 'IP-Adressen hinter User',
 					    xtype  : 'panel',
 					    layout : 'fit',
 					    items  : [
