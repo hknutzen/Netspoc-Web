@@ -2,7 +2,8 @@
 
 use strict;
 use warnings;
-use ReloadingFCGI;
+use FCGI;
+use FCGI::ProcManager;
 use JSON;
 use CGI::Simple;
 use CGI::Session;
@@ -18,14 +19,6 @@ Readonly::Scalar my $NETSPOC_DATA => '/home/heinz/netspoc';
 my $program = "Netspoc JSON service";
 my $VERSION = ( split ' ',
  '$Id$' )[2];
-
-# Setting $SIG{CHLD} to 'IGNORE' has the effect of not creating
-# zombie processes when the parent process fails to wait() on its child
-# processes.
-# On Linux 2.6 kernels if you auto. reap zombies by setting $SIG{CHLD} 
-# to 'IGNORE', then you can't trust the return code from 'system' 
-# as it will always be '-1'.
-$SIG{CHLD} = 'IGNORE';
 
 sub is_numeric { 
     my ($value) = @_;
@@ -398,8 +391,8 @@ sub logged_in {
 
     # Validate active owner. 
     # User could be removed from any owner role at any time.
-    my $user = $session->param('user');
-    my $active_owner = $session->param('owner');
+    my $user = $session->param('user') || '';
+    my $active_owner = $session->param('owner') || '';
     if (not grep { $active_owner eq $_ } @{ $email2owners{$user} }) {
 	$session->param('owner', '');
     }
@@ -413,7 +406,7 @@ sub logout {
 }
 
 ####################################################################
-# FCGI request handling
+# Request handling
 ####################################################################
 my %path2sub = 
     ( 
@@ -431,9 +424,9 @@ my %path2sub =
       ); 
 
 sub handle_request {
-    my $request = shift;
-    local *STDIN; open STDIN, '<', \$request->read_stdin;
-    local %ENV = %{$request->params};
+#    my $request = shift;
+#    local *STDIN; open STDIN, '<', \$request->read_stdin;
+#    local %ENV = %{$request->params};
 
     my $cgi = CGI::Simple->new();    
     my $session = new CGI::Session ($cgi);
@@ -460,12 +453,17 @@ sub handle_request {
     }
     my $cookie = $cgi->cookie( -name   => $session->name,
 			       -value  => $session->id );
-    $request->respond(
+#    $request->respond(
+##		      encode_json($data),
+# 		      to_json($data, {utf8 => 1, pretty => 1}), 
+# 		      'Content-Type' => 'application/x-json',
+# 		      'Set-Cookie' => $cookie,
+# 		      );
+    print $cgi->header( -type   => 'application/x-json',
+			-cookie => $cookie, 
+			);
 #		      encode_json($data),
-		      to_json($data, {utf8 => 1, pretty => 1}), 
-		      'Content-Type' => 'application/x-json',
-		      'Set-Cookie' => $cookie,
-		      );
+    print to_json($data, {utf8 => 1, pretty => 1});    
 }
 
 sub error_data {
@@ -497,14 +495,70 @@ sub init_data {
     Netspoc::info("Ready");
 }
 
+sub run {
+    my ( %params ) = @_;
+
+    # Read from STDIN by default.
+    my $sock = 0;
+
+    if ($params{listen}) {
+	my $old_umask = umask;
+	umask(0);
+	$sock = FCGI::OpenSocket( $params{listen}, 100 )
+	    or die "failed to open FastCGI socket; $!";
+	umask($old_umask);
+    }
+
+    # send STDERR to stdout or the web server
+    my $error = $params{keep_stderr} ? \*STDOUT : \*STDERR;
+
+    my $request =
+      FCGI::Request( \*STDIN, \*STDOUT, $error, \%ENV, $sock,
+		     FCGI::FAIL_ACCEPT_ON_INTR ,
+      );
+
+    my $nproc = $params{nproc};
+    my $proc_manager;
+    if ($nproc) {
+	$proc_manager = FCGI::ProcManager->new
+	    (
+	     {
+		 n_processes => $params{nproc},
+		 pid_fname   => $params{pidfile},
+	     }
+	     );
+    }
+
+    $nproc && $proc_manager->pm_manage();
+    
+    # Give each child its own RNG state.
+    srand;
+
+    while ( $request->Accept >= 0 ) {
+        $nproc && $proc_manager->pm_pre_dispatch();
+        $params{request_handler}->();
+        $nproc && $proc_manager->pm_post_dispatch();
+    }
+}
+
 ####################################################################
 # Start server
 ####################################################################
+
 init_data();
-ReloadingFCGI->run
-    (
-     reload_fifo => '/home/heinz/policy-shop/reload.socket',
-     daemonize => 0,
-     fcgi_socket =>'/var/lib/apache2/fastcgi/test.sock',
+
+# Tell parent that we have initialized successfully.
+if (my $ppid = $ENV{PPID}) {
+    print STDERR "Sending USR2 signal to $ppid\n";
+    kill 'USR2', $ppid;
+}
+
+run (
+# Don't listen itself but read from STDIN.
+#     listen => ':8080',
+
+     # Start FCGI::ProcManager with 2 n processes.
+     nproc => 2,
      request_handler => \&handle_request,
      );
+     
