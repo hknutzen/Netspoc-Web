@@ -22,62 +22,29 @@ my $old_child;
 my $new_child;
 
 sub do_fork {
-    if ($new_child->{pid}) {
+    if ($new_child) {
 	warn "Still forking\n";
 	return;
     }
     my $ppid = $$;
     my $child_fh;
     warn "Forking child\n";
-    defined (my $pid = fork) or die "Can't fork child: $!\n";
-    if ($pid) {
+    my $pid = fork;
+    if (not defined $pid) {
+	warn "Can't fork child: $!\n";
+	return;
+    }
+    elsif ($pid) {
 	
 	# Parent process.
-	$new_child->{pid} = $pid;
-
-	# Wait for new child to be initialized.
-	my $child_OK;
-	$child_OK = AnyEvent->signal 
-	    ( signal => "USR2", 
-	      cb => sub {
-		  warn "Got SIGUSR2 child\n";
-		  if (my $pid = $old_child->{pid}) {
-		      kill 'TERM', $pid;
-		      delete $old_child->{pid};
-		  }
-		  # this deletes $old_child->{w}; still needed?
-		  $old_child = $new_child;
-		  $new_child = undef;
-		  $child_OK = undef;
-	      });
-
- 	# wait for new child to die.
-	$new_child->{w} = AnyEvent->child 
-	    (
-	     pid => $pid,
-	     cb  => sub {
-		 my ($pid, $status) = @_;
-		 warn "pid $pid exited with status $status";
-		 if ($old_child->{pid} && $pid eq $old_child->{pid}) {
-		     delete $old_child->{pid};
-		     delete $old_child->{w};
-		     $restart->send;
-		 }
-		 elsif ($new_child->{pid} && $pid eq $new_child->{pid}) {
-		     delete $new_child->{pid};
-		     delete $new_child->{w};
-		     $restart->send if not $old_child->{pid};
-		     
-		 }
-	     },
-	     );
-
+	$new_child = $pid;
  	return;
     }
     else {
 			
 	# Child process.
 	# Start a fresh copy of this program which reads the changed data.
+	# Tell child the ppid. Child sends signal when it's ready for requests.
 	warn "Child $$ exec $cmd\n";
 	$ENV{PPID} = $ppid;
         exec($cmd) or die "Can't exec '$cmd': $!\n";
@@ -96,26 +63,60 @@ sub fcgi2stdin {
 }
 
 sub terminate {
-    kill 'TERM', $old_child->{pid} if $old_child->{pid};
-    kill 'TERM', $new_child->{pid} if $new_child->{pid};
+    kill 'TERM', $old_child if $old_child;
+    kill 'TERM', $new_child if $new_child;
     exit;
 }
 
+my $hup_watcher = AnyEvent->signal (signal => "HUP", 
+				    cb => sub { warn "Got HUP\n";
+						$restart->send });
+my $term_watcher = AnyEvent->signal (signal => 'TERM', cb => \&terminate);
+my $quit_watcher = AnyEvent->signal (signal => 'QUIT', cb => \&terminate);
+my $int_watcher  = AnyEvent->signal (signal => 'INT', cb => \&terminate);
+
+
+# Wait for some child to die.
+my $child_died = AnyEvent->child 
+    (
+     pid => 0,
+     cb  => sub {
+	 my ($pid, $status) = @_;
+	 warn "pid $pid exited with status $status\n";
+	 if ($old_child && $pid eq $old_child) {
+	     $old_child = undef;
+	     $restart->send if not $new_child;
+	 }
+	 elsif ($new_child && $pid eq $new_child) {
+	     $new_child = undef;
+	     $restart->send if not $old_child;
+
+	 }
+     },
+     );
+
+# Wait for new child to be initialized.
+my $child_OK = AnyEvent->signal 
+    ( signal => "USR2", 
+      cb => sub {
+	  warn "Child is initialized\n";
+	  if (my $pid = $old_child) {
+	      $old_child = undef;;
+	      kill 'TERM', $pid;
+	  }
+	  $old_child = $new_child;
+	  $new_child = undef;
+      });
+
+
 # Daemonize.
 fork && exit;
-
 warn "FastCGI started (pid $$)\n";
 fcgi2stdin();
 POSIX::setsid();
+
 while (1) {
     $restart = AnyEvent->condvar;
-    my $hup_watcher = AnyEvent->signal (signal => "HUP", 
-					cb => sub {
-					    warn "Got HUP\n";
-					    $restart->send });
-    my $term_watcher = AnyEvent->signal (signal => 'TERM', cb => \&terminate);
-    my $quit_watcher = AnyEvent->signal (signal => 'QUIT', cb => \&terminate);
-    my $int_watcher  = AnyEvent->signal (signal => 'INT', cb => \&terminate);
     do_fork($cmd);
     my $val = $restart->recv;
     warn "Restarting\n";
