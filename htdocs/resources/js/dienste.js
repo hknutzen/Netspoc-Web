@@ -218,7 +218,6 @@ function proxy4path ( path ) {
     );
 }
 
-
 Ext.ns( "NetspocWeb" );
 
 NetspocWeb.workspace = function () {
@@ -227,7 +226,6 @@ NetspocWeb.workspace = function () {
     return {
 	
 	init : function () {
-/*
 	    // Automatic login:
 	    Ext.Ajax.request(
 		{
@@ -240,11 +238,12 @@ NetspocWeb.workspace = function () {
 		    succCallback : this.onLoginSuccess
 		}
 	    );
-*/
+/*
 	    if ( ! loginWindow ) {
 		loginWindow = this.buildLoginWindow();
 	    }
 	    loginWindow.show();
+*/
         },
 
 	buildLoginWindow : function() {
@@ -272,8 +271,8 @@ NetspocWeb.workspace = function () {
 	},
 
 	onLoginSuccess : function( form, action ) {
-	    loginWindow.destroy();
-	    loginWindow = null;
+//	    loginWindow.destroy();
+//	    loginWindow = null;
 	    if ( ! ownerWindow ) {
 		ownerWindow = this.buildOwnerWindow();
 	    }
@@ -486,17 +485,13 @@ NetspocWeb.workspace = function () {
 
 	buildViewport : function () {
 
-	    // Define proxies for all needed requests.
-	    var all_services_proxy = proxy4path( 'service_list' );
-	    var get_owner_proxy    = proxy4path( 'get_owner'    );
-	    
 	    /****************************************************************/
 	    /* Define Listview containing services user clicks on
 	     * in order to display service details in a neighboring Dataview.
 	     */
 	    /****************************************************************/
 
-	    var policyLvStore = {
+	    var stAllPolicies = {
 		xtype         : 'jsonstore',
 		totalProperty : 'totalCount',
 		root          : 'records',
@@ -504,7 +499,7 @@ NetspocWeb.workspace = function () {
 		remoteSort    : false,
 		sortInfo      : { field: 'name', direction: "ASC" },
 		storeId       : 'policyDvStoreId',
-		proxy         : all_services_proxy,
+		proxy         : proxy4path( 'service_list' ),
 		fields        : [
 		    { name : 'name',  mapping : 'name'         },
 		    { name : 'desc',  mapping : 'description'  },
@@ -514,17 +509,17 @@ NetspocWeb.workspace = function () {
 		listeners : {
 		    load : function( thisStore, records, options ) {
 			var lvPolicies =
-			    Ext.getCmp('lvPolicyId');
+			    Ext.getCmp('lvAllPoliciesId');
 			// Select first policy after store has loaded.
 			lvPolicies.select( 0 );
 		    }
 		}
 	    };
 
-	    var lvPolicy = new Ext.ListView(
+	    var lvAllPolicies = new Ext.ListView(
 		{
-		    id            : 'lvPolicyId',
-		    store         : policyLvStore,
+		    id            : 'lvAllPoliciesId',
+		    store         : stAllPolicies,
 		    singleSelect  : true,
 //		    style         : 'background-color: #A0A0A0;',
 		    autoscroll    : true,
@@ -653,8 +648,8 @@ NetspocWeb.workspace = function () {
 
 	    var dvRules = new Ext.DataView(
 		{
-		    tpl   : dvRulesTpl,
-		    store : dvRulesStore
+		    tpl        : dvRulesTpl,
+		    store      : dvRulesStore
 		}
 	    ); 
 
@@ -670,8 +665,8 @@ NetspocWeb.workspace = function () {
 		'<div class="policy"> {desc} </div>',
 
 		'<div class="ping-and-owner">',
-		'<div class="ping-left">   Ping auf Netz erlaubt: ja  </div>',
-		'<div class="owner-right"> Verantwortlich: {owner}    </div>',
+		'<div class="ping-left">   Ping auf Netz erlaubt:   </div>',
+		'<div class="owner-right"> Verantwortlich: {owner}  </div>',
 		'</div>',
 
 		'</tpl>'   
@@ -716,7 +711,6 @@ NetspocWeb.workspace = function () {
 		    id            : 'lvUserId',
 		    store         : stUserLv,
 		    singleSelect  : true,
-		    autoscroll    : true,
 		    boxMinWidth   : 200,
 		    columns       : [
 			{
@@ -769,15 +763,16 @@ NetspocWeb.workspace = function () {
 			    layout : 'fit',
 			    items  : [
 				{
-				    xtype  : 'tabpanel',
-				    activeTab: 0,
-				    items: [
+				    xtype     : 'tabpanel',
+				    activeTab : 0,
+				    items     : [
 					{
 					    title  : 'Details des '
 						+ 'ausgew&auml;hlten'
 						+ ' Diensts',
 					    xtype  : 'panel',
 					    layout : 'anchor',
+					    autoScroll : true,
 					    items  : [
 						dvDetails,
 						dvRules
@@ -796,13 +791,49 @@ NetspocWeb.workspace = function () {
 			    ]
 			},
 			{
-			    // xtype: 'panel' implied by default
-			    id     : 'pLvPolicyId',
+			    id     : 'ctWestId',
 			    region : 'west',
-			    width  : 300,  // initial size
-			    split  : true, // resizable
+			    xtype  : 'container',
 			    layout : 'fit',
-			    items  : lvPolicy
+			    width     : 300,  // initial size
+			    split     : true, // resizable
+			    items  : [
+				{
+				    xtype     : 'tabpanel',
+				    activeTab : 3,
+				    items     :  [
+					{
+					    title  : 'Eigene Dienste',
+					    xtype  : 'panel',
+					    layout : 'fit',
+					    items  : [
+					    ]
+					},
+					{
+					    title  : 'Genutzte',
+					    xtype  : 'panel',
+					    layout : 'fit',
+					    items  : [
+					    ]
+					},
+					{
+					    title  : 'Sichtbare',
+					    xtype  : 'panel',
+					    layout : 'fit',
+					    items  : [
+					    ]
+					},
+					{
+					    title  : 'Alle',
+					    xtype  : 'panel',
+					    layout : 'fit',
+					    items  : [
+						lvAllPolicies
+					    ]
+					}
+				    ]
+				}
+			    ]
 			}
 		    ]
 		}
