@@ -27,39 +27,42 @@ sub is_numeric {
     $value =~ /^\d+$/; 
 }
 
-sub ip_for_objects {
-    my ($objects) = @_;
-    [ map {
-	if ( Netspoc::is_network( $_ ) ) {
-	    if ( is_numeric($_->{ip}) ) {
-		print_ip($_->{ip});
-	    }
+sub ip_for_object {
+    my ($obj) = @_;
+    if ( Netspoc::is_network( $obj ) ) {
+	if ( is_numeric($obj->{ip}) ) {
+	    print_ip($obj->{ip});
 	}
-	elsif ( Netspoc::is_host( $_ ) ) {
-	    if ( my $range = $_->{range} ) {
-		join('-', map { print_ip( $_ ) } @$range);
-	    }
-	    else {
-		print_ip($_->{ip});
-	    }
-	}
-	elsif ( Netspoc::is_interface( $_ ) ) {
-	    if ( is_numeric( $_->{ip} ) ) {
-		print_ip( $_->{ip} );
-	    }
-
-	    # 'negotiated'
-	    else {
-		"$_->{ip}: $_->{name}";
-	    }
-	}
-	elsif ( Netspoc::is_any( $_ ) ) {
-	    print_ip( 0 );
+    }
+    elsif ( Netspoc::is_host( $obj ) ) {
+	if ( my $range = $obj->{range} ) {
+	    join('-', map { print_ip($_) } @$range);
 	}
 	else {
-	    "$_->{name}";
+	    print_ip($obj->{ip});
 	}
-    } @$objects ];
+    }
+    elsif ( Netspoc::is_interface( $obj ) ) {
+	if ( is_numeric( $obj->{ip} ) ) {
+	    print_ip( $obj->{ip} );
+	}
+
+	# 'negotiated'
+	else {
+	    "$obj->{ip}: $obj->{name}";
+	}
+    }
+    elsif ( Netspoc::is_any( $obj ) ) {
+	print_ip( 0 );
+    }
+    else {
+	"$obj->{name}";
+    }
+}
+
+sub ip_for_objects {
+    my ($objects) = @_;
+    [ map { ip_for_object($_) } @$objects ];
 }
 
 my %unknown;
@@ -190,6 +193,25 @@ sub setup_policy_info {
 	$policy->{visible} ||= find_visibility($owners, $uowners);
 	$policy->{visible} and $policy->{visible} =~ s/\*$/.*/;
     }
+}
+
+####################################################################
+# Networks of current owner
+####################################################################
+
+sub get_networks {
+    my ($cgi, $session) = @_;
+    my $owner = $session->param('owner');
+    my @result;
+    for my $obj (values %networks, values %hosts) {
+	$obj->{disabled} and next;
+	my $obj_owner = owner_for_object($obj) or next;
+	if($obj_owner eq $owner) {
+	    push @result, { name => $obj->{name},
+			    ip => ip_for_object($obj), };
+	}
+    }
+    return \@result;
 }
 
 ####################################################################
@@ -467,6 +489,7 @@ my %path2sub =
       '/get_emails'   => \&get_emails,
       '/get_rules'    => \&get_rules,
       '/get_user'     => \&get_user,
+      '/get_networks' => \&get_networks,
 
       # For testing purposes.
       '/test'   => sub { my ($cgi) = @_; return { params => $cgi->raw()  } },
@@ -558,7 +581,7 @@ sub run {
 	umask($old_umask);
     }
 
-    # send STDERR to stdout or the web server
+    # Send STDERR to stdout or to the web server
     my $error = $params{keep_stderr} ? \*STDOUT : \*STDERR;
 
     my $request =
