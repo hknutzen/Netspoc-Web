@@ -206,10 +206,9 @@ var Dumper = (function(){
 
 
 
-/*******************************************************************/
+/* DUMPER END **********************************************************/
 
 
-// FOO
 function proxy4path ( path ) {
     return new Ext.data.HttpProxy(
 	{
@@ -218,7 +217,9 @@ function proxy4path ( path ) {
     );
 }
 
+
 Ext.ns( "NetspocWeb" );
+
 
 NetspocWeb.workspace = function () {
     var viewport, loginWindow, ownerWindow;
@@ -521,7 +522,6 @@ NetspocWeb.workspace = function () {
 		    id            : 'lvAllPoliciesId',
 		    store         : stAllPolicies,
 		    singleSelect  : true,
-//		    style         : 'background-color: #A0A0A0;',
 		    autoscroll    : true,
 		    columns       : [
 			{
