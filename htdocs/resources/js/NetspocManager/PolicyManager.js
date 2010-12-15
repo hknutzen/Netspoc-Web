@@ -30,19 +30,62 @@ NetspocManager.PolicyManager = Ext.extend(Ext.Panel, {
 
     buildPolicyList : function() {
         return {
-            xtype     : 'policylist',
-            itemId    : 'policyListId',
-            flex      : 1,
-            split     : true,
-            resizable : true,
-            region    : 'west',
-            width     : 300,
+	    id     : 'policyListId',
+	    region : 'west',
+	    xtype  : 'container',
+	    layout : 'fit',
+	    width     : 300,  // initial size
+	    split     : true, // resizable
             border    : false,
+	    items  : [
+		{
+		    xtype     : 'tabpanel',
+//		    activeTab : 0,  // does not work!
+		    items     :  [
+			{
+			    title  : 'Eigene Dienste',
+			    items  : [
+				{
+				    xtype    : 'policylist',
+				    proxyurl : 'service_list?relation=owner'
+				}
+			    ]
+			},
+			{
+			    title  : 'Genutzte',
+			    items  : [
+				{
+				    xtype    : 'policylist',
+				    proxyurl : 'service_list?relation=user'
+				}
+			    ]
+			},
+			{
+			    title  : 'Sichtbare',
+			    items  : [
+				{
+				    xtype    : 'policylist',
+				    proxyurl : 'service_list?relation=visible'
+				}
+			    ]
+			},
+			{
+			    title  : 'Alle',
+			    items  : [
+				{
+				    xtype    : 'policylist',
+				    proxyurl : 'service_list'
+				}
+			    ]
+			}
+		    ]
+		}
+	    ],
             listeners : {
                 scope : this,
                 click : this.onPolicyListClick
             }
-        };
+	}; // end of return-closure
     },
 
     buildPolicyDetailsView : function() {
@@ -93,4 +136,4 @@ NetspocManager.PolicyManager = Ext.extend(Ext.Panel, {
 
 });
 
-Ext.reg('policymanager', NetspocManager.PolicyManager);
+Ext.reg( 'policymanager', NetspocManager.PolicyManager );
