@@ -22,7 +22,7 @@ NetspocWeb.listpanel.ListPanelBaseCls = Ext.extend(
             NetspocWeb.listpanel.ListPanelBaseCls.
 		superclass.initComponent.call(this);
 	    
-            this.relayEvents(this.getView(), ['click']);
+            this.relayEvents(this.getView(), ['click', 'selectionchange']);
             this.relayEvents(this.getStore(), ['load']);
 	},
 	
