@@ -209,15 +209,6 @@ var Dumper = (function(){
 /* DUMPER END **********************************************************/
 
 
-function proxy4path ( path ) {
-    return new Ext.data.HttpProxy(
-	{
-	    url : '/netspoc/' + path
-	}
-    );
-}
-
-
 Ext.ns( "NetspocManager" );
 
 
@@ -514,9 +505,30 @@ NetspocManager.workspace = function () {
 		    border     : false,
 		    defaults   :  { workspace : this },
 		    items      :  [
-			{ xtype  : 'policymanager'   }
+			{ xtype  : 'policymanager'  },
+			{ xtype  : 'networkmanager' }
 		    ],
 		    tbar   : [
+			{
+			    text          : 'Dienste anzeigen',
+			    iconCls       : 'icon-computer_connect',
+			    toggleGroup   : 'navGrp',
+			    itemType      : 'policymanager',
+			    enableToggle  : true,
+			    pressed       : true,
+			    scope         : this,
+			    handler       : this.onSwitchPanel
+			},
+			'-',
+			{
+			    text         : 'Eigene Netze',
+			    iconCls      : 'icon-shape_shade_c',
+			    itemType     : 'networkmanager',
+			    toggleGroup  : 'navGrp',
+			    enableToggle : true,
+			    scope        : this,
+			    handler      : this.onSwitchPanel
+			},
 			'->',
 			{
 			    text    : 'Abmelden',
@@ -527,7 +539,7 @@ NetspocManager.workspace = function () {
 			'->',
 			{
 			    text    : 'Verantwortungsbereich',
-			    iconCls : 'icon-door_in',
+			    iconCls : 'icon-user',
 			    scope   : this,
 			    handler : function() {
 				this.destroy();
@@ -546,6 +558,29 @@ NetspocManager.workspace = function () {
 		}
 	    );
 	    Ext.getBody().unmask();
+	},  // end of buildViewport
+
+	onSwitchPanel : function( button ) {
+	    var xtype = button.itemType,
+            panels    = cardPanel.findByType(xtype),
+            newPanel  = panels[0];
+	    
+	    var newCardIndex = cardPanel.items.indexOf( newPanel ); 
+	    this.switchToCard( newCardIndex, newPanel );
+	},
+
+	switchToCard : function( newCardIndex, newPanel ) {
+	    var layout     = cardPanel.getLayout(),
+            activePanel    = layout.activeItem,
+            activePanelIdx = cardPanel.items.indexOf( activePanel );
+	    
+	    if ( activePanelIdx !== newCardIndex ) {
+		layout.setActiveItem( newCardIndex ); 
+		
+		if ( newPanel.cleanSlate ) {
+		    newPanel.cleanSlate();
+		}
+	    }
 	}
 
     }; // end of return-closure
