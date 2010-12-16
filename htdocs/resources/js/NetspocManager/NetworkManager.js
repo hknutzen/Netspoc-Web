@@ -51,7 +51,25 @@ NetspocManager.NetworkManager = Ext.extend(
 		listeners : {
                     scope : this,
                     click : this.onNetworkListClick
-		}
+		},
+		tbar      :  [
+                    {
+			text    : 'Netze/Hosts',
+			scope   : this,
+			handler : function() {
+//			    var plv =  this.getComponent('policyListId');
+//			    plv.loadStoreByParams( { relation : 'owner' } );
+			}
+                    },
+                    {
+			text    : 'Router',
+			scope   : this,
+			handler : function() {
+//			    var plv =  this.getComponent('policyListId');
+//			    plv.loadStoreByParams( { relation : 'user' } );
+			}
+                    }
+		]
 	    };
 
 	},
@@ -113,53 +131,14 @@ NetspocManager.NetworkManager = Ext.extend(
 
 	onNetworkListClick : function() {
             var selectedNetwork =
-		this.getComponent('policyListId').getSelected();
+		this.getComponent('networkListId').getSelected();
 
-	    var name   = selectedNetwork.get( 'name' );
-	    var desc   = selectedNetwork.get( 'desc' );
-	    var owner  = selectedNetwork.get( 'owner' );
-	    var ping   = selectedNetwork.get( 'ping' );
-
-	    var arrayData = [
-		[ name, desc, ping, owner ]
-	    ];
-	    var nameRecord = Ext.data.Record.create(
-		[
-		    {  name : 'name',  mapping : 0  },
-		    {  name : 'desc',  mapping : 1  },
-		    {  name : 'ping',  mapping : 2  },
-		    {  name : 'owner', mapping : 3  }
-		]
-	    );
-	    var arrayReader = new Ext.data.ArrayReader(
-		{}, nameRecord );
-	    var memoryProxy  = new Ext.data.MemoryProxy(
-		arrayData );
-	    var store = new Ext.data.Store(
-		{
-		    reader : arrayReader,
-		    proxy  : memoryProxy
-		}
-	    );
-
-	    // Now load the stores of policy-details-dataview and
-	    // of policy-rules-dataview.
-	    var policyDetails = this.findById('dvNetworkDetailsId');
-	    policyDetails.bindStore( store );
-	    policyDetails.getStore().reload();
-
-	    var dvRules =
-		Ext.StoreMgr.get('dvRulesStoreId');
-	    var url = 'get_rules?service=' + name;
-	    var rulesProxy = proxy4path( url );
-	    dvRules.proxy = rulesProxy;
-	    dvRules.load();
-	    
+	    console.log( "Selected: " + selectedNetwork.data.name );	    
 	    var stUserDetails =
-		Ext.StoreMgr.get('stUserLvId');
-	    url = 'get_user?service=' + name;
-	    stUserDetails.proxy = proxy4path( url );
-	    stUserDetails.load();
+		Ext.StoreMgr.get('stNetworkDetailsId');
+//	    var url = 'get_user?service=' + name;
+//	    stUserDetails.proxy = proxy4path( url );
+//	    stUserDetails.load();
 	},
 
 	cleanSlate : function () {
