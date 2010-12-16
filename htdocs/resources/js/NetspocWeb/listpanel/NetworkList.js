@@ -29,7 +29,7 @@ NetspocWeb.listpanel.NetworkList = Ext.extend(
 		store         : this.buildStore(),
 		columns       : [
 		    {
-			header    : 'IP-Adresse des Netzes',
+			header    : 'IP-Adresse des Netzes/Hosts',
 			dataIndex : 'ip'
 		    }
 		]
