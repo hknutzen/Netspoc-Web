@@ -54,35 +54,44 @@ NetspocManager.PolicyManager = Ext.extend(
 		},
 		tbar      :  [
                     {
-			text    : 'Eigene Dienste',
-			scope   : this,
-			handler : function() {
+			text         : 'Alle Dienste',
+			toggleGroup  : 'polNavBtnGrp',
+			enableToggle : true,
+			pressed      : true,
+			scope        : this,
+			handler      : function() {
+			    var plv =  this.getComponent('policyListId');
+			    plv.loadStoreByParams( {} );
+			}
+                    },
+                    {
+			text         : 'Eigene',
+			toggleGroup  : 'polNavBtnGrp',
+			enableToggle : true,
+			scope        : this,
+			handler      : function() {
 			    var plv =  this.getComponent('policyListId');
 			    plv.loadStoreByParams( { relation : 'owner' } );
 			}
                     },
                     {
-			text    : 'Genutzte',
-			scope   : this,
-			handler : function() {
+			text         : 'Genutzte',
+			toggleGroup  : 'polNavBtnGrp',
+			enableToggle : true,
+			scope        : this,
+			handler      : function() {
 			    var plv =  this.getComponent('policyListId');
 			    plv.loadStoreByParams( { relation : 'user' } );
 			}
                     },
                     {
-			text    : 'Sichtbare',
-			scope   : this,
-			handler : function() {
+			text         : 'Sichtbare',
+			toggleGroup  : 'polNavBtnGrp',
+			enableToggle : true,
+			scope        : this,
+			handler      : function() {
 			    var plv =  this.getComponent('policyListId');
 			    plv.loadStoreByParams( { relation : 'visible' } );
-			}
-                    },
-                    {
-			text    : 'Alle',
-			scope   : this,
-			handler : function() {
-			    var plv =  this.getComponent('policyListId');
-			    plv.loadStoreByParams( {} );
 			}
                     }
 		]
