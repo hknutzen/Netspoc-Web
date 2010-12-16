@@ -218,11 +218,11 @@ function proxy4path ( path ) {
 }
 
 
-Ext.ns( "NetspocWeb" );
+Ext.ns( "NetspocManager" );
 
 
-NetspocWeb.workspace = function () {
-    var viewport, loginWindow, ownerWindow;
+NetspocManager.workspace = function () {
+    var cardPanel, viewport, loginWindow, ownerWindow;
 
     return {
 	
@@ -272,12 +272,28 @@ NetspocWeb.workspace = function () {
 	},
 
 	onLoginSuccess : function( form, action ) {
-//	    loginWindow.destroy();
-//	    loginWindow = null;
+
+// TEMP FOR TEST !!!!!
+	    Ext.Ajax.request(
+		{
+		    url          : '/netspoc/set',
+		    params       : {
+			owner : 'DA_Netz_Firewall'
+		    },
+		    scope        : this,
+		    callback     : this.onAfterAjaxReq,
+		    succCallback : this.onSetOwnerSuccess
+		}
+	    );
+// TEMP FOR TEST !!!!!
+/*
+  	    loginWindow.destroy();
+	    loginWindow = null;
 	    if ( ! ownerWindow ) {
 		ownerWindow = this.buildOwnerWindow();
 	    }
 	    ownerWindow.show();
+*/
 	},
 
 	onLoginFailure : function( form, action ) {
@@ -725,125 +741,51 @@ NetspocWeb.workspace = function () {
 	    // Define viewport as BorderLayout.
 	    /****************************************************************/
 
-	    viewport = new Ext.Viewport(
+	    cardPanel = new Ext.Panel(
 		{
-		    title        : 'NetspocWeb -- Web Interface For Netspoc',
-		    layout       : 'border',
-		    items: [
+		    layout     : 'card',
+		    activeItem : 0,
+		    border     : false,
+		    defaults   :  { workspace : this },
+		    items      :  [
+			{ xtype  : 'policymanager'   }
+		    ],
+		    tbar   : [
+			'->',
 			{
-			    id     : 'pNorthId',
-			    region : 'north',
-			    layout : 'fit',
-			    layout : 'fit',
-			    frame  : false,
-			    tbar   : [
-				{
-				    text    : 'Verantwortungsbereich',
-				    iconCls : 'icon-door_in',
-				    scope   : this,
-				    handler : function() {
-					this.destroy();
-					ownerWindow = this.buildOwnerWindow();
-					ownerWindow.show();
-				    }
-				},
-				'->',
-				{
-				    text    : 'Abmelden',
-				    iconCls : 'icon-door_out',
-				    scope   : this,
-				    handler : this.onLogout
-				}
-			    ]
+			    text    : 'Abmelden',
+			    iconCls : 'icon-door_out',
+			    scope   : this,
+			    handler : this.onLogout
 			},
+			'->',
 			{
-			    id     : 'pCenterId',
-			    region : 'center',
-			    xtype  : 'container',
-			    layout : 'fit',
-			    items  : [
-				{
-				    xtype     : 'tabpanel',
-				    activeTab : 0,
-				    items     : [
-					{
-					    title  : 'Details des '
-						+ 'ausgew&auml;hlten'
-						+ ' Diensts',
-					    xtype  : 'panel',
-					    layout : 'anchor',
-					    autoScroll : true,
-					    items  : [
-						dvDetails,
-						dvRules
-					    ]
-					},
-					{
-					    title  : 'IP-Adressen hinter User',
-					    xtype  : 'panel',
-					    layout : 'fit',
-					    items  : [
-						lvUser
-					    ]
-					}
-				    ]
-				}
-			    ]
-			},
-			{
-			    id     : 'ctWestId',
-			    region : 'west',
-			    xtype  : 'container',
-			    layout : 'fit',
-			    width     : 300,  // initial size
-			    split     : true, // resizable
-			    items  : [
-				{
-				    xtype     : 'tabpanel',
-				    activeTab : 3,
-				    items     :  [
-					{
-					    title  : 'Eigene Dienste',
-					    xtype  : 'panel',
-					    layout : 'fit',
-					    items  : [
-					    ]
-					},
-					{
-					    title  : 'Genutzte',
-					    xtype  : 'panel',
-					    layout : 'fit',
-					    items  : [
-					    ]
-					},
-					{
-					    title  : 'Sichtbare',
-					    xtype  : 'panel',
-					    layout : 'fit',
-					    items  : [
-					    ]
-					},
-					{
-					    title  : 'Alle',
-					    xtype  : 'panel',
-					    layout : 'fit',
-					    items  : [
-						lvAllPolicies
-					    ]
-					}
-				    ]
-				}
-			    ]
+			    text    : 'Verantwortungsbereich',
+			    iconCls : 'icon-door_in',
+			    scope   : this,
+			    handler : function() {
+				this.destroy();
+				ownerWindow = this.buildOwnerWindow();
+				ownerWindow.show();
+			    }
 			}
 		    ]
 		}
 	    );
 	    
-	} // end buildViewport
+	    viewport = new Ext.Viewport(
+		{
+		    layout : 'fit',
+		    items  : cardPanel
+		}
+	    );
+	    Ext.getBody().unmask();
+	}
+
     }; // end of return-closure
 }(); // end of NetspocWeb.workspace function
 
 	    
-Ext.onReady( NetspocWeb.workspace.init, NetspocWeb.workspace );
+Ext.onReady( NetspocManager.workspace.init, NetspocManager.workspace );
 
 	
