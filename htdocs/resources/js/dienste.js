@@ -511,7 +511,7 @@ NetspocManager.workspace = function () {
 		    tbar   : [
 			{
 			    text          : 'Dienste anzeigen',
-			    iconCls       : 'icon-computer_connect',
+			    iconCls       : 'icon-chart_curve',
 			    toggleGroup   : 'navGrp',
 			    itemType      : 'policymanager',
 			    enableToggle  : true,
