@@ -31,7 +31,7 @@ sub ip_for_object {
     my ($obj) = @_;
     if ( Netspoc::is_network( $obj ) ) {
 	if ( is_numeric($obj->{ip}) ) {
-	    print_ip($obj->{ip});
+	    join(' ', print_ip($obj->{ip}), print_ip($obj->{mask}));
 	}
     }
     elsif ( Netspoc::is_host( $obj ) ) {
@@ -207,6 +207,12 @@ sub get_networks {
 	$obj->{disabled} and next;
 	my $obj_owner = owner_for_object($obj) or next;
 	if($obj_owner eq $owner) {
+
+	    # Nur die Hosts anzeigen, die einen eigenen Owner haben.
+	    if (my $network = $obj->{network}) {
+		my $net_owner = owner_for_object($network);
+		next if $net_owner and $net_owner eq $owner;
+	    }
 	    push @result, { name => $obj->{name},
 			    ip => ip_for_object($obj), };
 	}
