@@ -179,8 +179,9 @@ NetspocManager.PolicyManager = Ext.extend(
 
 	    return new Ext.DataView(
 		{
-		    tpl        : dvRulesTpl,
-		    store      : dvRulesStore
+		    tpl          : dvRulesTpl,
+		    store        : dvRulesStore,
+		    itemSelector :'div.thumb-wrap'
 		}
 	    ); 
 	},
@@ -202,8 +203,9 @@ NetspocManager.PolicyManager = Ext.extend(
     
             return new Ext.DataView(
 		{
-		    id  : 'dvPolicyDetailsId',
-		    tpl : dvDetailsTpl
+		    id           : 'dvPolicyDetailsId',
+		    tpl          : dvDetailsTpl,
+		    itemSelector :'div.thumb-wrap'
 		}
 	    );
 	},
