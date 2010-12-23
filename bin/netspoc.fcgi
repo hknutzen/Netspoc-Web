@@ -9,18 +9,62 @@ use FCGI::ProcManager;
 use JSON;
 use CGI::Simple;
 use CGI::Session;
+use CGI::Session::Driver::file;
+use Digest::MD5 qw/md5_hex/;
+use String::MkPasswd qw(mkpasswd);
 use Encode;
-use Readonly;
 use Netspoc;
 
-# Constants.
-Readonly::Scalar my $NETSPOC_DATA => '/home/heinz/netspoc';
-#Readonly::Scalar my $NETSPOC_DATA => '/home/heinz/cut';
+# Configuration data.
+my $conf_file = '/home/heinz/netspoc-web/config';
+$CGI::Session::Driver::file::FileName = "%s";
 
 # Global variables.
 my $program = "Netspoc JSON service";
 my $VERSION = ( split ' ',
  '$Id$' )[2];
+
+# Valid config options.
+my %conf_keys = 
+    (
+     netspoc_data => 1,
+     password_dir => 1,
+     session_dir => 1,
+     base_url => 1,
+     verify_mail_template => 1,
+     verify_ok_template => 1,
+     verify_fail_template => 1,
+     sendmail_command => 1,
+     );
+
+sub abort {
+    my ($msg) = @_;
+    die "$msg\n";
+}
+
+sub internal_err {
+    my ($msg) = @_;
+    abort "internal: $msg";
+}
+
+my $config;
+sub load_config {
+    open( my $fh, $conf_file ) or die $!;
+    my $content = do { local $/; <$fh> };
+    close $fh;
+    my $json = new JSON;
+    $json->relaxed(1);
+    $config = $json->decode($content);
+    
+    my %required;
+    for my $key (keys %conf_keys) {
+        next if $conf_keys{$key} eq 'optional';
+        defined $config->{$key} or abort "Missing key '$key' in $conf_file";
+    }
+    for my $key (keys %$config) {
+        $conf_keys{$key} or abort("Invalid key '$key' in $conf_file");
+    }
+}
 
 sub is_numeric { 
     my ($value) = @_;
@@ -264,20 +308,16 @@ sub service_list {
 		 });
 	}
     }
-    \@result;
+    return \@result;
 }
 
 sub check_owner {
     my ($cgi, $session) = @_;
     my $owner = $session->param('owner');
-    my $pname = $cgi->param('service') 
-	or return (undef, error_data("Missing parameter 'service'"));
+    my $pname = $cgi->param('service') or abort "Missing parameter 'service'";
     $pname = Encode::decode('UTF-8', $pname);
-    my $policy = $policies{$pname}
-    or return (undef, error_data ("Unknown policy"));
-    if (not is_visible($owner, $policy)) {
-	return (undef, error_data("Policy not visible for owner"));
-    }
+    my $policy = $policies{$pname} or abort "Unknown policy";
+    is_visible($owner, $policy) or abort "Policy not visible for owner";
     return $policy;
 }
 
@@ -339,27 +379,26 @@ sub proto_descr {
 
 sub get_rules {
     my ($cgi, $session) = @_;
-    my ($policy, $err) = check_owner($cgi, $session);
-    return $err if (not $policy);
-    [ 
-      map {
-	  { 
-	      action => $_->{action},
-	      has_user => $_->{has_user},
-	      
-	      # ToDo: Expand auto_interfaces.
-	      src => ip_for_objects($_->{expanded_src}),
-	      dst => ip_for_objects($_->{expanded_dst}),
-	      srv => proto_descr(Netspoc::expand_services($_->{srv}, 						      "rule in $_")),
-	  }
-      } @{ $policy->{rules} }
-      ];
+    my $policy = check_owner($cgi, $session);
+    return [ 
+	     map {
+		 { 
+		     action => $_->{action},
+		     has_user => $_->{has_user},
+		     
+		     # ToDo: Expand auto_interfaces.
+		     src => ip_for_objects($_->{expanded_src}),
+		     dst => ip_for_objects($_->{expanded_dst}),
+		     srv => proto_descr(Netspoc::expand_services($_->{srv}, 
+								 "rule in $_")),
+		 }
+	     } @{ $policy->{rules} }
+	     ];
 }
 
 sub get_user {
     my ($cgi, $session) = @_;
-    my ($policy, $err) = check_owner($cgi, $session);
-    return $err if (not $policy);
+    my $policy = check_owner($cgi, $session);
 
     # User is owner of policy.
     my $active_owner = $session->param('owner');
@@ -370,12 +409,12 @@ sub get_user {
 
     # User isn't owner but only uses policy.
     else {
-	[ map { { ip =>  $_ } } 
-	  @{ ip_for_objects
-		 [
-		  grep { my $owner = owner_for_object($_); 
-			 $owner && $owner eq $active_owner }
-		  @{ $policy->{expanded_user} } ] } ];
+	return [ map { { ip =>  $_ } } 
+		 @{ ip_for_objects
+			[
+			 grep { my $owner = owner_for_object($_); 
+				$owner && $owner eq $active_owner }
+			 @{ $policy->{expanded_user} } ] } ];
     }
 	
 }
@@ -389,13 +428,9 @@ my %saveparam = ( owner => 1 );
 sub set_session_data {
     my ($cgi, $session) = @_;
     for my $param ($cgi->param()) {
-	if ($saveparam{$param}) {
-	    my $val =  Encode::decode('UTF-8', $cgi->param($param));
-	    $session->param($param, $val);
-	}
-	else {
-	    return error_data("Invalid param $param");
-	}
+	$saveparam{$param} or abort "Invalid param '$param'";
+	my $val =  Encode::decode('UTF-8', $cgi->param($param));
+	$session->param($param, $val);
     }
     return [];
 }
@@ -428,52 +463,133 @@ sub get_owner {
     my $user = $session->param('user');
     my $active_owner = $session->param('owner');
     my $owners = $email2owners{$user};
-    [ map({ { name => $_, active => $_ eq $active_owner ? JSON::true : JSON::false } }
-	  @$owners) ];
+    return [ map({ { name => $_, 
+		     active => $_ eq $active_owner 
+			 ? JSON::true : JSON::false } }
+		 @$owners) ];
 }
 
 sub get_emails {
     my ($cgi, $session) = @_;
     my $active_owner = $session->param('owner');
     my $owner = $owners{$active_owner} || [];
-    [ map { $_->{email } } @{ $owner->{admins} } ];
+    return [ map { $_->{email } } @{ $owner->{admins} } ];
 }
 
+####################################################################
+# Register / reset password
+####################################################################
+
+sub read_template {
+    my ($file) = @_;
+    open(my $fh, $file) or internal_err "Can't open $file: $!";
+    local $/ = undef;
+    my $text = <$fh>;
+    close $fh;
+    $text;
+}
+
+sub send_verification_mail {
+    my ($user, $url) = @_;
+    my $text = read_template($config->{verify_mail_template});
+    $text =~ s/\$user/$user/g;
+    $text =~ s/\$url/$url/g;
+    my $sendmail = $config->{sendmail_command};
+    open(my $mail, "|$sendmail") or 
+	internal_err "Can't open $sendmail: $!";
+    print $mail $text;
+    close $mail or warn "Can't close $sendmail: $!\n";
+}
+
+# Password is stored with CGI::Session using email as ID.
+sub get_user_store {
+    my ($user) = @_;
+    new CGI::Session ('driver:file;id:static', $user, 
+		      { Directory=> $config->{password_dir} } 
+		      );
+}
+
+# Get / set password for user.
+# New password is already encrypted in sub register below.
+sub store_password {
+    my ($user, $pass) = @_;
+    my $pass_store = get_user_store($user);
+    $pass_store->param('pass', $pass);
+}
+
+sub check_password  {
+    my ($user, $pass) = @_;
+    my $pass_store = get_user_store($user);
+    $pass_store->param('pass') eq md5_hex($pass);
+}
+
+sub register {
+    my ($cgi, $session) = @_;
+    my $user = $cgi->param( 'user' ) or abort "Missing param 'user'";
+    my $admin = $email2admin{$user} or abort "Unknown user '$user'";
+    my $token = md5_hex(localtime, $user);
+    my $pass = mkpasswd() or die "Can't generate password";
+
+    # Store encrypted password in session until verification.
+    my $reg_data = { user => $user, pass => md5_hex($pass), token => $token };
+    $session->expire('register', '1d');
+    $session->param('register', $reg_data);
+    my $url = "$config->{base_url}/verify?user=$user&token=$token";
+    send_verification_mail ($user, $url);
+    return [{ pass => $pass } ];
+}
+
+sub verify {
+    my ($cgi, $session) = @_;
+    my $user = $cgi->param('user') or abort "Missing param 'user'";
+    my $token = $cgi->param('token') or abort "Missing param 'token'";
+    my $reg_data =  $session->param('register');
+
+    print $cgi->header( -type => 'text/html');
+    if ($reg_data and
+	$reg_data->{user} eq $user and
+	$reg_data->{token} eq $token) {
+	store_password($user, $reg_data->{pass});
+	$session->clear('register');
+	print read_template($config->{verify_ok_template});
+    }
+    else {
+	print read_template($config->{verify_fail_template});
+    }
+
+    # Don't gerate JSON data as result. HTML has already been sent.
+    return undef;
+}					 
+    
 ####################################################################
 # Login
 ####################################################################
 sub login {
     my ($cgi, $session) = @_;
-    my $user = $cgi->param( 'user' ) or
-	return error_data("Missing param 'user'");
-    my $admin = $email2admin{$user} or
-	return error_data("Unknown user '$user'");
-#    my $pass = $cgi->param( 'pass' );
-#    return error_data("Login failed") unless $admin->{pass} eq $pass;
-    my $s_user = $session->param('user') || '';
-    if ($s_user ne $user) {
-	$session->param('owner', '');
-	$session->param('user', $user);
-    }
-    elsif (not defined $session->param('owner')) {
-	$session->param('owner', '');
-    }
-    $session->param('logged_in', 1);
+    logout($cgi, $session);
+    my $user = $cgi->param( 'user' ) or abort "Missing param 'user'";
+    my $admin = $email2admin{$user} or abort "Unknown user '$user'";
+    my $pass = $cgi->param( 'pass' ) or abort "Missing param 'pass'";
+    check_password($user, $pass) or abort "Login failed";
+    $session->param('user', $user);
     $session->expire('logged_in', '30m');
+    $session->param('logged_in', 1);
     return [];
 }
 
 sub logged_in {
     my ($session) = @_;
-
-    # Validate active owner. 
-    # User could be removed from any owner role at any time.
-    my $user = $session->param('user') || '';
-    my $active_owner = $session->param('owner') || '';
-    if (not grep { $active_owner eq $_ } @{ $email2owners{$user} }) {
-	$session->param('owner', '');
-    }
     return $session->param('logged_in');
+}
+
+
+# Validate active owner. 
+# User could be removed from any owner role at any time.
+sub known_owner {
+    my ($session) = @_;
+    my $user = $session->param('user');
+    my $active_owner = $session->param('owner') || '';
+    return grep { $active_owner eq $_ } @{ $email2owners{$user} };
 }
 
 sub logout {
@@ -485,70 +601,82 @@ sub logout {
 ####################################################################
 # Request handling
 ####################################################################
-my %path2sub = 
+my %anon_path2sub =
+    (
+     login        => \&login,
+     register     => \&register,
+     verify       => \&verify,
+     logout       => \&logout,
+     );
+my %logged_in_path2sub = 
     ( 
-     #'/login'        => \&login,		# Handled separately.
-      '/logout'       => \&logout,
-      '/get_owner'    => \&get_owner,
-      '/set'          => \&set_session_data,
-      '/service_list' => \&service_list,
-      '/get_emails'   => \&get_emails,
-      '/get_rules'    => \&get_rules,
-      '/get_user'     => \&get_user,
-      '/get_networks' => \&get_networks,
-
-      # For testing purposes.
-      '/test'   => sub { my ($cgi) = @_; return { params => $cgi->raw()  } },
+      get_owner    => \&get_owner,
+      set          => \&set_session_data,
+      );
+my %known_owner_path2sub = 
+    ( 
+      service_list => \&service_list,
+      get_emails   => \&get_emails,
+      get_rules    => \&get_rules,
+      get_user     => \&get_user,
+      get_networks => \&get_networks,
       ); 
 
 sub handle_request {
-#    my $request = shift;
-#    local *STDIN; open STDIN, '<', \$request->read_stdin;
-#    local %ENV = %{$request->params};
+    my $cgi = CGI::Simple->new();
 
-    my $cgi = CGI::Simple->new();    
-    my $session = new CGI::Session ($cgi);
-    my $path = $cgi->path_info();
-    my $data;
-    if ($path eq '/login') {
-	$data = login($cgi, $session);
-    }
-    elsif (logged_in($session)) {
-	my $sub = $path2sub{$path};
-	$data = $sub 
-	     ? $sub->($cgi, $session)
-	     : error_data("Unknown path '$path'");
-    }
-    else {
-	$data = error_data("Login required");
-    }
-    if (ref $data eq 'ARRAY') {
-	$data = {
-	    success => JSON::true,
-	    totalCount => scalar @$data,
-	    records => $data
-	    };
-    }
-    my $cookie = $cgi->cookie( -name   => $session->name,
-			       -value  => $session->id );
-#    $request->respond(
-##		      encode_json($data),
-# 		      to_json($data, {utf8 => 1, pretty => 1}), 
-# 		      'Content-Type' => 'application/x-json',
-# 		      'Set-Cookie' => $cookie,
-# 		      );
-    print $cgi->header( -type   => 'application/x-json',
-			-cookie => $cookie, 
-			);
-#		      encode_json($data),
-    print to_json($data, {utf8 => 1, pretty => 1});    
-}
+    # Catch errors.
+    eval {
+	my $session = new CGI::Session ("driver:file", $cgi,
+					{ Directory=> $config->{session_dir} } 
+					);
+	my $path = $cgi->path_info();
+	$path =~ s:^/::;
+	my $sub;
+	if (not $sub = $anon_path2sub{$path}) {
+	    if (logged_in($session)) {
+		if (not $sub =  $logged_in_path2sub{$path}) {
+		    if (known_owner($session)) {
+			if (not $sub = $known_owner_path2sub{$path}) {
+			    abort "Unknown path '$path'";
+			}
+		    }
+		    else {
+			abort "Owner must be selected";
+		    }
+		}
+	    }
+	    else {
+		abort "Login required";
+	    }
+	}
+	my $data = $sub->($cgi, $session);
+	if (ref $data eq 'ARRAY') {
+	    $data = {
+		success => JSON::true,
+		totalCount => scalar @$data,
+		records => $data
+		};
+	    my $cookie = $cgi->cookie( -name   => $session->name,
+				       -value  => $session->id );
+	    print $cgi->header( -type   => 'application/x-json',
+				-cookie => $cookie, 
+				);
+#	    print encode_json($data),
+	    print to_json($data, {utf8 => 1, pretty => 1});    
+	}
+	else {
 
-sub error_data {
-    my ($msg) = @_;
-    return { success => JSON::false,
-	     msg => $msg,
-	 };
+	    # result has already been printed.
+	}
+    };
+    if ($@) {
+	my $msg = $@;
+	$msg =~ s/\n$//;
+	my $result = { success => JSON::false, msg => $msg };
+	print $cgi->header( -type   => 'application/x-json' );
+	print encode_json($result), "\n";
+    }
 }
 
 ####################################################################
@@ -556,9 +684,11 @@ sub error_data {
 ####################################################################
 sub init_data {
 
+    load_config();
+
     # Set global config variable of Netspoc to store attribute 'description'.
     $store_description = 1;
-    read_file_or_dir( $NETSPOC_DATA );
+    read_file_or_dir( $config->{netspoc_data} );
     order_services();
     link_topology();
     mark_disabled();
