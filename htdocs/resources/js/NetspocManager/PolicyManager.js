@@ -181,7 +181,8 @@ NetspocManager.PolicyManager = Ext.extend(
 		{
 		    tpl          : dvRulesTpl,
 		    store        : dvRulesStore,
-		    itemSelector :'div.thumb-wrap'
+		    itemSelector : 'div.thumb-wrap' // OBLIGATORY when
+		                                    // using XTemplate with DV
 		}
 	    ); 
 	},
@@ -205,7 +206,8 @@ NetspocManager.PolicyManager = Ext.extend(
 		{
 		    id           : 'dvPolicyDetailsId',
 		    tpl          : dvDetailsTpl,
-		    itemSelector :'div.thumb-wrap'
+		    itemSelector : 'div.thumb-wrap' // OBLIGATORY when
+		                                    // using XTemplate with DV
 		}
 	    );
 	},
