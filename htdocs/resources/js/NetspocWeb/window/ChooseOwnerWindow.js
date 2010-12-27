@@ -1,24 +1,14 @@
 Ext.ns("NetspocWeb.window");
 
 /**
- * @class NetspocWeb.window.UserLoginWindow
+ * @class NetspocWeb.window.ChooseOwnerWindow
  * @extends Ext.Window
- * A class to manage user logins
+ * A class to manage choice of owner to use after being logged in.
  * @constructor
  */
 NetspocWeb.window.ChooseOwnerWindow = Ext.extend(
     Ext.Window, {
-	/**
-	 * @cfg scope [Object} A refrence to the handler scope
-	 */
-	/**
-	 * @cfg handler {Object} A reference to a method to be
-	 *  called to process the login
-	 */
-	/**
-	 * @private
-	 * Configures the component, enforcing defaults
-	 */
+
 	initComponent : function() {
             // Force defaults
             Ext.apply( this,
@@ -54,18 +44,8 @@ NetspocWeb.window.ChooseOwnerWindow = Ext.extend(
 		anchor     : '-5'
             };
 
-	    Ext.Ajax.request(
-		{
-		    url          : 'http://10.3.28.111/netspoc/get_owner',
-		    scope        : this,
-		    callback     : NetspocWeb.onAfterAjaxReq,
-		    succCallback : this.onAfterGetOwner
-		}
-	    );
-	    
             return {
 		xtype       : 'form',
-		defaultType : 'textfield',
 		labelWidth  : 150,
 		frame       : true,
 		labelAlign  : 'right',
