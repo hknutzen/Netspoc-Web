@@ -54,19 +54,22 @@ NetspocManager.NetworkManager = Ext.extend(
 		},
 		tbar      :  [
                     {
-			text    : 'Netze/Hosts',
-			scope   : this,
-			handler : function() {
-//			    var plv =  this.getComponent('policyListId');
-//			    plv.loadStoreByParams( { relation : 'owner' } );
+			text         : 'Netze/Hosts',
+			toggleGroup  : 'netRouterGrp',
+			enableToggle : true,
+			pressed      : true,
+			scope        : this,
+			handler      : function() {
+			    //this.proxyurl = 'get_networks'
 			}
                     },
                     {
-			text    : 'Router',
-			scope   : this,
+			text         : 'Router',
+			toggleGroup  : 'netRouterGrp',
+			enableToggle : true,
+			scope        : this,
 			handler : function() {
-//			    var plv =  this.getComponent('policyListId');
-//			    plv.loadStoreByParams( { relation : 'user' } );
+			    //this.proxyurl = 'get_router'
 			}
                     }
 		]
@@ -81,8 +84,8 @@ NetspocManager.NetworkManager = Ext.extend(
 		activeTab : 0,
 		items     : [
 		    {
-			title  : 'In ausgew&auml;hltem Netz '
-			    + ' enthaltene Hosts',
+			title  : 'In ausgew&auml;hltem Objekt'
+			    + ' enthaltene Ressourcen',
 			xtype  : 'panel',
 			layout : 'anchor',
 			autoScroll : true,
