@@ -76,8 +76,7 @@ NetspocManager.NetworkManager = Ext.extend(
 		activeTab : 0,
 		items     : [
 		    {
-			title  : 'In ausgew&auml;hltem Objekt'
-			    + ' enthaltene Ressourcen',
+			title  : 'Enthaltene Ressourcen',
 			xtype  : 'panel',
 			layout : 'anchor',
 			autoScroll : true,
