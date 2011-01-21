@@ -113,6 +113,7 @@ my $child_OK = AnyEvent->signal
 fork && exit;
 warn "FastCGI started (pid $$)\n";
 fcgi2stdin();
+#open STDERR, '>/dev/null' or die "Can't open STDERR to /dev/null: $!\n";
 POSIX::setsid();
 
 while (1) {
