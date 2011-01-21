@@ -49,7 +49,7 @@ sub internal_err {
 
 my $config;
 sub load_config {
-    open( my $fh, $conf_file ) or die $!;
+    open( my $fh, $conf_file ) or die "Can't open $conf_file: $!\n";
     my $content = do { local $/; <$fh> };
     close $fh;
     my $json = new JSON;
