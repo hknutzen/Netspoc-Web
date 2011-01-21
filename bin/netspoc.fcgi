@@ -687,7 +687,7 @@ sub init_data {
     load_config();
 
     # Set global config variable of Netspoc to store attribute 'description'.
-    $store_description = 1;
+    store_description(1);
     read_file_or_dir( $config->{netspoc_data} );
     order_services();
     link_topology();
