@@ -659,7 +659,7 @@ sub handle_request {
 		};
 	    my $cookie = $cgi->cookie( -name   => $session->name,
 				       -value  => $session->id );
-	    print $cgi->header( -type   => 'application/x-json',
+	    print $cgi->header( -type   => 'text/x-json',
 				-cookie => $cookie, 
 				);
 #	    print encode_json($data),
@@ -674,7 +674,7 @@ sub handle_request {
 	my $msg = $@;
 	$msg =~ s/\n$//;
 	my $result = { success => JSON::false, msg => $msg };
-	print $cgi->header( -type   => 'application/x-json' );
+	print $cgi->header( -type   => 'text/x-json' );
 	print encode_json($result), "\n";
     }
 }
