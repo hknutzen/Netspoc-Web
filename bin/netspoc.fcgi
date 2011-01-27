@@ -25,17 +25,20 @@ my $VERSION = ( split ' ',
  '$Id$' )[2];
 
 # Valid config options.
-my %conf_keys = 
-    (
-     netspoc_data => 1,
-     password_dir => 1,
-     session_dir => 1,
-     base_url => 1,
-     verify_mail_template => 1,
-     verify_ok_template => 1,
-     verify_fail_template => 1,
-     sendmail_command => 1,
-     );
+my %conf_keys = map { ($_ => 1) } 
+qw(
+   app_url
+   base_url
+   error_page
+   netspoc_data
+   password_dir
+   sendmail_command
+   session_dir
+   show_passwd_template
+   verify_fail_template
+   verify_mail_template
+   verify_ok_template
+   );
 
 sub abort {
     my ($msg) = @_;
@@ -476,8 +479,9 @@ sub get_emails {
     return [ map { $_->{email } } @{ $owner->{admins} } ];
 }
 
+
 ####################################################################
-# Register / reset password
+# Send HTML as answer
 ####################################################################
 
 sub read_template {
@@ -489,11 +493,32 @@ sub read_template {
     $text;
 }
 
+# Do simple variable substitution.
+# Use syntax of template toolkit.
+sub process_template {
+    my ($text, $vars) = @_;
+    while (my ($key, $value) = each %$vars) {
+	$text =~ s/\[% $key %\]/$value/g;
+    }
+    $text;
+}
+
+sub get_substituted_html {
+    my ($file, $vars ) = @_;
+    my $text = read_template($file);
+    $text = process_template($text, $vars);
+    $text;
+}					 
+   
+
+####################################################################
+# Register / reset password
+####################################################################
+
 sub send_verification_mail {
     my ($user, $url) = @_;
     my $text = read_template($config->{verify_mail_template});
-    $text =~ s/\$user/$user/g;
-    $text =~ s/\$url/$url/g;
+    $text = process_template($text, { user => $user, url => $url });
     my $sendmail = $config->{sendmail_command};
     open(my $mail, "|$sendmail") or 
 	internal_err "Can't open $sendmail: $!";
@@ -536,7 +561,8 @@ sub register {
     $session->param('register', $reg_data);
     my $url = "$config->{base_url}/verify?user=$user&token=$token";
     send_verification_mail ($user, $url);
-    return [{ pass => $pass } ];
+    return get_substituted_html($config->{show_passwd_template},
+				{ pass => $pass });
 }
 
 sub verify {
@@ -544,21 +570,16 @@ sub verify {
     my $user = $cgi->param('user') or abort "Missing param 'user'";
     my $token = $cgi->param('token') or abort "Missing param 'token'";
     my $reg_data =  $session->param('register');
-
-    print $cgi->header( -type => 'text/html');
     if ($reg_data and
 	$reg_data->{user} eq $user and
 	$reg_data->{token} eq $token) {
 	store_password($user, $reg_data->{pass});
 	$session->clear('register');
-	print read_template($config->{verify_ok_template});
+	return get_substituted_html($config->{verify_ok_template}, {})
     }
     else {
-	print read_template($config->{verify_fail_template});
+	return get_substituted_html($config->{verify_fail_template}, {});
     }
-
-    # Don't gerate JSON data as result. HTML has already been sent.
-    return undef;
 }					 
     
 ####################################################################
@@ -574,7 +595,7 @@ sub login {
     $session->param('user', $user);
     $session->expire('logged_in', '30m');
     $session->param('logged_in', 1);
-    return [];
+    return $config->{app_url};
 }
 
 sub logged_in {
@@ -582,6 +603,10 @@ sub logged_in {
     return $session->param('logged_in');
 }
 
+sub get_login {
+    my ($cgi, $session) = @_;
+    $session->param('user');
+}
 
 # Validate active owner. 
 # User could be removed from any owner role at any time.
@@ -601,29 +626,31 @@ sub logout {
 ####################################################################
 # Request handling
 ####################################################################
-my %anon_path2sub =
+my %path2sub =
     (
-     login        => \&login,
-     register     => \&register,
-     verify       => \&verify,
-     logout       => \&logout,
-     );
-my %logged_in_path2sub = 
-    ( 
-      get_owner    => \&get_owner,
-      set          => \&set_session_data,
-      );
-my %known_owner_path2sub = 
-    ( 
-      service_list => \&service_list,
-      get_emails   => \&get_emails,
-      get_rules    => \&get_rules,
-      get_user     => \&get_user,
-      get_networks => \&get_networks,
+
+     # Default: user must be logged in, send JSON data.
+     # - anon: anonymous user is allowed
+     # - html: send html 
+     # - redir: send redirect
+     # - owner: logged in user must have selected a valid owner
+     login         => [ \&login,         { anon => 1, redir => 1, } ],
+     register      => [ \&register,      { anon => 1, html  => 1, } ],
+     verify        => [ \&verify,        { anon => 1, html  => 1, } ],
+     logout        => [ \&logout,        { anon => 1, } ],
+     get_login     => [ \&get_login,     {} ],
+     get_owner     => [ \&get_owner,     {} ],
+     set           => [ \&set_session_data, {} ],
+     service_list  => [ \&service_list,  { owner => 1, } ],
+     get_emails    => [ \&get_emails,    { owner => 1, } ],
+     get_rules     => [ \&get_rules,     { owner => 1, } ],
+     get_user      => [ \&get_user,      { owner => 1, } ],
+     get_networks  => [ \&get_networks,  { owner => 1, } ],
       ); 
 
 sub handle_request {
     my $cgi = CGI::Simple->new();
+    my $flags = { html => 1};
 
     # Catch errors.
     eval {
@@ -632,16 +659,12 @@ sub handle_request {
 					);
 	my $path = $cgi->path_info();
 	$path =~ s:^/::;
-	my $sub;
-	if (not $sub = $anon_path2sub{$path}) {
+	my $info = $path2sub{$path} or abort "Unknown path '$path'";
+	(my $sub, $flags) = @$info;
+	if (not $flags->{anon}) {
 	    if (logged_in($session)) {
-		if (not $sub =  $logged_in_path2sub{$path}) {
-		    if (known_owner($session)) {
-			if (not $sub = $known_owner_path2sub{$path}) {
-			    abort "Unknown path '$path'";
-			}
-		    }
-		    else {
+		if ($flags->{owner}) {
+		    if (not known_owner($session)) {
 			abort "Owner must be selected";
 		    }
 		}
@@ -651,31 +674,56 @@ sub handle_request {
 	    }
 	}
 	my $data = $sub->($cgi, $session);
-	if (ref $data eq 'ARRAY') {
-	    $data = {
-		success => JSON::true,
-		totalCount => scalar @$data,
-		records => $data
-		};
-	    my $cookie = $cgi->cookie( -name   => $session->name,
-				       -value  => $session->id );
-	    print $cgi->header( -type   => 'text/x-json',
-				-cookie => $cookie, 
-				);
+	my $cookie = $cgi->cookie( -name   => $session->name,
+				   -value  => $session->id );
+	if ($flags->{html}) {
+	    print $cgi->header( -type => 'text/html',
+				-charset => 'utf-8', 
+				-cookie => $cookie);
+	    print $data;	    
+	}
+	elsif ($flags->{redir}) {
+	    print $cgi->redirect( -uri => $data, 
+				  -cookie => $cookie);
+	}
+	else
+	{
+	    if (ref $data eq 'ARRAY') {
+		$data = {
+		    totalCount => scalar @$data,
+		    records => $data
+		    };
+	    }
+	    elsif ($data) {
+		$data = { data => $data, };
+	    }
+	    else {
+		$data = {};
+	    }
+	    $data->{success} = JSON::true;
+		
+	    print $cgi->header( -type    => 'text/x-json',
+				-charset => 'utf-8',
+				-cookie  => $cookie);
 #	    print encode_json($data),
 	    print to_json($data, {utf8 => 1, pretty => 1});    
-	}
-	else {
-
-	    # result has already been printed.
 	}
     };
     if ($@) {
 	my $msg = $@;
 	$msg =~ s/\n$//;
-	my $result = { success => JSON::false, msg => $msg };
-	print $cgi->header( -type   => 'text/x-json' );
-	print encode_json($result), "\n";
+	if ($flags->{html} or $flags->{redir}) {
+	    print $cgi->header( -type    => 'text/html',
+				-charset => 'utf-8',);
+	    print get_substituted_html($config->{error_page}, {msg => $msg});
+	}
+	else
+	{
+	    my $result = { success => JSON::false, msg => $msg };
+	    print $cgi->header( -type    => 'text/x-json',
+				-charset => 'utf-8', );
+	    print encode_json($result), "\n";
+	}
     }
 }
 
