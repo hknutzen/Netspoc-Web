@@ -9,25 +9,28 @@ NetspocManager.workspace = function () {
     return {
 	
 	init : function () {
-
-	    // Automatic login:
+	    this.checkLogged_in();
+	    this.get_owner();
+	},
+	 
+	checkLogged_in: function () {
 	    Ext.Ajax.request(
 		{
-		    url          : '/netspoc/login',
-		    params       : {
-			user : 'rolf.niedziella@dataport.de'
-		    },
+		    url          : '/netspoc/get_login',
 		    scope        : this,
 		    callback     : this.onAfterAjaxReq,
-		    succCallback : this.onLoginSuccess
+		    succCallback : function () {}
 		}
 	    );
-/*
+	    
+	},
+   
+	login:  function () {  
 	    if ( ! loginWindow ) {
 		loginWindow = this.buildLoginWindow();
 	    }
 	    loginWindow.show();
-*/
+
         },
 
 	buildLoginWindow : function() {
@@ -56,27 +59,16 @@ NetspocManager.workspace = function () {
 
 	onLoginSuccess : function( form, action ) {
 
-// TEMP FOR TEST !!!!!
-	    Ext.Ajax.request(
-		{
-		    url          : '/netspoc/set',
-		    params       : {
-			owner : 'DA_Netz_Firewall'
-		    },
-		    scope        : this,
-		    callback     : this.onAfterAjaxReq,
-		    succCallback : this.onSetOwnerSuccess
-		}
-	    );
-// TEMP FOR TEST !!!!!
-/*
   	    loginWindow.destroy();
 	    loginWindow = null;
+	    this.get_owner();
+	},
+
+	get_owner : function() {
 	    if ( ! ownerWindow ) {
 		ownerWindow = this.buildOwnerWindow();
 	    }
 	    ownerWindow.show();
-*/
 	},
 
 	onLoginFailure : function( form, action ) {
@@ -206,45 +198,37 @@ NetspocManager.workspace = function () {
 
 	onAfterAjaxReq : function( options, success, result ) {
 	    Ext.getBody().unmask();
+	    var msg;
 	    if ( success === true ) {
 		var jsonData;
 		try {
 		    jsonData = Ext.decode( result.responseText );
+		    if (jsonData.success === true) {
+			options.succCallback.call( options.scope, 
+						   jsonData, options );
+		    }
+		    else {
+			m = jsonData.msg;
+		    }
 		}
 		catch (e) {
-		    Ext.MessageBox.alert( 
-			'Fehler!', 
-			'Daten können nicht dekodiert werden (kein JSON?)!'
-		    );
+		    m = 'Daten können nicht dekodiert werden (kein JSON).';
 		}
-		options.succCallback.call( options.scope, 
-					   jsonData, options );
 	    }
 	    else {
-		var m;
-		if ( jsonData.msg ) {
-		    m = jsonData.msg;
-		    }
-		else {
-		    m = 'Unhandled exception?!';
-		}
-		Ext.MessageBox.alert( 'Fehler!', m );
+		m = 'Daten können nicht abgerufen werden';
+	    }
+	    if (m) {
+		Ext.MessageBox.show({ title : 'Fehler', 
+				      msg   : m,
+				      buttons : Ext.MessageBox.OK,
+				      icon  : Ext.MessageBox.ERROR
+				    });
 	    }
 	},
 
 	onLogout : function() {
 	    this.doLogout();
-/*	    Ext.MessageBox.confirm(
-		'Bitte bestätigen',
-		'Möchten Sie sich wirklich ausloggen?',
-		function(btn) {
-		    if (btn === 'yes') {
-			this.doLogout();
-		    }
-		},
-		this
-	    );
-*/
 	},
 	
 	doLogout : function() {
@@ -259,7 +243,7 @@ NetspocManager.workspace = function () {
 	    );
 	},
 
-	onAfterLogout : function(jsonData) {
+	onAfterLogout : function() {
 	    this.destroy_and_init();
 	},
 
