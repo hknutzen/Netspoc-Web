@@ -208,21 +208,21 @@ NetspocManager.workspace = function () {
 						   jsonData, options );
 		    }
 		    else {
-			m = jsonData.msg;
+			msg = jsonData.msg;
 		    }
 		}
 		catch (e) {
-		    m = 'Daten können nicht dekodiert werden (kein JSON).';
+		    msg = 'Daten können nicht dekodiert werden (kein JSON).';
 		}
 	    }
 	    else {
-		m = 'Daten können nicht abgerufen werden';
+		msg = 'Daten können nicht abgerufen werden';
 	    }
-	    if (m) {
-		Ext.MessageBox.show({ title : 'Fehler', 
-				      msg   : m,
+	    if (msg) {
+		Ext.MessageBox.show({ title   : 'Fehler', 
+				      msg     : msg,
 				      buttons : Ext.MessageBox.OK,
-				      icon  : Ext.MessageBox.ERROR
+				      icon    : Ext.MessageBox.ERROR
 				    });
 	    }
 	},
