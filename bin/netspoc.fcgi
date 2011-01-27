@@ -562,7 +562,7 @@ sub register {
     my $url = "$config->{base_url}/verify?user=$user&token=$token";
     send_verification_mail ($user, $url);
     return get_substituted_html($config->{show_passwd_template},
-				{ pass => $pass });
+				{ pass => $cgi->escapeHTML($pass) });
 }
 
 sub verify {
