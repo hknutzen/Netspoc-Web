@@ -634,7 +634,8 @@ my %path2sub =
      # - html: send html 
      # - redir: send redirect
      # - owner: logged in user must have selected a valid owner
-     login         => [ \&login,         { anon => 1, redir => 1, } ],
+     login         => [ \&login,         { anon => 1, redir => 1, 
+					   create_cookie => 1, } ],
      register      => [ \&register,      { anon => 1, html  => 1, } ],
      verify        => [ \&verify,        { anon => 1, html  => 1, } ],
      logout        => [ \&logout,        { anon => 1, } ],
@@ -672,6 +673,9 @@ sub handle_request {
 	    else {
 		abort "Login required";
 	    }
+	}
+	if ($session->is_empty() and not $flags->{create_cookie}) {
+	    die "Cookies must be activated\n";
 	}
 	my $data = $sub->($cgi, $session);
 	my $cookie = $cgi->cookie( -name   => $session->name,
