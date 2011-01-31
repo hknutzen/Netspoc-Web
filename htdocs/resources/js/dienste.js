@@ -9,88 +9,14 @@ NetspocManager.workspace = function () {
     return {
 	
 	init : function () {
-	    this.checkLogged_in();
 	    this.get_owner();
 	},
 	 
-	checkLogged_in: function () {
-	    Ext.Ajax.request(
-		{
-		    url          : '/netspoc/get_login',
-		    scope        : this,
-		    callback     : this.onAfterAjaxReq,
-		    succCallback : function () {}
-		}
-	    );
-	    
-	},
-   
-	login:  function () {  
-	    if ( ! loginWindow ) {
-		loginWindow = this.buildLoginWindow();
-	    }
-	    loginWindow.show();
-
-        },
-
-	buildLoginWindow : function() {
-	    return new NetspocWeb.window.UserLoginWindow(
-		{
-		    scope   : this,
-		    handler : this.onLogin
-		}
-	    );
-	},
-
-	onLogin :  function() {
-	    var form = loginWindow.get(0);
-	    if ( form.getForm().isValid() ) {
-		loginWindow.el.mask('Bitte warten ...', 'x-mask-loading');
-		
-		form.getForm().submit(
-		    {
-			success : this.onLoginSuccess,
-			failure : this.onLoginFailure,
-			scope   : this
-		    }
-		);
-	    }
-	},
-
-	onLoginSuccess : function( form, action ) {
-
-  	    loginWindow.destroy();
-	    loginWindow = null;
-	    this.get_owner();
-	},
-
 	get_owner : function() {
 	    if ( ! ownerWindow ) {
 		ownerWindow = this.buildOwnerWindow();
 	    }
 	    ownerWindow.show();
-	},
-
-	onLoginFailure : function( form, action ) {
-	    loginWindow.el.unmask();
-	    var result = action.result;
-	    var msg;
-	    if ( result && result.msg != '' ) {
-		msg = result.msg;
-	    }
-	    else {
-		msg = 'Benutzername oder Passwort falsch.'
-		+ ' Bitte versuchen Sie es erneut.';
-	    }
-	    Ext.Msg.show(
-		{
-		    title   : 'Login fehlgeschlagen!',
-		    msg     : msg,
-		    buttons : Ext.Msg.OK,
-		    fn      : this.destroy_and_init(),
-		    icon    : Ext.Msg.ERROR
-		}
-	    );
 	},
 
 	buildOwnerWindow : function() {
@@ -209,6 +135,12 @@ NetspocManager.workspace = function () {
 		    }
 		    else {
 			msg = jsonData.msg;
+			if (msg == 'Login required') {
+			    msg = null;
+			    Ext.MessageBox.alert('Sitzung abgelaufen', 
+						 'Neu anmelden', 
+						 this.onAfterLogout);
+			}
 		    }
 		}
 		catch (e) {
@@ -244,7 +176,7 @@ NetspocManager.workspace = function () {
 	},
 
 	onAfterLogout : function() {
-	    this.destroy_and_init();
+	    history.back()
 	},
 
 	destroy : function() {
@@ -260,11 +192,6 @@ NetspocManager.workspace = function () {
 		ownerWindow.destroy();
 		ownerWindow = null;
 	    }
-	},
-
-	destroy_and_init : function() {
-	    this.destroy();
-	    this.init();
 	},
 
 	buildViewport : function () {
