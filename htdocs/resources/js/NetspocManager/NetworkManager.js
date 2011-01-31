@@ -127,7 +127,8 @@ NetspocManager.NetworkManager = Ext.extend(
             var selectedNetwork =
 		this.getComponent('networkListId').getSelected();
 
-	    console.log( "Selected: " + selectedNetwork.data.name );	    
+// IE8 kennt kein console.log
+//	    console.log( "Selected: " + selectedNetwork.data.name );	    
 	    var stUserDetails =
 		Ext.StoreMgr.get('stNetworkDetailsId');
 //	    var url = 'get_user?service=' + name;
