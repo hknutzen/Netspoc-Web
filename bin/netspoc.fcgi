@@ -464,7 +464,7 @@ sub setup_email2admin {
 sub get_owner {
     my ($cgi, $session) = @_;
     my $user = $session->param('user');
-    my $active_owner = $session->param('owner');
+    my $active_owner = $session->param('owner') || '';
     my $owners = $email2owners{$user};
     return [ map({ { name => $_, 
 		     active => $_ eq $active_owner 
