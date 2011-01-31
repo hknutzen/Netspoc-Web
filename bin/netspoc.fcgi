@@ -603,11 +603,6 @@ sub logged_in {
     return $session->param('logged_in');
 }
 
-sub get_login {
-    my ($cgi, $session) = @_;
-    $session->param('user');
-}
-
 # Validate active owner. 
 # User could be removed from any owner role at any time.
 sub known_owner {
@@ -639,7 +634,6 @@ my %path2sub =
      register      => [ \&register,      { anon => 1, html  => 1, } ],
      verify        => [ \&verify,        { anon => 1, html  => 1, } ],
      logout        => [ \&logout,        { anon => 1, } ],
-     get_login     => [ \&get_login,     {} ],
      get_owner     => [ \&get_owner,     {} ],
      set           => [ \&set_session_data, {} ],
      service_list  => [ \&service_list,  { owner => 1, } ],
