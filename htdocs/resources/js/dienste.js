@@ -23,6 +23,7 @@ NetspocManager.workspace = function () {
 	    var remoteJsonStore = new Ext.data.JsonStore(
 		{
 		    totalProperty : 'totalCount',
+		    successProperty : 'success',
 		    root          : 'records',
 		    baseParams    : {
 			column : 'name'
@@ -42,7 +43,10 @@ NetspocManager.workspace = function () {
 			{
 			    url : '/netspoc/get_owner'
 			}
-		    )   
+		    ),
+		    listeners : { exception : { fn : this.onJsonException,
+						scope : this }
+				}
 		}
 	    );
 
@@ -134,28 +138,32 @@ NetspocManager.workspace = function () {
 						   jsonData, options );
 		    }
 		    else {
-			msg = jsonData.msg;
-			if (msg == 'Login required') {
-			    msg = null;
-			    Ext.MessageBox.alert('Sitzung abgelaufen', 
-						 'Neu anmelden', 
-						 this.onAfterLogout);
-			}
+			this.showJsonError(jsonData.msg);
 		    }
 		}
 		catch (e) {
-		    msg = 'Daten können nicht dekodiert werden (kein JSON).';
+		    this.showJsonError('Daten können nicht dekodiert werden (kein JSON).');
 		}
 	    }
 	    else {
-		msg = 'Daten können nicht abgerufen werden';
+		this.showJsonError('Daten können nicht abgerufen werden');
 	    }
+	},
+	
+	showJsonError : function ( msg ) {
 	    if (msg) {
-		Ext.MessageBox.show({ title   : 'Fehler', 
-				      msg     : msg,
-				      buttons : Ext.MessageBox.OK,
-				      icon    : Ext.MessageBox.ERROR
-				    });
+		if (msg == 'Login required') {
+		    Ext.MessageBox.alert('Sitzung abgelaufen', 
+					 'Neu anmelden', 
+					 this.onAfterLogout);
+		}
+		else {
+		    Ext.MessageBox.show({ title   : 'Fehler', 
+					  msg     : msg,
+					  buttons : Ext.MessageBox.OK,
+					  icon    : Ext.MessageBox.ERROR
+					});
+		}
 	    }
 	},
 
@@ -164,7 +172,6 @@ NetspocManager.workspace = function () {
 	},
 	
 	doLogout : function() {
-	    Ext.getBody().mask('Sie werden abgemeldet ...', 'x-mask-loading');
 	    Ext.Ajax.request(
 		{
 		    url          : '/netspoc/logout',
