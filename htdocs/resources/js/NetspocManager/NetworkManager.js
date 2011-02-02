@@ -38,7 +38,7 @@ NetspocManager.NetworkManager = Ext.extend(
 		xtype    : 'networklist',
 		proxyurl : 'get_networks',
 		itemId   : 'networkListId',
-		width    : 300,
+		width    : 400,
 		border   : false,
 		listeners : {
                     scope : this,
