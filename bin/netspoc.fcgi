@@ -633,7 +633,7 @@ my %path2sub =
 					   create_cookie => 1, } ],
      register      => [ \&register,      { anon => 1, html  => 1, } ],
      verify        => [ \&verify,        { anon => 1, html  => 1, } ],
-     logout        => [ \&logout,        { anon => 1, } ],
+     logout        => [ \&logout,        {} ],
      get_owner     => [ \&get_owner,     {} ],
      set           => [ \&set_session_data, {} ],
      service_list  => [ \&service_list,  { owner => 1, } ],
@@ -649,9 +649,10 @@ sub handle_request {
 
     # Catch errors.
     eval {
-	my $session = new CGI::Session ("driver:file", $cgi,
-					{ Directory=> $config->{session_dir} } 
-					);
+	my $session = CGI::Session->load("driver:file", $cgi,
+					 { Directory => 
+					       $config->{session_dir} }
+					 );
 	my $path = $cgi->path_info();
 	$path =~ s:^/::;
 	my $info = $path2sub{$path} or abort "Unknown path '$path'";
@@ -668,8 +669,13 @@ sub handle_request {
 		abort "Login required";
 	    }
 	}
-	if ($session->is_empty() and not $flags->{create_cookie}) {
-	    die "Cookies must be activated\n";
+	if ($session->is_empty()) {
+	    if ($flags->{create_cookie}) {
+		$session->new();
+	    }
+	    else {
+		die "Cookies must be activated\n";
+	    }
 	}
 	my $data = $sub->($cgi, $session);
 	my $cookie = $cgi->cookie( -name   => $session->name,
