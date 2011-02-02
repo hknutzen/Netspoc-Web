@@ -27,7 +27,6 @@ my $VERSION = ( split ' ',
 # Valid config options.
 my %conf_keys = map { ($_ => 1) } 
 qw(
-   app_url
    base_url
    error_page
    netspoc_data
@@ -591,11 +590,12 @@ sub login {
     my $user = $cgi->param( 'user' ) or abort "Missing param 'user'";
     my $admin = $email2admin{$user} or abort "Unknown user '$user'";
     my $pass = $cgi->param( 'pass' ) or abort "Missing param 'pass'";
+    my $app_url = $cgi->param( 'app' ) or abort "Missing param 'app'";
     check_password($user, $pass) or abort "Login failed";
     $session->param('user', $user);
     $session->expire('logged_in', '30m');
     $session->param('logged_in', 1);
-    return $config->{app_url};
+    return $app_url;
 }
 
 sub logged_in {
