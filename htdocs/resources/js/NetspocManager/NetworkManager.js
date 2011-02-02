@@ -134,10 +134,6 @@ NetspocManager.NetworkManager = Ext.extend(
 //	    var url = 'get_user?service=' + name;
 //	    stUserDetails.proxy = proxy4path( url );
 //	    stUserDetails.load();
-	},
-
-	cleanSlate : function () {
-	    this.getComponent('networkListId').refreshView();
 	}
     }
 );
