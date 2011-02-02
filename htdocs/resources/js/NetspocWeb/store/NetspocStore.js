@@ -10,7 +10,6 @@ NetspocWeb.store.Netspoc = Ext.extend(
 			  successProperty : 'success',
 			  root          : 'records',
 			  remoteSort    : false,
-			  autoload      : true,
 			  url           : '/netspoc/' + config.proxyurl
 		      });
 	    NetspocWeb.store.Netspoc.superclass.constructor.call(this, config);
