@@ -2,7 +2,7 @@
 <title>Netspoc</title>
 <style type="text/css">
  body {font-family:sans-serif;} 
- form {width:21em}
+ form {width:19em}
  fieldset {background-color:AliceBlue;border:2px solid steelblue;}
  input[type="submit"] {float:right;}
 </style>
@@ -14,12 +14,10 @@
  <div>
   <fieldset>
    <legend>Neues Kennwort anfordern</legend>
-    <table>
-      <tr>
-       <td><label for="email">Email:</label></td>
-       <td><input id="email" name="user" type="text" size="30"/></td>
-      </tr>
-    </table>
+   <p>
+    <label for="email">Email:</label>
+    <input id="email" name="user" type="text" size="30"/>
+    <input name="base_url" type="hidden" value="/netspoc"/>
    <p>
     <input type="submit" value="Kennwort anfordern"/>
    </p>
