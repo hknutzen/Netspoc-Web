@@ -27,7 +27,6 @@ my $VERSION = ( split ' ',
 # Valid config options.
 my %conf_keys = map { ($_ => 1) } 
 qw(
-   base_url
    error_page
    netspoc_data
    password_dir
@@ -551,6 +550,8 @@ sub register {
     my ($cgi, $session) = @_;
     my $user = $cgi->param( 'user' ) or abort "Missing param 'user'";
     my $admin = $email2admin{$user} or abort "Unknown user '$user'";
+    my $base_url = $cgi->param( 'base_url' ) 
+	or abort "Missing param 'base_url'";
     my $token = md5_hex(localtime, $user);
     my $pass = mkpasswd() or die "Can't generate password";
 
@@ -558,7 +559,7 @@ sub register {
     my $reg_data = { user => $user, pass => md5_hex($pass), token => $token };
     $session->expire('register', '1d');
     $session->param('register', $reg_data);
-    my $url = "$config->{base_url}/verify?user=$user&token=$token";
+    my $url = "$base_url/verify?user=$user&token=$token";
     send_verification_mail ($user, $url);
     return get_substituted_html($config->{show_passwd_template},
 				{ pass => $cgi->escapeHTML($pass) });
