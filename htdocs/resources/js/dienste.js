@@ -131,11 +131,11 @@ NetspocManager.workspace = function () {
 		    }
 		}
 		catch (e) {
-		    this.showJsonError('Daten können nicht dekodiert werden (kein JSON).');
+		    this.showJsonError('Daten k&ouml;nnen nicht dekodiert werden (kein JSON).');
 		}
 	    }
 	    else {
-		this.showJsonError('Daten können nicht abgerufen werden');
+		this.showJsonError('Daten k&ouml;nnen nicht abgerufen werden');
 	    }
 	},
 	
