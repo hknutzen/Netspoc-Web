@@ -207,24 +207,12 @@ NetspocManager.PolicyManager = Ext.extend(
 	buildUserDetailsDV : function() {
 	    var stUserLv = {
 		id            : 'stUserLvId',
-		xtype         : 'jsonstore',
-		totalProperty : 'totalCount',
-		root          : 'records',
-		autoLoad      : false,
-		remoteSort    : false,
-		sortInfo      : { field: 'ip', direction: "ASC" },
+		xtype         : 'netspocstore',
 		storeId       : 'stUserLvId',
+		sortInfo      : { field: 'ip', direction: "ASC" },
 		fields        : [
 		    { name : 'ip', mapping : 'ip'        }
-		],
-		listeners : {
-		    load : function( thisStore, records, options ) {
-			var lvUserIPs =
-			    Ext.getCmp('lvUserId');
-			// Select first policy after store has loaded.
-			lvUserIPs.select( 0 );
-		    }
-		}
+		]
 	    };
 
 	    return new Ext.ListView(
@@ -274,7 +262,7 @@ NetspocManager.PolicyManager = Ext.extend(
 		}
 	    );
 
-	    // Now load the stores of policy-details-dataview and
+	    // Load the stores of policy-details-dataview and
 	    // of policy-rules-dataview.
 	    var policyDetails = this.findById('dvPolicyDetailsId');
 	    policyDetails.bindStore( store );
