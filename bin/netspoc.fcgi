@@ -275,10 +275,9 @@ sub get_hosts {
     my $network = $networks{$net_name} or die "Unknown network";
     my $net_owner = owner_for_object($network);
     $net_owner and $net_owner eq $owner or die "Not your network";
-    return 
-	[map { { name => $_->{name},
-		 ip =>  ip_for_object($_) } } 
-	 @{ $network->{hosts} } ];
+    return [ map { { name => $_->{name},
+		     ip =>  ip_for_object($_) } } 
+	     @{ $network->{hosts} } ];
 }
 
 ####################################################################
@@ -416,24 +415,20 @@ sub get_rules {
 sub get_user {
     my ($cgi, $session) = @_;
     my $policy = check_owner($cgi, $session);
+    my @users = @{ $policy->{expanded_user} };
 
-    # User is owner of policy.
     my $active_owner = $session->param('owner');
-    if (grep({ $_ eq $active_owner } @{ $policy->{owners} })) {
-	return [ map { { ip =>  $_ } } 
-		 @{ ip_for_objects($policy->{expanded_user}) } ];
-    }
 
     # User isn't owner but only uses policy.
-    else {
-	return [ map { { ip =>  $_ } } 
-		 @{ ip_for_objects
-			[
-			 grep { my $owner = owner_for_object($_); 
-				$owner && $owner eq $active_owner }
-			 @{ $policy->{expanded_user} } ] } ];
+    # Only show owner's users.
+    if (not grep({ $_ eq $active_owner } @{ $policy->{owners} })) {
+	@users =  grep { my $owner = owner_for_object($_); 
+			 $owner && $owner eq $active_owner }
+	@users;
     }
-	
+    return [ map { { name => $_->{name},
+		     ip =>  ip_for_object($_) } } 
+	     @users ];
 }
 
 ####################################################################
