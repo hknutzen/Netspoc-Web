@@ -20,11 +20,8 @@ NetspocManager.workspace = function () {
 	},
 
 	buildOwnerWindow : function() {
-	    var remoteJsonStore = new Ext.data.JsonStore(
+	    var store = new NetspocWeb.store.Netspoc(
 		{
-		    totalProperty : 'totalCount',
-		    successProperty : 'success',
-		    root          : 'records',
 		    baseParams    : {
 			column : 'name'
 		    },
@@ -38,19 +35,11 @@ NetspocManager.workspace = function () {
 			    mapping : 'id'
 			}
 		    ],
-		    autoload : true,
-		    proxy : new Ext.data.HttpProxy(
-			{
-			    url : '/netspoc/get_owner'
-			}
-		    ),
-		    listeners : { exception : { fn : this.onJsonException,
-						scope : this }
-				}
+		    proxyurl : 'get_owner'
 		}
 	    );
 
-	    var cbOwner = {
+	    var combo = {
 		xtype          : 'combo',
 		id             : 'cbOwnerId',
 		fieldLabel     : 'Verantwortungsbereich',
@@ -63,7 +52,7 @@ NetspocManager.workspace = function () {
 		loadingText    : 'Abfrage l&auml;uft ...',
 		mode           : 'remote',
 		triggerAction  : 'all',
-		store          : remoteJsonStore,
+		store          : store,
 		listeners:{
 		    scope    : this,
 		    'select' : this.onOwnerChosen
@@ -87,7 +76,7 @@ NetspocManager.workspace = function () {
 				padding : '5',
 				align   : 'center'
 			    },
-			    items : cbOwner
+			    items : combo
 			}
 		    ]
 		}
