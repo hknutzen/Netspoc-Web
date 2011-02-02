@@ -10,14 +10,6 @@ Ext.ns("NetspocWeb.listpanel");
  * @param {Object} config The config object
  **/
 
-function proxy4path ( path ) {
-    return new Ext.data.HttpProxy(
-	{
-	    url : '/netspoc/' + path
-	}
-    );
-}
-
 NetspocWeb.listpanel.NetworkList = Ext.extend(
     NetspocWeb.listpanel.ListPanelBaseCls,
     {
@@ -38,14 +30,10 @@ NetspocWeb.listpanel.NetworkList = Ext.extend(
 	
 	buildStore : function() {
 	    return  {
-		xtype         : 'jsonstore',
-		totalProperty : 'totalCount',
-		root          : 'records',
-		autoLoad      : true,
-		remoteSort    : false,
-		sortInfo      : { field: 'name', direction: "ASC" },
+		xtype         : 'netspocstore',
+		proxyurl      : this.proxyurl,
 		storeId       : 'networkDvStoreId',
-		proxy         : proxy4path( this.proxyurl ),
+		sortInfo      : { field: 'name', direction: "ASC" },
 		fields        : [
 		    { name : 'name', mapping : 'name' },
 		    { name : 'ip',   mapping : 'ip'   }
