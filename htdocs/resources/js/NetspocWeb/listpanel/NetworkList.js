@@ -23,6 +23,10 @@ NetspocWeb.listpanel.NetworkList = Ext.extend(
 		    {
 			header    : 'IP-Adresse des Netzes/Hosts',
 			dataIndex : 'ip'
+		    },
+		    {
+			header    : 'Name',
+			dataIndex : 'name'
 		    }
 		]
 	    };
@@ -33,7 +37,7 @@ NetspocWeb.listpanel.NetworkList = Ext.extend(
 		xtype         : 'netspocstore',
 		proxyurl      : this.proxyurl,
 		storeId       : 'networkDvStoreId',
-		sortInfo      : { field: 'name', direction: "ASC" },
+		sortInfo      : { field: 'ip', direction: "ASC" },
 		fields        : [
 		    { name : 'name', mapping : 'name' },
 		    { name : 'ip',   mapping : 'ip'   }
