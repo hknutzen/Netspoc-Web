@@ -265,6 +265,22 @@ sub get_networks {
     return \@result;
 }
 
+sub get_hosts {
+    my ($cgi, $session) = @_;
+    my $net_name = $cgi->param('network') or die "Missing param 'network'\n";
+    my $owner = $session->param('owner');
+
+    # Ignore request with host.
+    $net_name =~ s/^network:// or return [];
+    my $network = $networks{$net_name} or die "Unknown network";
+    my $net_owner = owner_for_object($network);
+    $net_owner and $net_owner eq $owner or die "Not your network";
+    return 
+	[map { { name => $_->{name},
+		 ip =>  ip_for_object($_) } } 
+	 @{ $network->{hosts} } ];
+}
+
 ####################################################################
 # Services, rules, users
 ####################################################################
@@ -642,6 +658,7 @@ my %path2sub =
      get_rules     => [ \&get_rules,     { owner => 1, } ],
      get_user      => [ \&get_user,      { owner => 1, } ],
      get_networks  => [ \&get_networks,  { owner => 1, } ],
+     get_hosts     => [ \&get_hosts,     { owner => 1, } ],
       ); 
 
 sub handle_request {
