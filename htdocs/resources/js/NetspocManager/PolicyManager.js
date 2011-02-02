@@ -77,7 +77,7 @@ NetspocManager.PolicyManager = Ext.extend(
 			}
                     },
                     {
-			text         : 'Sichtbare',
+			text         : 'Nutzbare',
 			toggleGroup  : 'polNavBtnGrp',
 			enableToggle : true,
 			scope        : this,
@@ -99,9 +99,7 @@ NetspocManager.PolicyManager = Ext.extend(
 		activeTab : 0,
 		items     : [
 		    {
-			title  : 'Details des '
-			    + 'ausgew&auml;hlten'
-			    + ' Diensts',
+			title  : 'Details zum Dienst',
 			xtype  : 'panel',
 			layout : 'anchor',
 			autoScroll : true,
@@ -111,7 +109,7 @@ NetspocManager.PolicyManager = Ext.extend(
 			]
 		    },
 		    {
-			title  : 'IP-Adressen hinter User',
+			title  : 'IP-Adresse und Name der User',
 			xtype  : 'panel',
 			layout : 'fit',
 			items  : [
@@ -205,26 +203,31 @@ NetspocManager.PolicyManager = Ext.extend(
 	},
 
 	buildUserDetailsDV : function() {
-	    var stUserLv = {
+	    var store = {
 		id            : 'stUserLvId',
 		xtype         : 'netspocstore',
 		storeId       : 'stUserLvId',
 		sortInfo      : { field: 'ip', direction: "ASC" },
 		fields        : [
-		    { name : 'ip', mapping : 'ip'        }
+		    { name : 'name', mapping : 'name' },
+		    { name : 'ip'  , mapping : 'ip'        }
 		]
 	    };
 
 	    return new Ext.ListView(
 		{
 		    id            : 'lvUserId',
-		    store         : stUserLv,
+		    store         : store,
 		    singleSelect  : true,
 		    boxMinWidth   : 200,
 		    columns       : [
 			{
 			    header    : 'IP-Adressen',
 			    dataIndex : 'ip'
+			},
+			{
+			    header    : 'Name',
+			    dataIndex : 'name'
 			}
 		    ]
 		}
