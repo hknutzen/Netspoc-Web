@@ -32,7 +32,8 @@ NetspocWeb.listpanel.ListPanelBaseCls = Ext.extend(
 	},
 	
 	buildStore : function() {
-            return { xtype : 'jsonstore' };
+            return { xtype    : 'netspocstore',
+		     proxyurl : this.proxyurl };
 	},
 	
 	clearView : function() {
