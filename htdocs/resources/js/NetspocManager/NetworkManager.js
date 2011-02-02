@@ -89,14 +89,11 @@ NetspocManager.NetworkManager = Ext.extend(
 	},
 	
 	buildNetworkDetails : function() {
-	    var stNetworkLv = {
-		xtype         : 'jsonstore',
-		totalProperty : 'totalCount',
-		root          : 'records',
+	    var store = {
+		xtype         : 'netspocstore',
 		autoLoad      : false,
-		remoteSort    : false,
-		sortInfo      : { field: 'ip', direction: "ASC" },
 		storeId       : 'stNetworkDetailsId',
+		sortInfo      : { field: 'ip', direction: "ASC" },
 		fields        : [
 		    { name : 'ip',   mapping : 'ip'        },
 		    { name : 'name', mapping : 'name'      }
@@ -106,7 +103,7 @@ NetspocManager.NetworkManager = Ext.extend(
 	    return new Ext.ListView(
 		{
 		    id            : 'lvNetworkDetailsId',
-		    store         : stNetworkLv,
+		    store         : store,
 		    singleSelect  : true,
 		    boxMinWidth   : 200,
 		    columns       : [
@@ -116,7 +113,7 @@ NetspocManager.NetworkManager = Ext.extend(
 			},
 			{
 			    header    : 'Name',
-			    dataIndex : 'ip'
+			    dataIndex : 'name'
 			}
 		    ]
 		}
@@ -126,14 +123,11 @@ NetspocManager.NetworkManager = Ext.extend(
 	onNetworkListClick : function() {
             var selectedNetwork =
 		this.getComponent('networkListId').getSelected();
-
-// IE8 kennt kein console.log
-//	    console.log( "Selected: " + selectedNetwork.data.name );	    
-	    var stUserDetails =
-		Ext.StoreMgr.get('stNetworkDetailsId');
-//	    var url = 'get_user?service=' + name;
-//	    stUserDetails.proxy = proxy4path( url );
-//	    stUserDetails.load();
+	    var name  = selectedNetwork.get( 'name' );
+	    var store = Ext.StoreMgr.get('stNetworkDetailsId');
+	    var url = 'get_hosts?network=' + name;
+	    store.proxy = proxy4path( url );
+	    store.load();
 	}
     }
 );
