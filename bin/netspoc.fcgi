@@ -731,14 +731,16 @@ sub handle_request {
 	my $msg = $@;
 	$msg =~ s/\n$//;
 	if ($flags->{html} or $flags->{redir}) {
-	    print $cgi->header( -type    => 'text/html',
+	    print $cgi->header( -status  => 500,
+				-type    => 'text/html',
 				-charset => 'utf-8',);
 	    print get_substituted_html($config->{error_page}, {msg => $msg});
 	}
 	else
 	{
 	    my $result = { success => JSON::false, msg => $msg };
-	    print $cgi->header( -type    => 'text/x-json',
+	    print $cgi->header( -status  => 500,
+				-type    => 'text/x-json',
 				-charset => 'utf-8', );
 	    print encode_json($result), "\n";
 	}
