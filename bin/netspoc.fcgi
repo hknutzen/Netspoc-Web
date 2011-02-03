@@ -268,6 +268,7 @@ sub get_networks {
 sub get_hosts {
     my ($cgi, $session) = @_;
     my $net_name = $cgi->param('network') or die "Missing param 'network'\n";
+    $net_name = Encode::decode('UTF-8', $net_name);
     my $owner = $session->param('owner');
 
     # Ignore request with host.
