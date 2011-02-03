@@ -144,10 +144,9 @@ NetspocManager.PolicyManager = Ext.extend(
 		'</div>'
 	    );
     
-	    var dvRulesStore = {
-		xtype    : 'jsonstore',
-		root     : 'records',
-		autoLoad : false,
+	    var store = {
+		xtype    : 'netspocstore',
+		proxyurl : 'get_rules',
 		storeId  : 'dvRulesStoreId',
 		fields   : [
 		    { name : 'has_user', mapping : 'hasuser' },
@@ -170,7 +169,7 @@ NetspocManager.PolicyManager = Ext.extend(
 	    return new Ext.DataView(
 		{
 		    tpl          : dvRulesTpl,
-		    store        : dvRulesStore,
+		    store        : store,
 		    itemSelector : 'div.thumb-wrap' // OBLIGATORY when
 		                                    // using XTemplate with DV
 		}
@@ -204,8 +203,8 @@ NetspocManager.PolicyManager = Ext.extend(
 
 	buildUserDetailsDV : function() {
 	    var store = {
-		id            : 'stUserLvId',
 		xtype         : 'netspocstore',
+		proxyurl      : 'get_user',
 		storeId       : 'stUserLvId',
 		sortInfo      : { field: 'ip', direction: "ASC" },
 		fields        : [
@@ -254,10 +253,8 @@ NetspocManager.PolicyManager = Ext.extend(
 		    {  name : 'owner', mapping : 3  }
 		]
 	    );
-	    var arrayReader = new Ext.data.ArrayReader(
-		{}, nameRecord );
-	    var memoryProxy  = new Ext.data.MemoryProxy(
-		arrayData );
+	    var arrayReader = new Ext.data.ArrayReader( {}, nameRecord );
+	    var memoryProxy = new Ext.data.MemoryProxy( arrayData );
 	    var store = new Ext.data.Store(
 		{
 		    reader : arrayReader,
@@ -265,24 +262,16 @@ NetspocManager.PolicyManager = Ext.extend(
 		}
 	    );
 
-	    // Load the stores of policy-details-dataview and
-	    // of policy-rules-dataview.
+	    // Load the stores
 	    var policyDetails = this.findById('dvPolicyDetailsId');
 	    policyDetails.bindStore( store );
 	    policyDetails.getStore().reload();
 
-	    var dvRules =
-		Ext.StoreMgr.get('dvRulesStoreId');
-	    var url = 'get_rules?service=' + name;
-	    var rulesProxy = proxy4path( url );
-	    dvRules.proxy = rulesProxy;
-	    dvRules.load();
+	    var dvRules = Ext.StoreMgr.get('dvRulesStoreId');
+	    dvRules.load({ params : { service : name } });
 	    
-	    var stUserDetails =
-		Ext.StoreMgr.get('stUserLvId');
-	    url = 'get_user?service=' + name;
-	    stUserDetails.proxy = proxy4path( url );
-	    stUserDetails.load();
+	    var stUserDetails = Ext.StoreMgr.get('stUserLvId');
+	    stUserDetails.load({ params : { service : name } });
 	}
     }
 );

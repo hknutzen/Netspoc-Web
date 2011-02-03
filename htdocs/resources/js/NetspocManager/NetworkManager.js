@@ -91,7 +91,7 @@ NetspocManager.NetworkManager = Ext.extend(
 	buildNetworkDetails : function() {
 	    var store = {
 		xtype         : 'netspocstore',
-		autoLoad      : false,
+		proxyurl      : 'get_hosts',
 		storeId       : 'stNetworkDetailsId',
 		sortInfo      : { field: 'ip', direction: "ASC" },
 		fields        : [
@@ -125,9 +125,7 @@ NetspocManager.NetworkManager = Ext.extend(
 		this.getComponent('networkListId').getSelected();
 	    var name  = selectedNetwork.get( 'name' );
 	    var store = Ext.StoreMgr.get('stNetworkDetailsId');
-	    var url = 'get_hosts?network=' + name;
-	    store.proxy = proxy4path( url );
-	    store.load();
+	    store.load({ params : { network : name } });
 	}
     }
 );
