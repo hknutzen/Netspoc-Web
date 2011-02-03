@@ -478,7 +478,7 @@ sub get_owner {
     return [ map({ { name => $_, 
 		     active => $_ eq $active_owner 
 			 ? JSON::true : JSON::false } }
-		 @$owners) ];
+		 sort @$owners) ];
 }
 
 sub get_emails {
