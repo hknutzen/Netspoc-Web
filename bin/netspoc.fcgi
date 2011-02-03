@@ -268,7 +268,6 @@ sub get_networks {
 sub get_hosts {
     my ($cgi, $session) = @_;
     my $net_name = $cgi->param('network') or die "Missing param 'network'\n";
-    $net_name = Encode::decode('UTF-8', $net_name);
     my $owner = $session->param('owner');
 
     # Ignore request with host.
@@ -332,7 +331,6 @@ sub check_owner {
     my ($cgi, $session) = @_;
     my $owner = $session->param('owner');
     my $pname = $cgi->param('service') or abort "Missing parameter 'service'";
-    $pname = Encode::decode('UTF-8', $pname);
     my $policy = $policies{$pname} or abort "Unknown policy";
     is_visible($owner, $policy) or abort "Policy not visible for owner";
     return $policy;
@@ -442,7 +440,7 @@ sub set_session_data {
     my ($cgi, $session) = @_;
     for my $param ($cgi->param()) {
 	$saveparam{$param} or abort "Invalid param '$param'";
-	my $val =  Encode::decode('UTF-8', $cgi->param($param));
+	my $val = $cgi->param($param);
 	$session->param($param, $val);
     }
     return [];
@@ -634,6 +632,15 @@ sub logout {
 ####################################################################
 # Request handling
 ####################################################################
+
+sub decode_params {
+    my ($cgi) = @_;
+    for my $param ($cgi->param()) {
+	my $val =  Encode::decode('UTF-8', $cgi->param($param));
+	$cgi->param($param, $val);
+    }
+}
+
 my %path2sub =
     (
 
@@ -691,6 +698,7 @@ sub handle_request {
 		die "Cookies must be activated\n";
 	    }
 	}
+	decode_params($cgi);
 	my $data = $sub->($cgi, $session);
 	my $cookie = $cgi->cookie( -name   => $session->name,
 				   -value  => $session->id );
