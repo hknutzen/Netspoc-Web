@@ -455,15 +455,24 @@ sub setup_email2admin {
     }
 }
 
+# Get currently selected owner.
 sub get_owner {
     my ($cgi, $session) = @_;
     my $user = $session->param('user');
-    my $active_owner = $session->param('owner') || '';
+    if (my $active_owner = $session->param('owner')) {
+	return [ { name => $active_owner } ];
+    }
+    else {
+	return [];
+    }
+}
+
+# Get list of all owners available for current user.
+sub get_owners {
+    my ($cgi, $session) = @_;
+    my $user = $session->param('user');
     my $owners = $email2owners{$user};
-    return [ map({ { name => $_, 
-		     active => $_ eq $active_owner 
-			 ? JSON::true : JSON::false } }
-		 sort @$owners) ];
+    return [ map({ { name => $_ } } sort @$owners) ];
 }
 
 sub get_emails {
@@ -641,6 +650,7 @@ my %path2sub =
      verify        => [ \&verify,        { anon => 1, html  => 1, } ],
      logout        => [ \&logout,        {} ],
      get_owner     => [ \&get_owner,     {} ],
+     get_owners    => [ \&get_owners,    {} ],
      set           => [ \&set_session_data, {} ],
      service_list  => [ \&service_list,  { owner => 1, } ],
      get_emails    => [ \&get_emails,    { owner => 1, } ],
