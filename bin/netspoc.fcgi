@@ -286,8 +286,9 @@ sub get_hosts {
 
 sub is_visible {
     my ($owner, $policy) = @_;
-    grep({ $_ eq $owner } @{ $policy->{owners} }, @{ $policy->{uowners} })
-	or $policy->{visible} and $owner =~ /^$policy->{visible}/;
+    grep({ $_ eq $owner } @{ $policy->{owners} }) and 'owner' or
+	grep({ $_ eq $owner } @{ $policy->{uowners} }) and 'user' or
+	$policy->{visible} and $owner =~ /^$policy->{visible}/ and 'visible';
 }
 
 sub service_list {
@@ -296,23 +297,8 @@ sub service_list {
     my @result;
     my $relation = $cgi->param('relation');
     for my $policy (values %policies) {
-	my $is_owner = grep({ $_ eq $owner } @{ $policy->{owners} });
-	my $is_user = grep({ $_ eq $owner } @{ $policy->{uowners} });
-	my $is_visible = $policy->{visible} and $owner =~ /^$policy->{visible}/;
-	my $add;
-	if (not $relation) {
-	    $add = $is_owner || $is_user || $is_visible;
-	}
-	elsif ($is_owner) {
-	    $add = $relation eq 'owner';
-	}
-	elsif ($is_user) {
-	    $add = $relation eq 'user';
-	}
-	elsif ($is_visible) {
-	    $add = $relation eq 'visible';
-	}
-	if ($add) {
+	my $visible = is_visible($owner, $policy);
+	if ($relation ? $relation eq $visible : $visible) {
 	    (my $pname = $policy->{name}) =~ s/policy://;
 	    my $owner = join (',', @{ $policy->{owners} });
 	    push(@result, 
