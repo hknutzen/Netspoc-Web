@@ -20,24 +20,21 @@ NetspocManager.workspace = function () {
 	},
 
 	buildOwnerWindow : function() {
-	    var store = new NetspocWeb.store.Netspoc(
-		{
-		    baseParams    : {
-			column : 'name'
+	    var store = {
+		xtype      : 'netspocstore',
+		proxyurl   : 'get_owner',
+		baseParams : { column : 'name' },
+		fields     : [ 
+		    {
+			name    : 'name',
+			mapping : 'name'
 		    },
-		    fields     : [ 
-			{
-			    name    : 'name',
-			    mapping : 'name'
-			},
-			{
-			    name    : 'id',
-			    mapping : 'id'
-			}
-		    ],
-		    proxyurl : 'get_owner'
-		}
-	    );
+		    {
+			name    : 'id',
+			mapping : 'id'
+		    }
+		]
+	    };
 
 	    var combo = {
 		xtype          : 'combo',
@@ -80,31 +77,21 @@ NetspocManager.workspace = function () {
 			}
 		    ]
 		}
-	    );   
-/*
-	    return new NetspocWeb.window.ChooseOwnerWindow(
-		{
-		    scope   : this,
-		    handler : this.onOwnerChosen
-		}
-	    );
-*/
+	    ); 
 	},
 
 	onOwnerChosen : function() {
 	    var combo = Ext.getCmp( 'cbOwnerId' );
-	    var url   = '/netspoc/set';
-	    Ext.Ajax.request(
+	    var store =  new NetspocWeb.store.Netspoc(
 		{
-		    url          : url,
-		    params       : {
-			owner : combo.getValue()
-		    },
-		    scope        : this,
-		    callback     : this.onAfterAjaxReq,
-		    succCallback : this.onSetOwnerSuccess
+		    proxyurl : 'set',
+		    fields   : []
 		}
 	    );
+	    store.load({ params   : { owner : combo.getValue() },
+			 callback : this.onSetOwnerSuccess,
+			 scope    : this
+		       });
 	},
 
 	onSetOwnerSuccess : function() {
@@ -115,60 +102,21 @@ NetspocManager.workspace = function () {
 	    this.buildViewport();
 	},
 
-	onAfterAjaxReq : function( options, success, result ) {
-	    Ext.getBody().unmask();
-	    var msg;
-	    if ( success === true ) {
-		var jsonData;
-		try {
-		    jsonData = Ext.decode( result.responseText );
-		    if (jsonData.success === true) {
-			options.succCallback.call( options.scope, 
-						   jsonData, options );
-		    }
-		    else {
-			this.showJsonError(jsonData.msg);
-		    }
-		}
-		catch (e) {
-		    this.showJsonError('Daten k&ouml;nnen nicht dekodiert werden (kein JSON).');
-		}
-	    }
-	    else {
-		this.showJsonError('Daten k&ouml;nnen nicht abgerufen werden');
-	    }
-	},
-	
-	showJsonError : function ( msg ) {
-	    if (msg) {
-		if (msg == 'Login required') {
-		    Ext.MessageBox.alert('Sitzung abgelaufen', 
-					 'Neu anmelden', 
-					 this.onAfterLogout);
-		}
-		else {
-		    Ext.MessageBox.show({ title   : 'Fehler', 
-					  msg     : msg,
-					  buttons : Ext.MessageBox.OK,
-					  icon    : Ext.MessageBox.ERROR
-					});
-		}
-	    }
-	},
-
 	onLogout : function() {
 	    this.doLogout();
 	},
 	
 	doLogout : function() {
-	    Ext.Ajax.request(
+	    var store =  new NetspocWeb.store.Netspoc(
 		{
-		    url          : '/netspoc/logout',
-		    scope        : this,
-		    callback     : this.onAfterAjaxReq,
-		    succCallback : this.onAfterLogout
+		    proxyurl : 'logout',
+		    fields   : []
 		}
 	    );
+	    store.load({ params   : {},
+			 callback : this.onAfterLogout,
+			 scope    : this
+		       });
 	},
 
 	onAfterLogout : function() {
@@ -256,7 +204,6 @@ NetspocManager.workspace = function () {
 		    items  : cardPanel
 		}
 	    );
-	    Ext.getBody().unmask();
 	},  // end of buildViewport
 
 	onSwitchPanel : function( button ) {
