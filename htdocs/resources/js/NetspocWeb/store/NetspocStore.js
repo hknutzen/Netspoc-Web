@@ -41,23 +41,25 @@ NetspocWeb.store.Netspoc = Ext.extend(
 	    }
 	    msg = msg || 'Unbekannter Fehler (keine Meldung)';
 	    if (msg == 'Login required') {
-		Ext.MessageBox.show({ title   : 'Sitzung abgelaufen', 
-				      msg     : 'Neu anmelden',
-				      buttons : {ok:'OK', cancel:'Abbrechen'},
-				      icon    : Ext.MessageBox.WARNING
-				    });
-		Ext.MessageBox.alert('Sitzung abgelaufen', 
-				     'Neu anmelden',
-
-				     // logout from workspace
-				     NetspocManager.workspace.onAfterLogout);
+		Ext.MessageBox.show(
+		    { title   : 'Sitzung abgelaufen', 
+		      msg     : 'Neu anmelden',
+		      buttons : {ok:'OK', cancel:'Abbrechen'},
+		      icon    : Ext.MessageBox.WARNING,
+		      fn : function (buttonId) {
+			  if (buttonId == 'ok') {
+			      NetspocManager.workspace.onAfterLogout();
+			  }
+		      }
+		    });
 	    }
 	    else {
-		Ext.MessageBox.show({ title   : 'Fehler', 
-				      msg     : msg,
-				      buttons : Ext.MessageBox.OK,
-				      icon    : Ext.MessageBox.ERROR
-				    });
+		Ext.MessageBox.show(
+		    { title   : 'Fehler', 
+		      msg     : msg,
+		      buttons : Ext.MessageBox.OK,
+		      icon    : Ext.MessageBox.ERROR
+		    });
 	    }
 	}
     }
