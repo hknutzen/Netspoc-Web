@@ -646,7 +646,8 @@ my %path2sub =
      # - owner: logged in user must have selected a valid owner
      login         => [ \&login,         { anon => 1, redir => 1, 
 					   create_cookie => 1, } ],
-     register      => [ \&register,      { anon => 1, html  => 1, } ],
+     register      => [ \&register,      { anon => 1, html  => 1, 
+					   create_cookie => 1, } ],
      verify        => [ \&verify,        { anon => 1, html  => 1, } ],
      logout        => [ \&logout,        {} ],
      get_owner     => [ \&get_owner,     {} ],
@@ -663,6 +664,7 @@ my %path2sub =
 sub handle_request {
     my $cgi = CGI::Simple->new();
     my $flags = { html => 1};
+    my $cookie;
 
     # Catch errors.
     eval {
@@ -694,10 +696,10 @@ sub handle_request {
 		die "Cookies must be activated\n";
 	    }
 	}
+	$cookie = $cgi->cookie( -name   => $session->name,
+				-value  => $session->id );
 	decode_params($cgi);
 	my $data = $sub->($cgi, $session);
-	my $cookie = $cgi->cookie( -name   => $session->name,
-				   -value  => $session->id );
 	if ($flags->{html}) {
 	    print $cgi->header( -type => 'text/html',
 				-charset => 'utf-8', 
@@ -737,7 +739,8 @@ sub handle_request {
 	if ($flags->{html} or $flags->{redir}) {
 	    print $cgi->header( -status  => 200,
 				-type    => 'text/html',
-				-charset => 'utf-8',);
+				-charset => 'utf-8',
+				-cookie => $cookie);
 	    print get_substituted_html($config->{error_page}, {msg => $msg});
 	}
 	else
