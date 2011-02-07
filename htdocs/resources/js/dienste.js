@@ -4,26 +4,75 @@ Ext.ns( "NetspocManager" );
 
 
 NetspocManager.workspace = function () {
-    var cardPanel, viewport, loginWindow, ownerWindow;
+    var cardPanel, viewport, owner;
 
     return {
 	
 	init : function () {
-	    this.get_owner();
+	    this.get_active_owner();
 	},
 	 
-	get_owner : function() {
-	    if ( ! ownerWindow ) {
-		ownerWindow = this.buildOwnerWindow();
-	    }
-	    ownerWindow.show();
+	get_active_owner : function() {
+	    var store =  new NetspocWeb.store.Netspoc(
+		{
+		    proxyurl : 'get_owner',
+		    storeId  : 'active_owner',
+		    autoDestroy: true,
+		    fields     : [ 
+			{
+			    name    : 'name',
+			    mapping : 'name'
+			}
+		    ]
+		}
+	    );
+	    store.load({ callback : this.onOwnerLoaded,
+			 scope    : this,
+			 store    : store
+		       });
 	},
 
-	buildOwnerWindow : function() {
-	    var store = {
+	onOwnerLoaded : function(records, options) {
+
+	    // Keep already selected owner.
+	    if (records.length > 0) {
+		var new_owner = records[0].get('name');
+		this.setOwner(new_owner);
+	    }
+	    // Owner was never selected, ask user.
+	    else {
+		var combo = this.buildOwnerCombo();
+		new Ext.Window(
+ 		    {
+			id       : 'ownerWindow',
+ 			title    : 'Verantwortungsbereich ausw&auml;hlen',
+ 			width    : 400, 
+ 			height   : 80,
+ 			layout   : 'fit', 
+ 			items    : [
+ 			    {
+ 				xtype  : 'panel',
+ 				frame  : true,
+ 				layout : {
+ 				    type    : 'fit',
+ 				    padding : '5',
+ 				    align   : 'center'
+ 				},
+ 				items : combo
+ 			    }
+ 			]
+ 		    }
+ 		).show();
+	    } 
+	    options.store.destroy();
+	},
+
+	buildOwnersStore : function() {
+	    return {
 		xtype      : 'netspocstore',
-		proxyurl   : 'get_owner',
+		proxyurl   : 'get_owners',
 		baseParams : { column : 'name' },
+		autoDestroy: true,
 		fields     : [ 
 		    {
 			name    : 'name',
@@ -35,11 +84,12 @@ NetspocManager.workspace = function () {
 		    }
 		]
 	    };
-
-	    var combo = {
+	},
+	buildOwnerCombo : function() {
+	    var store = this.buildOwnersStore();
+	    var config = {
 		xtype          : 'combo',
 		id             : 'cbOwnerId',
-		fieldLabel     : 'Verantwortungsbereich',
 		forceSelection : true, 
 		autoselect     : true,
 		editable       : false,
@@ -50,55 +100,49 @@ NetspocManager.workspace = function () {
 		mode           : 'remote',
 		triggerAction  : 'all',
 		store          : store,
+		listWidth      : 400,
+
+		// show active owner
+		value          : owner,
 		listeners:{
 		    scope    : this,
 		    'select' : this.onOwnerChosen
 		}
 		
-	    };	    
-
-	    return new Ext.Window(
-		{
-		    id       : 'myWindow', 
-		    title    : 'Verantwortungsbereich ausw&auml;hlen',
-		    width    : 400, 
-		    height   : 80,
-		    layout   : 'fit', 
-		    items    : [
-			{
-			    xtype  : 'panel',
-			    frame  : true,
-			    layout : {
-				type    : 'fit',
-				padding : '5',
-				align   : 'center'
-			    },
-			    items : combo
-			}
-		    ]
-		}
-	    ); 
+	    };
+	    return config;
 	},
 
 	onOwnerChosen : function() {
 	    var combo = Ext.getCmp( 'cbOwnerId' );
+	    var new_owner = combo.getValue();
+	    var window = Ext.getCmp( 'ownerWindow' );
+	    if (window) {
+		window.close();
+	    }
+	    if (owner == new_owner) {
+		return;
+	    }
+	    this.setOwner(new_owner);
+	},
+
+	setOwner : function(new_owner) {
 	    var store =  new NetspocWeb.store.Netspoc(
 		{
 		    proxyurl : 'set',
-		    fields   : []
+		    fields   : [],
+		    autoDestroy : true
 		}
 	    );
-	    store.load({ params   : { owner : combo.getValue() },
+	    store.load({ params   : { owner : new_owner },
 			 callback : this.onSetOwnerSuccess,
 			 scope    : this
 		       });
 	},
 
-	onSetOwnerSuccess : function() {
-	    if ( ownerWindow ) {
-		ownerWindow.destroy();
-		ownerWindow = null;
-	    }
+	onSetOwnerSuccess : function(records, options, success) {
+	    owner = options.params.owner;
+	    this.destroy();
 	    this.buildViewport();
 	},
 
@@ -110,7 +154,8 @@ NetspocManager.workspace = function () {
 	    var store =  new NetspocWeb.store.Netspoc(
 		{
 		    proxyurl : 'logout',
-		    fields   : []
+		    fields   : [],
+		    autoDestroy : true
 		}
 	    );
 	    store.load({ params   : {},
@@ -128,23 +173,9 @@ NetspocManager.workspace = function () {
 		viewport.destroy();
 		viewport = null;
 	    }
-	    if ( loginWindow ) {
-		loginWindow.destroy();
-		loginWindow = null;
-	    }
-	    if ( ownerWindow ) {
-		ownerWindow.destroy();
-		ownerWindow = null;
-	    }
 	},
 
 	buildViewport : function () {
-
-
-	    /****************************************************************/
-	    // Define viewport as BorderLayout.
-	    /****************************************************************/
-
 	    cardPanel = new Ext.Panel(
 		{
 		    layout     : 'card',
@@ -184,16 +215,9 @@ NetspocManager.workspace = function () {
 			    handler : this.onLogout
 			},
 			'->',
-			{
-			    text    : 'Verantwortungsbereich',
-			    iconCls : 'icon-user',
-			    scope   : this,
-			    handler : function() {
-				this.destroy();
-				ownerWindow = this.buildOwnerWindow();
-				ownerWindow.show();
-			    }
-			}
+			this.buildOwnerCombo(),
+			'->',
+			'Verantwortungsbereich'
 		    ]
 		}
 	    );
