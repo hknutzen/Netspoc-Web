@@ -13,6 +13,14 @@ NetspocWeb.store.Netspoc = Ext.extend(
 			  autoLoad      : false,
 			  url           : '/netspoc/' + config.proxyurl,
 			  listeners     : {
+			      beforeload : function ( store, options ) {
+				  Ext.getBody().mask('Daten werden geladen ...', 
+						     'x-mask-loading');
+				  true;			
+			      },
+			      load :  function() {
+				  Ext.getBody().unmask();
+			      },
 			      exception : this.onJsonException
 			  }
 		      });
