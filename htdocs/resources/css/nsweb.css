@@ -17,6 +17,7 @@ RGB 138-145-153
 */
 
 div.policy {
+	font-family  : sans-serif;
 	color        : black;
 	text-align   : center;
 	background   : #D0D3D6;
@@ -28,6 +29,7 @@ div.policy {
 }
 
 div.rule-container {
+	font-family  : sans-serif;
 	color        : black;
 	background   : white;
 	/*border       : thin solid #54616E;*/
@@ -35,6 +37,7 @@ div.rule-container {
 }
 
 div.ping-and-owner {
+	font-family  : sans-serif;
 	color        : black;
 	font-weight  : bold;
 	background   : #E8E9EB;
@@ -44,41 +47,48 @@ div.ping-and-owner {
 }
 
 div.ping-left {
+	font-family  : sans-serif;
    float: left;
    width: 28%;
 }
 
 div.owner-right {
+	font-family  : sans-serif;
    float: right;
    width: 68%;
    text-align: left;
 } 
 
 td.action {
+	font-family    : sans-serif;
 	vertical-align : top;
 	padding        : 2px;
 	width          : 10%;
 }
 
 td.src {
+	font-family  : sans-serif;
 	vertical-align : top;
 	padding      : 2px;
 	width        : 40%;
 }
 
 td.dst {
+	font-family  : sans-serif;
 	vertical-align : top;
 	padding      : 2px;
 	width        : 40%;
 }
 
 td.srv {
+	font-family  : sans-serif;
 	vertical-align : top;
 	padding      : 2px;
 	width        : 100px;
 }
 
 td.user {
+	font-family    : sans-serif;
 	vertical-align : top;
 	font-weight    : bold;
 	padding        : 2px;
