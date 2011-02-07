@@ -19,10 +19,6 @@ NetspocManager.NetworkManager = Ext.extend(
             type  : 'hbox',
             align : 'stretch'
 	},
-	defaults : {
-//	    layout : 'fit',
-            flex   : 1
-	},
 
 	initComponent : function() {
             this.items =  [
