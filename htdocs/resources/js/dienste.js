@@ -32,8 +32,11 @@ NetspocManager.workspace = function () {
 		       });
 	},
 
-	onOwnerLoaded : function(records, options) {
+	onOwnerLoaded : function(records, options, success) {
 
+	    if (! success) {
+		return;
+	    }
 	    // Keep already selected owner.
 	    if (records.length > 0) {
 		var new_owner = records[0].get('name');
@@ -116,10 +119,6 @@ NetspocManager.workspace = function () {
 	onOwnerChosen : function() {
 	    var combo = Ext.getCmp( 'cbOwnerId' );
 	    var new_owner = combo.getValue();
-	    var window = Ext.getCmp( 'ownerWindow' );
-	    if (window) {
-		window.close();
-	    }
 	    if (owner == new_owner) {
 		return;
 	    }
@@ -142,6 +141,12 @@ NetspocManager.workspace = function () {
 
 	onSetOwnerSuccess : function(records, options, success) {
 	    owner = options.params.owner;
+
+	    // close window late, otherwise we get some extjs error.
+	    var window = Ext.getCmp( 'ownerWindow' );
+	    if (window) {
+		window.close();
+	    }
 	    this.destroy();
 	    this.buildViewport();
 	},
