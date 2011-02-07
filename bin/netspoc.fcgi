@@ -735,7 +735,7 @@ sub handle_request {
 	my $msg = $@;
 	$msg =~ s/\n$//;
 	if ($flags->{html} or $flags->{redir}) {
-	    print $cgi->header( -status  => 500,
+	    print $cgi->header( -status  => 200,
 				-type    => 'text/html',
 				-charset => 'utf-8',);
 	    print get_substituted_html($config->{error_page}, {msg => $msg});
