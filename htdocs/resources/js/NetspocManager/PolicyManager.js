@@ -38,7 +38,7 @@ NetspocManager.PolicyManager = Ext.extend(
 		xtype    : 'policylist',
 		proxyurl : 'service_list',
 		itemId   : 'policyListId',
-		width    : 300,
+		flex     : 1,
 		border   : false,
 		listeners : {
                     scope : this,
@@ -95,7 +95,7 @@ NetspocManager.PolicyManager = Ext.extend(
             return {
 		id        : 'pCenterId',
 		xtype     : 'tabpanel',
-		flex      : 2.5,
+		flex      : 2,
 		activeTab : 0,
 		items     : [
 		    {

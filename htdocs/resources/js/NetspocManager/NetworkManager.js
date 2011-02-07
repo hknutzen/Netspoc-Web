@@ -38,7 +38,7 @@ NetspocManager.NetworkManager = Ext.extend(
 		xtype    : 'networklist',
 		proxyurl : 'get_networks',
 		itemId   : 'networkListId',
-		width    : 400,
+		flex     : 2,
 		border   : false,
 		listeners : {
                     scope : this,
@@ -72,7 +72,7 @@ NetspocManager.NetworkManager = Ext.extend(
 	buildNetworkDetailsView : function() {
             return {
 		xtype     : 'tabpanel',
-		flex      : 2.5,
+		flex      : 2,
 		activeTab : 0,
 		items     : [
 		    {
