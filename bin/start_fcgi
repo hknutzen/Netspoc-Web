@@ -14,8 +14,10 @@ sub usage {
 }
 
 my $listen = shift @ARGV or usage();
-@ARGV or usage();
-my $cmd = join(' ', @ARGV);
+$listen =~ /^(?:(?:\d{1,3}[.]){3}\d{1,3})?[\d.]*:\d+/ or usage();
+my $prog = shift @ARGV or usage();
+-x $prog or die "Error: $prog must be executable\n";
+my $cmd = join(' ', $prog, @ARGV);
 
 my $restart;
 my $old_child;
