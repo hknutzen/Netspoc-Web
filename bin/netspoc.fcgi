@@ -1,7 +1,5 @@
 #!/usr/local/bin/perl -I /home/heinz/Netspoc/misc -I /home/heinz/Netspoc/lib
 
-# Usage: $0 [:PORT | 0 [#PROC]]\n";
-
 use strict;
 use warnings;
 use FCGI;
@@ -15,8 +13,18 @@ use String::MkPasswd qw(mkpasswd);
 use Encode;
 use Netspoc;
 
+sub usage {
+    die "Usage: $0 CONFIG [:PORT | 0 [#PROC]]\n";
+}
+
 # Configuration data.
-my $conf_file = '/home/heinz/netspoc-web/config';
+my $conf_file = shift @ARGV or usage();
+my $listen = shift @ARGV;
+my $nproc  = shift @ARGV;
+
+$listen and ($listen =~ /^(?:[:]\d+|0)$/ or usage());
+$nproc and ($nproc =~/^\d+$/ or usage());
+
 $CGI::Session::Driver::file::FileName = "%s";
 
 # Global variables.
@@ -835,9 +843,6 @@ if (my $ppid = $ENV{PPID}) {
     print STDERR "Sending USR2 signal to $ppid\n";
     kill 'USR2', $ppid;
 }
-
-my $listen = shift @ARGV;
-my $nproc  = shift @ARGV;
 
 run (
      # - listen on Port or 
