@@ -564,7 +564,7 @@ sub register {
     my $user = $cgi->param( 'user' ) or abort "Missing param 'user'";
     my $admin = $email2admin{$user} or abort "Unknown user '$user'";
     my $base_url = $cgi->param( 'base_url' ) 
-	or abort "Missing param 'base_url'";
+	or abort "Missing param 'base_url' (Activate JavaScript)";
     my $token = md5_hex(localtime, $user);
     my $pass = mkpasswd() or die "Can't generate password";
 
