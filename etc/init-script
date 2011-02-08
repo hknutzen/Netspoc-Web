@@ -3,12 +3,13 @@ CONFIG=/home/heinz/netspoc-web/config
 BASE=/home/heinz/NetspocWeb/bin
 PORT=8080
 WORKER=2
+USER=
 PIDFILE=/var/run/netspocweb/fcgi.pid
 CMD="$BASE/start_fcgi --pid $PIDFILE :$PORT $BASE/netspoc.fcgi $CONFIG 0 $WORKER"
 
 case $1 in
   start)
-	$CMD
+	if [ $USER ] ; then su - $USER -c "$CMD"; else $CMD; fi
 	;;
   reload)
 	kill -HUP $(cat $PIDFILE)
