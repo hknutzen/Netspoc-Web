@@ -1,0 +1,28 @@
+#!/bin/sh
+CONFIG=/home/heinz/netspoc-web/config
+BASE=/home/heinz/NetspocWeb/bin
+PORT=8080
+WORKER=2
+PIDFILE=/var/run/netspocweb/fcgi.pid
+CMD="$BASE/start_fcgi --pid $PIDFILE :$PORT $BASE/netspoc.fcgi $CONFIG 0 $WORKER"
+
+case $1 in
+  start)
+	$CMD
+	;;
+  reload)
+	kill -HUP $(cat $PIDFILE)
+	;;
+  restart)
+	$0 start
+	$0 stop
+	;;
+  stop)
+	kill $(cat $PIDFILE)
+	rm -f $PIDFILE
+	;;
+  *)
+	echo "Usage: $0{start|reload|restart|stop}"
+	exit 1
+	;;
+esac
