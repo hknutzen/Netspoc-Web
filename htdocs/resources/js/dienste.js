@@ -13,7 +13,7 @@ NetspocManager.workspace = function () {
 	},
 	 
 	get_active_owner : function() {
-	    var store =  new NetspocWeb.store.Netspoc(
+	    var store = new NetspocWeb.store.Netspoc(
 		{
 		    proxyurl : 'get_owner',
 		    storeId  : 'active_owner',
@@ -26,13 +26,13 @@ NetspocManager.workspace = function () {
 		    ]
 		}
 	    );
-	    store.load({ callback : this.onOwnerLoaded,
+	    store.load({ callback : this.onActiveOwnerLoaded,
 			 scope    : this,
 			 store    : store
 		       });
 	},
 
-	onOwnerLoaded : function(records, options, success) {
+	onActiveOwnerLoaded : function(records, options, success) {
 
 	    if (! success) {
 		return;
@@ -42,9 +42,30 @@ NetspocManager.workspace = function () {
 		var new_owner = records[0].get('name');
 		this.setOwner(new_owner);
 	    }
-	    // Owner was never selected, ask user.
+	    // Owner was never selected, check number of available owners.
 	    else {
-		var combo = this.buildOwnerCombo();
+		var store = Ext.create(this.buildOwnersStore());
+		store.load({ callback : this.onAllOwnerLoaded,
+			 scope    : this,
+			 store    : store
+		       });
+	    }
+	    options.store.destroy();
+	},
+
+	onAllOwnerLoaded : function(records, options, success) {
+
+	    if (! success) {
+		return;
+	    }
+	    // Automatically select owner if only one is available.
+	    if (records.length == 1) {
+		var new_owner = records[0].get('name');
+		this.setOwner(new_owner);
+	    }
+	    // Ask user to select one owner.
+	    else {
+		var combo = this.buildOwnerCombo(options.store);
 		new Ext.Window(
  		    {
 			id       : 'ownerWindow',
@@ -66,30 +87,30 @@ NetspocManager.workspace = function () {
  			]
  		    }
  		).show();
-	    } 
-	    options.store.destroy();
+	    }
 	},
 
 	buildOwnersStore : function() {
-	    return {
-		xtype      : 'netspocstore',
-		proxyurl   : 'get_owners',
-		baseParams : { column : 'name' },
-		autoDestroy: true,
-		fields     : [ 
-		    {
-			name    : 'name',
-			mapping : 'name'
-		    },
-		    {
-			name    : 'id',
-			mapping : 'id'
-		    }
-		]
-	    };
+	    var config =
+		{
+		    xtype      : 'netspocstore',
+		    proxyurl   : 'get_owners',
+		    baseParams : { column : 'name' },
+		    autoDestroy: true,
+		    fields     : [ 
+			{
+			    name    : 'name',
+			    mapping : 'name'
+			},
+			{
+			    name    : 'id',
+			    mapping : 'id'
+			}
+		    ]
+		};
+	    return config;
 	},
-	buildOwnerCombo : function() {
-	    var store = this.buildOwnersStore();
+	buildOwnerCombo : function(store) {
 	    var config = {
 		xtype          : 'combo',
 		id             : 'cbOwnerId',
@@ -220,7 +241,7 @@ NetspocManager.workspace = function () {
 			    handler : this.onLogout
 			},
 			'->',
-			this.buildOwnerCombo(),
+			this.buildOwnerCombo(this.buildOwnersStore()),
 			'->',
 			'Verantwortungsbereich'
 		    ]
