@@ -1,4 +1,4 @@
-#!/usr/local/bin/perl -I /home/heinz/Netspoc/misc -I /home/heinz/Netspoc/lib
+#!/usr/local/bin/perl
 
 use strict;
 use warnings;
