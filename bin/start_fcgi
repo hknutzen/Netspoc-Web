@@ -10,9 +10,14 @@ my $VERSION = ( split ' ',
  '$Id$' )[2];
 
 sub usage {
-    die "Usage: $0 [IP]:PORT CMD ...\n";
+    die "Usage: $0 [--pid FILE] [IP]:PORT CMD [ARGS ...]\n";
 }
 
+my $pidfile;
+if (@ARGV && $ARGV[0] eq '--pid') {
+    shift @ARGV;
+    $pidfile = shift @ARGV or usage();
+}
 my $listen = shift @ARGV or usage();
 $listen =~ /^(?:(?:\d{1,3}[.]){3}\d{1,3})?[\d.]*:\d+/ or usage();
 my $prog = shift @ARGV or usage();
@@ -67,7 +72,20 @@ sub fcgi2stdin {
 sub terminate {
     kill 'TERM', $old_child if $old_child;
     kill 'TERM', $new_child if $new_child;
+    remove_pidfile();
     exit;
+}
+
+sub write_pidfile {
+    return if not $pidfile;
+    open(my $fh, '>', $pidfile) or die "Can't open $pidfile: $!\n";
+    print $fh "$$\n";
+    close $fh or die "Can't close $pidfile: $!\n";
+}
+
+sub remove_pidfile {
+    return if not $pidfile;
+    unlink $pidfile or warn "Can't remove $pidfile: $!\n";
 }
 
 my $hup_watcher = AnyEvent->signal (signal => "HUP", 
@@ -113,11 +131,11 @@ my $child_OK = AnyEvent->signal
 
 # Daemonize.
 fork && exit;
-warn "FastCGI started (pid $$)\n";
 fcgi2stdin();
 #open STDERR, '>/dev/null' or die "Can't open STDERR to /dev/null: $!\n";
 POSIX::setsid();
-
+warn "FastCGI started (pid $$)\n";
+write_pidfile();
 while (1) {
     $restart = AnyEvent->condvar;
     do_fork($cmd);
