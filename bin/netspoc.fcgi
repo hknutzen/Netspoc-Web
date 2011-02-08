@@ -305,7 +305,7 @@ sub service_list {
     my @result;
     my $relation = $cgi->param('relation');
     for my $policy (values %policies) {
-	my $visible = is_visible($owner, $policy);
+	my $visible = is_visible($owner, $policy) || '';
 	if ($relation ? $relation eq $visible : $visible) {
 	    (my $pname = $policy->{name}) =~ s/policy://;
 	    my $owner = join (',', @{ $policy->{owners} });
