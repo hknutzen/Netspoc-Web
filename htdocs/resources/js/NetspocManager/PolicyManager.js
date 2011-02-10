@@ -105,7 +105,7 @@ NetspocManager.PolicyManager = Ext.extend(
 			]
 		    },
 		    {
-			title  : 'IP-Adresse und Name der User',
+			title  : 'Benutzer (User) des Dienstes',
 			xtype  : 'panel',
 			layout : 'fit',
 			items  : [
@@ -204,8 +204,9 @@ NetspocManager.PolicyManager = Ext.extend(
 		storeId       : 'stUserLvId',
 		sortInfo      : { field: 'ip', direction: "ASC" },
 		fields        : [
-		    { name : 'name', mapping : 'name' },
-		    { name : 'ip'  , mapping : 'ip'        }
+		    { name : 'name'  , mapping : 'name'  },
+		    { name : 'ip'    , mapping : 'ip'    },
+		    { name : 'owner' , mapping : 'owner' }
 		]
 	    };
 
@@ -214,15 +215,22 @@ NetspocManager.PolicyManager = Ext.extend(
 		    id            : 'lvUserId',
 		    store         : store,
 		    singleSelect  : true,
+//		    emptyText     : 'ungenutzt',
 		    boxMinWidth   : 200,
 		    columns       : [
 			{
 			    header    : 'IP-Adressen',
-			    dataIndex : 'ip'
+			    dataIndex : 'ip',
+			    width     : .25
 			},
 			{
 			    header    : 'Name',
 			    dataIndex : 'name'
+			},
+			{
+			    header    : 'Verantwortungsbereich',
+			    dataIndex : 'owner',
+			    width     : .25
 			}
 		    ]
 		}
