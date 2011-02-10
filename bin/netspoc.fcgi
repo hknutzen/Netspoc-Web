@@ -452,6 +452,13 @@ sub setup_email2owners {
 	for my $admin ( @{ $owner->{admins} } ) {
 	    push @{ $email2owners{$admin->{email}} },$name;
 	}
+	if (my $aref = $owner->{extended_by}) {
+	    for my $e_owner (@$aref) {
+		for my $admin ( @{ $e_owner->{admins} } ) {
+		    push @{ $email2owners{$admin->{email}} },$name;
+		}
+	    }
+	}	    
     }
 }
 
