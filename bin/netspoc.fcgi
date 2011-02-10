@@ -419,8 +419,10 @@ sub get_user {
 			 $owner && $owner eq $active_owner }
 	@users;
     }
-    return [ map { { name => $_->{name},
-		     ip =>  ip_for_object($_) } } 
+    return [ map { { name  => $_->{name},
+		     ip    => ip_for_object($_),
+		     owner => owner_for_object($_),
+		 } } 
 	     @users ];
 }
 
