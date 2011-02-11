@@ -371,6 +371,7 @@ sub proto_descr {
 	}
 	if (my $flags = $protocol->{flags}) {
 	    for my $key (sort keys %$flags) {
+		next if $key eq 'stateless_icmp';
 		if ($key eq 'src' or $key eq 'dst') {
 		    for my $part (sort keys %{$flags->{$key}}) {
 			$desc .= ", ${key}_$part";
