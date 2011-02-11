@@ -27,6 +27,8 @@ NetspocManager.NetworkManager = Ext.extend(
             ];
 	    
             NetspocManager.NetworkManager.superclass.initComponent.call(this);
+	    var view =  this.getComponent('networkListId');
+	    view.loadStoreByParams( {} );
 	},
 	
 	buildNetworkListPanel : function() {
