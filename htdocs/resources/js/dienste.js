@@ -214,7 +214,7 @@ NetspocManager.workspace = function () {
 		    ],
 		    tbar   : [
 			{
-			    text          : 'Dienste anzeigen',
+			    text          : 'Dienste, Freischaltungen',
 			    iconCls       : 'icon-chart_curve',
 			    toggleGroup   : 'navGrp',
 			    itemType      : 'policymanager',
@@ -226,7 +226,7 @@ NetspocManager.workspace = function () {
 			'-',
 			{
 			    text         : 'Eigene Netze',
-			    iconCls      : 'icon-shape_shade_c',
+			    iconCls      : 'icon-computer_connect',
 			    itemType     : 'networkmanager',
 			    toggleGroup  : 'navGrp',
 			    enableToggle : true,
