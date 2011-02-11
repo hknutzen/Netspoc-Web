@@ -47,48 +47,46 @@ NetspocManager.PolicyManager = Ext.extend(
 			text         : 'Eigene',
 			toggleGroup  : 'polNavBtnGrp',
 			enableToggle : true,
+			storeParams  : { relation : 'owner' },
 			scope        : this,
-			handler      : function() {
-			    var plv =  this.getComponent('policyListId');
-			    plv.loadStoreByParams( { relation : 'owner' } );
-			}
+			handler      : this.onButtonClick
                     },
                     {
 			text         : 'Genutzte',
 			toggleGroup  : 'polNavBtnGrp',
 			pressed      : true,
 			enableToggle : true,
+			storeParams  : { relation : 'user' },
 			scope        : this,
-			handler      : function() {
-			    var plv =  this.getComponent('policyListId');
-			    plv.loadStoreByParams( { relation : 'user' } );
-			}
+			handler      : this.onButtonClick
                     },
                     {
 			text         : 'Nutzbare',
 			toggleGroup  : 'polNavBtnGrp',
 			enableToggle : true,
+			storeParams  : { relation : 'visible' },
 			scope        : this,
-			handler      : function() {
-			    var plv =  this.getComponent('policyListId');
-			    plv.loadStoreByParams( { relation : 'visible' } );
-			}
+			handler      : this.onButtonClick
                     },
                     {
 			text         : 'Alle',
 			toggleGroup  : 'polNavBtnGrp',
 			enableToggle : true,
+			storeParams  : {},
 			scope        : this,
-			handler      : function() {
-			    var plv =  this.getComponent('policyListId');
-			    plv.loadStoreByParams( {} );
-			}
+			handler      : this.onButtonClick
                     }
 		]
 	    };
 
 	},
 	
+	onButtonClick :  function(button, event) {
+	    var plv =  this.getComponent('policyListId');
+	    plv.loadStoreByParams( button.storeParams );
+	    this.clearDetails();
+	},
+
 	buildPolicyDetailsView : function() {
             return {
 		id        : 'pCenterId',
@@ -242,7 +240,9 @@ NetspocManager.PolicyManager = Ext.extend(
 	onPolicyListClick : function() {
             var selectedPolicy =
 		this.getComponent('policyListId').getSelected();
-
+	    if (! selectedPolicy) {
+		return;
+	    }
 	    var name   = selectedPolicy.get( 'name' );
 	    var desc   = selectedPolicy.get( 'desc' );
 	    var owner  = selectedPolicy.get( 'owner' );
@@ -278,6 +278,18 @@ NetspocManager.PolicyManager = Ext.extend(
 	    
 	    var stUserDetails = Ext.StoreMgr.get('stUserLvId');
 	    stUserDetails.load({ params : { service : name } });
+	},
+
+	clearDetails : function() {
+	    var policyDetails = this.findById('dvPolicyDetailsId');
+	    var store = policyDetails.getStore();
+	    if (store) {
+		store.removeAll();
+		var dvRules = Ext.StoreMgr.get('dvRulesStoreId');
+		dvRules.removeAll();
+		var stUserDetails = Ext.StoreMgr.get('stUserLvId');
+		stUserDetails.removeAll();		
+	    }
 	}
     }
 );
