@@ -27,6 +27,8 @@ NetspocManager.PolicyManager = Ext.extend(
             ];
 	    
             NetspocManager.PolicyManager.superclass.initComponent.call(this);
+	    var plv =  this.getComponent('policyListId');
+	    plv.loadStoreByParams( { relation : 'user' } );
 	},
 	
 	buildPolicyListPanel : function() {
@@ -42,17 +44,6 @@ NetspocManager.PolicyManager = Ext.extend(
 		},
 		tbar      :  [
                     {
-			text         : 'Alle Dienste',
-			toggleGroup  : 'polNavBtnGrp',
-			enableToggle : true,
-			pressed      : true,
-			scope        : this,
-			handler      : function() {
-			    var plv =  this.getComponent('policyListId');
-			    plv.loadStoreByParams( {} );
-			}
-                    },
-                    {
 			text         : 'Eigene',
 			toggleGroup  : 'polNavBtnGrp',
 			enableToggle : true,
@@ -65,6 +56,7 @@ NetspocManager.PolicyManager = Ext.extend(
                     {
 			text         : 'Genutzte',
 			toggleGroup  : 'polNavBtnGrp',
+			pressed      : true,
 			enableToggle : true,
 			scope        : this,
 			handler      : function() {
@@ -80,6 +72,16 @@ NetspocManager.PolicyManager = Ext.extend(
 			handler      : function() {
 			    var plv =  this.getComponent('policyListId');
 			    plv.loadStoreByParams( { relation : 'visible' } );
+			}
+                    },
+                    {
+			text         : 'Alle',
+			toggleGroup  : 'polNavBtnGrp',
+			enableToggle : true,
+			scope        : this,
+			handler      : function() {
+			    var plv =  this.getComponent('policyListId');
+			    plv.loadStoreByParams( {} );
 			}
                     }
 		]
