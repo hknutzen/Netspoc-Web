@@ -39,12 +39,7 @@ NetspocWeb.listpanel.PolicyList = Ext.extend(
 		    { name : 'desc',  mapping : 'description'  },
 		    { name : 'ping',  mapping : 'pingallowed'  },
 		    { name : 'owner', mapping : 'owner'        }
-		],
-		listeners : {
-		    load : function( thisStore, records, options ) {
-			// Select first policy after store has loaded.
-		    }
-		}
+		]
 	    };
 	}
 	
