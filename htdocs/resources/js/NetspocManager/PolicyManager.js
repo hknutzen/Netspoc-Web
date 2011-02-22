@@ -89,28 +89,48 @@ NetspocManager.PolicyManager = Ext.extend(
 
 	buildPolicyDetailsView : function() {
             return {
-		id        : 'pCenterId',
-		xtype     : 'tabpanel',
-		flex      : 2,
-		activeTab : 0,
-		items     : [
+		xtype  : 'container',
+		layout : 'border',
+		flex   : 2,
+		items  : [
 		    {
-			title  : 'Details zum Dienst',
-			xtype  : 'panel',
-			layout : 'anchor',
-			autoScroll : true,
-			items  : [
-			    this.buildPolicyDetailsDV(),
-			    this.buildPolicyRulesDV()
-			]
+			id        : 'pCenterId',
+			xtype     : 'tabpanel',
+			region    : 'center',
+			activeTab : 0,
+			items     : [
+			    {
+				title  : 'Details zum Dienst',
+				xtype  : 'panel',
+				layout : 'anchor',
+				autoScroll : true,
+				items  : [
+				    this.buildPolicyDetailsDV(),
+				    this.buildPolicyRulesDV()
+				]
+			    },
+			    {
+				title  : 'Benutzer (User) des Dienstes',
+				xtype  : 'panel',
+				layout : 'fit',
+				items  : [
+				    this.buildUserDetailsDV()
+				]
+			    }
+			]		    
 		    },
 		    {
-			title  : 'Benutzer (User) des Dienstes',
-			xtype  : 'panel',
-			layout : 'fit',
-			items  : [
-				this.buildUserDetailsDV()
-			]
+			id          : 'emailListId',
+			xtype       : 'emaillist',
+			proxyurl    : 'get_emails',
+			title       : 'Verantwortliche',
+			region      : 'south',
+			collapsible : true,
+			collapseMode: 'mini',
+			split       : true,
+			header      : false,
+//			collapsed   : true,
+			height      : 68
 		    }
 		]
             };
@@ -198,43 +218,15 @@ NetspocManager.PolicyManager = Ext.extend(
 	},
 
 	buildUserDetailsDV : function() {
-	    var store = {
-		xtype         : 'netspocstore',
-		proxyurl      : 'get_user',
-		storeId       : 'stUserLvId',
-		sortInfo      : { field: 'ip', direction: "ASC" },
-		fields        : [
-		    { name : 'name'  , mapping : 'name'  },
-		    { name : 'ip'    , mapping : 'ip'    },
-		    { name : 'owner' , mapping : 'owner' }
-		]
-	    };
-
-	    return new Ext.ListView(
-		{
-		    id            : 'lvUserId',
-		    store         : store,
-		    singleSelect  : true,
-//		    emptyText     : 'ungenutzt',
-		    boxMinWidth   : 200,
-		    columns       : [
-			{
-			    header    : 'IP-Adressen',
-			    dataIndex : 'ip',
-			    width     : .25
-			},
-			{
-			    header    : 'Name',
-			    dataIndex : 'name'
-			},
-			{
-			    header    : 'Verantwortungsbereich',
-			    dataIndex : 'owner',
-			    width     : .25
-			}
-		    ]
+	    return {
+		xtype     : 'userlist',
+		proxyurl  : 'get_user',
+		id        : 'userListId',
+		listeners : {
+		    scope : this,
+		    click : this.onUserDetailsClick
 		}
-	    );
+	    };
 	},
 
 	onPolicyListClick : function() {
@@ -243,10 +235,10 @@ NetspocManager.PolicyManager = Ext.extend(
 	    if (! selectedPolicy) {
 		return;
 	    }
-	    var name   = selectedPolicy.get( 'name' );
-	    var desc   = selectedPolicy.get( 'desc' );
-	    var owner  = selectedPolicy.get( 'owner' );
-	    var ping   = selectedPolicy.get( 'ping' );
+	    var name  = selectedPolicy.get( 'name' );
+	    var desc  = selectedPolicy.get( 'desc' );
+	    var owner = selectedPolicy.get( 'owner' );
+	    var ping  = selectedPolicy.get( 'ping' );
 
 	    var arrayData = [
 		[ name, desc, ping, owner ]
@@ -276,8 +268,10 @@ NetspocManager.PolicyManager = Ext.extend(
 	    var dvRules = Ext.StoreMgr.get('dvRulesStoreId');
 	    dvRules.load({ params : { service : name } });
 	    
-	    var stUserDetails = Ext.StoreMgr.get('stUserLvId');
-	    stUserDetails.load({ params : { service : name } });
+	    var ulv = this.findById('userListId');
+	    ulv.loadStoreByParams( { service : name } );
+	    var emailstore = Ext.StoreMgr.get('email');
+	    emailstore.removeAll();
 	},
 
 	clearDetails : function() {
@@ -287,10 +281,25 @@ NetspocManager.PolicyManager = Ext.extend(
 		store.removeAll();
 		var dvRules = Ext.StoreMgr.get('dvRulesStoreId');
 		dvRules.removeAll();
-		var stUserDetails = Ext.StoreMgr.get('stUserLvId');
-		stUserDetails.removeAll();		
+		var stUserDetails = Ext.StoreMgr.get('user');
+		stUserDetails.removeAll();
 	    }
+	},
+
+	onUserDetailsClick : function() {
+            var selectedPolicy =
+		this.findById('userListId').getSelected();
+	    if (! selectedPolicy) {
+		return;
+	    }
+	    var name = selectedPolicy.get( 'owner' );
+	    var store = Ext.StoreMgr.get('email');
+	    store.load ({ params : { owner : name } });
+	    
+	    var emailPanel = this.findById('emailListId');
+	    var region = emailPanel.ownerCt.layout.south;
 	}
+
     }
 );
 
