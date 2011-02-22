@@ -200,7 +200,7 @@ NetspocManager.PolicyManager = Ext.extend(
 		'<div class="policy"> {desc} </div>',
 
 		'<div class="ping-and-owner">',
-		'<div class="ping-left">   Ping auf Netz erlaubt:   </div>',
+//		'<div class="ping-left">   Ping auf Netz erlaubt:   </div>',
 		'<div class="owner-right"> Verantwortlich: {owner}  </div>',
 		'</div>',
 
@@ -271,7 +271,9 @@ NetspocManager.PolicyManager = Ext.extend(
 	    var ulv = this.findById('userListId');
 	    ulv.loadStoreByParams( { service : name } );
 	    var emailstore = Ext.StoreMgr.get('email');
-	    emailstore.removeAll();
+	    if (emailstore) {
+		emailstore.removeAll();
+	    }
 	},
 
 	clearDetails : function() {
