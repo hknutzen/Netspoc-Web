@@ -465,7 +465,7 @@ sub setup_email2owners {
     }
 }
 
-# Netspoc.pm already checks, that one email addresses isn't used 
+# Netspoc.pm already checks, that one email address isn't used 
 # at multiple admins.
 sub setup_email2admin {
     for my $admin ( values %admins ) {
@@ -493,11 +493,12 @@ sub get_owners {
     return [ map({ { name => $_ } } sort @$owners) ];
 }
 
+# Get list of all emails for given owner.
 sub get_emails {
     my ($cgi, $session) = @_;
-    my $active_owner = $session->param('owner');
-    my $owner = $owners{$active_owner} || [];
-    return [ map { $_->{email } } @{ $owner->{admins} } ];
+    my $owner_name = $cgi->param('owner') or abort "Missing param 'owner'";;
+    my $owner = $owners{$owner_name} or abort "Unknown owner";
+    return [ map { { email => $_->{email} } } @{ $owner->{admins} } ];
 }
 
 
