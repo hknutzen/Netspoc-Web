@@ -81,6 +81,9 @@ NetspocWeb.listpanel.ListPanelBaseCls = Ext.extend(
 		view.select(ind);
             }
 	},
+	selectRow0 : function() {
+            this.getView().select(0);
+        },
 	
 	loadStoreByParams : function(params) {
             params = params || {};
