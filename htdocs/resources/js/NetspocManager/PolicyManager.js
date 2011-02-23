@@ -126,9 +126,9 @@ NetspocManager.PolicyManager = Ext.extend(
 			title       : 'Verantwortliche',
 			region      : 'south',
 			collapsible : true,
-			collapseMode: 'mini',
+//			collapseMode: 'mini',
 			split       : true,
-			header      : false,
+//			header      : false,
 //			collapsed   : true,
 			height      : 68
 		    }
@@ -183,38 +183,97 @@ NetspocManager.PolicyManager = Ext.extend(
 	    };
 
 	    return new Ext.DataView(
-		{
-		    tpl          : dvRulesTpl,
-		    store        : store,
-		    itemSelector : 'div.thumb-wrap' // OBLIGATORY when
+		{ tpl          : dvRulesTpl,
+		  store        : store,
+		  itemSelector : 'div.thumb-wrap' // OBLIGATORY when
 		                                    // using XTemplate with DV
 		}
 	    ); 
 	},
 
-	buildPolicyDetailsDV : function() {
-	    var dvDetailsTpl = new Ext.XTemplate(
-		'<tpl for=".">',
-
-		'<div class="policy"> {name} </div>',
-		'<div class="policy"> {desc} </div>',
-
-		'<div class="ping-and-owner">',
-//		'<div class="ping-left">   Ping auf Netz erlaubt:   </div>',
-		'<div class="owner-right"> Verantwortlich: {owner}  </div>',
-		'</div>',
-
-		'</tpl>'   
-	    );
-    
-            return new Ext.DataView(
+	buildPolicyDetailsDV : function() {    
+            return new Ext.FormPanel(
 		{
-		    id           : 'dvPolicyDetailsId',
-		    tpl          : dvDetailsTpl,
-		    itemSelector : 'div.thumb-wrap' // OBLIGATORY when
-		                                    // using XTemplate with DV
+		    id    : 'policyDetailsId',
+		    defaultType: 'textfield',
+		    defaults: {anchor : '100%' }, 
+		    border: false,
+		    style: { "margin-left": "3px" },
+		    items : [
+			{ fieldLabel: 'Name', name : 'name', readOnly : true },
+			{ fieldLabel: 'Beschreibung', name : 'desc', readOnly : true },
+			{ xtype : 'hidden', id: 'hiddenOwner', name : 'owner' },
+			{ xtype : 'trigger',
+			  id    : 'trigger',
+			  fieldLabel: 'Verantwortung',
+			  name      : 'owner1',
+			  editable  : false,
+			  onTriggerClick : this.bind(this.onTriggerClick)
+			}
+		    ]
 		}
 	    );
+	},
+
+	onPolicyListClick : function() {
+            var selectedPolicy = this.getComponent('policyListId').getSelected();
+	    if (! selectedPolicy) {
+		return;
+	    }
+
+	    // Load details form with values from selected record.
+	    var form = Ext.getCmp("policyDetailsId").getForm();
+	    form.loadRecord(selectedPolicy);
+
+	    // Handle multiple owners.
+ 	    var owner = selectedPolicy.get( 'owner' );
+	    // Hide trigger button if only one owner available.
+	    Ext.getCmp("trigger").setHideTrigger(owner.indexOf(',') == -1);
+	    // Show emails for first owner.
+	    this.onTriggerClick();
+
+	    // Load rules.
+ 	    var name  = selectedPolicy.get( 'name' );
+	    var dvRules = Ext.StoreMgr.get('dvRulesStoreId');
+	    dvRules.load({ params : { service : name } });
+	    
+	    // Load users.
+	    var ulv = this.findById('userListId');
+	    ulv.loadStoreByParams( { service : name } );
+	},
+
+	// Generate function which is called in current scope.
+	bind : function (fn) {
+	    var self = this;
+	    return function() {
+		return fn.call(self);
+	    }; 
+	},
+
+	onTriggerClick : function() {
+	    var hidden = Ext.getCmp("hiddenOwner");
+	    var owner = hidden.getValue();
+	    var array = owner.split(',');
+	    var owner1 = array.shift();
+	    array.push(owner1);
+	    hidden.setValue(array.join(','));
+	    Ext.getCmp("trigger").setValue(owner1);
+	    this.showEmail(owner1);
+	},
+
+	clearDetails : function() {
+	    var policyDetails = this.findById('dvPolicyDetailsId');
+	    if (! policyDetails) {
+		return;
+	    }
+	    var store = policyDetails.getStore();
+	    if (store) {
+		store.removeAll();
+		var dvRules = Ext.StoreMgr.get('dvRulesStoreId');
+		dvRules.removeAll();
+		var stUserDetails = Ext.StoreMgr.get('user');
+		stUserDetails.removeAll();
+	    }
 	},
 
 	buildUserDetailsDV : function() {
@@ -229,65 +288,6 @@ NetspocManager.PolicyManager = Ext.extend(
 	    };
 	},
 
-	onPolicyListClick : function() {
-            var selectedPolicy =
-		this.getComponent('policyListId').getSelected();
-	    if (! selectedPolicy) {
-		return;
-	    }
-	    var name  = selectedPolicy.get( 'name' );
-	    var desc  = selectedPolicy.get( 'desc' );
-	    var owner = selectedPolicy.get( 'owner' );
-	    var ping  = selectedPolicy.get( 'ping' );
-
-	    var arrayData = [
-		[ name, desc, ping, owner ]
-	    ];
-	    var nameRecord = Ext.data.Record.create(
-		[
-		    {  name : 'name',  mapping : 0  },
-		    {  name : 'desc',  mapping : 1  },
-		    {  name : 'ping',  mapping : 2  },
-		    {  name : 'owner', mapping : 3  }
-		]
-	    );
-	    var arrayReader = new Ext.data.ArrayReader( {}, nameRecord );
-	    var memoryProxy = new Ext.data.MemoryProxy( arrayData );
-	    var store = new Ext.data.Store(
-		{
-		    reader : arrayReader,
-		    proxy  : memoryProxy
-		}
-	    );
-
-	    // Load the stores
-	    var policyDetails = this.findById('dvPolicyDetailsId');
-	    policyDetails.bindStore( store );
-	    policyDetails.getStore().reload();
-
-	    var dvRules = Ext.StoreMgr.get('dvRulesStoreId');
-	    dvRules.load({ params : { service : name } });
-	    
-	    var ulv = this.findById('userListId');
-	    ulv.loadStoreByParams( { service : name } );
-	    var emailstore = Ext.StoreMgr.get('email');
-	    if (emailstore) {
-		emailstore.removeAll();
-	    }
-	},
-
-	clearDetails : function() {
-	    var policyDetails = this.findById('dvPolicyDetailsId');
-	    var store = policyDetails.getStore();
-	    if (store) {
-		store.removeAll();
-		var dvRules = Ext.StoreMgr.get('dvRulesStoreId');
-		dvRules.removeAll();
-		var stUserDetails = Ext.StoreMgr.get('user');
-		stUserDetails.removeAll();
-	    }
-	},
-
 	onUserDetailsClick : function() {
             var selectedPolicy =
 		this.findById('userListId').getSelected();
@@ -295,11 +295,16 @@ NetspocManager.PolicyManager = Ext.extend(
 		return;
 	    }
 	    var name = selectedPolicy.get( 'owner' );
+	    this.showEmail(name);
+	},
+
+	showEmail : function(owner) {
 	    var store = Ext.StoreMgr.get('email');
-	    store.load ({ params : { owner : name } });
+	    store.load ({ params : { owner : owner } });
 	    
 	    var emailPanel = this.findById('emailListId');
-	    var region = emailPanel.ownerCt.layout.south;
+	    emailPanel.setTitle('Vertwortliche f&uuml;r ' + owner);
+//	    var region = emailPanel.ownerCt.layout.south;
 	}
 
     }
