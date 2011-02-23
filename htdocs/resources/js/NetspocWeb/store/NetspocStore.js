@@ -11,20 +11,16 @@ NetspocWeb.store.Netspoc = Ext.extend(
 			  root          : 'records',
 			  remoteSort    : false,
 			  autoLoad      : false,
-			  url           : '/netspoc/' + config.proxyurl,
-			  listeners     : {
-			      beforeload : function ( store, options ) {
-				  Ext.getBody().mask('Daten werden geladen ...', 
-						     'x-mask-loading');
-				  true;			
-			      },
-			      load :  function() {
-				  Ext.getBody().unmask();
-			      },
-			      exception : this.onJsonException
-			  }
+			  url           : '/netspoc/' + config.proxyurl
 		      });
 	    NetspocWeb.store.Netspoc.superclass.constructor.call(this, config);
+	    this.addListener('beforeload', function ( store, options ) {
+				 Ext.getBody().mask('Daten werden geladen ...', 
+						    'x-mask-loading');
+				 true;			
+			     });
+	    this.addListener('load', function() { Ext.getBody().unmask(); });
+	    this.addListener('exception', this.onJsonException);
 	},
 
 	onJsonException :
