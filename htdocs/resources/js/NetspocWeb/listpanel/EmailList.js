@@ -19,6 +19,7 @@ NetspocWeb.listpanel.EmailList = Ext.extend(
 		singleSelect  : true,
 		autoScroll    : true,
 		store         : this.buildStore(),
+		hideHeaders   : true,
 		columns       : [
 		    {
 			header    : 'Verantwortliche',
