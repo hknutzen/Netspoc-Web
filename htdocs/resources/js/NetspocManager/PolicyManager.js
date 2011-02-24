@@ -269,18 +269,15 @@ NetspocManager.PolicyManager = Ext.extend(
 	},
 
 	clearDetails : function() {
-	    var policyDetails = this.findById('dvPolicyDetailsId');
-	    if (! policyDetails) {
-		return;
-	    }
-	    var store = policyDetails.getStore();
-	    if (store) {
-		store.removeAll();
-		var dvRules = Ext.StoreMgr.get('dvRulesStoreId');
-		dvRules.removeAll();
-		var stUserDetails = Ext.StoreMgr.get('user');
-		stUserDetails.removeAll();
-	    }
+	    var form = this.findById('policyDetailsId').getForm();
+	    form.reset();
+
+	    var dvRules = Ext.StoreMgr.get('dvRulesStoreId');
+	    dvRules.removeAll();
+	    var stUserDetails = Ext.StoreMgr.get('user');
+	    stUserDetails.removeAll();
+	    this.clearEmail('PolicyEmails');
+	    this.clearEmail('UserEmails');
 	},
 
 	buildUserDetailsDV : function() {
@@ -311,7 +308,14 @@ NetspocManager.PolicyManager = Ext.extend(
 	    var store = emailPanel.getStore();
 	    store.load ({ params : { owner : owner } });
 	    emailPanel.setTitle('Vertwortliche f&uuml;r ' + owner);
-	}
+	},
+
+	clearEmail : function(name) {
+	    var emailPanel = this.findById(name);
+	    var store = emailPanel.getStore();
+	    store.removeAll();
+	    emailPanel.setTitle('Vertwortliche');
+	},
 
     }
 );
