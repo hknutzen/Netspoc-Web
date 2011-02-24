@@ -40,7 +40,7 @@ NetspocManager.PolicyManager = Ext.extend(
 		border   : false,
 		listeners : {
                     scope : this,
-                    click : this.onPolicyListClick
+                    selectionchange : this.onPolicySelected
 		},
 		tbar      :  [
                     {
@@ -89,51 +89,58 @@ NetspocManager.PolicyManager = Ext.extend(
 
 	buildPolicyDetailsView : function() {
             return {
-		xtype  : 'container',
-		layout : 'border',
-		flex   : 2,
-		items  : [
+		xtype     : 'tabpanel',
+		flex      : 2,
+		activeTab : 0,
+		deferredRender : false,
+		items     : [
 		    {
-			id        : 'pCenterId',
-			xtype     : 'tabpanel',
-			region    : 'center',
-			activeTab : 0,
-			items     : [
+			title  : 'Details zum Dienst',
+			xtype  : 'panel',
+			layout : 'border',
+			autoScroll : true,
+			items  : [
 			    {
-				title  : 'Details zum Dienst',
 				xtype  : 'panel',
+				region : 'center',
 				layout : 'anchor',
-				autoScroll : true,
 				items  : [
 				    this.buildPolicyDetailsDV(),
 				    this.buildPolicyRulesDV()
 				]
 			    },
 			    {
-				title  : 'Benutzer (User) des Dienstes',
-				xtype  : 'panel',
-				layout : 'fit',
-				items  : [
-				    this.buildUserDetailsDV()
-				]
+				id          : 'PolicyEmails',
+				xtype       : 'emaillist',
+				proxyurl    : 'get_emails',
+				title       : 'Verantwortliche',
+				region      : 'south',
+				collapsible : true,
+				split       : true,
+				height      : 68
 			    }
-			]		    
+			]
 		    },
 		    {
-			id          : 'emailListId',
-			xtype       : 'emaillist',
-			proxyurl    : 'get_emails',
-			title       : 'Verantwortliche',
-			region      : 'south',
-			collapsible : true,
-//			collapseMode: 'mini',
-			split       : true,
-//			header      : false,
-//			collapsed   : true,
-			height      : 68
+			title  : 'Benutzer (User) des Dienstes',
+			xtype  : 'panel',
+			layout : 'border',
+			items  : [
+			    this.buildUserDetailsDV(),
+			    {
+				id          : 'UserEmails',
+				xtype       : 'emaillist',
+				proxyurl    : 'get_emails',
+				title       : 'Verantwortliche',
+				region      : 'south',
+				collapsible : true,
+				split       : true,
+				height      : 68
+			    }
+			]
 		    }
-		]
-            };
+		]		    
+	    };
 	},
 	
 	buildPolicyRulesDV : function() {
@@ -215,7 +222,7 @@ NetspocManager.PolicyManager = Ext.extend(
 	    );
 	},
 
-	onPolicyListClick : function() {
+	onPolicySelected : function() {
             var selectedPolicy = this.getComponent('policyListId').getSelected();
 	    if (! selectedPolicy) {
 		return;
@@ -258,7 +265,7 @@ NetspocManager.PolicyManager = Ext.extend(
 	    array.push(owner1);
 	    hidden.setValue(array.join(','));
 	    Ext.getCmp("trigger").setValue(owner1);
-	    this.showEmail(owner1);
+	    this.showEmail(owner1, 'PolicyEmails');
 	},
 
 	clearDetails : function() {
@@ -279,32 +286,31 @@ NetspocManager.PolicyManager = Ext.extend(
 	buildUserDetailsDV : function() {
 	    return {
 		xtype     : 'userlist',
+		region    : 'center',
 		proxyurl  : 'get_user',
 		id        : 'userListId',
 		listeners : {
 		    scope : this,
-		    click : this.onUserDetailsClick
+		    selectionchange : this.onUserDetailsSelected
 		}
 	    };
 	},
 
-	onUserDetailsClick : function() {
+	onUserDetailsSelected : function() {
             var selectedPolicy =
 		this.findById('userListId').getSelected();
 	    if (! selectedPolicy) {
 		return;
 	    }
 	    var name = selectedPolicy.get( 'owner' );
-	    this.showEmail(name);
+	    this.showEmail(name, 'UserEmails');
 	},
 
-	showEmail : function(owner) {
-	    var store = Ext.StoreMgr.get('email');
+	showEmail : function(owner, name) {
+	    var emailPanel = this.findById(name);
+	    var store = emailPanel.getStore();
 	    store.load ({ params : { owner : owner } });
-	    
-	    var emailPanel = this.findById('emailListId');
 	    emailPanel.setTitle('Vertwortliche f&uuml;r ' + owner);
-//	    var region = emailPanel.ownerCt.layout.south;
 	}
 
     }
