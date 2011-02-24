@@ -39,7 +39,11 @@ NetspocWeb.listpanel.PolicyList = Ext.extend(
 		    { name : 'desc',  mapping : 'description'  },
 		    { name : 'ping',  mapping : 'pingallowed'  },
 		    { name : 'owner', mapping : 'owner'        }
-		]
+		],
+		listeners: {
+                    scope : this,
+		    load  : this.selectRow0
+		}
 	    };
 	}
 	

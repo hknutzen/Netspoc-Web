@@ -48,7 +48,11 @@ NetspocWeb.listpanel.UserList = Ext.extend(
 		    { name : 'name'  , mapping : 'name'  },
 		    { name : 'ip'    , mapping : 'ip'    },
 		    { name : 'owner' , mapping : 'owner' }
-		]
+		],
+		listeners: {
+                    scope : this,
+		    load  : this.selectRow0
+		}
 	    };
 	}
 	
