@@ -315,7 +315,7 @@ NetspocManager.PolicyManager = Ext.extend(
 	    var store = emailPanel.getStore();
 	    store.removeAll();
 	    emailPanel.setTitle('Vertwortliche');
-	},
+	}
 
     }
 );
