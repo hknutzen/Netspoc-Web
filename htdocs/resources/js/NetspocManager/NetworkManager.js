@@ -40,7 +40,7 @@ NetspocManager.NetworkManager = Ext.extend(
 		border   : false,
 		listeners : {
                     scope : this,
-                    click : this.onNetworkListClick
+                    selectionchange : this.onNetworkListSelected
 		},
 		tbar      :  [
                     {
@@ -118,7 +118,7 @@ NetspocManager.NetworkManager = Ext.extend(
 	    );
 	},
 
-	onNetworkListClick : function() {
+	onNetworkListSelected : function() {
             var selectedNetwork =
 		this.getComponent('networkListId').getSelected();
 	    var name  = selectedNetwork.get( 'name' );
