@@ -42,10 +42,9 @@ NetspocWeb.listpanel.NetworkList = Ext.extend(
 		    { name : 'name', mapping : 'name' },
 		    { name : 'ip',   mapping : 'ip'   }
 		],
-		listeners : {
-		    load : function( thisStore, records, options ) {
-			// Select first item after store has loaded.
-		    }
+		listeners: {
+                    scope : this,
+		    load  : this.selectRow0
 		}
 	    };
 	}
