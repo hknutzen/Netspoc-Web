@@ -453,15 +453,18 @@ sub setup_email2owners {
     for my $name ( keys %owners ) {
 	my $owner = $owners{$name};
 	for my $admin ( @{ $owner->{admins} } ) {
-	    push @{ $email2owners{$admin->{email}} },$name;
+	    $email2owners{$admin->{email}}->{$name} = $name;
 	}
 	if (my $aref = $owner->{extended_by}) {
 	    for my $e_owner (@$aref) {
 		for my $admin ( @{ $e_owner->{admins} } ) {
-		    push @{ $email2owners{$admin->{email}} },$name;
+		    $email2owners{$admin->{email}}->{$name} = $name;
 		}
 	    }
-	}	    
+	}
+    }
+    for my $href (values %email2owners) {
+	$href = [ values %$href ];
     }
 }
 
