@@ -58,7 +58,7 @@ sub internal_err {
 
 my $config;
 sub load_config {
-    open( my $fh, $conf_file ) or die "Can't open $conf_file: $!\n";
+    open( my $fh, $conf_file ) or internal_err "Can't open $conf_file: $!";
     my $content = do { local $/; <$fh> };
     close $fh;
     my $json = new JSON;
@@ -118,7 +118,6 @@ sub ip_for_objects {
     [ map { ip_for_object($_) } @$objects ];
 }
 
-my %unknown;
 # Check if all arguments are 'eq'.
 sub equal {
     return 1 if not @_;
@@ -217,6 +216,8 @@ sub setup_policy_info {
 
 		next if $what eq $has_user;
 		my $all = 
+
+		    # Store expanded src  and dst for later use in get_rules
 		    $rule->{"expanded_$what"} =
 		    Netspoc::expand_group($rule->{$what}, "$what of $pname");
 		push(@objects, @$all);
@@ -237,6 +238,9 @@ sub setup_policy_info {
 	@objects = values %objects;
 
 	$policy->{all_ip} = ip_for_objects(\@objects);
+
+	# Policy has references to owner objects from netspoc.
+	# Convert to names of owners.
 	map { ($_ = $_->{name}) =~ s/^owner://; } @{ $policy->{owners} };
 	my $owners = $policy->{owners};
 	my $uowners = $is_coupling ? [] : owners_for_objects($users);
@@ -249,43 +253,117 @@ sub setup_policy_info {
 }
 
 ####################################################################
-# Networks of current owner
+# Get hosts, networks and any objects owned or inherited by current owner.
+# A network is inherited if it contains a host which is owned.
+# An 'any' object is inherited if it contains a network which is owned or inherited.
 ####################################################################
+
+sub inherited_and_own_networks {
+    my ($owner) = @_;
+    my %result;
+
+    # Owned directly.
+    for my $network (values %networks) {
+	$network->{disabled} and next;
+	$network->{loopback} and next;
+	my $net_owner = owner_for_object($network) or next;
+	$net_owner eq $owner or next;
+	$result{$network} = $network;
+    }
+
+    # Inherited from directly owned host.
+    for my $host (values %hosts) {
+	$host->{disabled} and next;
+	my $host_owner = owner_for_object($host) or next;
+	$host_owner eq $owner or next;
+	my $network = $host->{network};
+	my $net_owner = owner_for_object($network);
+	$net_owner and $net_owner eq $owner and next;
+	$result{$network} = $network;
+    }
+    return [ values %result ];
+}
+
+sub get_any {
+    my ($cgi, $session) = @_;
+    my $owner = $session->param('owner');
+    my %result;
+
+    # Take 'any' object owned by owner.
+    for my $any (values %anys) {
+	$any->{disabled} and next;
+	my $any_owner = owner_for_object($any) or next;
+	$any_owner eq $owner or next;
+	$result{$any} = $any;
+    }
+
+    # Inherit 'any' object owned by some other owner which contains objects of owner.
+    for my $network (@{ inherited_and_own_networks($owner) }) {
+	my $any = $network->{any};
+	my $any_owner = owner_for_object($any);
+	$any_owner and $any_owner eq $owner and next;
+	$result{$any} = $any;
+    }
+    return [ map { { name => $_->{name},
+		     ip => ip_for_object($_),
+		     owner => owner_for_object($_), } } 
+	     values %result ];
+}
 
 sub get_networks {
     my ($cgi, $session) = @_;
     my $owner = $session->param('owner');
-    my @result;
-    for my $obj (values %networks, values %hosts) {
-	$obj->{disabled} and next;
-	my $obj_owner = owner_for_object($obj) or next;
-	if($obj_owner eq $owner) {
+    my $result;
+    if (my $any_name = $cgi->param('any')) {
+	my $any = $anys{$any_name} or internal_err "Unknown 'any' object";
+	my $any_owner = owner_for_object($any);
 
-	    # Nur die Hosts anzeigen, die einen eigenen Owner haben.
-	    if (my $network = $obj->{network}) {
-		my $net_owner = owner_for_object($network);
-		next if $net_owner and $net_owner eq $owner;
-	    }
-	    push @result, { name => $obj->{name},
-			    ip => ip_for_object($obj), };
+	# Show all networks in own any.
+	if ($any_owner and $any_owner eq $owner) {
+	    $result = $any->{networks};
+	}
+
+	# Shown only own and inherited networks in other any.
+	else {
+	    $result = grep { $_->{any} eq $any } @{ inherited_and_own_networks($owner) };
 	}
     }
-    return \@result;
+
+    # Shown all inherited and onwn networks.
+    else {
+	$result = inherited_and_own_networks($owner);
+    }
+    return [ map { { name => $_->{name},
+		     ip => ip_for_object($_),
+		     owner => owner_for_object($_), } } 
+	     @$result ];
 }
 
 sub get_hosts {
     my ($cgi, $session) = @_;
     my $net_name = $cgi->param('network') or die "Missing param 'network'\n";
     my $owner = $session->param('owner');
+    my $result;
 
-    # Ignore request with host.
-    $net_name =~ s/^network:// or return [];
-    my $network = $networks{$net_name} or die "Unknown network";
+    $net_name =~ s/^network://;
+    my $network = $networks{$net_name} or internal_err "Unknown network";
     my $net_owner = owner_for_object($network);
-    $net_owner and $net_owner eq $owner or die "Not your network";
+
+    # Show all hosts in own network.
+    if ($net_owner and $net_owner eq $owner) {
+	$result = $network->{hosts};
+    }
+
+    # Show only own hosts in other network.
+    else {
+	$result = [ grep { my $host_owner = owner_for_object($_);
+			   $host_owner and $host_owner eq $owner } 
+		    @{ $network->{hosts} } ];
+    }
     return [ map { { name => $_->{name},
-		     ip =>  ip_for_object($_) } } 
-	     @{ $network->{hosts} } ];
+		     ip =>  ip_for_object($_),
+		     owner => owner_for_object($_), } } 
+	     @$result ];
 }
 
 ####################################################################
@@ -580,7 +658,7 @@ sub register {
     my $base_url = $cgi->param( 'base_url' ) 
 	or abort "Missing param 'base_url' (Activate JavaScript)";
     my $token = md5_hex(localtime, $user);
-    my $pass = mkpasswd() or die "Can't generate password";
+    my $pass = mkpasswd() or internal_err "Can't generate password";
 
     # Store encrypted password in session until verification.
     my $reg_data = { user => $user, pass => md5_hex($pass), token => $token };
