@@ -21,12 +21,18 @@ NetspocWeb.listpanel.NetworkList = Ext.extend(
 		store         : this.buildStore(),
 		columns       : [
 		    {
-			header    : 'IP-Adresse des Netzes/Hosts',
-			dataIndex : 'ip'
+			header    : 'IP-Adresse',
+			dataIndex : 'ip',
+			width     : .25
 		    },
 		    {
 			header    : 'Name',
 			dataIndex : 'name'
+		    },
+		    {
+			header    : 'Verantwortungsbereich',
+			dataIndex : 'owner',
+			width     : .25
 		    }
 		]
 	    };
@@ -39,8 +45,9 @@ NetspocWeb.listpanel.NetworkList = Ext.extend(
 		storeId       : 'networkDvStoreId',
 		sortInfo      : { field: 'ip', direction: "ASC" },
 		fields        : [
-		    { name : 'name', mapping : 'name' },
-		    { name : 'ip',   mapping : 'ip'   }
+		    { name : 'name',   mapping : 'name'  },
+		    { name : 'ip',     mapping : 'ip'    },
+		    { name : 'owner' , mapping : 'owner' }
 		],
 		listeners: {
                     scope : this,

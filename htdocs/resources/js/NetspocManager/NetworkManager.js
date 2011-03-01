@@ -44,7 +44,7 @@ NetspocManager.NetworkManager = Ext.extend(
 		},
 		tbar      :  [
                     {
-			text         : 'Netze/Hosts',
+			text         : 'Netze',
 			toggleGroup  : 'netRouterGrp',
 			enableToggle : true,
 			pressed      : true,
@@ -93,8 +93,9 @@ NetspocManager.NetworkManager = Ext.extend(
 		storeId       : 'stNetworkDetailsId',
 		sortInfo      : { field: 'ip', direction: "ASC" },
 		fields        : [
-		    { name : 'ip',   mapping : 'ip'        },
-		    { name : 'name', mapping : 'name'      }
+		    { name : 'ip',     mapping : 'ip'    },
+		    { name : 'name',   mapping : 'name'  },
+		    { name : 'owner' , mapping : 'owner' }
 		]
 	    };
 
@@ -107,11 +108,17 @@ NetspocManager.NetworkManager = Ext.extend(
 		    columns       : [
 			{
 			    header    : 'IP-Adresse',
-			    dataIndex : 'ip'
+			    dataIndex : 'ip',
+			    width     : .25
 			},
 			{
 			    header    : 'Name',
 			    dataIndex : 'name'
+			},
+			{
+			    header    : 'Verantwortungsbereich',
+			    dataIndex : 'owner',
+			    width     : .25
 			}
 		    ]
 		}
