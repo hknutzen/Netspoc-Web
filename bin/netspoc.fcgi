@@ -146,6 +146,20 @@ sub owners_for_objects {
     return [ values %owners ];
 }
 
+sub sub_owners_for_objects {	
+    my ($objects) = @_;
+    my %owners;
+    for my $object ( @$objects ) {
+	if (my $aref = $object->{sub_owners}) {
+	    for my $owner_obj (@$aref) {
+		(my $name = $owner_obj->{name}) =~ s/^owner://;
+		$owners{$name} = $name;
+	    }
+	}
+    }
+    return [ values %owners ];
+}
+
 sub expand_auto_intf {
     my ($src_aref, $dst_aref) = @_;
     for (my $i = 0; $i < @$src_aref; $i++) {
@@ -217,7 +231,7 @@ sub setup_policy_info {
 		next if $what eq $has_user;
 		my $all = 
 
-		    # Store expanded src  and dst for later use in get_rules
+		    # Store expanded src and dst for later use in get_rules
 		    $rule->{"expanded_$what"} =
 		    Netspoc::expand_group($rule->{$what}, "$what of $pname");
 		push(@objects, @$all);
@@ -239,12 +253,11 @@ sub setup_policy_info {
 
 	$policy->{all_ip} = ip_for_objects(\@objects);
 
-	# Policy has references to owner objects from netspoc.
-	# Convert to names of owners.
-	map { ($_ = $_->{name}) =~ s/^owner://; } @{ $policy->{owners} };
-	my $owners = $policy->{owners};
-	my $uowners = $is_coupling ? [] : owners_for_objects($users);
-	$policy->{uowners} = $uowners;
+	# Input: owner objects, output: owner names
+	my $owners = $policy->{owners} = owners_for_objects(\@objects);
+	$policy->{sub_owners} = sub_owners_for_objects(\@objects);
+	my $uowners = $policy->{uowners} = $is_coupling ? [] : owners_for_objects($users);
+	$policy->{sub_uowners} = $is_coupling ? [] : sub_owners_for_objects($users);
 
 	# Für Übergangszeit aus aktueller Benutzung bestimmen.
 	$policy->{visible} ||= find_visibility($owners, $uowners);
@@ -252,62 +265,85 @@ sub setup_policy_info {
     }
 }
 
-####################################################################
-# Get hosts, networks and any objects owned or inherited by current owner.
-# A network is inherited if it contains a host which is owned.
-# An 'any' object is inherited if it contains a network which is owned or inherited.
-####################################################################
+######################################################################
+# Fill attribute sub_owners at objects which contain objects
+# belonging to other owners.
+######################################################################
 
-sub inherited_and_own_networks {
-    my ($owner) = @_;
-    my %result;
-
-    # Owned directly.
-    for my $network (values %networks) {
-	$network->{disabled} and next;
-	$network->{loopback} and next;
-	my $net_owner = owner_for_object($network) or next;
-	$net_owner eq $owner or next;
-	$result{$network} = $network;
-    }
-
-    # Inherited from directly owned host.
+sub fill_sub_owners {
     for my $host (values %hosts) {
 	$host->{disabled} and next;
-	my $host_owner = owner_for_object($host) or next;
-	$host_owner eq $owner or next;
+	my $host_owner = $host->{owner} or next;
 	my $network = $host->{network};
-	my $net_owner = owner_for_object($network);
-	$net_owner and $net_owner eq $owner and next;
-	$result{$network} = $network;
+	my $net_owner = $network->{owner};
+	if ( not ($net_owner and $host_owner eq $net_owner)) {
+	    $network->{sub_owners}->{$host_owner} = $host_owner;
+	}
     }
-    return [ values %result ];
+    for my $network (values %networks) {
+	$network->{disabled} and next;
+	my @owners;
+	if (my $hash = $network->{sub_owners}) {
+	    @owners = values %$hash;
+
+	    # Substitute hash by array. Use a copy because @owner is changed below.
+	    $network->{sub_owners} = [ @owners ];
+	}
+	if (my $net_owner = $network->{owner}) {
+	    push @owners, $net_owner;
+	}
+	my $any = $network->{any};
+	my $any_owner = $any->{owner};
+	for my $owner (@owners) {
+	    if ( not ($any_owner and $owner eq $any_owner)) {
+		$any->{sub_owners}->{$owner} = $owner;
+	    }
+	}
+    }
+
+    # Substitute hash by array.
+    for my $any (values %anys) {
+	if (my $hash = $any->{sub_owner}) {
+	    $any->{sub_owners} = [ values %$hash ];
+	}
+    }
+}
+
+####################################################################
+# Get hosts, networks and any objects owned by current owner or
+# where some sub_owner equals current owner.
+####################################################################
+
+sub owned_objects {
+    my ($aref, $owner_name) = @_;
+    my $owner = $owners{$owner_name} or internal_err "Unknown owner";
+    my @result;
+    for my $obj (@$aref) {
+	next if $obj->{disabled};
+	if (my $obj_owner = $obj->{owner}) {
+	    if ($obj_owner eq $owner) {
+		push @result, $obj;
+		next;
+	    }
+	}
+	if (my $sub_owners = $obj->{sub_owners}) {
+	    if (grep { $owner eq $_ } @$sub_owners) {
+		push @result, $obj;
+		next;
+	    }
+	}
+    }
+    return \@result;
 }
 
 sub get_any {
     my ($cgi, $session) = @_;
     my $owner = $session->param('owner');
-    my %result;
-
-    # Take 'any' object owned by owner.
-    for my $any (values %anys) {
-	$any->{disabled} and next;
-	my $any_owner = owner_for_object($any) or next;
-	$any_owner eq $owner or next;
-	$result{$any} = $any;
-    }
-
-    # Inherit 'any' object owned by some other owner which contains objects of owner.
-    for my $network (@{ inherited_and_own_networks($owner) }) {
-	my $any = $network->{any};
-	my $any_owner = owner_for_object($any);
-	$any_owner and $any_owner eq $owner and next;
-	$result{$any} = $any;
-    }
+    my $result = owned_objects([values %anys], $owner);
     return [ map { { name => $_->{name},
 		     ip => ip_for_object($_),
 		     owner => owner_for_object($_), } } 
-	     values %result ];
+	     @$result ];
 }
 
 sub get_networks {
@@ -323,19 +359,20 @@ sub get_networks {
 	    $result = $any->{networks};
 	}
 
-	# Shown only own and inherited networks in other any.
+	# Show only own and networks with sub_owner in other any.
 	else {
-	    $result = grep { $_->{any} eq $any } @{ inherited_and_own_networks($owner) };
+	    $result = owned_objects($any->{networks}, $owner);
 	}
     }
 
-    # Shown all inherited and onwn networks.
+    # Show all sub_owned and owned networks.
     else {
-	$result = inherited_and_own_networks($owner);
+	$result = owned_objects([values %networks], $owner);
     }
     return [ map { { name => $_->{name},
 		     ip => ip_for_object($_),
 		     owner => owner_for_object($_), } } 
+	     grep { not $_->{loopback} }
 	     @$result ];
 }
 
@@ -372,9 +409,9 @@ sub get_hosts {
 
 sub is_visible {
     my ($owner, $policy) = @_;
-    grep({ $_ eq $owner } @{ $policy->{owners} }) and 'owner' or
-	grep({ $_ eq $owner } @{ $policy->{uowners} }) and 'user' or
-	$policy->{visible} and $owner =~ /^$policy->{visible}/ and 'visible';
+    grep({ $_ eq $owner } @{ $policy->{owners} }, @{ $policy->{sub_owners} }) and 'owner' or
+    grep({ $_ eq $owner } @{ $policy->{uowners} }, @{ $policy->{sub_uowners} }) and 'user' or
+    $policy->{visible} and $owner =~ /^$policy->{visible}/ and 'visible';
 }
 
 sub service_list {
@@ -493,9 +530,22 @@ sub get_user {
 
     # User isn't owner but only uses policy.
     # Only show owner's users.
-    if (not grep({ $_ eq $active_owner } @{ $policy->{owners} })) {
-	@users =  grep { my $owner = owner_for_object($_); 
-			 $owner && $owner eq $active_owner }
+    if (not grep({ $_ eq $active_owner } @{ $policy->{owners}}, @{ $policy->{sub_owners}}))
+    {
+	@users = 
+	    grep { 
+		my $result;
+		my $owner = owner_for_object($_);
+		if ($owner && $owner eq $active_owner) {
+		    1;
+		}
+		elsif (my $sub_owners = $_->{sub_owners}) {
+		    grep { $_->{name} eq "owner:$active_owner" } @$sub_owners;
+		}
+		else {
+		    0;
+		}
+	    }
 	@users;
     }
     return [ map { { name  => $_->{name},
@@ -868,6 +918,7 @@ sub init_data {
     order_services();
     link_topology();
     mark_disabled();
+    fill_sub_owners();
     distribute_nat_info();
     find_subnets();
     setany();
