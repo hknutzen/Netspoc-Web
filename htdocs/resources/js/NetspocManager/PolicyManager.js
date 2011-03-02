@@ -207,14 +207,23 @@ NetspocManager.PolicyManager = Ext.extend(
 		    border: false,
 		    style: { "margin-left": "3px" },
 		    items : [
-			{ fieldLabel: 'Name', name : 'name', readOnly : true },
-			{ fieldLabel: 'Beschreibung', name : 'desc', readOnly : true },
-			{ xtype : 'hidden', id: 'hiddenOwner', name : 'owner' },
-			{ xtype : 'trigger',
-			  id    : 'trigger',
-			  fieldLabel: 'Verantwortung',
-			  name      : 'owner1',
-			  editable  : false,
+			{ fieldLabel : 'Name',
+			  name       : 'name',
+			  readOnly   : true
+			},
+			{ fieldLabel : 'Beschreibung',
+			  name       : 'desc',
+			  readOnly   : true
+			},
+			{ xtype : 'hidden',
+			  id    : 'hiddenOwner',
+			  name  : 'owner'
+			},
+			{ xtype          : 'trigger',
+			  id             : 'trigger',
+			  fieldLabel     : 'Verantwortung',
+			  name           : 'owner1',
+			  editable       : false,
 			  onTriggerClick : this.bind(this.onTriggerClick)
 			}
 		    ]
