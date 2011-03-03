@@ -1,0 +1,18 @@
+<head>
+<title>Verifikation</title>
+<style type="text/css">
+ body {font-family:sans-serif;} 
+</style>
+</head>
+
+<body>
+<h2>Fehler</h2>
+Ein Fehler ist aufgetreten.<br>
+Ihr Kennwort wurde nicht geändert.
+<p>
+Hinweis:<br>
+Die Anforderung und die Best&auml;tigung des Kennworts m&uuml;ssen den
+gleichen Cookie verwenden. Beide Aufrufe m&uuml;ssen daher von dem gleichen
+Rechner und mit dem gleichen Browser erfolgen.
+</body>
+
