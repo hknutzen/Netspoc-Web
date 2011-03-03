@@ -670,9 +670,10 @@ sub get_substituted_html {
 ####################################################################
 
 sub send_verification_mail {
-    my ($email, $url) = @_;
+    my ($email, $url, $ip) = @_;
     my $text = read_template($config->{verify_mail_template});
-    $text = process_template($text, { email => $email, url => $url });
+    $text = process_template($text, 
+			     { email => $email, url => $url, ip => $ip });
     my $sendmail = $config->{sendmail_command};
     open(my $mail, "|$sendmail") or 
 	internal_err "Can't open $sendmail: $!";
@@ -717,7 +718,10 @@ sub register {
     $session->expire('register', '1d');
     $session->param('register', $reg_data);
     my $url = "$base_url/verify?email=$email&token=$token";
-    send_verification_mail ($email, $url);
+
+    # Send remote address to the recipient to allow tracking of abuse.
+    my $ip = $cgi->remote_addr();
+    send_verification_mail ($email, $url, $ip);
     return get_substituted_html($config->{show_passwd_template},
 				{ pass => $cgi->escapeHTML($pass) });
 }
