@@ -1,0 +1,9 @@
+From: noreply@landsh.de
+To: [% email %]
+Subject: Verification Request
+Content-Type: text/plain; charset=UTF-8
+
+Für Netspoc-Web wurde ein neues Kennwort angefordert.
+(Von IP-Adresse [% ip %].)
+Bitte bestätigen Sie die Änderung durch Aufruf dieser URL:
+ [% url %]
