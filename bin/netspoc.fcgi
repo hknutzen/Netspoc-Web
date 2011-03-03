@@ -710,6 +710,7 @@ sub register {
     my $admin = $email2admin{$email} or abort "Unknown email '$email'";
     my $base_url = $cgi->param( 'base_url' ) 
 	or abort "Missing param 'base_url' (Activate JavaScript)";
+    check_attack($email);
     my $token = md5_hex(localtime, $email);
     my $pass = mkpasswd() or internal_err "Can't generate password";
 
@@ -721,6 +722,7 @@ sub register {
 
     # Send remote address to the recipient to allow tracking of abuse.
     my $ip = $cgi->remote_addr();
+    set_attack($email);
     send_verification_mail ($email, $url, $ip);
     return get_substituted_html($config->{show_passwd_template},
 				{ pass => $cgi->escapeHTML($pass) });
@@ -747,15 +749,52 @@ sub verify {
 ####################################################################
 # Login
 ####################################################################
+
+# Wait for 10, 20, .., 300 seconds after submitting wrong password.
+sub set_attack {
+    my ($email) = @_;
+    my $store = get_user_store($email);
+    my $wait = $store->param('login_wait') || 5;
+    $wait *= 2;
+    $wait = 300 if $wait > 300;
+    $store->param('login_wait', $wait);
+    $store->param('failed_time', time());
+    $wait;
+}
+
+sub check_attack {
+    my ($email) = @_;
+    my $store = get_user_store($email);
+    my $wait = $store->param('login_wait');
+    return if not $wait;
+    sleep(5);
+    my $remain = $store->param('failed_time') + $wait - time();
+    if ($remain > 0) {
+	abort("Wait for $remain seconds after wrong password" );
+    }
+}
+
+sub clear_attack {
+    my ($email) = @_;
+    my $store = get_user_store($email);
+    $store->clear('login_wait');
+}
+
 sub login {
     my ($cgi, $session) = @_;
     logout($cgi, $session);
-    my $email = $cgi->param( 'email' ) or abort "Missing param 'email'";
+    my $email = $cgi->param('email') or abort "Missing param 'email'";
     $email = lc $email;
     my $admin = $email2admin{$email} or abort "Unknown email '$email'";
-    my $pass = $cgi->param( 'pass' ) or abort "Missing param 'pass'";
-    my $app_url = $cgi->param( 'app' ) or abort "Missing param 'app'";
-    check_password($email, $pass) or abort "Login failed";
+    my $pass = $cgi->param('pass') or abort "Missing param 'pass'";
+    my $app_url = $cgi->param('app') or abort "Missing param 'app'";
+    check_attack($email);
+    if (not check_password($email, $pass)) {
+	my $wait = set_attack($email);
+	sleep(5);
+	abort "Login failed, wait $wait seconds";
+    }
+    clear_attack($email);
     $session->param('email', $email);
     $session->clear('user');		# Remove old, now unused param.
     $session->expire('logged_in', '30m');
