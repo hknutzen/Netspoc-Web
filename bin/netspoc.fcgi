@@ -586,7 +586,9 @@ sub setup_email2owners {
 	if (my $aref = $owner->{extended_by}) {
 	    for my $e_owner (@$aref) {
 		for my $admin ( @{ $e_owner->{admins} } ) {
-		    $email2owners{$admin->{email}}->{$name} = $name;
+
+		    # Normalize email to lower case.
+		    $email2owners{lc $admin->{email}}->{$name} = $name;
 		}
 	    }
 	}
@@ -607,7 +609,6 @@ sub setup_email2admin {
 # Get currently selected owner.
 sub get_owner {
     my ($cgi, $session) = @_;
-    my $user = $session->param('user');
     if (my $active_owner = $session->param('owner')) {
 	return [ { name => $active_owner } ];
     }
@@ -619,8 +620,8 @@ sub get_owner {
 # Get list of all owners available for current user.
 sub get_owners {
     my ($cgi, $session) = @_;
-    my $user = $session->param('user');
-    my $owners = $email2owners{$user};
+    my $email = $session->param('email');
+    my $owners = $email2owners{$email};
     return [ map({ { name => $_ } } sort @$owners) ];
 }
 
@@ -669,9 +670,9 @@ sub get_substituted_html {
 ####################################################################
 
 sub send_verification_mail {
-    my ($user, $url) = @_;
+    my ($email, $url) = @_;
     my $text = read_template($config->{verify_mail_template});
-    $text = process_template($text, { user => $user, url => $url });
+    $text = process_template($text, { email => $email, url => $url });
     my $sendmail = $config->{sendmail_command};
     open(my $mail, "|$sendmail") or 
 	internal_err "Can't open $sendmail: $!";
@@ -681,8 +682,8 @@ sub send_verification_mail {
 
 # Password is stored with CGI::Session using email as ID.
 sub get_user_store {
-    my ($user) = @_;
-    new CGI::Session ('driver:file;id:static', $user, 
+    my ($email) = @_;
+    new CGI::Session ('driver:file;id:static', $email, 
 		      { Directory=> $config->{password_dir} } 
 		      );
 }
@@ -690,45 +691,47 @@ sub get_user_store {
 # Get / set password for user.
 # New password is already encrypted in sub register below.
 sub store_password {
-    my ($user, $pass) = @_;
-    my $pass_store = get_user_store($user);
+    my ($email, $pass) = @_;
+    my $pass_store = get_user_store($email);
     $pass_store->param('pass', $pass);
 }
 
 sub check_password  {
-    my ($user, $pass) = @_;
-    my $pass_store = get_user_store($user);
+    my ($email, $pass) = @_;
+    my $pass_store = get_user_store($email);
     $pass_store->param('pass') eq md5_hex($pass);
 }
 
 sub register {
     my ($cgi, $session) = @_;
-    my $user = $cgi->param( 'user' ) or abort "Missing param 'user'";
-    my $admin = $email2admin{$user} or abort "Unknown user '$user'";
+    my $email = $cgi->param('email') or abort "Missing param 'email'";
+    $email = lc $email;
+    my $admin = $email2admin{$email} or abort "Unknown email '$email'";
     my $base_url = $cgi->param( 'base_url' ) 
 	or abort "Missing param 'base_url' (Activate JavaScript)";
-    my $token = md5_hex(localtime, $user);
+    my $token = md5_hex(localtime, $email);
     my $pass = mkpasswd() or internal_err "Can't generate password";
 
     # Store encrypted password in session until verification.
-    my $reg_data = { user => $user, pass => md5_hex($pass), token => $token };
+    my $reg_data = { user => $email, pass => md5_hex($pass), token => $token };
     $session->expire('register', '1d');
     $session->param('register', $reg_data);
-    my $url = "$base_url/verify?user=$user&token=$token";
-    send_verification_mail ($user, $url);
+    my $url = "$base_url/verify?email=$email&token=$token";
+    send_verification_mail ($email, $url);
     return get_substituted_html($config->{show_passwd_template},
 				{ pass => $cgi->escapeHTML($pass) });
 }
 
 sub verify {
     my ($cgi, $session) = @_;
-    my $user = $cgi->param('user') or abort "Missing param 'user'";
+    my $email = $cgi->param('email') or abort "Missing param 'email'";
     my $token = $cgi->param('token') or abort "Missing param 'token'";
     my $reg_data =  $session->param('register');
     if ($reg_data and
-	$reg_data->{user} eq $user and
-	$reg_data->{token} eq $token) {
-	store_password($user, $reg_data->{pass});
+	$reg_data->{user} eq $email and
+	$reg_data->{token} eq $token) 
+    {
+	store_password($email, $reg_data->{pass});
 	$session->clear('register');
 	return get_substituted_html($config->{verify_ok_template}, {})
     }
@@ -743,12 +746,14 @@ sub verify {
 sub login {
     my ($cgi, $session) = @_;
     logout($cgi, $session);
-    my $user = $cgi->param( 'user' ) or abort "Missing param 'user'";
-    my $admin = $email2admin{$user} or abort "Unknown user '$user'";
+    my $email = $cgi->param( 'email' ) or abort "Missing param 'email'";
+    $email = lc $email;
+    my $admin = $email2admin{$email} or abort "Unknown email '$email'";
     my $pass = $cgi->param( 'pass' ) or abort "Missing param 'pass'";
     my $app_url = $cgi->param( 'app' ) or abort "Missing param 'app'";
-    check_password($user, $pass) or abort "Login failed";
-    $session->param('user', $user);
+    check_password($email, $pass) or abort "Login failed";
+    $session->param('email', $email);
+    $session->clear('user');		# Remove old, now unused param.
     $session->expire('logged_in', '30m');
     $session->param('logged_in', 1);
     return $app_url;
@@ -760,12 +765,12 @@ sub logged_in {
 }
 
 # Validate active owner. 
-# User could be removed from any owner role at any time.
+# Email could be removed from any owner role at any time in netspoc data.
 sub known_owner {
     my ($session) = @_;
-    my $user = $session->param('user');
+    my $email = $session->param('email') || $session->param('user');
     my $active_owner = $session->param('owner') || '';
-    return grep { $active_owner eq $_ } @{ $email2owners{$user} };
+    return grep { $active_owner eq $_ } @{ $email2owners{$email} };
 }
 
 sub logout {
