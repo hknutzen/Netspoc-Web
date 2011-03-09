@@ -75,18 +75,43 @@ NetspocManager.PolicyManager = Ext.extend(
 			storeParams  : {},
 			scope        : this,
 			handler      : this.onButtonClick
-                    }
+                    },
+		    '->',
+		    {
+			iconCls      : 'icon-printer',
+			scope        : this,
+			handler      : this.onPrint
+		    }
 		]
 	    };
 
 	},
 	
 	onButtonClick :  function(button, event) {
-	    var plv =  this.getComponent('policyListId');
+	    var plv = this.getComponent('policyListId');
 	    plv.loadStoreByParams( button.storeParams );
 	    this.clearDetails();
 	},
 
+	onPrint :  function( button, event ) {
+	    
+	    var parent = button.findParentByType( 'policylist' );
+	    var store = parent.getStore();
+
+	    var grid = new Ext.grid.GridPanel(
+		{
+		    store  : store,
+		    columns       : [
+			{
+			    header    : 'Dienstname',
+			    dataIndex : 'name'
+			}
+		    ]
+		}
+	    );
+	    Ext.ux.Printer.print( grid );
+	},
+	
 	buildPolicyDetailsView : function() {
             return {
 		xtype     : 'tabpanel',
