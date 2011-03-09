@@ -79,6 +79,7 @@ NetspocManager.PolicyManager = Ext.extend(
 		    '->',
 		    {
 			iconCls      : 'icon-printer',
+			tooltip      : 'Druckansicht (ermöglicht auch das Kopieren von Text)',
 			scope        : this,
 			handler      : this.onPrint
 		    }
@@ -100,8 +101,8 @@ NetspocManager.PolicyManager = Ext.extend(
 
 	    var grid = new Ext.grid.GridPanel(
 		{
-		    store  : store,
-		    columns       : [
+		    store   : store,
+		    columns : [
 			{
 			    header    : 'Dienstname',
 			    dataIndex : 'name'
