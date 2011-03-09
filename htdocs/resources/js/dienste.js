@@ -2,6 +2,7 @@
 
 Ext.ns( "NetspocManager" );
 
+Ext.QuickTips.init();
 
 NetspocManager.workspace = function () {
     var cardPanel, viewport, owner;
