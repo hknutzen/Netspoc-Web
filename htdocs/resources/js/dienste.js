@@ -192,7 +192,7 @@ NetspocManager.workspace = function () {
 	},
 
 	onAfterLogout : function() {
-	    history.back()
+	    history.back();
 	},
 
 	destroy : function() {
