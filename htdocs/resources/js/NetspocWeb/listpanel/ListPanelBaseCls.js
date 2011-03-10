@@ -34,6 +34,17 @@ NetspocWeb.listpanel.ListPanelBaseCls = Ext.extend(
             return { xtype    : 'netspocstore',
 		     proxyurl : this.proxyurl };
 	},
+
+	printView : function() {
+            var view = this.getView();
+	    var grid = new Ext.grid.GridPanel(
+		{
+		    store   : view.store,
+		    columns : view.columns
+		}
+	    );
+	    Ext.ux.Printer.print( grid );
+	},
 	
 	clearView : function() {
             this.getStore().removeAll();
