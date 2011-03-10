@@ -78,10 +78,10 @@ NetspocManager.PolicyManager = Ext.extend(
                     },
 		    '->',
 		    {
-			iconCls      : 'icon-printer',
-			tooltip      : 'Druckansicht (ermöglicht auch das Kopieren von Text)',
-			scope        : this,
-			handler      : this.onPrint
+			iconCls : 'icon-printer',
+ 			tooltip : 'Druckansicht (ermöglicht auch das Kopieren von Text)',
+ 			scope   : this,
+			handler : this.onPrint
 		    }
 		]
 	    };
@@ -95,24 +95,10 @@ NetspocManager.PolicyManager = Ext.extend(
 	},
 
 	onPrint :  function( button, event ) {
-	    
 	    var parent = button.findParentByType( 'policylist' );
-	    var store = parent.getStore();
-
-	    var grid = new Ext.grid.GridPanel(
-		{
-		    store   : store,
-		    columns : [
-			{
-			    header    : 'Dienstname',
-			    dataIndex : 'name'
-			}
-		    ]
-		}
-	    );
-	    Ext.ux.Printer.print( grid );
+	    parent.printView();	    
 	},
-	
+	    
 	buildPolicyDetailsView : function() {
             return {
 		xtype     : 'tabpanel',
@@ -339,10 +325,18 @@ NetspocManager.PolicyManager = Ext.extend(
 	},
 
 	showEmail : function(owner, name) {
-	    var emailPanel = this.findById(name);
-	    var store = emailPanel.getStore();
+	    if (! owner) {
+		this. clearEmail(name);
+ 		return;
+	    }
+	    var emailPanel  = this.findById(name);
+	    var store       = emailPanel.getStore();
+	    var lastOptions = store.lastOptions;
+	    if (lastOptions && lastOptions.params.owner == owner) {
+		return;
+	    }
 	    store.load ({ params : { owner : owner } });
-	    emailPanel.setTitle('Vertwortliche f&uuml;r ' + owner);
+	    emailPanel.setTitle('Verantwortliche f&uuml;r ' + owner);
 	},
 
 	clearEmail : function(name) {
