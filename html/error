@@ -1,0 +1,13 @@
+<head>
+<title>Fehler</title>
+<style type="text/css">
+ body {font-family:sans-serif;}
+</style>
+</head>
+
+<body>
+
+<h2>Fehler</h2>
+<p>
+[% msg %]
+
