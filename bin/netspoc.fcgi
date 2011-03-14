@@ -80,42 +80,96 @@ sub is_numeric {
     $value =~ /^\d+$/; 
 }
 
+# Store nat_map for each owner.
+# This is the intersection of all nat_maps of that nat_domains
+# where networks of an owner are located.
+my %owner2nat_map;
+
+# Take higher bits from network NAT, lower bits from original IP.
+# This works with and without NAT.
+sub nat {
+    my ($ip, $network) = @_;
+    $network->{ip} | $ip & Netspoc::complement_32bit ($network->{mask});
+}
+
 sub ip_for_object {
-    my ($obj) = @_;
-    if ( Netspoc::is_network( $obj ) ) {
-	if ( is_numeric($obj->{ip}) ) {
+    my ($obj, $nat_map) = @_;
+
+# This code is a modified copy of Netspoc::address.
+# - It needs to handle objects of type 'Host' instead of 'Subnet'.
+# - Handles dynamic NAT for hosts.
+# - It returns strings of textual ip/mask, not pairs of numbers.
+    my $type = ref $obj;
+    if ($type eq 'Network') {
+        $obj = $nat_map->{$obj} || $obj;
+
+        # ToDo: Is it OK to permit a dynamic address as destination?
+        if ($obj->{ip} eq 'unnumbered') {
+            internal_err "Unexpected unnumbered $obj->{name}\n";
+        }
+        else {
 	    join(' ', print_ip($obj->{ip}), print_ip($obj->{mask}));
+        }
+    }
+    elsif ($type eq 'Host') {
+        my $network = $obj->{network};
+        $network = $nat_map->{$network} || $network;
+        if (my $nat_tag = $network->{dynamic}) {
+            if (my $ip = $obj->{nat}->{$nat_tag}) {
+
+                # Single static NAT IP for this host.
+		print_ip($ip);
+            }
+            else {
+
+                # Dynamic NAT, take whole network.
+		join(' ', 
+		     print_ip($network->{ip}), print_ip($network->{mask}));
+	    }
+        }
+        else {
+	    if ( my $range = $obj->{range} ) {
+		join('-', map { print_ip(nat($_, $network)) } @$range);
+	    }
+	    else {
+		print_ip(nat($obj->{ip}, $network));
+	    }
 	}
     }
-    elsif ( Netspoc::is_host( $obj ) ) {
-	if ( my $range = $obj->{range} ) {
-	    join('-', map { print_ip($_) } @$range);
-	}
-	else {
+    elsif ($type eq 'Interface') {
+        if ($obj->{ip} =~ /unnumbered|short/) {
+            internal_err "Unexpected $obj->{ip} $obj->{name}\n";
+        }
+
+        my $network = $obj->{network};
+        $network = $nat_map->{$network} || $network;
+
+        if ($obj->{ip} eq 'negotiated') {
+
+	    # Take whole network.
+	    join(' ', print_ip($network->{ip}), print_ip($network->{mask}));
+        }
+	elsif ($network->{isolated}) {
+
+	    # NAT not allowed for isolated ports. Take no bits from network, 
+	    # because secondary isolated ports don't match network.
 	    print_ip($obj->{ip});
 	}
-    }
-    elsif ( Netspoc::is_interface( $obj ) ) {
-	if ( is_numeric( $obj->{ip} ) ) {
-	    print_ip( $obj->{ip} );
-	}
-
-	# 'negotiated'
-	else {
-	    "$obj->{ip}: $obj->{name}";
+        else {
+	    print_ip(nat($obj->{ip}, $network));
 	}
     }
     elsif ( Netspoc::is_any( $obj ) ) {
 	print_ip( 0 );
     }
     else {
-	"$obj->{name}";
+        internal_err "Unexpected object $obj->{name}";
     }
 }
 
 sub ip_for_objects {
-    my ($objects) = @_;
-    [ map { ip_for_object($_) } @$objects ];
+    my ($objects, $nat_map) = @_;
+    [ map { ip_for_object($_, $nat_map) } @$objects ];
 }
 
 # Check if all arguments are 'eq'.
@@ -131,15 +185,22 @@ sub owner_for_object {
 	(my $name = $owner_obj->{name}) =~ s/^owner://;
 	return $name;
     }
-    return;
+    return ();
+}
+
+sub sub_owners_for_object {	
+    my ($object) = @_;
+    if (my $aref = $object->{sub_owners}) {
+	return map { (my $name = $_->{name}) =~ s/^owner://; $name } @$aref;
+    }
+    return ();
 }
 
 sub owners_for_objects {	
     my ($objects) = @_;
     my %owners;
-    for my $object ( @$objects ) {
-	if (my $owner_obj = $object->{owner}) {
-	    (my $name = $owner_obj->{name}) =~ s/^owner://;
+    for my $object (@$objects) {
+	if (my $name = owner_for_object($object)) {
 	    $owners{$name} = $name;
 	}
     }
@@ -149,12 +210,9 @@ sub owners_for_objects {
 sub sub_owners_for_objects {	
     my ($objects) = @_;
     my %owners;
-    for my $object ( @$objects ) {
-	if (my $aref = $object->{sub_owners}) {
-	    for my $owner_obj (@$aref) {
-		(my $name = $owner_obj->{name}) =~ s/^owner://;
-		$owners{$name} = $name;
-	    }
+    for my $object (@$objects) {
+	for my $name (sub_owners_for_object($object)) {
+	    $owners{$name} = $name;
 	}
     }
     return [ values %owners ];
@@ -251,7 +309,6 @@ sub setup_policy_info {
 	my %objects = map { $_ => $_ } @objects;
 	@objects = values %objects;
 
-	$policy->{all_ip} = ip_for_objects(\@objects);
 
 	# Input: owner objects, output: owner names
 	my $owners = $policy->{owners} = owners_for_objects(\@objects);
@@ -270,7 +327,8 @@ sub setup_policy_info {
 # belonging to other owners.
 ######################################################################
 
-sub fill_sub_owners {
+sub setup_sub_owners {
+    Netspoc::info("Setup sub owners");
     for my $host (values %hosts) {
 	$host->{disabled} and next;
 	my $host_owner = $host->{owner} or next;
@@ -309,8 +367,65 @@ sub fill_sub_owners {
     }
 }
 
+######################################################################
+# Setup NAT
+# - relate each network to its owner and sub_owners
+# - build a nat_map for each owner, where own networks are'nt translated
+######################################################################
+
+sub setup_owner2nat {
+    Netspoc::info("Setup NAT for owner");
+    my %owner2net;
+    for my $network (values %networks) {
+	$network->{disabled} and next;
+	for my $owner_name 
+	    (owner_for_object($network), sub_owners_for_object($network))
+	{
+	    $owner2net{$owner_name}->{$network} = $network;
+	}
+    }
+    for my $owner_name (sort keys %owner2net) {
+	my %nat_domains;
+	for my $network (values %{ $owner2net{$owner_name} }) {
+	    my $nat_domain = $network->{nat_domain};
+	    $nat_domains{$nat_domain} = $nat_domain;
+	}
+	my @nat_domains = values %nat_domains;	
+#	if ((my $count = @nat_domains) > 1) {
+#	    print "$owner_name has $count nat_domains\n";
+#	    for my $network (values %{ $owner2net{$owner_name} }) {
+#		my $d = $network->{nat_domain};
+#		print " - $d->{name}: $network->{name}\n";
+#	    }
+#	}
+
+	# Build intersecton of nat_maps
+	my $result = $nat_domains[0]->{nat_map};
+	for my $dom (@nat_domains[ 1 .. $#nat_domains ]) {
+	    my $nat_map = $dom->{nat_map};
+	    my $intersection;
+	    for my $key (%$nat_map) {
+		if ($result->{$key}) {
+		    $intersection->{$key} = $nat_map->{$key};
+		    if ($nat_map->{$key} ne $result->{$key}) {
+			my $nat1 = $result->{$key};
+			my $nat2 = $nat_map->{$key};
+			my $ip1 = Netspoc::print_ip($nat1->{ip});
+			my $ip2 = Netspoc::print_ip($nat2->{ip});
+			print "Inconsistent NAT for $owner_name\n";
+			print " - $nat1->{name}, $ip1\n";
+			print " - $nat2->{name}, $ip2\n";
+		    }
+		}
+	    }
+	    $result = $intersection;
+	}
+	$owner2nat_map{$owner_name} = $result;
+    }
+}
+
 ####################################################################
-# Get hosts, networks and any objects owned by current owner or
+# Get hosts, networks and 'any' objects owned by current owner or
 # where some sub_owner equals current owner.
 ####################################################################
 
@@ -428,21 +543,11 @@ sub service_list {
 		 {
 		     name => $pname,
 		     description => $policy->{description},
-		     ips => $policy->{all_ip},
 		     owner => $owner,
 		 });
 	}
     }
     return \@result;
-}
-
-sub check_owner {
-    my ($cgi, $session) = @_;
-    my $owner = $session->param('owner');
-    my $pname = $cgi->param('service') or abort "Missing parameter 'service'";
-    my $policy = $policies{$pname} or abort "Unknown policy";
-    is_visible($owner, $policy) or abort "Policy not visible for owner";
-    return $policy;
 }
 
 sub proto_descr {
@@ -502,9 +607,20 @@ sub proto_descr {
     \@result;
 }
 
+sub get_service4owner {
+    my ($cgi, $owner) = @_;
+    my $pname = $cgi->param('service') or abort "Missing parameter 'service'";
+    my $policy = $policies{$pname} or abort "Unknown policy";
+    my $visible = is_visible($owner, $policy) 
+	or abort "Policy not visible for owner";
+    return ($policy, $visible);
+}
+
 sub get_rules {
     my ($cgi, $session) = @_;
-    my $policy = check_owner($cgi, $session);
+    my $active_owner = $session->param('owner');
+    my ($policy, $visible) = get_service4owner($cgi, $active_owner);
+    my $nat_map = $owner2nat_map{$active_owner};
     return [ 
 	     map {
 		 { 
@@ -512,8 +628,8 @@ sub get_rules {
 		     has_user => $_->{has_user},
 		     
 		     # ToDo: Expand auto_interfaces.
-		     src => ip_for_objects($_->{expanded_src}),
-		     dst => ip_for_objects($_->{expanded_dst}),
+		     src => ip_for_objects($_->{expanded_src}, $nat_map),
+		     dst => ip_for_objects($_->{expanded_dst}, $nat_map),
 		     srv => proto_descr(Netspoc::expand_services($_->{srv}, 
 								 "rule in $_")),
 		 }
@@ -523,15 +639,14 @@ sub get_rules {
 
 sub get_user {
     my ($cgi, $session) = @_;
-    my $policy = check_owner($cgi, $session);
-    my @users = @{ $policy->{expanded_user} };
-
     my $active_owner = $session->param('owner');
+    my ($policy, $visible) = get_service4owner($cgi, $active_owner);
+    my @users = @{ $policy->{expanded_user} };
+    my $nat_map = $owner2nat_map{$active_owner};
 
-    # User isn't owner but only uses policy.
-    # Only show owner's users.
-    if (not grep({ $_ eq $active_owner } @{ $policy->{owners}}, @{ $policy->{sub_owners}}))
-    {
+    # Active owner isn't owner but only uses policy.
+    # Only show active owners's users.
+    if ($visible eq 'user') {
 	@users = 
 	    grep { 
 		my $result;
@@ -549,7 +664,7 @@ sub get_user {
 	@users;
     }
     return [ map { { name  => $_->{name},
-		     ip    => ip_for_object($_),
+		     ip    => ip_for_object($_, $nat_map),
 		     owner => owner_for_object($_),
 		 } } 
 	     @users ];
@@ -966,12 +1081,13 @@ sub init_data {
     order_services();
     link_topology();
     mark_disabled();
-    fill_sub_owners();
+    setup_sub_owners();
     distribute_nat_info();
     find_subnets();
     setany();
     setpath();
     set_policy_owner();
+    setup_owner2nat();
     setup_email2owners();
     setup_email2admin();
     setup_policy_info();
