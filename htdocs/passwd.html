@@ -10,7 +10,7 @@
 
 <body>
 <h1>Kennwort</h1>
-<form action="/netspoc/register" method="post">
+<form action="backend/register" method="post">
  <div>
   <fieldset>
    <legend>Neues Kennwort anfordern</legend>
@@ -26,8 +26,7 @@
 </form>
 <!-- Link für Bestätigungs-Mail dynamisch aus der aktuellen URL bestimmen. -->
 <script type="text/javascript">
-  document.getElementById("base").value = 
-  window.location.protocol + "//" +
-  window.location.host + "/netspoc";
+  var url = window.location.href;
+  document.getElementById("base").value = url.replace(/[^/]*$/, 'backend');
 </script>
 </body>
