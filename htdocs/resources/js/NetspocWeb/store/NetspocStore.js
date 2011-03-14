@@ -11,7 +11,7 @@ NetspocWeb.store.Netspoc = Ext.extend(
 			  root          : 'records',
 			  remoteSort    : false,
 			  autoLoad      : false,
-			  url           : '/netspoc/' + config.proxyurl
+			  url           : 'backend/' + config.proxyurl
 		      });
 	    NetspocWeb.store.Netspoc.superclass.constructor.call(this, config);
 	    this.addListener('beforeload', function ( store, options ) {
