@@ -78,9 +78,14 @@ sub load_config {
 sub load {
     my ($path) = @_;
     $path = Encode::encode('UTF-8', "$config->{netspoc_data}/$path");
-    open (my $fh, '<', $path) or die "Can't open $path\n";
-    local $/ = undef;
-    return from_json( <$fh>, { utf8  => 1 } );
+    if (-e $path) {
+	open (my $fh, '<', $path) or die "Can't open $path\n";
+	local $/ = undef;
+	return from_json( <$fh>, { utf8  => 1 } );
+    }
+    else {
+	return [];
+    }
 }
 
 sub check_file {
