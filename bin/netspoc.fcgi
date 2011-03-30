@@ -12,6 +12,7 @@ use Digest::MD5 qw/md5_hex/;
 use String::MkPasswd qw(mkpasswd);
 use Encode;
 use Netspoc;
+use open qw(:std :utf8);
 
 sub usage {
     die "Usage: $0 CONFIG [:PORT | 0 [#PROC]]\n";
@@ -78,14 +79,17 @@ sub load_config {
 sub load {
     my ($path) = @_;
     $path = Encode::encode('UTF-8', "$config->{netspoc_data}/$path");
-    if (-e $path) {
-	open (my $fh, '<', $path) or die "Can't open $path\n";
-	local $/ = undef;
-	return from_json( <$fh>, { utf8  => 1 } );
-    }
-    else {
-	return [];
-    }
+    open (my $fh, '<', $path) or die "Can't open $path\n";
+    local $/ = undef;
+    return from_json( <$fh>, { utf8  => 1 } );
+}
+
+sub load_string {
+    my ($path) = @_;
+    $path = Encode::encode('UTF-8', "$config->{netspoc_data}/$path");
+    open (my $fh, '<', $path) or die "Can't open $path\n";
+    local $/ = undef;
+    return <$fh>;
 }
 
 sub check_file {
@@ -111,7 +115,13 @@ sub get_hosts {
     my $net_name = $cgi->param('network') or die "Missing param 'network'\n";
     my $owner = $session->param('owner');
     $net_name =~ s/^network://;
-    return load("owner/$owner/hosts/$net_name");
+    my $path = "owner/$owner/hosts/$net_name";
+    if (check_file $path) {
+	return load($path);
+    }
+    else {
+	return [];
+    }
 }
 
 ####################################################################
@@ -141,14 +151,28 @@ sub get_rules {
     my ($cgi, $session) = @_;
     my $active_owner = $session->param('owner');
     my $pname = $cgi->param('service') or abort "Missing parameter 'service'";
-    return load("owner/$active_owner/services/$pname/rules");
+    my $path = "owner/$active_owner/services/$pname/rules";
+    if (check_file $path) {
+	return load($path);
+    }
+    else {
+	my $policy_owner = load_string("${path}x");
+	$path = "owner/$policy_owner/services/$pname/rules";
+	return load($path);
+    }
 }
 
 sub get_user {
     my ($cgi, $session) = @_;
     my $active_owner = $session->param('owner');
     my $pname = $cgi->param('service') or abort "Missing parameter 'service'";
-    return load("owner/$active_owner/services/$pname/users");
+    my $path = "owner/$active_owner/services/$pname/users";
+    if (check_file $path) {
+	return load($path);
+    }
+    else {
+	return [];
+    }
 }
 
 ####################################################################
