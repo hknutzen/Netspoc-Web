@@ -11,7 +11,6 @@ use CGI::Session::Driver::file;
 use Digest::MD5 qw/md5_hex/;
 use String::MkPasswd qw(mkpasswd);
 use Encode;
-use Netspoc;
 use open qw(:std :utf8);
 
 sub usage {
