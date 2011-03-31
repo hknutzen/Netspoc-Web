@@ -152,14 +152,20 @@ sub get_rules {
     my $active_owner = $session->param('owner');
     my $pname = $cgi->param('service') or abort "Missing parameter 'service'";
     my $path = "owner/$active_owner/services/$pname/rules";
-    if (check_file $path) {
-	return load($path);
-    }
-    else {
+    if (not check_file $path) {
 	my $policy_owner = load_string("${path}x");
 	$path = "owner/$policy_owner/services/$pname/rules";
-	return load($path);
     }
+    my $hash = load($path);
+    my ($rules, $objects) = @{$hash}{qw(rules objects)};
+    for my $rule (@$rules) {
+	for my $what (qw(src dst)) {
+	    for my $obj (@{ $rule->{$what} }) {
+		$obj = $objects->{$obj}->{ip};
+	    }
+	}
+    }
+    return $rules;
 }
 
 sub get_user {
@@ -217,6 +223,9 @@ sub get_owners {
 sub get_emails {
     my ($cgi, $session) = @_;
     my $owner_name = $cgi->param('owner') or abort "Missing param 'owner'";
+    if ($owner_name eq ':unknown') {
+	return [];
+    }
     return load("owner/$owner_name/emails");
 }
 
