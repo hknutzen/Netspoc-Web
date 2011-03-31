@@ -492,7 +492,7 @@ sub handle_request {
 	}
 	$cookie = $cgi->cookie( -name    => $session->name,
 				-value   => $session->id,
-				-expires => '+30d' );
+				-expires => '+1y' );
 	decode_params($cgi);
 	my $data = $sub->($cgi, $session);
 	if ($flags->{html}) {
