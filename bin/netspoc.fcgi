@@ -73,7 +73,6 @@ sub load_config {
 }
 
 my %cache;
-my $objects;
 
 sub load_cached_json {
     my ($path) = @_;
@@ -86,13 +85,20 @@ sub load_cached_json {
 	$cache{$path}->{data} = $data;
 	$cache{$path}->{mtime} = $mtime;
 	if ($path =~ /objects$/) {
+
+	    # Add attribute 'name' to each object.
 	    for my $name (keys %$data) {
 		$data->{$name}->{name} = $name;
 	    }
-	    $objects = $data;
+	}
+	elsif ($path =~ m/service_lists$/) {
+
+	    # Add hash with all services as keys.
+	    my @snames = map @$_, values %$data;
+	    @{$data->{hash}}{@snames} = (1) x @snames;
 	}
 	elsif ($path =~/rules$/) {
-	    get_objects();
+	    my $objects = get_objects();
 	    for my $rule (@$data) {
 		for my $what (qw(src dst)) {
 		    for my $obj (@{ $rule->{$what} }) {
@@ -101,11 +107,11 @@ sub load_cached_json {
 		}
 	    }
 	}
-	elsif ($path =~/(?:hosts\/[^\/]+|networks|anys|users)$/) {
+	elsif ($path =~ /(?:(?:hosts|users)\/[^\/]+|networks|anys)$/) {
 
 	    # ToDo: Prevent race condition: 
 	    # new objects file with old rules, hosts, .. -file.
-	    get_objects();
+	    my $objects = get_objects();
 	    for my $obj (@$data) {
 		$obj = $objects->{$obj};
 	    }
@@ -123,14 +129,6 @@ sub load_json {
     return load_cached_json($path);
 }
 
-sub load_string {
-    my ($path) = @_;
-    $path = Encode::encode('UTF-8', "$config->{netspoc_data}/$path");
-    open (my $fh, '<', $path) or die "Can't open $path\n";
-    local $/ = undef;
-    return <$fh>;
-}
-
 sub check_file {
     my ($path) = @_;
     $path = "$config->{netspoc_data}/$path";
@@ -138,8 +136,7 @@ sub check_file {
 }
 
 sub get_objects {
-    my $objects = load_json('objects');
-    return $objects;
+    return load_json('objects');
 }
 
 sub get_any {
@@ -170,42 +167,43 @@ sub get_hosts {
 # Services, rules, users
 ####################################################################
 
-sub by_name { $a->{name} cmp $b->{name} }
-
 sub service_list {
     my ($cgi, $session) = @_;
     my $owner = $session->param('owner');
     my $relation = $cgi->param('relation');
+    my $lists = load_json("owner/$owner/service_lists");
+    my $plist;
     if (not $relation) {
-	my @result;
-	for my $relation (qw(owner user visible)) {
-	    push(@result, sort by_name
-		 @{ load_json("owner/$owner/service_list/$relation") });
-	}
-	return \@result;
+	$plist = [ sort map(@$_, @{$lists}{qw(owner user visible)}) ]
     }
     else {
-	return load_json("owner/$owner/service_list/$relation");
+	$plist = $lists->{$relation};
     }
+    my $policies = load_json('policies');
+    return [ map {
+	my $hash = { name => $_, %{ $policies->{$_}->{details}} };
+
+	# Convert [ owner, .. ] to "owner, .."
+	$hash->{owner} = join(',', @{ $hash->{owner} });
+	$hash;
+    } @$plist ];
 }
 
 sub get_rules {
     my ($cgi, $session) = @_;
-    my $active_owner = $session->param('owner');
+    my $owner = $session->param('owner');
     my $pname = $cgi->param('service') or abort "Missing parameter 'service'";
-    my $path = "owner/$active_owner/services/$pname/rules";
-    if (not check_file $path) {
-	my $policy_owner = load_string("${path}x");
-	$path = "owner/$policy_owner/services/$pname/rules";
-    }
-    return load_json($path);
+    my $lists = load_json("owner/$owner/service_lists");
+    $lists->{hash}->{$pname} or abort "Unknown service '$pname'";
+    my $policies = load_json('policies');
+    return $policies->{$pname}->{rules};
 }
 
-sub get_user {
+sub get_users {
     my ($cgi, $session) = @_;
-    my $active_owner = $session->param('owner');
+    my $owner = $session->param('owner');
     my $pname = $cgi->param('service') or abort "Missing parameter 'service'";
-    my $path = "owner/$active_owner/services/$pname/users";
+    my $path = "owner/$owner/users/$pname";
     if (not check_file $path) {
 	return [];
     }
@@ -482,7 +480,7 @@ my %path2sub =
      service_list  => [ \&service_list,  { owner => 1, } ],
      get_emails    => [ \&get_emails,    { owner => 1, } ],
      get_rules     => [ \&get_rules,     { owner => 1, } ],
-     get_user      => [ \&get_user,      { owner => 1, } ],
+     get_users     => [ \&get_users,     { owner => 1, } ],
      get_networks  => [ \&get_networks,  { owner => 1, } ],
      get_hosts     => [ \&get_hosts,     { owner => 1, } ],
       ); 
