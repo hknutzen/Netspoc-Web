@@ -305,7 +305,7 @@ NetspocManager.PolicyManager = Ext.extend(
 	    return {
 		xtype     : 'userlist',
 		region    : 'center',
-		proxyurl  : 'get_user',
+		proxyurl  : 'get_users',
 		id        : 'userListId',
 		listeners : {
 		    scope : this,
