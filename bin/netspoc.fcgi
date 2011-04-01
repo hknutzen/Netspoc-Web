@@ -59,11 +59,8 @@ sub internal_err {
 my $config;
 sub load_config {
     open( my $fh, $conf_file ) or internal_err "Can't open $conf_file: $!";
-    my $content = do { local $/; <$fh> };
-    close $fh;
-    my $json = new JSON;
-    $json->relaxed(1);
-    $config = $json->decode($content);
+    local $/;
+    $config = from_json(  <$fh>, { relaxed  => 1 } );
     
     my %required;
     for my $key (keys %conf_keys) {
@@ -75,12 +72,55 @@ sub load_config {
     }
 }
 
-sub load {
+my %cache;
+my $objects;
+
+sub load_cached_json {
+    my ($path) = @_;
+    my $data;
+    my $mtime = (stat($path))[9];
+    if ((($cache{$path}->{mtime}) || 0) < $mtime) {
+	open (my $fh, '<', $path) or die "Can't open $path\n";
+	local $/;
+	$data = from_json( <$fh>, { utf8  => 1 } );
+	$cache{$path}->{data} = $data;
+	$cache{$path}->{mtime} = $mtime;
+	if ($path =~ /objects$/) {
+	    for my $name (keys %$data) {
+		$data->{$name}->{name} = $name;
+	    }
+	    $objects = $data;
+	}
+	elsif ($path =~/rules$/) {
+	    get_objects();
+	    for my $rule (@$data) {
+		for my $what (qw(src dst)) {
+		    for my $obj (@{ $rule->{$what} }) {
+			$obj = $objects->{$obj}->{ip};
+		    }
+		}
+	    }
+	}
+	elsif ($path =~/(?:hosts\/[^\/]+|networks|anys|users)$/) {
+
+	    # ToDo: Prevent race condition: 
+	    # new objects file with old rules, hosts, .. -file.
+	    get_objects();
+	    for my $obj (@$data) {
+		$obj = $objects->{$obj};
+	    }
+	}	    
+    }
+    else {
+	$data = $cache{$path}->{data};
+    }
+    return $data;
+}
+
+sub load_json {
     my ($path) = @_;
     $path = Encode::encode('UTF-8', "$config->{netspoc_data}/$path");
-    open (my $fh, '<', $path) or die "Can't open $path\n";
-    local $/ = undef;
-    return from_json( <$fh>, { utf8  => 1 } );
+    return load_cached_json($path);
 }
 
 sub load_string {
@@ -97,16 +137,21 @@ sub check_file {
     return -e $path;
 }
 
+sub get_objects {
+    my $objects = load_json('objects');
+    return $objects;
+}
+
 sub get_any {
     my ($cgi, $session) = @_;
     my $owner = $session->param('owner');
-    return load("owner/$owner/anys");
+    return load_json("owner/$owner/anys");
 }
 
 sub get_networks {
     my ($cgi, $session) = @_;
     my $owner = $session->param('owner');
-    return load("owner/$owner/networks");
+    return load_json("owner/$owner/networks");
 }
 
 sub get_hosts {
@@ -115,12 +160,10 @@ sub get_hosts {
     my $owner = $session->param('owner');
     $net_name =~ s/^network://;
     my $path = "owner/$owner/hosts/$net_name";
-    if (check_file $path) {
-	return load($path);
-    }
-    else {
+    if (not check_file $path) {
 	return [];
     }
+    return load_json($path);
 }
 
 ####################################################################
@@ -137,12 +180,12 @@ sub service_list {
 	my @result;
 	for my $relation (qw(owner user visible)) {
 	    push(@result, sort by_name
-		 @{ load("owner/$owner/service_list/$relation") });
+		 @{ load_json("owner/$owner/service_list/$relation") });
 	}
 	return \@result;
     }
     else {
-	return load("owner/$owner/service_list/$relation");
+	return load_json("owner/$owner/service_list/$relation");
     }
 }
 
@@ -155,16 +198,7 @@ sub get_rules {
 	my $policy_owner = load_string("${path}x");
 	$path = "owner/$policy_owner/services/$pname/rules";
     }
-    my $hash = load($path);
-    my ($rules, $objects) = @{$hash}{qw(rules objects)};
-    for my $rule (@$rules) {
-	for my $what (qw(src dst)) {
-	    for my $obj (@{ $rule->{$what} }) {
-		$obj = $objects->{$obj}->{ip};
-	    }
-	}
-    }
-    return $rules;
+    return load_json($path);
 }
 
 sub get_user {
@@ -172,12 +206,10 @@ sub get_user {
     my $active_owner = $session->param('owner');
     my $pname = $cgi->param('service') or abort "Missing parameter 'service'";
     my $path = "owner/$active_owner/services/$pname/users";
-    if (check_file $path) {
-	return load($path);
-    }
-    else {
+    if (not check_file $path) {
 	return [];
     }
+    return load_json($path);
 }
 
 ####################################################################
@@ -215,7 +247,7 @@ sub get_owner {
 sub get_owners {
     my ($cgi, $session) = @_;
     my $email = $session->param('email');
-    return load("email/$email/owners");
+    return load_json("email/$email/owners");
 }
 
 # Get list of all emails for given owner.
@@ -225,7 +257,7 @@ sub get_emails {
     if ($owner_name eq ':unknown') {
 	return [];
     }
-    return load("owner/$owner_name/emails");
+    return load_json("owner/$owner_name/emails");
 }
 
 
@@ -409,7 +441,7 @@ sub known_owner {
     my $email = $session->param('email') || $session->param('user');
     my $active_owner = $session->param('owner') || '';
     return grep { $active_owner eq $_->{name} } 
-    @{ load("email/$email/owners") };
+    @{ load_json("email/$email/owners") };
 }
 
 sub logout {
@@ -549,14 +581,6 @@ sub handle_request {
     }
 }
 
-####################################################################
-# Initialize Netspoc data
-####################################################################
-sub init_data {
-
-    load_config();
-}
-
 sub run {
     my ( %params ) = @_;
 
@@ -607,7 +631,7 @@ sub run {
 # Start server
 ####################################################################
 
-init_data();
+load_config();
 
 # Tell parent that we have initialized successfully.
 if (my $ppid = $ENV{PPID}) {
