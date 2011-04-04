@@ -77,13 +77,12 @@ my %cache;
 sub load_cached_json {
     my ($path) = @_;
     my $data;
-    my $mtime = (stat($path))[9];
+    my $mtime = (stat($path))[9] 
+	or die "Can't get modification time of $path\n";
     if ((($cache{$path}->{mtime}) || 0) < $mtime) {
 	open (my $fh, '<', $path) or die "Can't open $path\n";
 	local $/;
 	$data = from_json( <$fh>, { utf8  => 1 } );
-	$cache{$path}->{data} = $data;
-	$cache{$path}->{mtime} = $mtime;
 	if ($path =~ /objects$/) {
 
 	    # Add attribute 'name' to each object.
@@ -91,18 +90,25 @@ sub load_cached_json {
 		$data->{$name}->{name} = $name;
 	    }
 	}
+	elsif ($path =~ m/no_nat_set$/) {
+
+	    # Change array to hash.
+	    $data = { map { $_ => 1 } @$data };
+	}
 	elsif ($path =~ m/service_lists$/) {
 
 	    # Add hash with all services as keys.
 	    my @snames = map @$_, values %$data;
 	    @{$data->{hash}}{@snames} = (1) x @snames;
 	}
-	elsif ($path =~/rules$/) {
+	elsif ($path =~/services$/) {
 	    my $objects = get_objects();
-	    for my $rule (@$data) {
-		for my $what (qw(src dst)) {
-		    for my $obj (@{ $rule->{$what} }) {
-			$obj = $objects->{$obj}->{ip};
+	    for my $service (values %$data) {
+		for my $rule (@{ $service->{rules} }) {
+		    for my $what (qw(src dst)) {
+			for my $obj (@{ $rule->{$what} }) {
+			    $obj = $objects->{$obj};
+			}
 		    }
 		}
 	    }
@@ -115,7 +121,9 @@ sub load_cached_json {
 	    for my $obj (@$data) {
 		$obj = $objects->{$obj};
 	    }
-	}	    
+	}
+	$cache{$path}->{data} = $data;
+	$cache{$path}->{mtime} = $mtime;
     }
     else {
 	$data = $cache{$path}->{data};
@@ -139,6 +147,33 @@ sub get_objects {
     return load_json('objects');
 }
 
+sub get_no_nat_set {
+    my ($owner) = @_;
+    return load_json("owner/$owner/no_nat_set");
+}
+
+sub get_nat_obj {
+    my ($obj, $no_nat_set) = @_;
+    if (my $href = $obj->{nat}) {
+	for my $tag (keys %$href) {
+	    next if $no_nat_set->{$tag};
+	    my $nat_ip = $href->{$tag};
+	    return { %$obj, ip => $nat_ip };
+	}
+    }
+    return undef;
+}
+    
+sub subst_nat {
+    my ($objects, $owner) = @_;
+    my $no_nat_set = get_no_nat_set($owner);
+    for my $obj (@$objects) {
+	if (my $nat_obj = get_nat_obj($obj, $no_nat_set)) {
+	    $obj = $nat_obj;
+	}
+    }
+}
+
 sub get_any {
     my ($cgi, $session) = @_;
     my $owner = $session->param('owner');
@@ -148,7 +183,9 @@ sub get_any {
 sub get_networks {
     my ($cgi, $session) = @_;
     my $owner = $session->param('owner');
-    return load_json("owner/$owner/networks");
+    my $networks = load_json("owner/$owner/networks");
+    subst_nat($networks, $owner);
+    return $networks;
 }
 
 sub get_hosts {
@@ -160,7 +197,9 @@ sub get_hosts {
     if (not check_file $path) {
 	return [];
     }
-    return load_json($path);
+    my $hosts = load_json($path);
+    subst_nat($hosts, $owner);
+    return $hosts;
 }
 
 ####################################################################
@@ -179,9 +218,9 @@ sub service_list {
     else {
 	$plist = $lists->{$relation};
     }
-    my $policies = load_json('policies');
+    my $services = load_json('services');
     return [ map {
-	my $hash = { name => $_, %{ $policies->{$_}->{details}} };
+	my $hash = { name => $_, %{ $services->{$_}->{details}} };
 
 	# Convert [ owner, .. ] to "owner, .."
 	$hash->{owner} = join(',', @{ $hash->{owner} });
@@ -192,22 +231,41 @@ sub service_list {
 sub get_rules {
     my ($cgi, $session) = @_;
     my $owner = $session->param('owner');
-    my $pname = $cgi->param('service') or abort "Missing parameter 'service'";
+    my $sname = $cgi->param('service') or abort "Missing parameter 'service'";
     my $lists = load_json("owner/$owner/service_lists");
-    $lists->{hash}->{$pname} or abort "Unknown service '$pname'";
-    my $policies = load_json('policies');
-    return $policies->{$pname}->{rules};
+
+    # Check if owner is allowed to access this service.
+    $lists->{hash}->{$sname} or abort "Unknown service '$sname'";
+    my $services = load_json('services');
+
+    # Rules reference objects. 
+    # Build copy which holds IP addresses with NAT aplied.
+    my $no_nat_set = get_no_nat_set($owner);
+    my $rules = $services->{$sname}->{rules};
+    my $crules;
+    for my $rule (@$rules) {
+	my $crule = { %$rule };
+	for my $what (qw(src dst)) {
+	    $crule->{$what} = 
+		[ map((get_nat_obj($_, $no_nat_set) || $_)->{ip},
+		      @{ $rule->{$what} }) ];
+	}
+	push @$crules, $crule;
+    }
+    return $crules;
 }
 
 sub get_users {
     my ($cgi, $session) = @_;
     my $owner = $session->param('owner');
-    my $pname = $cgi->param('service') or abort "Missing parameter 'service'";
-    my $path = "owner/$owner/users/$pname";
+    my $sname = $cgi->param('service') or abort "Missing parameter 'service'";
+    my $path = "owner/$owner/users/$sname";
     if (not check_file $path) {
 	return [];
     }
-    return load_json($path);
+    my $users = load_json($path);
+    subst_nat($users, $owner);
+    return $users;
 }
 
 ####################################################################
