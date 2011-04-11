@@ -82,7 +82,7 @@ sub load_cached_json {
     if ((($cache{$path}->{mtime}) || 0) < $mtime) {
 	open (my $fh, '<', $path) or die "Can't open $path\n";
 	local $/;
-	$data = from_json( <$fh>, { utf8  => 1 } );
+	$data = from_json( <$fh> );
 	if ($path =~ /objects$/) {
 
 	    # Add attribute 'name' to each object.
@@ -92,16 +92,23 @@ sub load_cached_json {
 	}
 	elsif ($path =~ m/no_nat_set$/) {
 
+	    # Input: Array with no_nat_tags.
 	    # Change array to hash.
 	    $data = { map { $_ => 1 } @$data };
 	}
 	elsif ($path =~ m/service_lists$/) {
 
-	    # Add hash with all services as keys.
+	    # Input: Hash with owner|users|visible => [ service_name, ..]
+	    # Add hash with all service names as keys.
 	    my @snames = map @$_, values %$data;
 	    @{$data->{hash}}{@snames} = (1) x @snames;
 	}
 	elsif ($path =~/services$/) {
+
+	    # Input: Hash with service_name => { src => [ object_names, ..],
+	    #                                    dst => [ object_names, ..],
+	    #                                    ...}
+	    # Substitute names by objects.
 	    my $objects = get_objects();
 	    for my $service (values %$data) {
 		for my $rule (@{ $service->{rules} }) {
@@ -113,7 +120,18 @@ sub load_cached_json {
 		}
 	    }
 	}
-	elsif ($path =~ /(?:(?:hosts|users)\/[^\/]+|networks|anys)$/) {
+	elsif ($path =~ m/users$/) {
+	    
+	    # Input: Hash with service_name => [ object_name, ..]
+	    # Substitute object names by objects.
+	    my $objects = get_objects();
+	    for my $aref (values %$data) {
+		for my $name (@$aref) {
+		    $name = $objects->{$name};
+		}
+	    }
+	}
+	elsif ($path =~ /(?:hosts\/[^\/]+|networks|anys)$/) {
 
 	    # ToDo: Prevent race condition: 
 	    # new objects file with old rules, hosts, .. -file.
@@ -239,7 +257,7 @@ sub get_rules {
     my $services = load_json('services');
 
     # Rules reference objects. 
-    # Build copy which holds IP addresses with NAT aplied.
+    # Build copy which holds IP addresses with NAT applied.
     my $no_nat_set = get_no_nat_set($owner);
     my $rules = $services->{$sname}->{rules};
     my $crules;
@@ -259,11 +277,9 @@ sub get_users {
     my ($cgi, $session) = @_;
     my $owner = $session->param('owner');
     my $sname = $cgi->param('service') or abort "Missing parameter 'service'";
-    my $path = "owner/$owner/users/$sname";
-    if (not check_file $path) {
-	return [];
-    }
-    my $users = load_json($path);
+    my $path = "owner/$owner/users";
+    my $sname2users = load_json($path);
+    my $users = $sname2users->{$sname} or abort "Unknown service '$sname'";
     subst_nat($users, $owner);
     return $users;
 }
