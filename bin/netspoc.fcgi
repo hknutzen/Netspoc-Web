@@ -74,6 +74,8 @@ sub load_config {
 
 my %cache;
 
+# ToDo: Prevent race condition, when 
+# loading new objects file with old rules or assets file.
 sub load_cached_json {
     my ($path) = @_;
     my $data;
@@ -105,10 +107,21 @@ sub load_cached_json {
 	}
 	elsif ($path =~/services$/) {
 
-	    # Input: Hash with service_name => { src => [ object_names, ..],
-	    #                                    dst => [ object_names, ..],
-	    #                                    ...}
-	    # Substitute names by objects.
+	    # Input: Hash mapping service names to details and rules.
+	    # { s1 => { 
+	    #      details => {
+	    #           description => "Text",
+	    #           owner => [owner1, .. ] | [":unknown"],
+	    #           sub_owners => [ owner2, ..] },
+	    #      rules => [
+	    #        { src => [ object_names, ..],
+	    #          dst => [ object_names, ..],
+	    #          action => "permit|deny",
+	    #          has_user => "src|dst|both",
+	    #          srv => [ "ip|tcp|tcp 80|...", ..] },
+	    #        ..]},
+	    #   ..}
+	    # Substitute object names in src and dst by objects.
 	    my $objects = get_objects();
 	    for my $service (values %$data) {
 		for my $rule (@{ $service->{rules} }) {
@@ -122,7 +135,8 @@ sub load_cached_json {
 	}
 	elsif ($path =~ m/users$/) {
 	    
-	    # Input: Hash with service_name => [ object_name, ..]
+	    # Input: Hash mapping service names to user objects.
+	    # { s1 => [ o1, ..], ..}
 	    # Substitute object names by objects.
 	    my $objects = get_objects();
 	    for my $aref (values %$data) {
@@ -131,13 +145,43 @@ sub load_cached_json {
 		}
 	    }
 	}
-	elsif ($path =~ /(?:hosts\/[^\/]+|networks|anys)$/) {
+	elsif ($path =~ /assets$/) {
 
-	    # ToDo: Prevent race condition: 
-	    # new objects file with old rules, hosts, .. -file.
+	    # Input: Hash with
+	    # { anys => {a1 => { networks => {n1 => { hosts => [h1, ..],
+	    #                                         interfaces => [i1, ..]},
+	    #                                 ..}
+	    ######                    interfaces => [i1, ..]},
+	    #            ..},
+	    ######   routers => {r1 => [i1, ..],
+	    #               ..}}
+	    # Add attribute 'net2childs' with flattened networks hashes 
+	    # of all any objects.
 	    my $objects = get_objects();
-	    for my $obj (@$data) {
-		$obj = $objects->{$obj};
+	    my $anys = $data->{anys};
+	    $data->{net2childs} = { map(%{ $_->{networks} }, values %$anys) };
+
+	    # Add attribute 'any_list' with list of 'any' objects.
+	    $data->{any_list} = [ map($objects->{$_}, keys %$anys) ];
+
+	    # Add attribute 'network_list' with list of network objects.
+	    $data->{network_list} = 
+		[ map($objects->{$_}, keys %{ $data->{net2childs} }) ];
+	    
+	    # Substitute network hashes of 'any' objects by list of 
+	    # network objects.
+	    for my $hash (values %$anys) {
+		$hash->{networks} = 
+		    [ map($objects->{$_}, keys %{ $hash->{networks} }) ];
+	    }
+
+	    # Substitute child names of net2childs by objects.
+	    for my $hash (values %{ $data->{net2childs} }) {
+		for my $aref (values %$hash) {
+		    for my $name (@$aref) {
+			$name = $objects->{$name};
+		    }
+		}
 	    }
 	}
 	$cache{$path}->{data} = $data;
@@ -195,13 +239,15 @@ sub subst_nat {
 sub get_any {
     my ($cgi, $session) = @_;
     my $owner = $session->param('owner');
-    return load_json("owner/$owner/anys");
+    my $assets = load_json("owner/$owner/assets");
+    return $assets->{any_list};
 }
 
 sub get_networks {
     my ($cgi, $session) = @_;
     my $owner = $session->param('owner');
-    my $networks = load_json("owner/$owner/networks");
+    my $assets = load_json("owner/$owner/assets");
+    my $networks = $assets->{network_list};
     subst_nat($networks, $owner);
     return $networks;
 }
@@ -210,12 +256,8 @@ sub get_hosts {
     my ($cgi, $session) = @_;
     my $net_name = $cgi->param('network') or die "Missing param 'network'\n";
     my $owner = $session->param('owner');
-    $net_name =~ s/^network://;
-    my $path = "owner/$owner/hosts/$net_name";
-    if (not check_file $path) {
-	return [];
-    }
-    my $hosts = load_json($path);
+    my $assets = load_json("owner/$owner/assets");
+    my $hosts = $assets->{net2childs}->{$net_name}->{hosts};
     subst_nat($hosts, $owner);
     return $hosts;
 }
