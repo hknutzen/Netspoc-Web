@@ -128,9 +128,14 @@ NetspocManager.NetworkManager = Ext.extend(
 	onNetworkListSelected : function() {
             var selectedNetwork =
 		this.getComponent('networkListId').getSelected();
-	    var name  = selectedNetwork.get( 'name' );
 	    var store = Ext.StoreMgr.get('stNetworkDetailsId');
-	    store.load({ params : { network : name } });
+	    if (selectedNetwork) {
+		var name  = selectedNetwork.get( 'name' );
+		store.load({ params : { network : name } });		
+	    }
+	    else {
+		store.removeAll();
+	    }
 	}
     }
 );
