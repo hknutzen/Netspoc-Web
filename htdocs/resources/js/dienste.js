@@ -60,7 +60,7 @@ NetspocManager.workspace = function () {
 		return;
 	    }
 	    // Automatically select owner if only one is available.
-	    if (records.length == 1) {
+	    if (records.length === 1) {
 		var new_owner = records[0].get('name');
 		this.setOwner(new_owner);
 	    }
@@ -141,7 +141,7 @@ NetspocManager.workspace = function () {
 	onOwnerChosen : function() {
 	    var combo = Ext.getCmp( 'cbOwnerId' );
 	    var new_owner = combo.getValue();
-	    if (owner == new_owner) {
+	    if (owner === new_owner) {
 		return;
 	    }
 	    this.setOwner(new_owner);
@@ -192,7 +192,10 @@ NetspocManager.workspace = function () {
 	},
 
 	onAfterLogout : function() {
-	    history.back();
+
+	    // Jump to login page,
+	    // which is assumed to be the default page in current directory.
+	    window.location.href = '.';
 	},
 
 	destroy : function() {
