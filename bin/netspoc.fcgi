@@ -148,8 +148,7 @@ sub load_cached_json {
 	elsif ($path =~ /assets$/) {
 
 	    # Input: Hash with
-	    # { anys => {a1 => { networks => {n1 => { hosts => [h1, ..],
-	    #                                         interfaces => [i1, ..]},
+	    # { anys => {a1 => { networks => {n1 => [h1,i1, ..],
 	    #                                 ..}
 	    ######                    interfaces => [i1, ..]},
 	    #            ..},
@@ -176,11 +175,9 @@ sub load_cached_json {
 	    }
 
 	    # Substitute child names of net2childs by objects.
-	    for my $hash (values %{ $data->{net2childs} }) {
-		for my $aref (values %$hash) {
-		    for my $name (@$aref) {
-			$name = $objects->{$name};
-		    }
+	    for my $aref (values %{ $data->{net2childs} }) {
+		for my $name (@$aref) {
+		    $name = $objects->{$name};
 		}
 	    }
 	}
@@ -257,9 +254,9 @@ sub get_hosts {
     my $net_name = $cgi->param('network') or die "Missing param 'network'\n";
     my $owner = $session->param('owner');
     my $assets = load_json("owner/$owner/assets");
-    my $hosts = $assets->{net2childs}->{$net_name}->{hosts};
-    subst_nat($hosts, $owner);
-    return $hosts;
+    my $childs = $assets->{net2childs}->{$net_name};
+    subst_nat($childs, $owner);
+    return $childs;
 }
 
 ####################################################################
