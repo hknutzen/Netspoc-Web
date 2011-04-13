@@ -312,7 +312,9 @@ sub get_users {
     my $sname = $cgi->param('service') or abort "Missing parameter 'service'";
     my $path = "owner/$owner/users";
     my $sname2users = load_json($path);
-    my $users = $sname2users->{$sname} or abort "Unknown service '$sname'";
+
+    # Empty user list is not exported intentionally.
+    my $users = $sname2users->{$sname} || [];
     subst_nat($users, $owner);
     return $users;
 }
