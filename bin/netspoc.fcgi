@@ -613,6 +613,14 @@ sub handle_request {
 	$path =~ s:^/::;
 	my $info = $path2sub{$path} or abort "Unknown path '$path'";
 	(my $sub, $flags) = @$info;
+	if ($session->is_empty()) {
+	    if ($flags->{create_cookie}) {
+		$session->new();
+	    }
+	    else {
+		die "Cookies must be activated\n";
+	    }
+	}
 	if (not $flags->{anon}) {
 	    if (logged_in($session)) {
 		if ($flags->{owner}) {
@@ -623,14 +631,6 @@ sub handle_request {
 	    }
 	    else {
 		abort "Login required";
-	    }
-	}
-	if ($session->is_empty()) {
-	    if ($flags->{create_cookie}) {
-		$session->new();
-	    }
-	    else {
-		die "Cookies must be activated\n";
 	    }
 	}
 	$cookie = $cgi->cookie( -name    => $session->name,
