@@ -355,7 +355,7 @@ sub get_owners {
     my ($cgi, $session) = @_;
     my $email = $session->param('email');
     my $email2owners = load_json("email");
-    return map({ name => $_}, $email2owners->{$email});
+    return [ map({ name => $_}, @{ $email2owners->{$email} }) ];
 }
 
 # Get list of all emails for given owner.
