@@ -196,12 +196,6 @@ sub load_json {
     return load_cached_json($path);
 }
 
-sub check_file {
-    my ($path) = @_;
-    $path = "$config->{netspoc_data}/$path";
-    return -e $path;
-}
-
 sub get_objects {
     return load_json('objects');
 }
@@ -354,11 +348,12 @@ sub get_owner {
     }
 }
 
-# Get list of all owners available for current user.
+# Get list of all owners available for current email.
 sub get_owners {
     my ($cgi, $session) = @_;
     my $email = $session->param('email');
-    return load_json("email/$email/owners");
+    my $email2owners = load_json("email");
+    return map({ name => $_}, $email2owners->{$email});
 }
 
 # Get list of all emails for given owner.
@@ -445,7 +440,8 @@ sub register {
     my ($cgi, $session) = @_;
     my $email = $cgi->param('email') or abort "Missing param 'email'";
     $email = lc $email;
-    check_file("email/$email") or abort "Unknown email '$email'";
+    my $email2owners = load_json("email");
+    $email2owners->{$email} or abort "Unknown email '$email'";
     my $base_url = $cgi->param( 'base_url' ) 
 	or abort "Missing param 'base_url' (Activate JavaScript)";
     check_attack($email);
@@ -523,7 +519,8 @@ sub login {
     logout($cgi, $session);
     my $email = $cgi->param('email') or abort "Missing param 'email'";
     $email = lc $email;
-    check_file("email/$email") or abort "Unknown email '$email'";
+    my $email2owners = load_json("email");
+    $email2owners->{$email} or abort "Unknown email '$email'";
     my $pass = $cgi->param('pass') or abort "Missing param 'pass'";
     my $app_url = $cgi->param('app') or abort "Missing param 'app'";
     check_attack($email);
@@ -551,8 +548,8 @@ sub known_owner {
     my ($session) = @_;
     my $email = $session->param('email') || $session->param('user');
     my $active_owner = $session->param('owner') || '';
-    return grep { $active_owner eq $_->{name} } 
-    @{ load_json("email/$email/owners") };
+    my $email2owners = load_json("email");
+    return grep { $active_owner eq $_ } @{ $email2owners->{$email} };
 }
 
 sub logout {
