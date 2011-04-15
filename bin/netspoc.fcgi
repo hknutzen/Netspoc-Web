@@ -78,6 +78,9 @@ my $netspoc_path;
 sub set_netspoc_path {
     my $path = $config->{netspoc_data};
     $netspoc_path = `readlink -f $path` || $path;
+
+    # Remove newline added by readlink.
+    chomp $netspoc_path;
 }
 
 my %cache;
