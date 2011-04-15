@@ -13,6 +13,9 @@ use String::MkPasswd qw(mkpasswd);
 use Encode;
 use open qw(:std :utf8);
 
+my $VERSION = ( split ' ',
+ '$Id$' )[2];
+
 sub usage {
     die "Usage: $0 CONFIG [:PORT | 0 [#PROC]]\n";
 }
@@ -26,11 +29,6 @@ $listen and ($listen =~ /^(?:[:]\d+|0)$/ or usage());
 $nproc and ($nproc =~/^\d+$/ or usage());
 
 $CGI::Session::Driver::file::FileName = "%s";
-
-# Global variables.
-my $program = "Netspoc JSON service";
-my $VERSION = ( split ' ',
- '$Id$' )[2];
 
 # Valid config options.
 my %conf_keys = map { ($_ => 1) } 
@@ -59,9 +57,10 @@ sub internal_err {
 my $config;
 sub load_config {
     open( my $fh, $conf_file ) or internal_err "Can't open $conf_file: $!";
-    local $/;
-    $config = from_json(  <$fh>, { relaxed  => 1 } );
-    
+    {
+	local $/ = undef;
+	$config = from_json(  <$fh>, { relaxed  => 1 } );
+    }    
     my %required;
     for my $key (keys %conf_keys) {
         next if $conf_keys{$key} eq 'optional';
@@ -72,6 +71,15 @@ sub load_config {
     }
 }
 
+# If $config->{netspoc_data} is a symbolic link, follow it to the real file.
+# This ensures a consistent state, if the link is changed while
+# we read multiple files during one call.
+my $netspoc_path;
+sub set_netspoc_path {
+    my $path = $config->{netspoc_data};
+    $netspoc_path = `readlink -f $path` || $path;
+}
+
 my %cache;
 
 # ToDo: Prevent race condition, when 
@@ -79,12 +87,16 @@ my %cache;
 sub load_cached_json {
     my ($path) = @_;
     my $data;
+
+    chomp $path;
     my $mtime = (stat($path))[9] 
-	or die "Can't get modification time of $path\n";
+	or die "Can't get modification time of $path: $!\n";
     if ((($cache{$path}->{mtime}) || 0) < $mtime) {
 	open (my $fh, '<', $path) or die "Can't open $path\n";
-	local $/;
-	$data = from_json( <$fh> );
+	{
+	    local $/ = undef;
+	    $data = from_json( <$fh> );
+	}
 	if ($path =~ /objects$/) {
 
 	    # Add attribute 'name' to each object.
@@ -192,7 +204,7 @@ sub load_cached_json {
 
 sub load_json {
     my ($path) = @_;
-    $path = Encode::encode('UTF-8', "$config->{netspoc_data}/$path");
+    $path = Encode::encode('UTF-8', "$netspoc_path/$path");
     return load_cached_json($path);
 }
 
@@ -636,6 +648,7 @@ sub handle_request {
 				-value   => $session->id,
 				-expires => '+1y' );
 	decode_params($cgi);
+	set_netspoc_path();
 	my $data = $sub->($cgi, $session);
 	if ($flags->{html}) {
 	    print $cgi->header( -type => 'text/html',
@@ -666,7 +679,6 @@ sub handle_request {
 	    print $cgi->header( -type    => 'text/x-json',
 				-charset => 'utf-8',
 				-cookie  => $cookie);
-#	    print encode_json($data),
 	    print to_json($data, {utf8 => 1, pretty => 1});    
 	}
     };
