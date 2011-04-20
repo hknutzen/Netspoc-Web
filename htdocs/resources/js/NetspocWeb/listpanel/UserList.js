@@ -40,7 +40,7 @@ NetspocWeb.listpanel.UserList = Ext.extend(
 	
 	buildStore : function() {
 	    return  {
-		xtype         : 'netspocstore',
+		xtype         : 'netspocstatestore',
 		proxyurl      : this.proxyurl,
 		storeId       : 'user',
 		sortInfo      : { field: 'ip', direction: "ASC" },
