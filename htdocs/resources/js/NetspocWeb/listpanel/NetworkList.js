@@ -40,8 +40,9 @@ NetspocWeb.listpanel.NetworkList = Ext.extend(
 	
 	buildStore : function() {
 	    return  {
-		xtype         : 'netspocstore',
+		xtype         : 'netspocstatestore',
 		proxyurl      : this.proxyurl,
+		doReload      : 1,
 		storeId       : 'networkDvStoreId',
 		sortInfo      : { field: 'ip', direction: "ASC" },
 		fields        : [
