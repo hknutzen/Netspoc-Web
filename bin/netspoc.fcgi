@@ -71,35 +71,100 @@ sub load_config {
     }
 }
 
-# If $config->{netspoc_data} is a symbolic link, follow it to the real file.
-# This ensures a consistent state, if the link is changed while
-# we read multiple files during one call.
-my $netspoc_path;
-sub set_netspoc_path {
-    my $path = $config->{netspoc_data};
-    $netspoc_path = `readlink -f $path` || $path;
+sub get_policy {
 
-    # Remove newline added by readlink.
-    chomp $netspoc_path;
+    # Read modification date of and policy number from file current/POLICY 
+    # Content is: # pnnnnn #...
+    my $policy_path = "$config->{netspoc_data}/current/POLICY";
+    my ($date, $time) = split(' ', qx(date -r $policy_path '+%F %T'));
+    my $policy = qx(cat $policy_path);
+    $policy =~ m/^# (\S+)/ or abort "Can't find policy name in $policy_path";
+    $policy = $1;
+    return [ { current => 1,
+	       policy => $policy,
+	       date => $date,
+	       time => $time,
+	   }];
 }
 
+sub get_history {
+    my @result = (get_policy())[0];
+
+    # Add data from RCS rlog output.
+    # Parse lines of this format:
+    # ...
+    # ----------------------------
+    # revision 1.4  ...
+    # date: 2011-04-18 11:23:01+02; ...
+    # <one or more lines of log message>
+    # ----------------------------
+    # ...
+    # We take date, time and  first line of the log message.
+    my $RCS_path = "$config->{netspoc_data}/RCS/POLICY,v";
+    if (-e $RCS_path) {
+	my @rlog = qx(rlog -zLT $RCS_path);
+
+	while (my $line = shift @rlog) {
+	    my($date, $time) = ($line =~ /^date: (\S+) (\S+)/) or next;
+	    my $policy = shift @rlog;
+	    chomp $policy;
+	    push(@result, { policy => $policy,
+			    date => $date,
+			    time => $time,
+			});
+	}
+    }
+    return \@result;
+}
+
+# Store data of file or RCS revisions of file in memory.
+# Data is partially postprocesses after first loading.
+#
+# Key: 
+# - pathname, direct pathname relative to $config->{netspoc_data}/ or 
+# - pathname:YYYY-MM-DD, 
+#   take revision from $config->{netspoc_data}/RCS of given date.
+# Value: Hash with { data => <data>, 
+#                    atime => <access time of data> }
 my %cache;
 
-# ToDo: Prevent race condition, when 
-# loading new objects file with old rules or assets file.
+my $selected_history;
+sub select_history {
+    my ($cgi) = @_;
+    $selected_history = $cgi->param('history') || 'current';
+}
+
+# Todo: Cleanup cache after reaching some size limit.
 sub load_cached_json {
     my ($path) = @_;
-    my $data;
+    my $pathspec = "$selected_history:$path";
+    my $data = $cache{$pathspec}->{data};
 
-    chomp $path;
-    my $mtime = (stat($path))[9] 
-	or die "Can't get modification time of $path: $!\n";
-    if ((($cache{$path}->{mtime}) || 0) < $mtime) {
-	open (my $fh, '<', $path) or die "Can't open $path\n";
+    if (not $data) {
+	my $fh;
+
+	# Check out from RCS revision of some date.
+	if ($selected_history =~ /^\d\d\d\d-\d\d-\d\d$/) {
+	    my $cmd = 
+		"co -p -d'$selected_history' $config->{netspoc_data}/$path";
+	    $cmd = Encode::encode('UTF-8', $cmd);
+	    open ($fh, '-|', $cmd) or die "Can't open $cmd: $!\n";
+	}
+
+	# Get selected policy from today.
+	elsif ($selected_history =~ /^(?:p\d{1,8}|current)$/) {
+	    my $real_path = "$config->{netspoc_data}/$selected_history/$path";
+	    $real_path = Encode::encode('UTF-8', $real_path);
+	    open ($fh, '<', $real_path) or die "Can't open $real_path\n";
+	}
+	else {
+	    abort "Invalid value for parameter 'history'";
+	}
 	{
 	    local $/ = undef;
 	    $data = from_json( <$fh> );
 	}
+	close($fh);
 	if ($path =~ /objects$/) {
 
 	    # Add attribute 'name' to each object.
@@ -196,19 +261,15 @@ sub load_cached_json {
 		}
 	    }
 	}
-	$cache{$path}->{data} = $data;
-	$cache{$path}->{mtime} = $mtime;
+	$cache{$pathspec}->{data} = $data;
     }
-    else {
-	$data = $cache{$path}->{data};
-    }
+    $cache{$pathspec}->{atime} = localtime();
     return $data;
 }
 
 sub load_json {
-    my ($path) = @_;
-    $path = Encode::encode('UTF-8', "$netspoc_path/$path");
-    return load_cached_json($path);
+    my ($path, $cgi) = @_;
+    return load_cached_json($path, $cgi);
 }
 
 sub get_objects {
@@ -244,14 +305,14 @@ sub subst_nat {
 
 sub get_any {
     my ($cgi, $session) = @_;
-    my $owner = $session->param('owner');
+    my $owner = $cgi->param('active_owner');
     my $assets = load_json("owner/$owner/assets");
     return $assets->{any_list};
 }
 
 sub get_networks {
     my ($cgi, $session) = @_;
-    my $owner = $session->param('owner');
+    my $owner = $cgi->param('active_owner');
     my $assets = load_json("owner/$owner/assets");
     my $networks = $assets->{network_list};
     subst_nat($networks, $owner);
@@ -260,8 +321,8 @@ sub get_networks {
 
 sub get_hosts {
     my ($cgi, $session) = @_;
-    my $net_name = $cgi->param('network') or die "Missing param 'network'\n";
-    my $owner = $session->param('owner');
+    my $net_name = $cgi->param('network') or abort "Missing param 'network'";
+    my $owner = $cgi->param('active_owner');
     my $assets = load_json("owner/$owner/assets");
     my $childs = $assets->{net2childs}->{$net_name};
     subst_nat($childs, $owner);
@@ -274,7 +335,7 @@ sub get_hosts {
 
 sub service_list {
     my ($cgi, $session) = @_;
-    my $owner = $session->param('owner');
+    my $owner = $cgi->param('active_owner');
     my $relation = $cgi->param('relation');
     my $lists = load_json("owner/$owner/service_lists");
     my $plist;
@@ -296,7 +357,7 @@ sub service_list {
 
 sub get_rules {
     my ($cgi, $session) = @_;
-    my $owner = $session->param('owner');
+    my $owner = $cgi->param('active_owner');
     my $sname = $cgi->param('service') or abort "Missing parameter 'service'";
     my $lists = load_json("owner/$owner/service_lists");
 
@@ -323,7 +384,7 @@ sub get_rules {
 
 sub get_users {
     my ($cgi, $session) = @_;
-    my $owner = $session->param('owner');
+    my $owner = $cgi->param('active_owner');
     my $sname = $cgi->param('service') or abort "Missing parameter 'service'";
     my $path = "owner/$owner/users";
     my $sname2users = load_json($path);
@@ -561,12 +622,18 @@ sub logged_in {
 
 # Validate active owner. 
 # Email could be removed from any owner role at any time in netspoc data.
-sub known_owner {
-    my ($session) = @_;
-    my $email = $session->param('email') || $session->param('user');
-    my $active_owner = $session->param('owner') || '';
-    my $email2owners = load_json("email");
-    return grep { $active_owner eq $_ } @{ $email2owners->{$email} };
+sub validate_owner {
+    my ($cgi, $session, $owner_needed) = @_;
+    if (my $active_owner = $cgi->param('active_owner')) {
+	$owner_needed or abort abort "Must not send parameter 'active_owner'";
+	my $email = $session->param('email');
+	my $email2owners = load_json("email");
+	grep { $active_owner eq $_ } @{ $email2owners->{$email} } or
+	    abort "Invalid owner: $active_owner";
+    } 
+    else {
+	$owner_needed and abort "Missing parameter 'active_owner'";
+    }
 }
 
 sub logout {
@@ -600,6 +667,7 @@ my %path2sub =
      register      => [ \&register,      { anon => 1, html  => 1, 
 					   create_cookie => 1, } ],
      verify        => [ \&verify,        { anon => 1, html  => 1, } ],
+     get_policy    => [ \&get_policy,    { anon => 1, no_history => 1, } ],
      logout        => [ \&logout,        {} ],
      get_owner     => [ \&get_owner,     {} ],
      get_owners    => [ \&get_owners,    {} ],
@@ -610,6 +678,7 @@ my %path2sub =
      get_users     => [ \&get_users,     { owner => 1, } ],
      get_networks  => [ \&get_networks,  { owner => 1, } ],
      get_hosts     => [ \&get_hosts,     { owner => 1, } ],
+     get_history   => [ \&get_history,   { owner => 1, } ],
       ); 
 
 sub handle_request {
@@ -623,6 +692,7 @@ sub handle_request {
 					 { Directory => 
 					       $config->{session_dir} }
 					 );
+	decode_params($cgi);
 	my $path = $cgi->path_info();
 	$path =~ s:^/::;
 	my $info = $path2sub{$path} or abort "Unknown path '$path'";
@@ -635,14 +705,10 @@ sub handle_request {
 		die "Cookies must be activated\n";
 	    }
 	}
+	select_history($cgi);
 	if (not $flags->{anon}) {
 	    if (logged_in($session)) {
-		if ($flags->{owner}) {
-		    if (not known_owner($session)) {
-			abort "Owner must be selected";
-		    }
-		}
-	    }
+		validate_owner($cgi, $session, $flags->{owner});	    }
 	    else {
 		abort "Login required";
 	    }
@@ -650,8 +716,6 @@ sub handle_request {
 	$cookie = $cgi->cookie( -name    => $session->name,
 				-value   => $session->id,
 				-expires => '+1y' );
-	decode_params($cgi);
-	set_netspoc_path();
 	my $data = $sub->($cgi, $session);
 	if ($flags->{html}) {
 	    print $cgi->header( -type => 'text/html',
