@@ -88,7 +88,7 @@ NetspocManager.NetworkManager = Ext.extend(
 	
 	buildNetworkDetails : function() {
 	    var store = {
-		xtype         : 'netspocstore',
+		xtype         : 'netspocstatestore',
 		proxyurl      : 'get_hosts',
 		storeId       : 'stNetworkDetailsId',
 		sortInfo      : { field: 'ip', direction: "ASC" },
