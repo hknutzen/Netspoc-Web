@@ -22,7 +22,6 @@ NetspocWeb.store.Netspoc = Ext.extend(
 	    this.addListener('load', function() { Ext.getBody().unmask(); });
 	    this.addListener('exception', this.onJsonException);
 	},
-
 	onJsonException :
 	function(proxy, type, action, options, response, arg ) {
 	    Ext.getBody().unmask();
@@ -70,3 +69,39 @@ NetspocWeb.store.Netspoc = Ext.extend(
 );
 
 Ext.reg( 'netspocstore', NetspocWeb.store.Netspoc);
+
+NetspocWeb.store.NetspocState = Ext.extend(
+    NetspocWeb.store.Netspoc,
+    {
+	constructor : function(config) {
+	    var appstate = NetspocManager.appstate;
+	    NetspocWeb.store.NetspocState.superclass.constructor.call(this, 
+								      config);
+	    // Set baseParams and reload store if appstate changes.
+	    this.setBaseParam('active_owner', appstate.getOwner());
+	    this.setBaseParam('history', appstate.getHistory());
+	    appstate.addListener(
+		'changed', 
+		function () {
+		    var params;
+		    var active_owner = appstate.getOwner();
+		    var history = appstate.getHistory();
+		    this.setBaseParam('active_owner', active_owner);
+		    this.setBaseParam('history', history);
+		    if (this.doReload) {
+
+			// We need to add BaseParams again because
+			// they had been copied to lastOptions internally.
+			params = {
+			    active_owner : active_owner,
+			    history : history
+			};
+			Ext.applyIf(params, this.lastOptions.params);
+			this.reload({params : params});
+		    }
+		}, this);
+	}
+    }
+);
+
+Ext.reg( 'netspocstatestore', NetspocWeb.store.NetspocState);
