@@ -47,7 +47,7 @@ NetspocManager.PolicyManager = Ext.extend(
 			text         : 'Eigene',
 			toggleGroup  : 'polNavBtnGrp',
 			enableToggle : true,
-			storeParams  : { relation : 'owner' },
+			relation     : 'owner',
 			scope        : this,
 			handler      : this.onButtonClick
                     },
@@ -56,7 +56,7 @@ NetspocManager.PolicyManager = Ext.extend(
 			toggleGroup  : 'polNavBtnGrp',
 			pressed      : true,
 			enableToggle : true,
-			storeParams  : { relation : 'user' },
+			relation     : 'user',
 			scope        : this,
 			handler      : this.onButtonClick
                     },
@@ -64,7 +64,7 @@ NetspocManager.PolicyManager = Ext.extend(
 			text         : 'Nutzbare',
 			toggleGroup  : 'polNavBtnGrp',
 			enableToggle : true,
-			storeParams  : { relation : 'visible' },
+			relation     : 'visible',
 			scope        : this,
 			handler      : this.onButtonClick
                     },
@@ -72,6 +72,7 @@ NetspocManager.PolicyManager = Ext.extend(
 			text         : 'Alle',
 			toggleGroup  : 'polNavBtnGrp',
 			enableToggle : true,
+			relation     : undefined,
 			storeParams  : {},
 			scope        : this,
 			handler      : this.onButtonClick
@@ -90,7 +91,12 @@ NetspocManager.PolicyManager = Ext.extend(
 	
 	onButtonClick :  function(button, event) {
 	    var plv = this.getComponent('policyListId');
-	    plv.loadStoreByParams( button.storeParams );
+	    var relation = button.relation;
+	    var params;
+	    if (relation) {
+		params = { relation : relation };
+	    }
+	    plv.loadStoreByParams(params);
 	    this.clearDetails();
 	},
 
@@ -180,7 +186,7 @@ NetspocManager.PolicyManager = Ext.extend(
 	    );
     
 	    var store = {
-		xtype    : 'netspocstore',
+		xtype    : 'netspocstatestore',
 		proxyurl : 'get_rules',
 		storeId  : 'dvRulesStoreId',
 		fields   : [
@@ -246,6 +252,7 @@ NetspocManager.PolicyManager = Ext.extend(
 	onPolicySelected : function() {
             var selectedPolicy = this.getComponent('policyListId').getSelected();
 	    if (! selectedPolicy) {
+		this.clearDetails();
 		return;
 	    }
 
