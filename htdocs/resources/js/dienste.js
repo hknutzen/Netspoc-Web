@@ -131,18 +131,8 @@ NetspocManager.workspace = function () {
 		{
 		    xtype      : 'netspocstore',
 		    proxyurl   : 'get_owners',
-		    baseParams : { column : 'name' },
 		    autoDestroy: true,
-		    fields     : [ 
-			{
-			    name    : 'name',
-			    mapping : 'name'
-			},
-			{
-			    name    : 'id',
-			    mapping : 'id'
-			}
-		    ]
+		    fields     : [ 'name', 'id' ]
 		};
 	    return config;
 	},
