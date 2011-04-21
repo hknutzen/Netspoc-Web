@@ -88,7 +88,9 @@ sub get_policy {
 }
 
 sub get_history {
-    my @result = (get_policy())[0];
+    my $policy_aref = get_policy();
+    my @result = $policy_aref->[0];
+    
 
     # Add data from RCS rlog output.
     # Parse lines of this format:
@@ -142,18 +144,18 @@ sub load_cached_json {
 
     if (not $data) {
 	my $fh;
+	my $dir = $config->{netspoc_data};
 
 	# Check out from RCS revision of some date.
 	if ($selected_history =~ /^\d\d\d\d-\d\d-\d\d$/) {
-	    my $cmd = 
-		"co -p -d'$selected_history' $config->{netspoc_data}/$path";
+	    my $cmd = "co -q -p -d'$selected_history' -zLT $dir/RCS/$path,v";
 	    $cmd = Encode::encode('UTF-8', $cmd);
 	    open ($fh, '-|', $cmd) or die "Can't open $cmd: $!\n";
 	}
 
 	# Get selected policy from today.
 	elsif ($selected_history =~ /^(?:p\d{1,8}|current)$/) {
-	    my $real_path = "$config->{netspoc_data}/$selected_history/$path";
+	    my $real_path = "$dir/$selected_history/$path";
 	    $real_path = Encode::encode('UTF-8', $real_path);
 	    open ($fh, '<', $real_path) or die "Can't open $real_path\n";
 	}
