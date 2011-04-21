@@ -5,28 +5,49 @@ Ext.ns( "NetspocManager" );
 Ext.QuickTips.init();
 
 // Store state of currently selected owner and history.
+// - owner is a string
+// - history is an object { policy : .., date : .., time : .., current : ..}
 // This is used by netspocstatestore to set and update its baseParams.
 NetspocManager.appstate = function () {
-    var selectedOwner, selectedHistory;
+    var owner, history;
     var state = new Ext.util.Observable();
     state.addEvents('changed');
     state.changeOwner = function (newOwner) {
-	if (newOwner !== selectedOwner) {
-	    selectedOwner = newOwner;
+	if (newOwner !== owner) {
+	    owner = newOwner;
 	    state.fireEvent('changed');
 	}
     };
-    state.changeHistory = function (newHistory) {
-	if (newHistory !== selectedHistory) {
-	    selectedHistory = newHistory;
+    state.changeHistory = function (record) {
+	var data = { policy  : record.get('policy'),
+		     date    : record.get('date'),
+		     time    : record.get('time'),
+		     current : record.get('current') };
+	if (! history || 
+	    data.policy !== history.policy) 
+	{
+	    history = data;
 	    state.fireEvent('changed');
 	}
     };
     state.getOwner = function () {
-	return selectedOwner;
+	return owner;
     };
     state.getHistory = function () {
-	return selectedHistory;
+	if (history.current) {
+	    return history.policy;
+	}
+	else {
+	    return history.date;
+	}
+    };
+    state.showHistory = function () {
+	var now = new Date();
+	var pdate = new Date(history.date);
+	var when = (now.getDayOfYear() === pdate.getDayOfYear())
+	? history.time : history.date;
+	var version = history.current ? 'aktuell' : history.policy; 
+	return (when + ' (' + version + ')');
     };
     return state;
 }();
@@ -44,16 +65,16 @@ NetspocManager.workspace = function () {
 		{
 		    proxyurl : 'get_policy',
 		    autoDestroy: true,
-		    fields     : [ 'policy', 'date', 'time' ]
+		    fields     : [ 'policy', 'date', 'time', 'current' ]
 		}
 	    );
 	    store.load({ scope    : this,
 			 store    : store, // make store available for callback
 			 callback : function(records, options, success) {
-			     var policy;
+			     var record;
 			     if (success && records.length) {
-				 policy = records[0].get('policy');
-				 NetspocManager.appstate.changeHistory(policy);
+				 record = records[0];
+				 NetspocManager.appstate.changeHistory(record);
 			     }
 			     options.store.destroy();
 			 }
@@ -266,7 +287,11 @@ NetspocManager.workspace = function () {
 			'->',
 			this.buildOwnerCombo(this.buildOwnersStore()),
 			'->',
-			'Verantwortungsbereich'
+			'Verantwortungsbereich',
+			'->',
+			this.buildHistoryCombo(),
+			'->',
+			'Stand'
 		    ]
 		}
 	    );
@@ -300,6 +325,48 @@ NetspocManager.workspace = function () {
 		    newPanel.cleanSlate();
 		}
 	    }
+	},
+
+	buildHistoryCombo : function () {
+	    var tpl =
+		'<tpl for="."><div class="x-combo-list-item">'
+		+ '{date} {time} ({policy})'
+		+ '</div></tpl>';
+	    return {
+		xtype          : 'combo',
+		forceSelection : true, 
+		autoselect     : true,
+		editable       : false,
+		allowblank     : false,
+		displayField   : undefined,
+		valueField     : undefined,
+		loadingText    : 'Abfrage l&auml;uft ...',
+		mode           : 'remote',
+		triggerAction  : 'all',
+		store          : {
+		    xtype      : 'netspocstatestore',
+		    proxyurl   : 'get_history',
+		    autoDestroy: true,
+		    fields     : [ 'policy', 'date', 'time', 'current' ]
+		},
+		tpl            : tpl,
+		listWidth      : 400,
+
+		// Show selected history.
+		value          : NetspocManager.appstate.showHistory(),
+		listeners:{
+		    scope  : this,
+		    // delete the previous query in the beforequery event
+		    // this will reload the store the next time it expands
+		    beforequery: function(qe){
+			delete qe.combo.lastQuery;
+		    },
+		    select : function (combo, record, index) {
+			NetspocManager.appstate.changeHistory(record);
+			combo.setValue(NetspocManager.appstate.showHistory());
+		    }
+		}
+	    };
 	}
 
     }; // end of return-closure
@@ -307,5 +374,3 @@ NetspocManager.workspace = function () {
 
 	    
 Ext.onReady( NetspocManager.workspace.init, NetspocManager.workspace );
-
-	
