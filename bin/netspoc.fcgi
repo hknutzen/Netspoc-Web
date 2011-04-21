@@ -151,7 +151,7 @@ sub load_cached_json {
 
 	# Check out from RCS revision of some date.
 	if ($selected_history =~ /^\d\d\d\d-\d\d-\d\d$/) {
-	    my $cmd = "co -q -p -d'$selected_history' -zLT $dir/RCS/$path,v";
+	    my $cmd = "co -q -p -d'$selected_history 23:59' -zLT $dir/RCS/$path,v";
 	    $cmd = Encode::encode('UTF-8', $cmd);
 	    open ($fh, '-|', $cmd) or die "Can't open $cmd: $!\n";
 	}
