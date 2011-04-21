@@ -76,7 +76,7 @@ sub get_policy {
     # Read modification date of and policy number from file current/POLICY 
     # Content is: # pnnnnn #...
     my $policy_path = "$config->{netspoc_data}/current/POLICY";
-    my ($date, $time) = split(' ', qx(date -r $policy_path '+%F %T'));
+    my ($date, $time) = split(' ', qx(date -r $policy_path '+%F %R'));
     my $policy = qx(cat $policy_path);
     $policy =~ m/^# (\S+)/ or abort "Can't find policy name in $policy_path";
     $policy = $1;
@@ -88,8 +88,10 @@ sub get_policy {
 }
 
 sub get_history {
-    my $policy_aref = get_policy();
-    my @result = $policy_aref->[0];
+    my $aref = get_policy();
+    my $current = $aref->[0];
+    my $current_policy = $current->{policy};
+    my @result = ($current);
     
 
     # Add data from RCS rlog output.
@@ -107,9 +109,10 @@ sub get_history {
 	my @rlog = qx(rlog -zLT $RCS_path);
 
 	while (my $line = shift @rlog) {
-	    my($date, $time) = ($line =~ /^date: (\S+) (\S+)/) or next;
+	    my($date, $time) = ($line =~ /^date: (\S+) (\d+:\d+)/) or next;
 	    my $policy = shift @rlog;
 	    chomp $policy;
+	    next if $policy eq $current_policy;
 	    push(@result, { policy => $policy,
 			    date => $date,
 			    time => $time,
