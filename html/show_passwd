@@ -14,7 +14,7 @@ Das System sendet Ihnen nun eine Bestätigungs-Email.<br/>
 Rufen Sie den darin enthaltenen Link auf, um diese Kennwort-Änderung zu
 bestätigen.
 <p>
-Nach erfogreicher Bestätigung lautet Ihr neues Kennwort:
+Nach erfolgreicher Bestätigung lautet Ihr neues Kennwort:
 <p>
 <input type="text" readonly size=10 value="[% pass %]"/>
 </body>
