@@ -1,0 +1,25 @@
+#!/bin/sh
+
+data=~/export
+link=current
+
+# Abort on any untested error.
+set -e
+
+cd $data
+current=$(readlink $link)
+version=$current
+
+# Add current version to RCS.
+~/NetspocWeb/bin/add_to_rcs $current RCS $version
+
+# Remove all versions except current one.
+for f in p* ; do
+    case $f in
+	$current)
+	    ;;
+	*)
+	    rm -rf $f
+	    ;;
+    esac
+done
