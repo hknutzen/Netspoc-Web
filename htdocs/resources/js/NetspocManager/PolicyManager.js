@@ -82,7 +82,9 @@ NetspocManager.PolicyManager = Ext.extend(
 			iconCls : 'icon-printer',
  			tooltip : 'Druckansicht (ermöglicht auch das Kopieren von Text)',
  			scope   : this,
-			handler : this.onPrint
+			handler : function( button ) {
+			    button.findParentByType('panel').printView();
+			}
 		    }
 		]
 	    };
@@ -100,65 +102,88 @@ NetspocManager.PolicyManager = Ext.extend(
 	    this.clearDetails();
 	},
 
-	onPrint :  function( button, event ) {
-	    var parent = button.findParentByType( 'policylist' );
-	    parent.printView();	    
-	},
-	    
 	buildPolicyDetailsView : function() {
-            return {
-		xtype     : 'tabpanel',
-		flex      : 2,
-		activeTab : 0,
-		deferredRender : false,
-		items     : [
-		    {
-			title  : 'Details zum Dienst',
-			xtype  : 'panel',
-			layout : 'border',
-			autoScroll : true,
-			items  : [
-			    {
-				xtype  : 'panel',
-				region : 'center',
-				layout : 'anchor',
-				items  : [
-				    this.buildPolicyDetailsDV(),
-				    this.buildPolicyRulesDV()
-				]
-			    },
-			    {
-				id          : 'PolicyEmails',
-				xtype       : 'emaillist',
-				proxyurl    : 'get_emails',
-				title       : 'Verantwortliche',
-				region      : 'south',
-				collapsible : true,
-				split       : true,
-				height      : 68
+	    var detailsPanel = 
+		{
+		    layout : 'border',
+		    autoScroll : true,
+		    items  : [
+			{
+			    region : 'center',
+			    layout : 'anchor',
+			    items  : [
+				this.buildPolicyDetailsDV(),
+				this.buildPolicyRulesDV()
+			    ]
+			},
+			{
+			    id          : 'PolicyEmails',
+			    xtype       : 'emaillist',
+			    proxyurl    : 'get_emails',
+			    title       : 'Verantwortliche',
+			    region      : 'south',
+			    collapsible : true,
+			    split       : true,
+			    height      : 68
+			}
+		    ]
+		};
+
+	    var userPanel = new Ext.Panel(
+		{
+		    layout : 'border',
+		    items  : [
+			this.buildUserDetailsDV(),  // center region (default)
+			{
+			    id          : 'UserEmails',
+			    xtype       : 'emaillist',
+			    proxyurl    : 'get_emails',
+			    title       : 'Verantwortliche',
+			    region      : 'south',
+			    collapsible : true,
+			    split       : true,
+			    height      : 68
+			}
+		    ]
+		}
+	    );
+	    
+            return new Ext.Panel(
+		{
+		    layout         :'card',
+		    flex           : 2,
+		    activeItem     : 0,
+		    deferredRender : false,
+		    tbar   : [
+			{
+			    text          : 'Details zum Dienst',
+			    toggleGroup   : 'polDVGrp',
+			    enableToggle  : true,
+			    pressed       : true,
+			    scope         : this,
+			    handler      : function ( button ) {
+				var cardPanel = button.findParentByType( 'panel' );
+				cardPanel.layout.setActiveItem( 0 );
 			    }
-			]
-		    },
-		    {
-			title  : 'Benutzer (User) des Dienstes',
-			xtype  : 'panel',
-			layout : 'border',
-			items  : [
-			    this.buildUserDetailsDV(),
-			    {
-				id          : 'UserEmails',
-				xtype       : 'emaillist',
-				proxyurl    : 'get_emails',
-				title       : 'Verantwortliche',
-				region      : 'south',
-				collapsible : true,
-				split       : true,
-				height      : 68
+			},
+			'-',
+			{
+			    text         : 'Benutzer (User) des Dienstes',
+			    toggleGroup  : 'polDVGrp',
+			    enableToggle : true,
+			    scope        : this,
+			    handler      : function ( button ) {
+				var cardPanel = button.findParentByType( 'panel' );
+				cardPanel.layout.setActiveItem( 1 );
 			    }
-			]
-		    }
-		]		    
-	    };
+			}
+		    ],
+		    items : [
+			detailsPanel,
+			userPanel
+		    ]
+		}
+	    );
 	},
 	
 	buildPolicyRulesDV : function() {
@@ -219,12 +244,12 @@ NetspocManager.PolicyManager = Ext.extend(
 	buildPolicyDetailsDV : function() {    
             return new Ext.FormPanel(
 		{
-		    id    : 'policyDetailsId',
-		    defaultType: 'textfield',
-		    defaults: {anchor : '100%' }, 
-		    border: false,
-		    style: { "margin-left": "3px" },
-		    items : [
+		    id          : 'policyDetailsId',
+		    defaultType : 'textfield',
+		    defaults    : { anchor : '100%' }, 
+		    border      : false,
+		    style       : { "margin-left": "3px" },
+		    items       : [
 			{ fieldLabel : 'Name',
 			  name       : 'name',
 			  readOnly   : true
