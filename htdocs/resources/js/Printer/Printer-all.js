@@ -161,7 +161,8 @@ Ext.ux.Printer.BaseRenderer = Ext.extend(Object, {
    * @return {String} The window title
    */
   getTitle: function(component) {
-    return typeof component.getTitle == 'function' ? component.getTitle() : (component.title || "Printing");
+    return typeof component.getTitle == 'function' ? component.getTitle() :
+	  ( component.title || "Drucken" );
   },
   
   /**
