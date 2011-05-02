@@ -36,9 +36,11 @@ NetspocWeb.listpanel.ListPanelBaseCls = Ext.extend(
 	},
 
 	printView : function() {
-            var view = this.getView();
-	    var grid = new Ext.grid.GridPanel(
+            var view  = this.getView();
+	    var title = view.title ? view.title + ' drucken': 'Drucken';
+	    var grid  = new Ext.grid.GridPanel(
 		{
+		    title   : title,
 		    store   : view.store,
 		    columns : view.columns
 		}
