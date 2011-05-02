@@ -11,7 +11,10 @@ use CGI::Session::Driver::file;
 use Digest::MD5 qw/md5_hex/;
 use String::MkPasswd qw(mkpasswd);
 use Encode;
-use open qw(:std :utf8);
+
+# Input from template files is encoded in utf8.
+# Output is explicitly sent as utf8.
+use open IN => ':utf8';
 
 my $VERSION = ( split ' ',
  '$Id$' )[2];
@@ -502,7 +505,9 @@ sub get_user_store {
     my ($email) = @_;
     new CGI::Session ('driver:file;id:static', $email, 
 		      { Directory=> $config->{password_dir} } 
-		      );
+		      ) 
+	or abort(CGI::Session->errstr());
+			  
 }
 
 # Get / set password for user.
@@ -726,7 +731,7 @@ sub handle_request {
 	    print $cgi->header( -type => 'text/html',
 				-charset => 'utf-8', 
 				-cookie => $cookie);
-	    print $data;	    
+	    print Encode::encode('UTF-8', $data);	    
 	}
 	elsif ($flags->{redir}) {
 	    print $cgi->redirect( -uri => $data, 
