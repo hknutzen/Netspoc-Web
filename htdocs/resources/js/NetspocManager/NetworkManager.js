@@ -61,68 +61,49 @@ NetspocManager.NetworkManager = Ext.extend(
 			handler : function() {
 			    //this.proxyurl = 'get_router'
 			}
-                    }
+                    },
+		    '->',
+		    {
+			xtype : 'printbutton'
+		    }
 		]
 	    };
 
 	},
 	
 	buildNetworkDetailsView : function() {
-            return {
-		xtype     : 'tabpanel',
-		flex      : 2,
-		activeTab : 0,
-		items     : [
+	    return {
+		xtype : 'cardprintactive',
+		flex           : 2,
+		activeItem     : 0,
+		deferredRender : false,
+		tbar : [
 		    {
-			title  : 'Enthaltene Ressourcen',
-			xtype  : 'panel',
-			layout : 'anchor',
-			autoScroll : true,
-			items  : [
-			    this.buildNetworkDetails()
-			]
+			text          : 'Enthaltene Ressourcen',
+			toggleGroup   : 'containedResourcesGrp',
+//			enableToggle  : true,
+//			pressed       : true,
+			scope         : this,
+			handler       : function ( button ) {
+			    var cardPanel = button.findParentByType( 'panel' );
+			    cardPanel.layout.setActiveItem( 0 );
+			}
+		    },
+		    '->',
+		    {
+			xtype : 'printbutton'
 		    }
+		],
+		items : [
+		    this.buildNetworkDetails()
 		]
-            };
+	    };
 	},
 	
 	buildNetworkDetails : function() {
-	    var store = {
-		xtype         : 'netspocstatestore',
-		proxyurl      : 'get_hosts',
-		storeId       : 'stNetworkDetailsId',
-		sortInfo      : { field: 'ip', direction: "ASC" },
-		fields        : [
-		    { name : 'ip',     mapping : 'ip'    },
-		    { name : 'name',   mapping : 'name'  },
-		    { name : 'owner' , mapping : 'owner' }
-		]
+	    return {
+		xtype : 'networkresourceslist'
 	    };
-
-	    return new Ext.ListView(
-		{
-		    id            : 'lvNetworkDetailsId',
-		    store         : store,
-		    singleSelect  : true,
-		    boxMinWidth   : 200,
-		    columns       : [
-			{
-			    header    : 'IP-Adresse',
-			    dataIndex : 'ip',
-			    width     : .25
-			},
-			{
-			    header    : 'Name',
-			    dataIndex : 'name'
-			},
-			{
-			    header    : 'Verantwortungsbereich',
-			    dataIndex : 'owner',
-			    width     : .25
-			}
-		    ]
-		}
-	    );
 	},
 
 	onNetworkListSelected : function() {

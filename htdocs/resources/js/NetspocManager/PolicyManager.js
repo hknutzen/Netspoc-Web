@@ -79,12 +79,7 @@ NetspocManager.PolicyManager = Ext.extend(
                     },
 		    '->',
 		    {
-			iconCls : 'icon-printer',
- 			tooltip : 'Druckansicht (ermöglicht auch das Kopieren von Text)',
- 			scope   : this,
-			handler : function( button ) {
-			    button.findParentByType('panel').printView();
-			}
+			 xtype : 'printbutton'
 		    }
 		]
 	    };
@@ -148,42 +143,44 @@ NetspocManager.PolicyManager = Ext.extend(
 		}
 	    );
 	    
-            return new Ext.Panel(
-		{
-		    layout         :'card',
-		    flex           : 2,
-		    activeItem     : 0,
-		    deferredRender : false,
-		    tbar   : [
-			{
-			    text          : 'Details zum Dienst',
-			    toggleGroup   : 'polDVGrp',
-			    enableToggle  : true,
-			    pressed       : true,
-			    scope         : this,
-			    handler      : function ( button ) {
-				var cardPanel = button.findParentByType( 'panel' );
-				cardPanel.layout.setActiveItem( 0 );
-			    }
-			},
-			'-',
-			{
-			    text         : 'Benutzer (User) des Dienstes',
-			    toggleGroup  : 'polDVGrp',
-			    enableToggle : true,
-			    scope        : this,
-			    handler      : function ( button ) {
-				var cardPanel = button.findParentByType( 'panel' );
-				cardPanel.layout.setActiveItem( 1 );
-			    }
+	    return {
+		xtype : 'cardprintactive',
+		flex           : 2,
+		activeItem     : 0,
+		deferredRender : false,
+		tbar : [
+		    {
+			text          : 'Details zum Dienst',
+			toggleGroup   : 'polDVGrp',
+			enableToggle  : true,
+			pressed       : true,
+			scope         : this,
+			handler       : function ( button ) {
+			    var cardPanel = button.findParentByType( 'panel' );
+			    cardPanel.layout.setActiveItem( 0 );
 			}
-		    ],
-		    items : [
-			detailsPanel,
-			userPanel
-		    ]
-		}
-	    );
+		    },
+		    '-',
+		    {
+			text         : 'Benutzer (User) des Dienstes',
+			toggleGroup  : 'polDVGrp',
+			enableToggle : true,
+			scope        : this,
+			handler      : function ( button ) {
+			    var cardPanel = button.findParentByType( 'panel' );
+			    cardPanel.layout.setActiveItem( 1 );
+			}
+		    },
+		    '->',
+		    {
+			xtype : 'printbutton'
+		    }
+		],
+		items : [
+		    detailsPanel,
+		    userPanel
+		]
+	    };
 	},
 	
 	buildPolicyRulesDV : function() {
