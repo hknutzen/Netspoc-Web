@@ -496,7 +496,7 @@ sub send_verification_mail {
     my $sendmail = $config->{sendmail_command};
     open(my $mail, "|$sendmail") or 
 	internal_err "Can't open $sendmail: $!";
-    print $mail $text;
+    print $mail Encode::encode('UTF-8', $text);
     close $mail or warn "Can't close $sendmail: $!\n";
 }
 
