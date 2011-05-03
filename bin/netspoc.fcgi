@@ -589,7 +589,6 @@ sub check_attack {
     my $store = get_user_store($email);
     my $wait = $store->param('login_wait');
     return if not $wait;
-    sleep(5);
     my $remain = $store->param('failed_time') + $wait - time();
     if ($remain > 0) {
 	abort("Wait for $remain seconds after wrong password" );
@@ -614,7 +613,6 @@ sub login {
     check_attack($email);
     if (not check_password($email, $pass)) {
 	my $wait = set_attack($email);
-	sleep(5);
 	abort "Login failed, wait $wait seconds";
     }
     clear_attack($email);
