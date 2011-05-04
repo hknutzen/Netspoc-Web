@@ -17,13 +17,21 @@ NetspocWeb.cardpanel.PrintActive = Ext.extend(
 //		console.log( activePanel.layout.type );
 		if ( activePanel.layout.type == 'border' ) {
 		    var cp = activePanel.layout.center.panel;
-		    var sp = activePanel.layout.south.panel;
+		    if ( activePanel.layout.north ) {
+			var np = activePanel.layout.north.panel;
+			if ( np ) {
+			    np.printView();
+			}
+		    }
+		    if ( activePanel.layout.south ) {
+			var sp = activePanel.layout.south.panel;
+			//if ( sp ) {
+			//sp.printView();
+			//}
+		    }
 		    if ( cp ) {
 			cp.printView();
 		    }
-		    //if ( sp ) {
-		    //sp.printView();
-		    //}
 		}
 		else if ( activePanel.layout.type == 'fit' ) {
 		    activePanel.printView();
