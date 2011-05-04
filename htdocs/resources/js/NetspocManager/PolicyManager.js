@@ -97,31 +97,66 @@ NetspocManager.PolicyManager = Ext.extend(
 	    this.clearDetails();
 	},
 
+	printDetails : function() {
+	    new Ext.Window(
+ 		{
+ 		    title     : 'Druckfunktion wird implementiert ...',
+ 		    width     : 500, 
+ 		    height    : 150,
+ 		    layout    : 'fit',
+		    resizable : false,
+ 		    items     : [
+ 			{
+ 			    frame  : true,
+ 			    layout : {
+ 				type    : 'fit',
+ 				padding : '5',
+ 				align   : 'center'
+ 			    },
+			    html : '<br><br><center> <h1> An einer Druckfunktion für Dienste-Details wird noch gearbeitet </h1> <br><br> <h1> Wir bitten um etwas Geduld ... </h1> </center>'
+ 			}
+ 		    ]
+ 		}
+ 	    ).show();
+	},
+	
 	buildPolicyDetailsView : function() {
 	    var detailsPanel = 
 		{
-		    layout : 'border',
+		    layout     : 'border',
 		    autoScroll : true,
-		    items  : [
+		    items      : [
 			{
-			    region : 'center',
-			    layout : 'anchor',
+			    region : 'north',
 			    items  : [
-				this.buildPolicyDetailsDV(),
-				this.buildPolicyRulesDV()
-			    ]
+				this.buildPolicyDetailsDV()
+			    ],
+			    printView : function() {
+				// Intentionally left empty, handle printing
+				// only once (for the center panel).
+			    }
 			},
 			{
+			    region : 'center',
+			    items  : [
+				this.buildPolicyRulesDV()
+			    ],
+			    printView : function() {
+				var pm = this.findParentByType( 'policymanager' );
+				pm.printDetails();
+			    }
+			},
+			{
+			    region      : 'south',
 			    id          : 'PolicyEmails',
 			    xtype       : 'emaillist',
 			    proxyurl    : 'get_emails',
 			    title       : 'Verantwortliche',
-			    region      : 'south',
 			    collapsible : true,
 			    split       : true,
 			    height      : 68
 			}
-		    ]
+		    ],
 		};
 
 	    var userPanel = new Ext.Panel(
@@ -173,7 +208,7 @@ NetspocManager.PolicyManager = Ext.extend(
 		    },
 		    '->',
 		    {
-			xtype : 'printbutton'
+			xtype     : 'printbutton'
 		    }
 		],
 		items : [
@@ -182,7 +217,7 @@ NetspocManager.PolicyManager = Ext.extend(
 		]
 	    };
 	},
-	
+
 	buildPolicyRulesDV : function() {
 	    var dvRulesTpl = new Ext.XTemplate(
 		'<div class="rule-container">',  // div for one rule
