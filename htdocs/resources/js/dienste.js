@@ -63,7 +63,6 @@ NetspocManager.workspace = function () {
 	
 	init : function () {
 	    this.getCurrentPolicy();
-	    this.get_active_owner();
 	},
 	getCurrentPolicy : function() {
 	    var store = new NetspocWeb.store.Netspoc(
@@ -75,17 +74,19 @@ NetspocManager.workspace = function () {
 	    );
 	    store.load({ scope    : this,
 			 store    : store, // make store available for callback
-			 callback : function(records, options, success) {
-			     var record;
-			     if (success && records.length) {
-				 record = records[0];
-				 NetspocManager.appstate.changeHistory(record);
-			     }
-			     options.store.destroy();
-			 }
+			 callback : this.onPolicyLoaded
 		       });
 	},
-	get_active_owner : function() {
+	onPolicyLoaded : function(records, options, success) {
+	    var record;
+	    if (success && records.length) {
+		record = records[0];
+		NetspocManager.appstate.changeHistory(record);
+	    }
+	    options.store.destroy();
+	    this.getActiveOwner();
+	},
+	getActiveOwner : function() {
 	    var store = new NetspocWeb.store.Netspoc(
 		{
 		    proxyurl : 'get_owner',
@@ -106,7 +107,7 @@ NetspocManager.workspace = function () {
 			     // check number of available owners.
 			     else {
 				 var store = Ext.create(this.buildOwnersStore());
-				 store.load({ callback : this.onAllOwnerLoaded,
+				 store.load({ callback : this.onOwnerLoaded,
 					      scope    : this,
 					      store    : store
 					    });
@@ -115,7 +116,7 @@ NetspocManager.workspace = function () {
 			 }});
 	},
 
-	onAllOwnerLoaded : function(records, options, success) {
+	onOwnerLoaded : function(records, options, success) {
 
 	    if (! success) {
 		return;
