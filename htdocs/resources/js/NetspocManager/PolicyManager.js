@@ -395,8 +395,15 @@ NetspocManager.PolicyManager = Ext.extend(
 	    }
 	    var emailPanel  = this.findById(name);
 	    var store       = emailPanel.getStore();
+	    var appstate = NetspocManager.appstate;
+	    var active_owner = appstate.getOwner();
+	    var history = appstate.getHistory();
 	    var lastOptions = store.lastOptions;
-	    if (lastOptions && lastOptions.params.owner == owner) {
+	    if (lastOptions 
+		&& lastOptions.params.owner === owner
+		&& lastOptions.params.history === history
+		&& lastOptions.params.active_owner === active_owner) 
+	    {
 		return;
 	    }
 	    store.load ({ params : { owner : owner } });
