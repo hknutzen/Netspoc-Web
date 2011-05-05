@@ -58,7 +58,7 @@ NetspocManager.appstate = function () {
 }();
 
 NetspocManager.workspace = function () {
-    var cardPanel, viewport;
+    var cardPanel;
     return {
 	
 	init : function () {
@@ -101,7 +101,7 @@ NetspocManager.workspace = function () {
 			     // Keep already selected owner.
 			     if (success && records.length) {
 				 var new_owner = records[0].get('name');
-				 this.setOwner(new_owner);
+				 this.startApp(new_owner);
 			     }
 			     // Owner was never selected, 
 			     // check number of available owners.
@@ -214,16 +214,19 @@ NetspocManager.workspace = function () {
 	},
 
 	onSetOwnerSuccess : function(records, options, success) {
-	    NetspocManager.appstate.changeOwner(options.params.owner);
-
-	    // close window late, otherwise we get some extjs error.
+	    var new_owner = options.params.owner;
 	    var window = Ext.getCmp( 'ownerWindow' );
+
+	    // Close window late, otherwise we get some extjs error.
 	    if (window) {
 		window.close();
 	    }
-	    if (! viewport) {
-		this.buildViewport();
-	    }
+	    this.startApp(new_owner);
+	},
+
+	startApp : function(new_owner) {
+	    NetspocManager.appstate.changeOwner(new_owner);
+	    this.buildViewport();
 	},
 
 	onLogout : function() {
@@ -302,7 +305,7 @@ NetspocManager.workspace = function () {
 		}
 	    );
 	    
-	    viewport = new Ext.Viewport(
+	    new Ext.Viewport(
 		{
 		    layout : 'fit',
 		    items  : cardPanel
@@ -325,11 +328,7 @@ NetspocManager.workspace = function () {
             activePanelIdx = cardPanel.items.indexOf( activePanel );
 	    
 	    if ( activePanelIdx !== newCardIndex ) {
-		layout.setActiveItem( newCardIndex ); 
-		
-		if ( newPanel.cleanSlate ) {
-		    newPanel.cleanSlate();
-		}
+		layout.setActiveItem( newCardIndex );
 	    }
 	},
 
