@@ -43,8 +43,12 @@ NetspocManager.appstate = function () {
     };
     state.showHistory = function () {
 	var now = new Date();
+	
+	// history.date: 'yyyy-mm-dd'
 	var ymd = history.date.split('-');
-	var pdate = new Date(ymd[0], ymd[1], ymd[2]);
+
+	// month for 'new Date' is counted from 0.
+	var pdate = new Date(ymd[0], ymd[1]-1, ymd[2]);
 	var when = (now.getDayOfYear() === pdate.getDayOfYear())
 	? history.time : history.date;
 	var version = history.current ? 'aktuell' : history.policy; 
