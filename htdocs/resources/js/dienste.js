@@ -112,7 +112,7 @@ NetspocManager.workspace = function () {
 					      store    : store
 					    });
 			     }
-			     options.store.destroy()
+			     options.store.destroy();
 			 }});
 	},
 
