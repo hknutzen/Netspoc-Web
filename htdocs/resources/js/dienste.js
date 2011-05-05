@@ -58,7 +58,6 @@ NetspocManager.appstate = function () {
 }();
 
 NetspocManager.workspace = function () {
-    var cardPanel;
     return {
 	
 	init : function () {
@@ -255,7 +254,7 @@ NetspocManager.workspace = function () {
 	},
 
 	buildViewport : function () {
-	    cardPanel = new Ext.Panel(
+	    var cardPanel = new Ext.Panel(
 		{
 		    layout     : 'card',
 		    activeItem : 0,
@@ -274,7 +273,9 @@ NetspocManager.workspace = function () {
 			    enableToggle  : true,
 			    pressed       : true,
 			    scope         : this,
-			    handler       : this.onSwitchPanel
+			    handler       : function ( button ) {
+				this.switchToCard(button, 0);
+			    }
 			},
 			'-',
 			{
@@ -284,7 +285,9 @@ NetspocManager.workspace = function () {
 			    toggleGroup  : 'navGrp',
 			    enableToggle : true,
 			    scope        : this,
-			    handler      : this.onSwitchPanel
+			    handler       : function ( button ) {
+				this.switchToCard(button, 1);
+			    }
 			},
 			'->',
 			{
@@ -313,23 +316,9 @@ NetspocManager.workspace = function () {
 	    );
 	},  // end of buildViewport
 
-	onSwitchPanel : function( button ) {
-	    var xtype = button.itemType,
-            panels    = cardPanel.findByType(xtype),
-            newPanel  = panels[0];
-	    
-	    var newCardIndex = cardPanel.items.indexOf( newPanel ); 
-	    this.switchToCard( newCardIndex, newPanel );
-	},
-
-	switchToCard : function( newCardIndex, newPanel ) {
-	    var layout     = cardPanel.getLayout(),
-            activePanel    = layout.activeItem,
-            activePanelIdx = cardPanel.items.indexOf( activePanel );
-	    
-	    if ( activePanelIdx !== newCardIndex ) {
-		layout.setActiveItem( newCardIndex );
-	    }
+	switchToCard : function( button, index ) {
+	    var cardPanel = button.findParentByType('panel');
+	    cardPanel.layout.setActiveItem( index );
 	},
 
 	buildHistoryCombo : function () {
