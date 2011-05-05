@@ -156,7 +156,7 @@ NetspocManager.PolicyManager = Ext.extend(
 			    split       : true,
 			    height      : 68
 			}
-		    ],
+		    ]
 		};
 
 	    var userPanel = new Ext.Panel(
