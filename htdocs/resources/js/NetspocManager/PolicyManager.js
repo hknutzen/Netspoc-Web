@@ -402,7 +402,9 @@ NetspocManager.PolicyManager = Ext.extend(
 	    if (lastOptions 
 		&& lastOptions.params.owner === owner
 		&& lastOptions.params.history === history
-		&& lastOptions.params.active_owner === active_owner) 
+		&& lastOptions.params.active_owner === active_owner
+		// Reload if data was removed previously.
+	        && store.getCount()) 
 	    {
 		return;
 	    }
