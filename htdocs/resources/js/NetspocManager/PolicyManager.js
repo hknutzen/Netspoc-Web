@@ -414,7 +414,7 @@ NetspocManager.PolicyManager = Ext.extend(
 	    var emailPanel = this.findById(name);
 	    var store = emailPanel.getStore();
 	    store.removeAll();
-	    emailPanel.setTitle('Vertwortliche');
+	    emailPanel.setTitle('Verantwortliche');
 	}
 
     }
