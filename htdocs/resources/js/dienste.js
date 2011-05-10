@@ -338,7 +338,7 @@ NetspocManager.workspace = function () {
 		mode           : 'remote',
 		triggerAction  : 'all',
 		store          : {
-		    xtype      : 'netspocstatestore',
+		    xtype      : 'netspocstore',
 		    proxyurl   : 'get_history',
 		    autoDestroy: true,
 		    fields     : [ 'policy', 'date', 'time', 'current' ]
