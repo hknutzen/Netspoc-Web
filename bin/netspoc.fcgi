@@ -686,7 +686,7 @@ my %path2sub =
      get_users     => [ \&get_users,     { owner => 1, } ],
      get_networks  => [ \&get_networks,  { owner => 1, } ],
      get_hosts     => [ \&get_hosts,     { owner => 1, } ],
-     get_history   => [ \&get_history,   { owner => 1, } ],
+     get_history   => [ \&get_history,   { owner => 0, } ],
       ); 
 
 sub handle_request {
