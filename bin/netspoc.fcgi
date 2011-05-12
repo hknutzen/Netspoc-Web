@@ -38,6 +38,7 @@ my %conf_keys = map { ($_ => 1) }
 qw(
    error_page
    netspoc_data
+   noreply_address
    password_dir
    sendmail_command
    session_dir
@@ -491,10 +492,15 @@ sub get_substituted_html {
 sub send_verification_mail {
     my ($email, $url, $ip) = @_;
     my $text = read_template($config->{verify_mail_template});
-    $text = process_template($text, 
-			     { email => $email, url => $url, ip => $ip });
+    $text = process_template($text, { email => $email, 
+				      url => $url, 
+				      ip => $ip });
     my $sendmail = $config->{sendmail_command};
-    open(my $mail, "|$sendmail") or 
+
+    # -t: read recipient address from mail text
+    # -f: set sender address
+    # -F: don't use sender full name
+    open(my $mail, "|$sendmail -t -F '' -f $config->{noreply_address}") or 
 	internal_err "Can't open $sendmail: $!";
     print $mail Encode::encode('UTF-8', $text);
     close $mail or warn "Can't close $sendmail: $!\n";
