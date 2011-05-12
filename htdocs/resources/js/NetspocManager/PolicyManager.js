@@ -77,13 +77,14 @@ NetspocManager.PolicyManager = Ext.extend(
 			scope        : this,
 			handler      : this.onButtonClick
                     },
-                    {
+/*                    {
 			text         : 'Suche',
 			toggleGroup  : 'polNavBtnGrp',
 			enableToggle : true,
 			scope        : this,
 			handler      : this.displaySearchWindow
                     },
+*/
 		    '->',
 		    {
 			 xtype : 'printbutton'
