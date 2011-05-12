@@ -77,6 +77,13 @@ NetspocManager.PolicyManager = Ext.extend(
 			scope        : this,
 			handler      : this.onButtonClick
                     },
+                    {
+			text         : 'Suche',
+			toggleGroup  : 'polNavBtnGrp',
+			enableToggle : true,
+			scope        : this,
+			handler      : this.displaySearchWindow
+                    },
 		    '->',
 		    {
 			 xtype : 'printbutton'
@@ -113,7 +120,7 @@ NetspocManager.PolicyManager = Ext.extend(
  				padding : '5',
  				align   : 'center'
  			    },
-			    html : '<br><br><center> <h1> An einer Druckfunktion für Dienste-Details wird noch gearbeitet </h1> <br><br> <h1> Wir bitten um etwas Geduld ... </h1> </center>'
+			    html : '<br><br><center> <h1> An einer Druckfunktion für Dienste-Details wird noch gearbeitet. </h1> <br><br> <h1> Wir bitten um etwas Geduld ... </h1> </center>'
  			}
  		    ]
  		}
@@ -127,18 +134,10 @@ NetspocManager.PolicyManager = Ext.extend(
 		    autoScroll : true,
 		    items      : [
 			{
-			    region : 'north',
-			    items  : [
-				this.buildPolicyDetailsDV()
-			    ],
-			    printView : function() {
-				// Intentionally left empty, handle printing
-				// only once (for the center panel).
-			    }
-			},
-			{
 			    region : 'center',
+			    layout : 'anchor',
 			    items  : [
+				this.buildPolicyDetailsDV(),
 				this.buildPolicyRulesDV()
 			    ],
 			    printView : function() {
