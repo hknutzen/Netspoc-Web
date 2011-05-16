@@ -92,8 +92,7 @@ sub get_policy {
 }
 
 sub get_history {
-    my $aref = get_policy();
-    my $current = $aref->[0];
+    my $current = get_policy()->[0];
     my $current_policy = $current->{policy};
     my @result = ($current);
     
@@ -116,6 +115,9 @@ sub get_history {
 	    my($date, $time) = ($line =~ /^date: (\S+) (\d+:\d+)/) or next;
 	    my $policy = shift @rlog;
 	    chomp $policy;
+
+	    # If there wasn't added a new policy today, current policy
+	    # is available duplicate in RCS.
 	    next if $policy eq $current_policy;
 	    push(@result, { policy => $policy,
 			    date => $date,
@@ -127,7 +129,7 @@ sub get_history {
 }
 
 # Store data of file or RCS revisions of file in memory.
-# Data is partially postprocesses after first loading.
+# Data is partially postprocessed after first loading.
 #
 # Key: 
 # - pathname, direct pathname relative to $config->{netspoc_data}/ or 
@@ -139,8 +141,18 @@ my %cache;
 
 my $selected_history;
 sub select_history {
-    my ($cgi) = @_;
-    $selected_history = $cgi->param('history') || 'current';
+    my ($cgi, $history_needed) = @_;
+
+    # Read requested history from cgi paramter.
+    if ($selected_history = $cgi->param('history')) {
+	$history_needed or abort "Must not send parameter 'history'";
+    }
+
+    # Follow symlink "current".
+    else {
+	$history_needed and abort "Missing parameter 'history'";
+	$selected_history = get_policy()->[0]->{policy};
+    }
 }
 
 # Todo: Cleanup cache after reaching some size limit.
@@ -535,7 +547,7 @@ sub register {
     my $email = $cgi->param('email') or abort "Missing param 'email'";
     $email = lc $email;
     my $email2owners = load_json("email");
-    $email2owners->{$email} or abort "Unknown email '$email'";
+    $email2owners->{$email} or abort "Address '$email' is not authorized";
     my $base_url = $cgi->param( 'base_url' ) 
 	or abort "Missing param 'base_url' (Activate JavaScript)";
     check_attack($email);
@@ -613,13 +625,13 @@ sub login {
     my $email = $cgi->param('email') or abort "Missing param 'email'";
     $email = lc $email;
     my $email2owners = load_json("email");
-    $email2owners->{$email} or abort "Unknown email '$email'";
+    $email2owners->{$email} or abort "Address '$email' is not authorized";
     my $pass = $cgi->param('pass') or abort "Missing param 'pass'";
     my $app_url = $cgi->param('app') or abort "Missing param 'app'";
     check_attack($email);
     if (not check_password($email, $pass)) {
-	my $wait = set_attack($email);
-	abort "Login failed, wait $wait seconds";
+	set_attack($email);
+	abort "Login failed";
     }
     clear_attack($email);
     $session->param('email', $email);
@@ -671,20 +683,22 @@ sub decode_params {
 my %path2sub =
     (
 
-     # Default: user must be logged in, send JSON data.
+     # Default: user must be logged in, JSON data is sent.
      # - anon: anonymous user is allowed
      # - html: send html 
      # - redir: send redirect
-     # - owner: logged in user must have selected a valid owner
+     # - owner: valid owner and history must be given as cgi parameter
+     # - create_cookie: create cookie if no cookie is available
      login         => [ \&login,         { anon => 1, redir => 1, 
 					   create_cookie => 1, } ],
      register      => [ \&register,      { anon => 1, html  => 1, 
 					   create_cookie => 1, } ],
      verify        => [ \&verify,        { anon => 1, html  => 1, } ],
-     get_policy    => [ \&get_policy,    { anon => 1, no_history => 1, } ],
+     get_policy    => [ \&get_policy,    { anon => 1, } ],
      logout        => [ \&logout,        {} ],
      get_owner     => [ \&get_owner,     {} ],
      get_owners    => [ \&get_owners,    {} ],
+     get_history   => [ \&get_history,   {} ],
      set           => [ \&set_session_data, {} ],
      service_list  => [ \&service_list,  { owner => 1, } ],
      get_emails    => [ \&get_emails,    { owner => 1, } ],
@@ -692,7 +706,6 @@ my %path2sub =
      get_users     => [ \&get_users,     { owner => 1, } ],
      get_networks  => [ \&get_networks,  { owner => 1, } ],
      get_hosts     => [ \&get_hosts,     { owner => 1, } ],
-     get_history   => [ \&get_history,   { owner => 0, } ],
       ); 
 
 sub handle_request {
@@ -719,14 +732,9 @@ sub handle_request {
 		die "Cookies must be activated\n";
 	    }
 	}
-	select_history($cgi);
-	if (not $flags->{anon}) {
-	    if (logged_in($session)) {
-		validate_owner($cgi, $session, $flags->{owner});	    }
-	    else {
-		abort "Login required";
-	    }
-	}
+	select_history($cgi, $flags->{owner});
+	validate_owner($cgi, $session, $flags->{owner});
+	$flags->{anon} or logged_in($session) or abort "Login required";
 	$cookie = $cgi->cookie( -name    => $session->name,
 				-value   => $session->id,
 				-expires => '+1y' );
