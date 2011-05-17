@@ -2,15 +2,16 @@
 <title>Netspoc</title>
 <style type="text/css">
  body {font-family:sans-serif;} 
- form {width:21em}
+ form {width:21em;float:left;}
  fieldset {background-color:AliceBlue;border:2px solid steelblue;}
+ div#rechts {margin-left:23em;}
+ p {margin-top:2em}
 </style>
 </head>
 
 <body>
 <h1>Policy-Web</h1>
 
-<p>
 <form action="backend/login" method="post">
   <fieldset>
    <legend>Anmelden</legend>
@@ -27,10 +28,30 @@
       <tr>
        <td colspan=2 align=right><input type="submit" value="Login"/></td>
       </tr>
+      <tr>
+       <td colspan=2>Neues <a href="passwd.html">Kennwort anfordern</a></td>
+      </tr>
     </table>
   </fieldset>
 </form>
+
+<div id="rechts">
 <p>
-Neues <a href="passwd.html">Kennwort anfordern</a>
+Dokumentation finden Sie
+<a href="dokuwiki/">
+im Wiki
+<img src="/dokuwiki/lib/exe/fetch.php?w=50&media=wiki:dokuwiki-128.png">
+</a>.
+<p>
+Lesen Sie unten die neuesten Neuigkeiten<br>
+oder lesen Sie
+<a href="dokuwiki/doku.php?id=neuigkeiten">alle Neuigkeiten im Wiki</a>.
+</div>
+
+<p>
+<iframe src="dokuwiki/doku.php?id=neuigkeiten&do=export_html" width="100%"
+height="70%" frameborder=0 >
+<a href="dokuwiki/">Neigkeiten</a>
+</iframe>
 
 </body>
