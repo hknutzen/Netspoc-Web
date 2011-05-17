@@ -547,7 +547,7 @@ sub register {
     my $email = $cgi->param('email') or abort "Missing param 'email'";
     $email = lc $email;
     my $email2owners = load_json("email");
-    $email2owners->{$email} or abort "Address '$email' is not authorized";
+    $email2owners->{$email} or abort "Email address is not authorized";
     my $base_url = $cgi->param( 'base_url' ) 
 	or abort "Missing param 'base_url' (Activate JavaScript)";
     check_attack($email);
@@ -625,7 +625,7 @@ sub login {
     my $email = $cgi->param('email') or abort "Missing param 'email'";
     $email = lc $email;
     my $email2owners = load_json("email");
-    $email2owners->{$email} or abort "Address '$email' is not authorized";
+    $email2owners->{$email} or abort "Email address is not authorized";
     my $pass = $cgi->param('pass') or abort "Missing param 'pass'";
     my $app_url = $cgi->param('app') or abort "Missing param 'app'";
     check_attack($email);
