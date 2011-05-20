@@ -668,6 +668,14 @@ sub logout {
     return [];
 }
 
+# Find email address for current session.
+# This program must ensure that $session->param('email') is only set
+# if a user was successfully logged in at least once.
+sub session_email {
+    my ($cgi, $session) = @_;
+    return $session->param('email') || '';
+}
+
 ####################################################################
 # Request handling
 ####################################################################
@@ -694,6 +702,8 @@ my %path2sub =
      register      => [ \&register,      { anon => 1, html  => 1, 
 					   create_cookie => 1, } ],
      verify        => [ \&verify,        { anon => 1, html  => 1, } ],
+     session_email => [ \&session_email, { anon => 1, html => 1, 
+					   err_status => 500} ],
      get_policy    => [ \&get_policy,    { anon => 1, } ],
      logout        => [ \&logout,        {} ],
      get_owner     => [ \&get_owner,     {} ],
@@ -775,7 +785,11 @@ sub handle_request {
 	my $msg = $@;
 	$msg =~ s/\n$//;
 	if ($flags->{html} or $flags->{redir}) {
-	    print $cgi->header( -status  => 200,
+
+	    # Don't use status 500 on all errors, because IE 
+	    # doesn't show error page.
+	    my $status = $flags->{err_status} || 200;
+	    print $cgi->header( -status  => $status,
 				-type    => 'text/html',
 				-charset => 'utf-8',
 				-cookie => $cookie);
