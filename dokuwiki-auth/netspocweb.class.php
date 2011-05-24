@@ -46,14 +46,14 @@ class auth_netspocweb extends auth_basic {
     # Try to find admin user
     $admin = $this->_getEmailUser($email);
     if ($admin) {
-	$user = $admin['user'];
-	$name = $admin['name'];
+ 	$user = $email;
+	$name = $admin['name']; 
 	$grps = $admin['grps'];
     }
     # Otherwise take default value.
     else {
 	$grps[] = $this->cnf['group'];;
-	$name = $email;
+	$user = $email;
     }
 
     $USERINFO['name'] = $name;
