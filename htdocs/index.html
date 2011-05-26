@@ -2,17 +2,30 @@
 <title>Netspoc</title>
 <style type="text/css">
  body {font-family:sans-serif;} 
- form {width:21em;float:left;}
+ #links {width:21em;float:left;}
  fieldset {background-color:AliceBlue;border:2px solid steelblue;}
- div#rechts {margin-left:23em;}
- p {margin-top:2em}
+ #rechts {float:right;}
+ #unten {clear:both}
 </style>
 </head>
 
 <body>
 <h1>Policy-Web</h1>
 
-<form action="backend/login" method="post">
+<div id="rechts">
+<p>
+Dokumentation finden Sie
+<a href="/dokuwiki/">
+im Wiki
+<img src="/dokuwiki/lib/exe/fetch.php?w=50&media=wiki:dokuwiki-128.png">
+</a>.
+<p>
+Lesen Sie unten die neuesten Neuigkeiten
+oder
+<a href="/dokuwiki/doku.php?id=neuigkeiten">alle Neuigkeiten im Wiki</a>.
+</div>
+
+<form action="backend/login" method="post" id="links">
   <fieldset>
    <legend>Anmelden</legend>
     <input name="app" type="hidden" value="../app.html"/>
@@ -35,23 +48,12 @@
   </fieldset>
 </form>
 
-<div id="rechts">
-<p>
-Dokumentation finden Sie
-<a href="/dokuwiki/">
-im Wiki
-<img src="/dokuwiki/lib/exe/fetch.php?w=50&media=wiki:dokuwiki-128.png">
-</a>.
-<p>
-Lesen Sie unten die neuesten Neuigkeiten<br>
-oder
-<a href="/dokuwiki/doku.php?id=neuigkeiten">alle Neuigkeiten im Wiki</a>.
-</div>
-
+<div id="unten">
 <p>
 <iframe src="/dokuwiki/doku.php?id=neuigkeiten&do=export_html" width="100%"
 height="70%" frameborder=0 >
 <a href="/dokuwiki/doku.php?id=neuigkeiten">Neigkeiten</a>
 </iframe>
+</div>
 
 </body>
