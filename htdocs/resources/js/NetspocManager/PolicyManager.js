@@ -77,14 +77,13 @@ NetspocManager.PolicyManager = Ext.extend(
 			scope        : this,
 			handler      : this.onButtonClick
                     },
-/*                    {
+                    {
 			text         : 'Suche',
 			toggleGroup  : 'polNavBtnGrp',
 			enableToggle : true,
 			scope        : this,
 			handler      : this.displaySearchWindow
                     },
-*/
 		    '->',
 		    {
 			 xtype : 'printbutton'
@@ -95,14 +94,208 @@ NetspocManager.PolicyManager = Ext.extend(
 	},
 	
 	onButtonClick :  function(button, event) {
+	    var sfw = Ext.getCmp( 'searchFormWindowId' );
+	    if ( sfw ) {
+		sfw.hide();
+	    }
 	    var plv = this.getComponent('policyListId');
 	    var relation = button.relation;
-	    var params;
-	    if (relation) {
+	    var params   = button.search_params;
+	    var url;
+
+	    if ( relation ) {
 		params = { relation : relation };
 	    }
 	    plv.loadStoreByParams(params);
 	    this.clearDetails();
+	},
+
+	displaySearchWindow :  function(button, event) {
+	    var checkbox_group1 = {
+		xtype      : 'checkboxgroup',
+		fieldLabel : 'Suche in diesen Diensten',
+		anchor     : '100%',
+		columns    : 1,
+		flex       : 1,
+		defaults   : {
+		    checked    : false
+		},
+		items      : [
+		    {
+			boxLabel   : 'Eigene',
+			name       : 'search_own'
+		    },
+		    {
+			boxLabel   : 'Genutzte',
+			name       : 'search_used'
+		    },
+		    {
+			boxLabel   : 'Sichtbare',
+			name       : 'search_visible'
+		    },
+		    {
+			boxLabel   : 'Alle',
+			name       : 'search_all',
+			//inputValue : 'search_all',
+			handler    : function( cb, checked ) {
+			    var cbg = cb.findParentByType( 'checkboxgroup' );
+			    if ( checked === true ) {
+				cbg.setValue( [ true, true, true ] );
+			    }
+			    else {
+				cbg.setValue( [ false, false, false ] );
+			    }
+			}
+		    }
+		]
+	    };
+	    
+	    var checkbox_group2 = {
+		xtype      : 'checkboxgroup',
+		fieldLabel : 'Suche in Regeln/User',
+		anchor     : '100%',
+		columns    : 1,
+		flex       : 2,
+		defaults   : {
+		    checked    : false
+		},
+		items      : [
+		    {
+			boxLabel   : 'Regeln',
+			name       : 'search_in_rules'
+		    },
+		    {
+			boxLabel   : 'User',
+			name       : 'search_in_user'
+		    },
+		    {
+			boxLabel   : 'Regeln und User',
+			name       : 'search_in_rules_and_user',
+			handler    : function( cb, checked ) {
+			    var cbg = cb.findParentByType( 'checkboxgroup' );
+			    if ( checked === true ) {
+				cbg.setValue( [ true, true ] );
+			    }
+			    else {
+				cbg.setValue( [ false, false ] );
+			    }
+			}
+		    }
+		]
+	    };
+	    
+	    var checkbox_container = {
+		xtype  : 'container',
+		layout : 'form',
+		height : 120,
+		layoutConfig : {
+		    //labelAlign : 'top'
+		},
+		items : [
+		    checkbox_group1,
+		    checkbox_group2
+		]
+	    };
+	    
+	    var radio_group = {
+		xtype      : 'radiogroup',
+		anchor     : '100%',
+		fieldLabel : 'IP oder String',
+		//columns    : 2,
+		//flex       : 2,
+		items      : [
+		    {
+			boxLabel   : 'Zeichenkette',
+			name       : 'search_ip_or_string'
+		    },
+		    {
+			boxLabel   : 'IP-Adresse',
+			name       : 'search_ip_or_string'
+		    }
+		]
+	    };
+	    var searchtext = {
+		xtype      : 'textfield',
+		id         : 'search_string',
+		width      : 300,
+		emptyText  : 'Zeichenkette oder IP eingeben ... ',
+		fieldLabel : 'Suchbegriff',
+		allowBlank : false,
+		minLength  : 2
+	    };
+	    
+	    var myFormPanel = new Ext.form.FormPanel(
+		{
+		    id           : 'myFormPanel',
+		    width        : 400,
+		    height       : 250,
+		    frame        : true,
+		    bodyStyle    : 'padding: 6px',
+		    labelWidth   : 70,
+		    buttonAlign  : 'center',
+		    layoutConfig : {
+			align : 'stretch'
+		    },
+		    items        : [
+			searchtext,
+			{ height : 10 },
+			radio_group,
+			{ height : 10 },
+			checkbox_container
+		    ]
+/*
+		    keys    : [
+			{
+			    key: [
+				Ext.EventObject.ENTER
+			    ],
+			    handler: function() {
+				Ext.Msg.alert("Alert","Enter Key Event !");
+			    }
+			}
+		    ],
+*/
+		}
+	    );
+
+	    var form = myFormPanel.getForm();
+	    var search_button =
+		myFormPanel.addButton( 'Suche starten', function( button, event )
+				       {
+					   if ( form.isValid() ) {
+					       button.search_params = form.getValues();
+					       var v   = Ext.getCmp( 'viewportId' );
+					       var pm  = v.findByType("policymanager");
+					       pm[0].onButtonClick( button );
+					   } else {
+					       var m = 'Bitte Eingaben korrigieren.';
+					       Ext.MessageBox.alert( 'Fehler!', m );
+					   }
+				       },
+				       myFormPanel
+				     );
+	    
+	    
+	    var sfw = Ext.getCmp( 'searchFormWindowId' );
+	    if ( sfw ) {
+		sfw.show();
+		return;
+	    }
+	    else {
+		new Ext.Window(
+ 		    {
+			id        : 'searchFormWindowId',
+			title     : 'IP-Adresse oder Zeichenkette suchen',
+ 			width     : 450, 
+ 			height    : 350,
+ 			layout    : 'fit',
+			resizable : false,
+ 			items     : [
+			    myFormPanel
+ 			]
+ 		    }
+ 		).show();
+	    }
 	},
 
 	printDetails : function() {
@@ -110,7 +303,7 @@ NetspocManager.PolicyManager = Ext.extend(
  		{
  		    title     : 'Druckfunktion wird implementiert ...',
  		    width     : 500, 
- 		    height    : 150,
+ 		    height    : 250,
  		    layout    : 'fit',
 		    resizable : false,
  		    items     : [
@@ -393,18 +586,18 @@ NetspocManager.PolicyManager = Ext.extend(
 		this. clearEmail(name);
  		return;
 	    }
-	    var emailPanel  = this.findById(name);
-	    var store       = emailPanel.getStore();
-	    var appstate = NetspocManager.appstate;
+	    var emailPanel   = this.findById(name);
+	    var store        = emailPanel.getStore();
+	    var appstate     = NetspocManager.appstate;
 	    var active_owner = appstate.getOwner();
-	    var history = appstate.getHistory();
-	    var lastOptions = store.lastOptions;
-	    if (lastOptions 
-		&& lastOptions.params.owner === owner
-		&& lastOptions.params.history === history
-		&& lastOptions.params.active_owner === active_owner
-		// Reload if data was removed previously.
-	        && store.getCount()) 
+	    var history      = appstate.getHistory();
+	    var lastOptions  = store.lastOptions;
+	    if ( lastOptions 
+		 && lastOptions.params.owner === owner
+		 && lastOptions.params.history === history
+		 && lastOptions.params.active_owner === active_owner
+		 // Reload if data was removed previously.
+	         && store.getCount()) 
 	    {
 		return;
 	    }
