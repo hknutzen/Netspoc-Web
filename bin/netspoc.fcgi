@@ -358,15 +358,85 @@ sub service_list {
     my ($cgi, $session) = @_;
     my $owner = $cgi->param('active_owner');
     my $relation = $cgi->param('relation');
+    my $search   = $cgi->param('search_string');
+    my $search_in_user =  $cgi->param( 'search_in_user' )
+	? $cgi->param( 'search_in_user' )
+	: '';
+    my $search_in_rules =  $cgi->param( 'search_in_rules' )
+	? $cgi->param( 'search_in_rules' )
+	: '';
     my $lists = load_json("owner/$owner/service_lists");
     my $plist;
-    if (not $relation) {
+    my $search_plist;
+
+    if ( not $relation ) {
 	$plist = [ sort map(@$_, @{$lists}{qw(owner user visible)}) ]
     }
     else {
 	$plist = $lists->{$relation};
     }
+
+    # Searching services?
+    if ( $search ) {
+	$plist = [];
+	my @search_in = ();
+	if ( $cgi->param( 'search_all' ) ) {
+	    @search_in = qw(owner user visible);
+	}
+	else {
+	    if ( $cgi->param( 'search_own' ) ) {
+		push @search_in, 'owner';
+	    }
+	    if ( $cgi->param( 'search_used' ) ) {
+		push @search_in, 'user';
+	    }
+	    if ( $cgi->param( 'search_visible' ) ) {
+		push @search_in, 'visible';
+	    }
+	}
+	$search_plist = [ sort map(@$_, @{$lists}{ @search_in } ) ]
+    }
+
     my $services = load_json('services');
+
+    if ( $search_plist ) {
+	# Iterate over policies in $plist and search in rules
+	# and/or in user-resources.
+      SERVICE:
+	for my $sname ( @$search_plist ) {
+	    if ( $search_in_rules ) {
+		my %lookup = (
+			      'src' => 'dst',
+			      'dst' => 'src'
+			      );
+		# Get rules for current owner and service.
+		my $rules = get_rules_for_owner_and_service( $owner, $sname );
+		if ( $rules ) {
+		    for my $r ( @$rules ) {
+			for my $item ( @{$r->{$lookup{$r->{has_user}}}} ) {
+			    if ( $item =~ /$search/ ) {
+				push @$plist, $sname;
+				next SERVICE;
+			    }
+			}
+		    }
+		}
+	    }
+	    if ( $search_in_user ) {
+		my $users = get_users_for_owner_and_service( $owner, $sname );
+		for my $u ( @$users ) {
+		    if ( $u->{ip}    =~ /$search/  ||
+			 $u->{name}  =~ /$search/  ||
+			 $u->{owner} =~ /$search/
+			 ) {
+			push @$plist, $sname;
+			next SERVICE;
+		    }
+		}
+	    }
+	}
+    }
+
     return [ map {
 	my $hash = { name => $_, %{ $services->{$_}->{details}} };
 
@@ -376,10 +446,20 @@ sub service_list {
     } @$plist ];
 }
 
-sub get_rules {
-    my ($cgi, $session) = @_;
-    my $owner = $cgi->param('active_owner');
-    my $sname = $cgi->param('service') or abort "Missing parameter 'service'";
+sub get_users_for_owner_and_service {
+    my ( $owner, $sname ) = @_;
+    # Get user for current owner and service.
+    my $path = "owner/$owner/users";
+    my $sname2users = load_json( $path );
+    
+    # Empty user list is not exported intentionally.
+    my $users = $sname2users->{$sname} || [];
+    subst_nat( $users, $owner );
+    return $users;
+}
+
+sub get_rules_for_owner_and_service {
+    my ( $owner, $sname ) = @_;
     my $lists = load_json("owner/$owner/service_lists");
 
     # Check if owner is allowed to access this service.
@@ -403,17 +483,18 @@ sub get_rules {
     return $crules;
 }
 
+sub get_rules {
+    my ($cgi, $session) = @_;
+    my $owner = $cgi->param('active_owner');
+    my $sname = $cgi->param('service') or abort "Missing parameter 'service'";
+    return get_rules_for_owner_and_service( $owner, $sname );
+}
+
 sub get_users {
     my ($cgi, $session) = @_;
     my $owner = $cgi->param('active_owner');
     my $sname = $cgi->param('service') or abort "Missing parameter 'service'";
-    my $path = "owner/$owner/users";
-    my $sname2users = load_json($path);
-
-    # Empty user list is not exported intentionally.
-    my $users = $sname2users->{$sname} || [];
-    subst_nat($users, $owner);
-    return $users;
+    return get_users_for_owner_and_service( $owner, $sname );
 }
 
 ####################################################################
