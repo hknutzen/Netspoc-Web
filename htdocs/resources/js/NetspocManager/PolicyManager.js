@@ -237,8 +237,8 @@ NetspocManager.PolicyManager = Ext.extend(
 		    items        : [
 			searchtext,
 			{ height : 10 },
-			radio_group,
-			{ height : 10 },
+//			radio_group,
+//			{ height : 10 },
 			checkbox_container
 		    ]
 /*
