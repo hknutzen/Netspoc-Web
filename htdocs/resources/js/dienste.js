@@ -310,6 +310,7 @@ NetspocManager.workspace = function () {
 	    
 	    new Ext.Viewport(
 		{
+		    id     : 'viewportId',
 		    layout : 'fit',
 		    items  : cardPanel
 		}
