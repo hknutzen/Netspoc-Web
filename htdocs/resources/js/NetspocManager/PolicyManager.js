@@ -113,12 +113,12 @@ NetspocManager.PolicyManager = Ext.extend(
 	displaySearchWindow :  function(button, event) {
 	    var checkbox_group1 = {
 		xtype      : 'checkboxgroup',
-		fieldLabel : 'Suche in diesen Diensten',
+		fieldLabel : 'Suche in Diensten',
 		anchor     : '100%',
 		columns    : 1,
 		flex       : 1,
 		defaults   : {
-		    checked    : false
+		    checked    : true
 		},
 		items      : [
 		    {
@@ -157,7 +157,7 @@ NetspocManager.PolicyManager = Ext.extend(
 		columns    : 1,
 		flex       : 2,
 		defaults   : {
-		    checked    : false
+		    checked    : true
 		},
 		items      : [
 		    {
@@ -200,9 +200,7 @@ NetspocManager.PolicyManager = Ext.extend(
 	    var radio_group = {
 		xtype      : 'radiogroup',
 		anchor     : '100%',
-		fieldLabel : 'IP oder String',
-		//columns    : 2,
-		//flex       : 2,
+		//fieldLabel : 'IP oder String',
 		items      : [
 		    {
 			boxLabel   : 'Zeichenkette',
@@ -269,7 +267,7 @@ NetspocManager.PolicyManager = Ext.extend(
 					       pm[0].onButtonClick( button );
 					   } else {
 					       var m = 'Bitte Eingaben korrigieren.';
-					       Ext.MessageBox.alert( 'Fehler!', m );
+					       Ext.MessageBox.alert( 'Fehlerhafte Eingabe!', m );
 					   }
 				       },
 				       myFormPanel
