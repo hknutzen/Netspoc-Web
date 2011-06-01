@@ -132,7 +132,8 @@ NetspocManager.PolicyManager = Ext.extend(
 		    {
 			boxLabel   : 'Sichtbare',
 			name       : 'search_visible'
-		    },
+		    }
+/*
 		    {
 			boxLabel   : 'Alle',
 			name       : 'search_all',
@@ -147,6 +148,7 @@ NetspocManager.PolicyManager = Ext.extend(
 			    }
 			}
 		    }
+*/
 		]
 	    };
 	    
@@ -167,7 +169,8 @@ NetspocManager.PolicyManager = Ext.extend(
 		    {
 			boxLabel   : 'User',
 			name       : 'search_in_user'
-		    },
+		    }
+/*
 		    {
 			boxLabel   : 'Regeln und User',
 			name       : 'search_in_rules_and_user',
@@ -181,6 +184,7 @@ NetspocManager.PolicyManager = Ext.extend(
 			    }
 			}
 		    }
+*/
 		]
 	    };
 	    
