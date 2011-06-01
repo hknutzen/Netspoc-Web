@@ -365,9 +365,10 @@ sub service_list {
     my $search_in_rules =  $cgi->param( 'search_in_rules' )
 	? $cgi->param( 'search_in_rules' )
 	: '';
-    my $lists = load_json("owner/$owner/service_lists");
+    my $lists    = load_json("owner/$owner/service_lists");
+    my $services = load_json('services');
     my $plist;
-    my $search_plist;
+    my $search_plist = [];
 
     if ( not $relation ) {
 	$plist = [ sort map(@$_, @{$lists}{qw(owner user visible)}) ]
@@ -394,12 +395,8 @@ sub service_list {
 		push @search_in, 'visible';
 	    }
 	}
-	$search_plist = [ sort map(@$_, @{$lists}{ @search_in } ) ]
-    }
+	$search_plist = [ sort map(@$_, @{$lists}{ @search_in } ) ];
 
-    my $services = load_json('services');
-
-    if ( $search_plist ) {
 	# Iterate over policies in $plist and search in rules
 	# and/or in user-resources.
       SERVICE:
