@@ -270,7 +270,8 @@ NetspocManager.PolicyManager = Ext.extend(
 					       var pm  = v.findByType("policymanager");
 					       pm[0].onButtonClick( button );
 					   } else {
-					       var m = 'Bitte Eingaben korrigieren.';
+					       var m = 'Bitte Eingaben in rot markierten ' 
+						   + 'Feldern korrigieren.';
 					       Ext.MessageBox.alert( 'Fehlerhafte Eingabe!', m );
 					   }
 				       },
