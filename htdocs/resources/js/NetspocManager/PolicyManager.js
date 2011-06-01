@@ -230,7 +230,7 @@ NetspocManager.PolicyManager = Ext.extend(
 		{
 		    id           : 'myFormPanel',
 		    width        : 400,
-		    height       : 250,
+		    height       : 200,
 		    frame        : true,
 		    bodyStyle    : 'padding: 6px',
 		    labelWidth   : 70,
@@ -242,7 +242,7 @@ NetspocManager.PolicyManager = Ext.extend(
 			searchtext,
 			{ height : 10 },
 //			radio_group,
-//			{ height : 10 },
+			{ height : 10 },
 			checkbox_container
 		    ]
 /*
@@ -289,7 +289,7 @@ NetspocManager.PolicyManager = Ext.extend(
 			id        : 'searchFormWindowId',
 			title     : 'IP-Adresse oder Zeichenkette suchen',
  			width     : 450, 
- 			height    : 350,
+ 			height    : 250,
  			layout    : 'fit',
 			resizable : false,
  			items     : [
