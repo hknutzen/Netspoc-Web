@@ -94,15 +94,16 @@ NetspocManager.PolicyManager = Ext.extend(
 	},
 	
 	onButtonClick :  function(button, event) {
-	    var sfw = Ext.getCmp( 'searchFormWindowId' );
-	    if ( sfw ) {
+	    var sfw        = Ext.getCmp( 'searchFormWindowId' );
+	    var plv        = this.getComponent('policyListId');
+	    var relation   = button.relation;
+	    var params     = button.search_params;
+	    var keep_front = false;
+	    //var keep_front = params.keep_front;
+	    
+	    if ( sfw && !keep_front ) {
 		sfw.hide();
 	    }
-	    var plv = this.getComponent('policyListId');
-	    var relation = button.relation;
-	    var params   = button.search_params;
-	    var url;
-
 	    if ( relation ) {
 		params = { relation : relation };
 	    }
@@ -110,7 +111,8 @@ NetspocManager.PolicyManager = Ext.extend(
 	    this.clearDetails();
 	},
 
-	displaySearchWindow :  function(button, event) {
+	displaySearchWindow :  function( button, event ) {
+
 	    var checkbox_group1 = {
 		xtype      : 'checkboxgroup',
 		fieldLabel : 'Suche in Diensten',
@@ -132,12 +134,10 @@ NetspocManager.PolicyManager = Ext.extend(
 		    {
 			boxLabel   : 'Sichtbare',
 			name       : 'search_visible'
-		    }
-/*
+		    },
 		    {
 			boxLabel   : 'Alle',
-			name       : 'search_all',
-			//inputValue : 'search_all',
+			name       : 'search_in_all_services',
 			handler    : function( cb, checked ) {
 			    var cbg = cb.findParentByType( 'checkboxgroup' );
 			    if ( checked === true ) {
@@ -148,7 +148,6 @@ NetspocManager.PolicyManager = Ext.extend(
 			    }
 			}
 		    }
-*/
 		]
 	    };
 	    
@@ -169,22 +168,24 @@ NetspocManager.PolicyManager = Ext.extend(
 		    {
 			boxLabel   : 'User',
 			name       : 'search_in_user'
-		    }
-/*
+		    },
 		    {
-			boxLabel   : 'Regeln und User',
-			name       : 'search_in_rules_and_user',
+			boxLabel   : 'Dienstbeschreibung',
+			name       : 'search_in_desc'
+		    },
+		    {
+			boxLabel   : 'Alle',
+			name       : 'search_in_all_details',
 			handler    : function( cb, checked ) {
 			    var cbg = cb.findParentByType( 'checkboxgroup' );
 			    if ( checked === true ) {
-				cbg.setValue( [ true, true ] );
+				cbg.setValue( [ true, true, true ] );
 			    }
 			    else {
-				cbg.setValue( [ false, false ] );
+				cbg.setValue( [ false, false, false ] );
 			    }
 			}
 		    }
-*/
 		]
 	    };
 	    
@@ -216,6 +217,7 @@ NetspocManager.PolicyManager = Ext.extend(
 		    }
 		]
 	    };
+
 	    var searchtext = {
 		xtype      : 'textfield',
 		id         : 'search_string',
@@ -239,6 +241,14 @@ NetspocManager.PolicyManager = Ext.extend(
 			align : 'stretch'
 		    },
 		    items        : [
+/*			{
+			    xtype    : 'checkbox',
+			    name     : 'keep_front',
+			    boxLabel : 'Such-Fenster im Vordergrund halten',
+			    checked  : false
+			},
+*/
+			{ height : 10 },
 			searchtext,
 			{ height : 10 },
 //			radio_group,
@@ -278,7 +288,6 @@ NetspocManager.PolicyManager = Ext.extend(
 				       myFormPanel
 				     );
 	    
-	    
 	    var sfw = Ext.getCmp( 'searchFormWindowId' );
 	    if ( sfw ) {
 		sfw.show();
@@ -290,7 +299,7 @@ NetspocManager.PolicyManager = Ext.extend(
 			id        : 'searchFormWindowId',
 			title     : 'IP-Adresse oder Zeichenkette suchen',
  			width     : 450, 
- 			height    : 250,
+ 			height    : 350,
  			layout    : 'fit',
 			resizable : false,
  			items     : [
@@ -306,7 +315,7 @@ NetspocManager.PolicyManager = Ext.extend(
  		{
  		    title     : 'Druckfunktion wird implementiert ...',
  		    width     : 500, 
- 		    height    : 250,
+ 		    height    : 350,
  		    layout    : 'fit',
 		    resizable : false,
  		    items     : [
