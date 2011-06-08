@@ -359,15 +359,6 @@ sub service_list {
     my $owner = $cgi->param('active_owner');
     my $relation = $cgi->param('relation');
     my $search   = $cgi->param('search_string');
-    my $search_in_user =  $cgi->param( 'search_in_user' )
-	? $cgi->param( 'search_in_user' )
-	: '';
-    my $search_in_rules =  $cgi->param( 'search_in_rules' )
-	? $cgi->param( 'search_in_rules' )
-	: '';
-    my $search_in_desc =  $cgi->param( 'search_in_desc' )
-	? $cgi->param( 'search_in_rules' )
-	: '';
     my $lists    = load_json("owner/$owner/service_lists");
     my $services = load_json('services');
     my $plist;
@@ -398,7 +389,7 @@ sub service_list {
 
       SERVICE:
 	for my $sname ( @$search_plist ) {
-	    if ( $search_in_rules ) {
+	    if ( $cgi->param( 'search_in_rules' ) ) {
 		my %lookup = (
 			      'src' => 'dst',
 			      'dst' => 'src'
@@ -424,7 +415,7 @@ sub service_list {
 		    }
 		}
 	    }
-	    if ( $search_in_user ) {
+	    if ( $cgi->param( 'search_in_user' ) ) {
 		my $users = get_users_for_owner_and_service( $owner, $sname );
 		if ( $users ) {
 		    for my $u ( @$users ) {
@@ -438,7 +429,7 @@ sub service_list {
 		    }
 		}
 	    }
-	    if ( $search_in_desc ) {
+	    if ( $cgi->param( 'search_in_desc' ) ) {
 		my $desc = $services->{$sname}->{details}->{description};
 		if ( $desc =~ /$search/ ) {
 		    push @$plist, $sname;
