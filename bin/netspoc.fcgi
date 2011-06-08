@@ -365,6 +365,9 @@ sub service_list {
     my $search_in_rules =  $cgi->param( 'search_in_rules' )
 	? $cgi->param( 'search_in_rules' )
 	: '';
+    my $search_in_desc =  $cgi->param( 'search_in_desc' )
+	? $cgi->param( 'search_in_rules' )
+	: '';
     my $lists    = load_json("owner/$owner/service_lists");
     my $services = load_json('services');
     my $plist;
@@ -381,24 +384,18 @@ sub service_list {
     if ( $search ) {
 	$plist = [];
 	my @search_in = ();
-	if ( $cgi->param( 'search_all' ) ) {
-	    @search_in = qw(owner user visible);
+	if ( $cgi->param( 'search_own' ) ) {
+	    push @search_in, 'owner';
 	}
-	else {
-	    if ( $cgi->param( 'search_own' ) ) {
-		push @search_in, 'owner';
-	    }
-	    if ( $cgi->param( 'search_used' ) ) {
-		push @search_in, 'user';
-	    }
-	    if ( $cgi->param( 'search_visible' ) ) {
-		push @search_in, 'visible';
-	    }
+	if ( $cgi->param( 'search_used' ) ) {
+	    push @search_in, 'user';
+	}
+	if ( $cgi->param( 'search_visible' ) ) {
+	    push @search_in, 'visible';
 	}
 	$search_plist = [ sort map(@$_, @{$lists}{ @search_in } ) ];
 
-	# Iterate over policies in $plist and search in rules
-	# and/or in user-resources.
+
       SERVICE:
 	for my $sname ( @$search_plist ) {
 	    if ( $search_in_rules ) {
@@ -410,7 +407,15 @@ sub service_list {
 		my $rules = get_rules_for_owner_and_service( $owner, $sname );
 		if ( $rules ) {
 		    for my $r ( @$rules ) {
+			# Search in src or dst.
 			for my $item ( @{$r->{$lookup{$r->{has_user}}}} ) {
+			    if ( $item =~ /$search/ ) {
+				push @$plist, $sname;
+				next SERVICE;
+			    }
+			}
+			# Search in srv.
+			for my $item ( @{$r->{srv}} ) {
 			    if ( $item =~ /$search/ ) {
 				push @$plist, $sname;
 				next SERVICE;
@@ -421,14 +426,23 @@ sub service_list {
 	    }
 	    if ( $search_in_user ) {
 		my $users = get_users_for_owner_and_service( $owner, $sname );
-		for my $u ( @$users ) {
-		    if ( $u->{ip}    =~ /$search/  ||
-			 $u->{name}  =~ /$search/  ||
-			 $u->{owner} =~ /$search/
-			 ) {
-			push @$plist, $sname;
-			next SERVICE;
+		if ( $users ) {
+		    for my $u ( @$users ) {
+			if ( $u->{ip}    =~ /$search/  ||
+			     $u->{name}  =~ /$search/  ||
+			     $u->{owner} =~ /$search/
+			     ) {
+			    push @$plist, $sname;
+			    next SERVICE;
+			}
 		    }
+		}
+	    }
+	    if ( $search_in_desc ) {
+		my $desc = $services->{$sname}->{details}->{description};
+		if ( $desc =~ /$search/ ) {
+		    push @$plist, $sname;
+		    next SERVICE;
 		}
 	    }
 	}
