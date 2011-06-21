@@ -132,7 +132,7 @@ NetspocManager.PolicyManager = Ext.extend(
 			name       : 'search_used'
 		    },
 		    {
-			boxLabel   : 'Sichtbare',
+			boxLabel   : 'Nutzbare',
 			name       : 'search_visible'
 		    },
 		    {
