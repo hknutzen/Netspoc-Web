@@ -430,10 +430,11 @@ sub service_list {
 		}
 	    }
 	    if ( $cgi->param( 'search_in_desc' ) ) {
-		my $desc = $services->{$sname}->{details}->{description};
-		if ( $desc =~ /$search/ ) {
-		    push @$plist, $sname;
-		    next SERVICE;
+		if ( my $desc = $services->{$sname}->{details}->{description} ) {
+		    if ( $desc =~ /$search/ ) {
+			push @$plist, $sname;
+			next SERVICE;
+		    }
 		}
 	    }
 	}
