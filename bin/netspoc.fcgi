@@ -143,12 +143,12 @@ my $selected_history;
 sub select_history {
     my ($cgi, $history_needed) = @_;
 
-    # Read requested history from cgi paramter.
+    # Read requested version date from cgi paramter.
     if ($selected_history = $cgi->param('history')) {
 	$history_needed or abort "Must not send parameter 'history'";
     }
 
-    # Follow symlink "current".
+    # Read current version tag from current/POLICY.
     else {
 	$history_needed and abort "Missing parameter 'history'";
 	$selected_history = get_policy()->[0]->{policy};
@@ -173,7 +173,7 @@ sub load_json {
 	}
 
 	# Get selected policy from today.
-	elsif ($selected_history =~ /^(?:p\d{1,8}|current)$/) {
+	elsif ($selected_history =~ /^p\d{1,8}$/) {
 	    my $real_path = "$dir/$selected_history/$path";
 	    $real_path = Encode::encode('UTF-8', $real_path);
 	    open ($fh, '<', $real_path) or die "Can't open $real_path\n";
