@@ -156,7 +156,7 @@ sub select_history {
 }
 
 # Todo: Cleanup cache after reaching some size limit.
-sub load_cached_json {
+sub load_json {
     my ($path) = @_;
     my $pathspec = "$selected_history:$path";
     my $data = $cache{$pathspec}->{data};
@@ -286,11 +286,6 @@ sub load_cached_json {
     }
     $cache{$pathspec}->{atime} = localtime();
     return $data;
-}
-
-sub load_json {
-    my ($path, $cgi) = @_;
-    return load_cached_json($path, $cgi);
 }
 
 sub get_objects {
