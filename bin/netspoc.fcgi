@@ -222,29 +222,11 @@ sub load_json {
 	    #          srv => [ "ip|tcp|tcp 80|...", ..] },
 	    #        ..]},
 	    #   ..}
-	    # Substitute object names in src and dst by objects.
-	    my $objects = get_objects();
-	    for my $service (values %$data) {
-		for my $rule (@{ $service->{rules} }) {
-		    for my $what (qw(src dst)) {
-			for my $obj (@{ $rule->{$what} }) {
-			    $obj = $objects->{$obj};
-			}
-		    }
-		}
-	    }
 	}
 	elsif ($path =~ m/users$/) {
 	    
 	    # Input: Hash mapping service names to user objects.
 	    # { s1 => [ o1, ..], ..}
-	    # Substitute object names by objects.
-	    my $objects = get_objects();
-	    for my $aref (values %$data) {
-		for my $name (@$aref) {
-		    $name = $objects->{$name};
-		}
-	    }
 	}
 	elsif ($path =~ /assets$/) {
 
@@ -257,30 +239,14 @@ sub load_json {
 	    #               ..}}
 	    # Add attribute 'net2childs' with flattened networks hashes 
 	    # of all any objects.
-	    my $objects = get_objects();
 	    my $anys = $data->{anys};
 	    $data->{net2childs} = { map(%{ $_->{networks} }, values %$anys) };
 
-	    # Add attribute 'any_list' with list of 'any' objects.
-	    $data->{any_list} = [ map($objects->{$_}, keys %$anys) ];
+	    # Add attribute 'any_list' with names of 'any' objects.
+	    $data->{any_list} = [ keys %$anys ];
 
-	    # Add attribute 'network_list' with list of network objects.
-	    $data->{network_list} = 
-		[ map($objects->{$_}, keys %{ $data->{net2childs} }) ];
-	    
-	    # Substitute network hashes of 'any' objects by list of 
-	    # network objects.
-	    for my $hash (values %$anys) {
-		$hash->{networks} = 
-		    [ map($objects->{$_}, keys %{ $hash->{networks} }) ];
-	    }
-
-	    # Substitute child names of net2childs by objects.
-	    for my $aref (values %{ $data->{net2childs} }) {
-		for my $name (@$aref) {
-		    $name = $objects->{$name};
-		}
-	    }
+	    # Add attribute 'network_list' with names of network objects.
+	    $data->{network_list} = [ keys %{ $data->{net2childs} } ];
 	}
 	$cache{$pathspec}->{data} = $data;
     }
@@ -298,41 +264,39 @@ sub get_no_nat_set {
 }
 
 sub get_nat_obj {
-    my ($obj, $no_nat_set) = @_;
-    if (my $href = $obj->{nat}) {
+    my ($obj_name, $no_nat_set) = @_;
+    my $objects = get_objects();
+    my $obj = $objects->{$obj_name};
+    if (my $href = $obj->{nat} and $no_nat_set) {
 	for my $tag (keys %$href) {
 	    next if $no_nat_set->{$tag};
 	    my $nat_ip = $href->{$tag};
 	    return { %$obj, ip => $nat_ip };
 	}
     }
-    return undef;
+    return $obj;
 }
     
-sub subst_nat {
-    my ($objects, $owner) = @_;
+sub get_nat_obj_list {
+    my ($obj_names, $owner) = @_;
     my $no_nat_set = get_no_nat_set($owner);
-    for my $obj (@$objects) {
-	if (my $nat_obj = get_nat_obj($obj, $no_nat_set)) {
-	    $obj = $nat_obj;
-	}
-    }
+    return [ map(get_nat_obj($_, $no_nat_set), @$obj_names) ];
 }
 
 sub get_any {
     my ($cgi, $session) = @_;
     my $owner = $cgi->param('active_owner');
     my $assets = load_json("owner/$owner/assets");
-    return $assets->{any_list};
+    my $any_names = $assets->{any_list};
+    return get_nat_obj_list($any_names, $owner);
 }
 
 sub get_networks {
     my ($cgi, $session) = @_;
     my $owner = $cgi->param('active_owner');
     my $assets = load_json("owner/$owner/assets");
-    my $networks = $assets->{network_list};
-    subst_nat($networks, $owner);
-    return $networks;
+    my $network_names = $assets->{network_list};
+    return get_nat_obj_list($network_names, $owner);
 }
 
 sub get_hosts {
@@ -340,9 +304,8 @@ sub get_hosts {
     my $net_name = $cgi->param('network') or abort "Missing param 'network'";
     my $owner = $cgi->param('active_owner');
     my $assets = load_json("owner/$owner/assets");
-    my $childs = $assets->{net2childs}->{$net_name};
-    subst_nat($childs, $owner);
-    return $childs;
+    my $child_names = $assets->{net2childs}->{$net_name};
+    return get_nat_obj_list($child_names, $owner);
 }
 
 ####################################################################
@@ -451,9 +414,8 @@ sub get_users_for_owner_and_service {
     my $sname2users = load_json( $path );
     
     # Empty user list is not exported intentionally.
-    my $users = $sname2users->{$sname} || [];
-    subst_nat( $users, $owner );
-    return $users;
+    my $user_names = $sname2users->{$sname} || [];
+    return get_nat_obj_list($user_names, $owner);
 }
 
 sub get_rules_for_owner_and_service {
@@ -464,8 +426,10 @@ sub get_rules_for_owner_and_service {
     $lists->{hash}->{$sname} or abort "Unknown service '$sname'";
     my $services = load_json('services');
 
-    # Rules reference objects. 
-    # Build copy which holds IP addresses with NAT applied.
+    # Rules reference objects by name.
+    # Build copy with 
+    # - names substituted by objects
+    # - IP addresses in object with NAT applied.
     my $no_nat_set = get_no_nat_set($owner);
     my $rules = $services->{$sname}->{rules};
     my $crules;
@@ -473,7 +437,7 @@ sub get_rules_for_owner_and_service {
 	my $crule = { %$rule };
 	for my $what (qw(src dst)) {
 	    $crule->{$what} = 
-		[ map((get_nat_obj($_, $no_nat_set) || $_)->{ip},
+		[ map((get_nat_obj($_, $no_nat_set))->{ip},
 		      @{ $rule->{$what} }) ];
 	}
 	push @$crules, $crule;
