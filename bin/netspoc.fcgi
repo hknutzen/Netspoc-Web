@@ -161,12 +161,27 @@ sub load_json {
     load_json_version($path, $selected_history);
 }
 
+my $max_versions = 8;
+
+sub clean_cache {
+    return if keys %cache <= $max_versions;
+    
+    # Sorted version keys, least use comes first.
+    my @versions_by_atime = 
+	sort { $cache{$a}->{_atime} <=> $cache{$b}->{_atime} } keys %cache;
+    my $delete_to = @versions_by_atime - $max_versions - 1;
+    delete @cache{@versions_by_atime[0..$delete_to]};
+}
+
 sub load_json_version {
     my ($path, $version) = @_;
-    my $pathspec = "$version:$path";
-    my $data = $cache{$pathspec}->{data};
+
+    # last access time for data of this version.
+    $cache{$version}->{_atime} = localtime();
+    my $data = $cache{$version}->{$path};
 
     if (not $data) {
+	clean_cache();
 	my $fh;
 	my $dir = $config->{netspoc_data};
 
@@ -253,9 +268,8 @@ sub load_json_version {
 	    # Add attribute 'network_list' with names of network objects.
 	    $data->{network_list} = [ keys %{ $data->{net2childs} } ];
 	}
-	$cache{$pathspec}->{data} = $data;
+	$cache{$version}->{$path} = $data;
     }
-    $cache{$pathspec}->{atime} = localtime();
     return $data;
 }
 
