@@ -158,7 +158,12 @@ sub select_history {
 # Todo: Cleanup cache after reaching some size limit.
 sub load_json {
     my ($path) = @_;
-    my $pathspec = "$selected_history:$path";
+    load_json_version($path, $selected_history);
+}
+
+sub load_json_version {
+    my ($path, $version) = @_;
+    my $pathspec = "$version:$path";
     my $data = $cache{$pathspec}->{data};
 
     if (not $data) {
@@ -166,15 +171,15 @@ sub load_json {
 	my $dir = $config->{netspoc_data};
 
 	# Check out from RCS revision of some date.
-	if ($selected_history =~ /^\d\d\d\d-\d\d-\d\d$/) {
-	    my $cmd = "co -q -p -d'$selected_history 23:59' -zLT $dir/RCS/$path,v";
+	if ($version =~ /^\d\d\d\d-\d\d-\d\d$/) {
+	    my $cmd = "co -q -p -d'$version 23:59' -zLT $dir/RCS/$path,v";
 	    $cmd = Encode::encode('UTF-8', $cmd);
 	    open ($fh, '-|', $cmd) or die "Can't open $cmd: $!\n";
 	}
 
 	# Get selected policy from today.
-	elsif ($selected_history =~ /^p\d{1,8}$/) {
-	    my $real_path = "$dir/$selected_history/$path";
+	elsif ($version =~ /^p\d{1,8}$/) {
+	    my $real_path = "$dir/$version/$path";
 	    $real_path = Encode::encode('UTF-8', $real_path);
 	    open ($fh, '<', $real_path) or die "Can't open $real_path\n";
 	}
