@@ -117,7 +117,7 @@ sub load_json_version {
     my ($self, $version, $path) = @_;
 
     # Last access time for data of this version.
-    $self->{atime}->{$version} = localtime();
+    $self->{atime}->{$version} = time();
     my $data = $self->{cache}->{$version}->{$path};
 
     if (not $data) {
