@@ -61,32 +61,32 @@ td.action {
 	font-family    : sans-serif;
 	vertical-align : top;
 	padding        : 2px;
-	width          : 10%;
+	/* width          : 10%; */
 }
 
 td.src {
 	vertical-align : top;
 	padding      : 2px;
-	width        : 40%;
+	/* width        : 30%; */
 }
 
 td.dst {
 	vertical-align : top;
 	padding      : 2px;
-	width        : 40%;
+	/* width        : 30%; */
 }
 
 td.srv {
 	vertical-align : top;
 	padding      : 2px;
-	width        : 100px;
+	/* width        : 25%; */
 }
 
 td.user {
 	vertical-align : top;
 	font-weight    : bold;
 	padding        : 2px;
-	width          : 10%;
+	/* width          : 30%; */
 }
 
 
