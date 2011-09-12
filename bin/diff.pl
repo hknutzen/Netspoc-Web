@@ -95,7 +95,7 @@ sub diff {
 	    while($diff->Next()) {
 		if ($diff->Same()) {
 		    for my $elt ($diff->Same()) {
-			if ($global && $changed{objects}->{$elt}) {
+			if ($global && $changed{$global}->{$elt}) {
 			    push(@{ $result->{$key}->{changed} }, $elt);
 			}
 		    }
