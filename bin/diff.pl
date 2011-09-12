@@ -2,6 +2,7 @@
 
 use strict;
 use warnings;
+use Algorithm::Diff;
 
 use FindBin;
 use lib $FindBin::Bin;
@@ -29,7 +30,7 @@ my $new_ver = shift @ARGV or usage();
 #}
 
 my $cache;
-my %diff;
+my %changed;
 
 # Der Wert für die angegebenen Keys ist ein Array mit Namen aus
 # 'objects' bzw. 'services'.
@@ -68,29 +69,46 @@ sub diff {
 	    }
 	}
 	elsif ($type eq 'ARRAY') {
-	    if (my $diff = @$n_val - @$o_val) {
-		$result->{$key} = ($diff > 0)
-		                ? "incremented by $diff"
-		                : ("decremented by " . -$diff);
+	    next if not @$o_val and not @$n_val;
+	    my $is_ref = @$o_val 
+		       ? ref($o_val->[0]) 
+		       : @$n_val 
+		       ? ref($n_val->[0]) 
+		       : 0;
+	    if ($is_ref) {
+		if (my $diff = @$n_val - @$o_val) {
+		    $result->{$key} = ($diff > 0)
+				    ? "incremented by $diff"
+				    : ("decremented by " . -$diff);
+		    next;
+		}
+		for (my $i = 0; $i < @$o_val; $i++) {
+		    my $o_elt = $o_val->[$i];
+		    my $n_elt = $n_val->[$i];
+		    if (my $diff = diff($o_elt, $n_elt)) {
+			@{$result->{$key}->{$i}}{keys %$diff} = values %$diff;
+		    }
+		}
 		next;
 	    }
+		    
 	    my $global = $lookup{$key};
-	    for (my $i = 0; $i < @$o_val; $i++) {
-		my $o_elt = $o_val->[$i];
-		my $n_elt = $n_val->[$i];
-		if (not ref($o_elt)) {
-		    if ($o_elt ne $n_elt) {
-			$result->{$key}->{$o_elt} = "array element changed";
-			next KEY;
-		    }
-		    if ($global) {
-			if (my $diff = $diff{$global}->{$n_elt}) {
-			    $result->{$key}->{$n_elt} = 'changed';
+	    my $diff = Algorithm::Diff->new($o_val, $n_val);
+	    while($diff->Next()) {
+		if ($diff->Same()) {
+		    for my $elt ($diff->Same()) {
+			if ($global && $changed{objects}->{$elt}) {
+			    push(@{ $result->{$key}->{changed} }, $elt);
 			}
 		    }
 		}
-		elsif (my $diff = diff($o_elt, $n_elt)) {
-		    @{$result->{$key}->{$i}}{keys %$diff} = values %$diff;
+		else {
+		    if($diff->Items(1)) {
+			push(@{ $result->{$key}->{deleted} }, $diff->Items(1));
+		    }
+		    if($diff->Items(2)) {
+			push(@{ $result->{$key}->{added} }, $diff->Items(2));
+		    }
 		}
 	    }
 	}
@@ -123,21 +141,22 @@ sub diff_users {
     for my $key (keys %$old) {
 	my $n_val = $new->{$key} or next;
 	my $o_val = $old->{$key};
-	if (my $diff = @$n_val - @$o_val) {
-	    $result->{$key} = ($diff > 0)
-		            ? "incremented by $diff"
-		            : ("decremented by " . -$diff);
-	    next;
-	}
-	for (my $i = 0; $i < @$o_val; $i++) {
-	    my $o_elt = $o_val->[$i];
-	    my $n_elt = $n_val->[$i];
-	    if ($o_elt ne $n_elt) {
-		$result->{$key}->{$o_elt} = "user name changed";
-		next KEY;
+	my $diff = Algorithm::Diff->new($o_val, $n_val);
+	while($diff->Next()) {
+	    if ($diff->Same()) {
+		for my $elt ($diff->Same()) {
+		    if ($changed{objects}->{$elt}) {
+			push(@{ $result->{$key}->{changed} }, $elt);
+		    }
+		}
 	    }
-	    if (my $diff = $diff{objects}->{$n_elt}) {
-		$result->{$key}->{$n_elt} = 'changed';
+	    else {
+		if($diff->Items(1)) {
+		    push(@{ $result->{$key}->{deleted} }, $diff->Items(1));
+		}
+		if($diff->Items(2)) {
+		    push(@{ $result->{$key}->{added} }, $diff->Items(2));
+		}
 	    }
 	}
     }
@@ -154,7 +173,7 @@ sub compare {
 	         ? diff_users($old_data, $new_data)
 	         : diff($old_data, $new_data)) 
     {
-	$diff{$path} = $diff;
+	$changed{$path} = $diff;
     }
 }
 
@@ -185,17 +204,17 @@ for my $owner (values %owners) {
 
 # Clean up auto vivification.
 for my $path ( qw(objects services)) {
-    my $value = $diff{$path};
+    my $value = $changed{$path};
     if ($value and not %$value) {
-	delete $diff{$path};
+	delete $changed{$path};
     }
 }
 
 
 use Data::Dumper;
-print Dumper(\%diff);
+print Dumper(\%changed);
 exit;
-for my $path (sort keys %diff) {
+for my $path (sort keys %changed) {
     print "$path\n";
-    print Dumper($diff{$path});
+    print Dumper($changed{$path});
 }
