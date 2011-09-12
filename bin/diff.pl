@@ -76,10 +76,8 @@ sub diff {
 		       ? ref($n_val->[0]) 
 		       : 0;
 	    if ($is_ref) {
-		if (my $diff = @$n_val - @$o_val) {
-		    $result->{$key} = ($diff > 0)
-				    ? "incremented by $diff"
-				    : ("decremented by " . -$diff);
+		if (@$n_val - @$o_val) {
+		    $result->{$key} = 'changed';
 		    next;
 		}
 		for (my $i = 0; $i < @$o_val; $i++) {
