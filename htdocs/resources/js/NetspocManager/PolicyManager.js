@@ -337,20 +337,9 @@ NetspocManager.PolicyManager = Ext.extend(
 	    var detailsPanel = 
 		{
 		    layout     : 'border',
-		    autoScroll : true,
 		    items      : [
-			{
-			    region : 'center',
-			    layout : 'border',
-			    items  : [
-				this.buildPolicyDetailsDV(),
-				this.buildPolicyRulesDV()
-			    ],
-			    printView : function() {
-				var pm = this.findParentByType( 'policymanager' );
-				pm.printDetails();
-			    }
-			},
+			this.buildPolicyDetailsDV(),
+			this.buildPolicyRulesDV(),
 			{
 			    region      : 'south',
 			    id          : 'PolicyEmails',
@@ -480,16 +469,16 @@ NetspocManager.PolicyManager = Ext.extend(
 	    return new Ext.Panel(
 		{ layout :'fit',
 		  region : 'center',
-		  items  : [ dv ]
+		  items  : [ dv ],
+		    printView : function() { }
 		}
 	    );
 	},
 
 	buildPolicyDetailsDV : function() {    
-            return new Ext.FormPanel(
+            fp = new Ext.FormPanel(
 		{
 		    id          : 'policyDetailsId',
-		    region      : 'north',
 		    defaultType : 'textfield',
 		    defaults    : { anchor : '100%' }, 
 		    border      : false,
@@ -497,6 +486,7 @@ NetspocManager.PolicyManager = Ext.extend(
 		    items       : [
 			{ fieldLabel : 'Name',
 			  name       : 'name',
+			  anchor     : '100%',
 			  readOnly   : true
 			},
 			{ fieldLabel : 'Beschreibung',
@@ -507,14 +497,25 @@ NetspocManager.PolicyManager = Ext.extend(
 			  id    : 'hiddenOwner',
 			  name  : 'owner'
 			},
-			{ xtype          : 'trigger',
-			  id             : 'trigger',
-			  fieldLabel     : 'Verantwortung',
-			  name           : 'owner1',
-			  editable       : false,
-			  onTriggerClick : this.bind(this.onTriggerClick)
-			}
+ 			{ xtype          : 'trigger',
+ 			  id             : 'trigger',
+ 			  fieldLabel     : 'Verantwortung',
+ 			  name           : 'owner1',
+ 			  editable       : false,
+ 			  onTriggerClick : this.bind(this.onTriggerClick)
+  			}
 		    ]
+		}
+	    );
+	    return new Ext.Panel(
+		{ layout :'anchor',
+		  region : 'north',
+		  border : false,
+		  items  : [ fp ],
+		  printView : function() {
+		      var pm = this.findParentByType( 'policymanager' );
+		      pm.printDetails();
+		  }
 		}
 	    );
 	},
