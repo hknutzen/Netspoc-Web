@@ -341,7 +341,7 @@ NetspocManager.PolicyManager = Ext.extend(
 		    items      : [
 			{
 			    region : 'center',
-			    layout : 'anchor',
+			    layout : 'border',
 			    items  : [
 				this.buildPolicyDetailsDV(),
 				this.buildPolicyRulesDV()
@@ -469,19 +469,27 @@ NetspocManager.PolicyManager = Ext.extend(
 		]
 	    };
 
-	    return new Ext.DataView(
-		{ tpl          : dvRulesTpl,
+	    var dv = new Ext.DataView(
+		{ autoScroll   : true,
+		  tpl          : dvRulesTpl,
 		  store        : store,
 		  itemSelector : 'div.thumb-wrap' // OBLIGATORY when
 		                                    // using XTemplate with DV
 		}
-	    ); 
+	    );
+	    return new Ext.Panel(
+		{ layout :'fit',
+		  region : 'center',
+		  items  : [ dv ]
+		}
+	    );
 	},
 
 	buildPolicyDetailsDV : function() {    
             return new Ext.FormPanel(
 		{
 		    id          : 'policyDetailsId',
+		    region      : 'north',
 		    defaultType : 'textfield',
 		    defaults    : { anchor : '100%' }, 
 		    border      : false,
