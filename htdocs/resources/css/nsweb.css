@@ -78,7 +78,8 @@ td.dst {
 
 td.srv {
 	vertical-align : top;
-	padding      : 2px;
+	padding        : 2px;
+	white-space    : nowrap;
 	/* width        : 25%; */
 }
 
