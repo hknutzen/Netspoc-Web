@@ -7,3 +7,7 @@ function proxy4path ( path ) {
     );
 }
 
+function trim( str ) {
+    return str.replace(/^\s+|\s+$/g,"");
+}
+
