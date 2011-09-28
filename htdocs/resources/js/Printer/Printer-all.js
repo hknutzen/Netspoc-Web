@@ -62,6 +62,22 @@ Ext.ux.Printer = function() {
           break;
         }
       }
+    },
+
+    print2html: function(component) {
+	var xtypes = component.getXTypes().split('/');
+	
+	// iterate backwards over the xtypes of this component,
+	// dispatching to the most specific renderer
+	for ( var i = xtypes.length - 1; i >= 0; i-- ) {
+            var xtype    = xtypes[i],        
+            renderer = this.getRenderer(xtype);
+            
+            if (renderer != undefined) {
+		return renderer.print2html( component );
+		break;
+            }
+	}
     }
   };
 }();
@@ -112,6 +128,14 @@ Ext.ux.Printer.BaseRenderer = Ext.extend(Object, {
     
 //    win.print();
 //    win.close();
+  },
+  
+  /**
+   * Returns the component's content as HTML.
+   * @param {Ext.Component} component The component to print to html
+   */
+  print2html: function(component) {
+      return this.generateHTML(component);
   },
   
   /**
@@ -309,29 +333,36 @@ Ext.ux.Printer.GridPanelRenderer = Ext.extend(Ext.ux.Printer.BaseRenderer, {
    * @return {Array} Data suitable for use in the XTemplate
    */
   prepareData: function(grid) {
-    //We generate an XTemplate here by using 2 intermediary XTemplates - one to create the header,
-    //the other to create the body (see the escaped {} below)
-    var columns = this.getColumns(grid);
-  
-    //build a useable array of store data for the XTemplate
-    var data = [];
-    grid.store.data.each(function(item) {
-      var convertedData = {};
+      //We generate an XTemplate here by using 2 intermediary XTemplates -
+      //  one to create the header,
+      //the other to create the body (see the escaped {} below)
+      var columns = this.getColumns(grid);
       
-      //apply renderers from column model
-      Ext.iterate(item.data, function(key, value) {
-        Ext.each(columns, function(column) {
-          if (column.dataIndex == key) {
-            convertedData[key] = column.renderer ? column.renderer(value, null, item) : value;
-            return false;
-          }
-        }, this);
-      });
-    
-      data.push(convertedData);
-    });
-    
-    return data;
+      //build a useable array of store data for the XTemplate
+      var data = [];
+      grid.store.data.each(
+	  function(item) {
+	      var convertedData = {};
+	      
+	      //apply renderers from column model
+	      Ext.iterate(item.data,
+			  function(key, value) {
+			      Ext.each(columns, function(column) {
+					   if (column.dataIndex == key) {
+					       convertedData[key] = column.renderer ?
+						   column.renderer(value, null, item) :
+						   value;
+					       return false;
+					   }
+				       },
+				       this
+				      );
+			  }
+			 );
+	      data.push(convertedData);
+	  }
+      );
+      return data;
   },
   
   /**
