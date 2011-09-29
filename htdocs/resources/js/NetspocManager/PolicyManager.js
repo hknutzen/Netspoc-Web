@@ -226,6 +226,13 @@ NetspocManager.PolicyManager = Ext.extend(
 		fieldLabel : 'Suchbegriff',
 		allowBlank : false,
 		minLength  : 2
+/*   FOO
+ 		specialkey : function( field, el ) {
+		    if ( el.getKey() == Ext.EventObject.ENTER ) {
+			Ext.getCmp('loginButton').fireEvent('click');
+		    }
+		}
+*/
 	    };
 	    
 	    var myFormPanel = new Ext.form.FormPanel(
@@ -311,26 +318,21 @@ NetspocManager.PolicyManager = Ext.extend(
 	},
 
 	printDetails : function() {
-	    new Ext.Window(
- 		{
- 		    title     : 'Druckfunktion wird implementiert ...',
- 		    width     : 500, 
- 		    height    : 350,
- 		    layout    : 'fit',
-		    resizable : false,
- 		    items     : [
- 			{
- 			    frame  : true,
- 			    layout : {
- 				type    : 'fit',
- 				padding : '5',
- 				align   : 'center'
- 			    },
-			    html : '<br><br><center> <h1> An einer Druckfunktion für Dienste-Details wird noch gearbeitet. </h1> <br><br> <h1> Wir bitten um etwas Geduld ... </h1> </center>'
- 			}
- 		    ]
- 		}
- 	    ).show();
+	    
+            var fp    = this.findByType( 'form' )[0];
+	    var name  = fp.find( 'name', 'name'  )[0];
+	    var desc  = fp.find( 'name', 'desc'  )[0];
+	    var owner = fp.find( 'name', 'owner' )[0];
+
+	    // Load rules.
+	    var store = Ext.StoreMgr.get('dvRulesStoreId');
+
+	    var grid = Ext.getCmp("grdRulesId");
+		
+	    var details = Ext.ux.Printer.print2html( grid );
+	    console.log( details );
+	    var win = window.open( '', 'Dienste-Details drucken' );
+	    win.document.write( details );
 	},
 	
 	buildPolicyDetailsView : function() {
@@ -413,42 +415,30 @@ NetspocManager.PolicyManager = Ext.extend(
 	},
 
 	buildPolicyRulesDV : function() {
-	    var dvRulesTpl = new Ext.XTemplate(
-		'<div class="rule-container">',  // div for one rule
-		'<table>',
 
-		'<tpl for=".">',   // rules-loop
-		'<tr>',    // new row
-		'<td class="action"> {action} </td> ',
-		'<tpl if="has_user==src">',		    
-		'<td class="user"> User  </td>',
-		'<td class="dst" > {dst} </td>',
-		'</tpl>',  // end tpl-if
-		'<tpl if="has_user==dst">',		    
-		'<td class="src" > {src} </td>',
-		'<td class="user"> User  </td>',
-		'</tpl>',  // end tpl-if
-		'<td class="srv"> {srv}  </td>',
-		'</tr>',    // end row
-		'</tpl>',  // end rules-loop
-
-		'</table>',
-		'</div>'
-	    );
-    
 	    var store = {
 		xtype    : 'netspocstatestore',
 		proxyurl : 'get_rules',
 		storeId  : 'dvRulesStoreId',
 		fields   : [
-		    { name : 'has_user', mapping : 'hasuser' },
+		    { name : 'has_user', mapping : 'hasuser'  },
 		    { name : 'action',   mapping : 'action'  },
 		    { name : 'src',      mapping : function( node ) {
-			  return node.src.join( '<br>' );
+			  if ( node.has_user == 'src' || node.has_user == 'both' ) {
+			      return 'User';
+			  }
+			  else {
+			      return node.src.join( '<br>' );
+			  };
 		      }
 		    },
 		    { name : 'dst',      mapping : function( node ) {
-			  return node.dst.join( '<br>' );
+			  if ( node.has_user == 'dst' || node.has_user == 'both' ) {
+			      return 'User';
+			  }
+			  else {
+			      return node.dst.join( '<br>' );
+			  };
 		      }
 		    },
 		    { name : 'srv',      mapping : function( node ) {
@@ -457,19 +447,69 @@ NetspocManager.PolicyManager = Ext.extend(
 		    }
 		]
 	    };
-
-	    var dv = new Ext.DataView(
-		{ autoScroll   : true,
-		  tpl          : dvRulesTpl,
-		  store        : store,
-		  itemSelector : 'div.thumb-wrap' // OBLIGATORY when
-		                                    // using XTemplate with DV
+	    
+	    function src_user_bold( value, metaData, record, rowIndex, colIndex, store ) {
+		if ( record.data.src == 'User' ) {
+		    return '<span style="font-weight:bold;">' + value + '</span>';
+		}
+		else {
+		    return value;
+		}
+	    } 
+	    function dst_user_bold( value, metaData, record, rowIndex, colIndex, store ) {
+		if ( record.data.dst == 'User' ) {
+		    return '<span style="font-weight:bold;">' + value + '</span>';
+		}
+		else {
+		    return value;
+		}
+	    } 
+	    
+	    var colModel = new Ext.grid.ColumnModel(
+		{
+		    columns    : [
+			{
+			    header    : 'Aktion',
+			    dataIndex : 'action',
+			    width     : 50,
+			    fixed     : true
+			},
+			{
+			    header    : 'Quelle',
+			    dataIndex : 'src',
+			    renderer  : src_user_bold
+			},
+			{
+			    header    : 'Ziel',
+			    dataIndex : 'dst',
+			    renderer  : dst_user_bold
+			},
+			{
+			    header    : 'Protokoll',
+			    dataIndex : 'srv'
+			}
+		    ],
+		    defaults : {
+			menuDisabled : true
+		    }
 		}
 	    );
+	    var grid  = new Ext.grid.GridPanel(
+		{
+		    id         : 'grdRulesId',
+		    store      : store,
+		    viewConfig : {
+			forceFit         : true,
+			selectedRowClass : 'x-grid3-row-over'
+		    },
+		    colModel : colModel
+		}
+	    );
+
 	    return new Ext.Panel(
 		{ layout :'fit',
 		  region : 'center',
-		  items  : [ dv ],
+		  items  : [ grid ],
 		    printView : function() { }
 		}
 	    );
