@@ -237,6 +237,10 @@ sub service_list {
 
     # Searching services?
     if ( $search ) {
+	# Strip leading and trailing whitespaces.
+	$search =~ s/^\s+//;
+	$search =~ s/\s+$//;
+
 	$plist = [];
 	my @search_in = ();
 	if ( $cgi->param( 'search_own' ) ) {
