@@ -225,19 +225,25 @@ NetspocManager.PolicyManager = Ext.extend(
 		emptyText  : 'Zeichenkette oder IP eingeben ... ',
 		fieldLabel : 'Suchbegriff',
 		allowBlank : false,
-		minLength  : 2
-/*   FOO
- 		specialkey : function( field, el ) {
-		    if ( el.getKey() == Ext.EventObject.ENTER ) {
-			Ext.getCmp('loginButton').fireEvent('click');
-		    }
+		minLength  : 2,
+		listeners: {
+                    specialkey: function( field, e ){
+			// Handle ENTER key press.
+			if ( e.getKey() == e.ENTER ) {
+			    var sb   = Ext.getCmp( 'buttonId' );
+			    var v    = Ext.getCmp( 'viewportId' );
+			    var pm   = v.findByType("policymanager");
+                            var form = field.ownerCt.getForm();
+			    sb.search_params = form.getValues();
+			    pm[0].onButtonClick( sb );
+			}
+                    }
 		}
-*/
 	    };
 	    
 	    var myFormPanel = new Ext.form.FormPanel(
 		{
-		    id           : 'myFormPanel',
+		    id           : 'myFormPanelId',
 		    width        : 400,
 		    height       : 200,
 		    frame        : true,
@@ -262,38 +268,30 @@ NetspocManager.PolicyManager = Ext.extend(
 			{ height : 10 },
 			checkbox_container
 		    ]
-/*
-		    keys    : [
-			{
-			    key: [
-				Ext.EventObject.ENTER
-			    ],
-			    handler: function() {
-				Ext.Msg.alert("Alert","Enter Key Event !");
-			    }
-			}
-		    ],
-*/
 		}
 	    );
 
 	    var form = myFormPanel.getForm();
 	    var search_button =
-		myFormPanel.addButton( 'Suche starten', function( button, event )
-				       {
-					   if ( form.isValid() ) {
-					       button.search_params = form.getValues();
-					       var v   = Ext.getCmp( 'viewportId' );
-					       var pm  = v.findByType("policymanager");
-					       pm[0].onButtonClick( button );
-					   } else {
-					       var m = 'Bitte Eingaben in rot markierten ' 
-						   + 'Feldern korrigieren.';
-					       Ext.MessageBox.alert( 'Fehlerhafte Eingabe!', m );
-					   }
-				       },
-				       myFormPanel
-				     );
+		myFormPanel.addButton( 
+		    {   // button config
+			id   : 'buttonId',
+			text : 'Suche starten'
+		    },
+		    function( button, event ) {  // button click handler
+			if ( form.isValid() ) {
+			    button.search_params = form.getValues();
+			    var v   = Ext.getCmp( 'viewportId' );
+			    var pm  = v.findByType("policymanager");
+			    pm[0].onButtonClick( button );
+			} else {
+			    var m = 'Bitte Eingaben in rot markierten ' 
+				+ 'Feldern korrigieren.';
+			    Ext.MessageBox.alert( 'Fehlerhafte Eingabe!', m );
+			}
+		    },
+		    myFormPanel    // scope in which the button handler function is executed
+		);
 	    
 	    var sfw = Ext.getCmp( 'searchFormWindowId' );
 	    if ( sfw ) {
@@ -311,8 +309,11 @@ NetspocManager.PolicyManager = Ext.extend(
 			resizable : false,
  			items     : [
 			    myFormPanel
- 			]
- 		    }
+ 			],
+			focus: function() {  // Focus search text field.
+			    this.items.item(0).items.item(1).focus();
+ 			}
+		    }
  		).show();
 	    }
 	},
