@@ -251,16 +251,19 @@ sub service_list {
 	$search_plist = [ sort map(@$_, @{$lists}{ @search_in } ) ];
 
 
+	use Data::Dumper;
       SERVICE:
 	for my $sname ( @$search_plist ) {
 	    if ( $cgi->param( 'search_in_rules' ) ) {
 		my %lookup = (
-			      'src' => 'dst',
-			      'dst' => 'src'
+			      'src'  => 'dst',
+			      'dst'  => 'src',
+			      'both' => 'both'
 			      );
 		# Get rules for current owner and service.
 		my $rules = get_rules_for_owner_and_service( $owner, $sname );
 		if ( $rules ) {
+
 		    for my $r ( @$rules ) {
 			# Search in src or dst.
 			for my $item ( @{$r->{$lookup{$r->{has_user}}}} ) {
@@ -283,12 +286,18 @@ sub service_list {
 		my $users = get_users_for_owner_and_service( $owner, $sname );
 		if ( $users ) {
 		    for my $u ( @$users ) {
-			if ( $u->{ip}    =~ /$search/  ||
-			     $u->{name}  =~ /$search/  ||
-			     $u->{owner} =~ /$search/
-			     ) {
-			    push @$plist, $sname;
-			    next SERVICE;
+			if ( !$u->{ip} || !$u->{name} || !$u->{owner} ) {
+			    print STDERR "IP, name or owner undefined in USER:\n";
+			    print STDERR Dumper( $u );
+			}
+			else {
+			    if ( $u->{ip}    =~ /$search/  ||
+				 $u->{name}  =~ /$search/  ||
+				 $u->{owner} =~ /$search/
+				 ) {
+				push @$plist, $sname;
+				next SERVICE;
+			    }
 			}
 		    }
 		}
