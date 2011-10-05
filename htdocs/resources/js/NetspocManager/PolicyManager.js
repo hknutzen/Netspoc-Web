@@ -498,6 +498,7 @@ NetspocManager.PolicyManager = Ext.extend(
 	    var grid  = new Ext.grid.GridPanel(
 		{
 		    id         : 'grdRulesId',
+		    border     : false,
 		    store      : store,
 		    viewConfig : {
 			forceFit         : true,
