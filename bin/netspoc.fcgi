@@ -220,10 +220,9 @@ sub get_hosts {
 
 sub service_list {
     my ($cgi, $session) = @_;
-    my $owner = $cgi->param('active_owner');
+    my $owner    = $cgi->param('active_owner');
     my $relation = $cgi->param('relation');
     my $search   = $cgi->param('search_string');
-    my $i        = $cgi->param('search_case_sensitive') ? '' : 'i';
     my $lists    = load_json("owner/$owner/service_lists");
     my $services = load_json('services');
     my $plist;
@@ -238,9 +237,15 @@ sub service_list {
 
     # Searching services?
     if ( $search ) {
+
 	# Strip leading and trailing whitespaces.
 	$search =~ s/^\s+//;
 	$search =~ s/\s+$//;
+
+	# Search case-sensitive?
+	if ( !$cgi->param('search_case_sensitive') ) {
+	    $search = "(?i)$search";
+	}
 
 	$plist = [];
 	my @search_in = ();
@@ -261,7 +266,7 @@ sub service_list {
 	for my $sname ( @$search_plist ) {
 
 	    # Check if service name itself contains $search.
-	    if ( $sname =~ /$search/$i ) {
+	    if ( $sname =~ /$search/ ) {
 		push @$plist, $sname;
 		next SERVICE;
 	    }
@@ -279,14 +284,14 @@ sub service_list {
 		    for my $r ( @$rules ) {
 			# Search in src or dst.
 			for my $item ( @{$r->{$lookup{$r->{has_user}}}} ) {
-			    if ( $item =~ /$search/$i ) {
+			    if ( $item =~ /$search/ ) {
 				push @$plist, $sname;
 				next SERVICE;
 			    }
 			}
 			# Search in srv.
 			for my $item ( @{$r->{srv}} ) {
-			    if ( $item =~ /$search/$i ) {
+			    if ( $item =~ /$search/ ) {
 				push @$plist, $sname;
 				next SERVICE;
 			    }
@@ -303,9 +308,9 @@ sub service_list {
 			    print STDERR Dumper( $u );
 			}
 			else {
-			    if ( $u->{ip}    =~ /$search/$i  ||
-				 $u->{name}  =~ /$search/$i  ||
-				 $u->{owner} =~ /$search/$i
+			    if ( $u->{ip}    =~ /$search/  ||
+				 $u->{name}  =~ /$search/  ||
+				 $u->{owner} =~ /$search/
 				 ) {
 				push @$plist, $sname;
 				next SERVICE;
@@ -316,7 +321,7 @@ sub service_list {
 	    }
 	    if ( $cgi->param( 'search_in_desc' ) ) {
 		if ( my $desc = $services->{$sname}->{details}->{description} ) {
-		    if ( $desc =~ /$search/$i ) {
+		    if ( $desc =~ /$search/ ) {
 			push @$plist, $sname;
 			next SERVICE;
 		    }
