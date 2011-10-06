@@ -223,6 +223,7 @@ sub service_list {
     my $owner = $cgi->param('active_owner');
     my $relation = $cgi->param('relation');
     my $search   = $cgi->param('search_string');
+    my $i        = $cgi->param('search_case_sensitive') ? '' : 'i';
     my $lists    = load_json("owner/$owner/service_lists");
     my $services = load_json('services');
     my $plist;
@@ -258,6 +259,13 @@ sub service_list {
 	use Data::Dumper;
       SERVICE:
 	for my $sname ( @$search_plist ) {
+
+	    # Check if service name itself contains $search.
+	    if ( $sname =~ /$search/$i ) {
+		push @$plist, $sname;
+		next SERVICE;
+	    }
+
 	    if ( $cgi->param( 'search_in_rules' ) ) {
 		my %lookup = (
 			      'src'  => 'dst',
@@ -271,14 +279,14 @@ sub service_list {
 		    for my $r ( @$rules ) {
 			# Search in src or dst.
 			for my $item ( @{$r->{$lookup{$r->{has_user}}}} ) {
-			    if ( $item =~ /$search/ ) {
+			    if ( $item =~ /$search/$i ) {
 				push @$plist, $sname;
 				next SERVICE;
 			    }
 			}
 			# Search in srv.
 			for my $item ( @{$r->{srv}} ) {
-			    if ( $item =~ /$search/ ) {
+			    if ( $item =~ /$search/$i ) {
 				push @$plist, $sname;
 				next SERVICE;
 			    }
@@ -295,9 +303,9 @@ sub service_list {
 			    print STDERR Dumper( $u );
 			}
 			else {
-			    if ( $u->{ip}    =~ /$search/  ||
-				 $u->{name}  =~ /$search/  ||
-				 $u->{owner} =~ /$search/
+			    if ( $u->{ip}    =~ /$search/$i  ||
+				 $u->{name}  =~ /$search/$i  ||
+				 $u->{owner} =~ /$search/$i
 				 ) {
 				push @$plist, $sname;
 				next SERVICE;
@@ -308,7 +316,7 @@ sub service_list {
 	    }
 	    if ( $cgi->param( 'search_in_desc' ) ) {
 		if ( my $desc = $services->{$sname}->{details}->{description} ) {
-		    if ( $desc =~ /$search/ ) {
+		    if ( $desc =~ /$search/$i ) {
 			push @$plist, $sname;
 			next SERVICE;
 		    }
