@@ -80,7 +80,7 @@ NetspocManager.PolicyManager = Ext.extend(
                     {
 			text         : 'Suche',
 			toggleGroup  : 'polNavBtnGrp',
-			enableToggle : true,
+			enableToggle : false,
 			scope        : this,
 			handler      : this.displaySearchWindow
                     },
@@ -99,7 +99,10 @@ NetspocManager.PolicyManager = Ext.extend(
 	    var relation   = button.relation;
 	    var params     = button.search_params;
 	    var keep_front = false;
-	    //var keep_front = params.keep_front;
+	    
+	    if ( params ) {
+		    keep_front = params.keep_front;
+	    }
 	    
 	    if ( sfw && !keep_front ) {
 		sfw.hide();
@@ -113,115 +116,10 @@ NetspocManager.PolicyManager = Ext.extend(
 
 	displaySearchWindow :  function( button, event ) {
 
-	    var checkbox_group1 = {
-		xtype      : 'checkboxgroup',
-		fieldLabel : 'Suche in Diensten',
-		anchor     : '100%',
-		columns    : 1,
-		flex       : 1,
-		defaults   : {
-		    checked    : true
-		},
-		items      : [
-		    {
-			boxLabel   : 'Eigene',
-			name       : 'search_own'
-		    },
-		    {
-			boxLabel   : 'Genutzte',
-			name       : 'search_used'
-		    },
-		    {
-			boxLabel   : 'Nutzbare',
-			name       : 'search_visible'
-		    },
-		    {
-			boxLabel   : 'Alle',
-			name       : 'search_in_all_services',
-			handler    : function( cb, checked ) {
-			    var cbg = cb.findParentByType( 'checkboxgroup' );
-			    if ( checked === true ) {
-				cbg.setValue( [ true, true, true ] );
-			    }
-			    else {
-				cbg.setValue( [ false, false, false ] );
-			    }
-			}
-		    }
-		]
-	    };
-	    
-	    var checkbox_group2 = {
-		xtype      : 'checkboxgroup',
-		fieldLabel : 'Suche in Regeln/User',
-		anchor     : '100%',
-		columns    : 1,
-		flex       : 2,
-		defaults   : {
-		    checked    : true
-		},
-		items      : [
-		    {
-			boxLabel   : 'Regeln',
-			name       : 'search_in_rules'
-		    },
-		    {
-			boxLabel   : 'User',
-			name       : 'search_in_user'
-		    },
-		    {
-			boxLabel   : 'Dienstbeschreibung',
-			name       : 'search_in_desc'
-		    },
-		    {
-			boxLabel   : 'Alle',
-			name       : 'search_in_all_details',
-			handler    : function( cb, checked ) {
-			    var cbg = cb.findParentByType( 'checkboxgroup' );
-			    if ( checked === true ) {
-				cbg.setValue( [ true, true, true ] );
-			    }
-			    else {
-				cbg.setValue( [ false, false, false ] );
-			    }
-			}
-		    }
-		]
-	    };
-	    
-	    var checkbox_container = {
-		xtype  : 'container',
-		layout : 'form',
-		height : 120,
-		layoutConfig : {
-		    //labelAlign : 'top'
-		},
-		items : [
-		    checkbox_group1,
-		    checkbox_group2
-		]
-	    };
-	    
-	    var radio_group = {
-		xtype      : 'radiogroup',
-		anchor     : '100%',
-		//fieldLabel : 'IP oder String',
-		items      : [
-		    {
-			boxLabel   : 'Zeichenkette',
-			name       : 'search_ip_or_string'
-		    },
-		    {
-			boxLabel   : 'IP-Adresse',
-			name       : 'search_ip_or_string'
-		    }
-		]
-	    };
-
 	    var searchtext = {
 		xtype      : 'textfield',
 		id         : 'search_string',
-		width      : 300,
+		width      : 330,
 		emptyText  : 'Zeichenkette oder IP eingeben ... ',
 		fieldLabel : 'Suchbegriff',
 		allowBlank : false,
@@ -241,31 +139,150 @@ NetspocManager.PolicyManager = Ext.extend(
 		}
 	    };
 	    
+	    var checkbox_group1 = {
+		xtype      : 'checkboxgroup',
+		fieldLabel : 'Suche in',
+		anchor     : '100%',
+		columns    : 2,
+		flex       : 1,
+		defaults   : {
+		    checked    : true
+		},
+		items      : [
+		    {
+			boxLabel   : 'Eigene Dienste',
+			name       : 'search_own'
+		    },
+		    {
+			id         : 'cb-rule-id',
+			boxLabel   : 'Regeln der Dienste',
+			name       : 'search_in_rules'
+		    },
+		    {
+			boxLabel   : 'Genutzte Dienste',
+			name       : 'search_used'
+		    },
+		    {
+			id         : 'cb-user-id',
+			boxLabel   : 'Nutzer der Dienste (User)',
+			name       : 'search_in_user'
+		    },
+		    {
+			boxLabel   : 'Nutzbare Dienste',
+			name       : 'search_visible'
+		    },
+		    {
+			id         : 'cb-desc-id',
+			boxLabel   : 'Dienstbeschreibungen',
+			name       : 'search_in_desc'
+		    },
+		    {
+			boxLabel   : 'Alle',
+			name       : 'search_in_all_services',
+			handler    : function( cb, checked ) {
+			    var cbg = cb.findParentByType( 'checkboxgroup' );
+			    if ( checked === true ) {
+				cbg.setValue( [ true, true, true ] );
+			    }
+			    else {
+				cbg.setValue( [ false, false, false ] );
+			    }
+			}
+		    },
+		    {
+			boxLabel   : 'Alle',
+			name       : 'search_in_all_details',
+			handler    : function( cb, checked ) {
+			    var cbg = cb.findParentByType( 'checkboxgroup' );
+			    if ( checked === true ) {
+				cbg.setValue(
+				    {
+					'cb-rule-id' : true,
+					'cb-user-id' : true,
+					'cb-desc-id' : true
+				    }
+				);
+			    }
+			    else {
+				cbg.setValue(
+				    {
+					'cb-rule-id' : false,
+					'cb-user-id' : false,
+					'cb-desc-id' : false
+				    }
+				);
+			    }
+			}
+		    }
+		]
+	    };
+	    
+	    var checkbox_group2 = {
+		xtype      : 'checkboxgroup',
+		anchor     : '100%',
+		columns    : 1,
+		flex       : 2,
+		defaults   : {
+		    checked    : true
+		},
+		items      : [
+		    {
+			boxLabel   : 'Groß-/Kleinschreibung beachten',
+			name       : 'search_case_sensitive'
+		    },
+		    {
+			boxLabel   : 'Such-Fenster im Vordergrund halten',
+			name       : 'keep_front',
+			checked    : false
+		    }
+		]
+	    };
+
+	    var checkbox_container = {
+		xtype  : 'container',
+		layout : 'form',
+		height : 120,
+		items : [
+		    checkbox_group1,
+		    { height : 10 },
+		    checkbox_group2
+
+		]
+	    };
+	    
+	    var radio_group = {
+		xtype      : 'radiogroup',
+		anchor     : '100%',
+		//fieldLabel : 'IP oder String',
+		items      : [
+		    {
+			boxLabel   : 'Zeichenkette',
+			name       : 'search_ip_or_string'
+		    },
+		    {
+			boxLabel   : 'IP-Adresse',
+			name       : 'search_ip_or_string'
+		    }
+		]
+	    };
+
 	    var myFormPanel = new Ext.form.FormPanel(
 		{
 		    id           : 'myFormPanelId',
-		    width        : 400,
-		    height       : 200,
+		    width        : 350,
+		    height       : 250,
 		    frame        : true,
 		    bodyStyle    : 'padding: 6px',
 		    labelWidth   : 70,
 		    buttonAlign  : 'center',
 		    layoutConfig : {
-			align : 'stretch'
+//			align : 'stretch'
 		    },
 		    items        : [
-/*			{
-			    xtype    : 'checkbox',
-			    name     : 'keep_front',
-			    boxLabel : 'Such-Fenster im Vordergrund halten',
-			    checked  : false
-			},
-*/
 			{ height : 10 },
 			searchtext,
 			{ height : 10 },
 //			radio_group,
-			{ height : 10 },
 			checkbox_container
 		    ]
 		}
@@ -304,14 +321,15 @@ NetspocManager.PolicyManager = Ext.extend(
 			id        : 'searchFormWindowId',
 			title     : 'IP-Adresse oder Zeichenkette suchen',
  			width     : 450, 
- 			height    : 350,
+ 			height    : 290,
  			layout    : 'fit',
 			resizable : false,
  			items     : [
 			    myFormPanel
  			],
-			focus: function() {  // Focus search text field.
-			    this.items.item(0).items.item(1).focus();
+			focus     : function() {  // Focus search text field.
+			    var txt_fields = this.findByType( 'textfield' );
+			    txt_fields[0].focus( false, true );
  			}
 		    }
  		).show();
@@ -331,8 +349,7 @@ NetspocManager.PolicyManager = Ext.extend(
 	    var grid = Ext.getCmp("grdRulesId");
 		
 	    var details = Ext.ux.Printer.print2html( grid );
-	    console.log( details );
-	    var win = window.open( '', 'Dienste-Details drucken' );
+	    var win = window.open( '', 'dienste_details_drucken' );
 	    win.document.write( details );
 	},
 	
@@ -495,6 +512,11 @@ NetspocManager.PolicyManager = Ext.extend(
 		    }
 		}
 	    );
+/*
+ * .x-grid3-row-selected .x-grid3-cell-inner {
+        font-size : large;
+    }
+ */
 	    var grid  = new Ext.grid.GridPanel(
 		{
 		    id         : 'grdRulesId',
@@ -502,9 +524,12 @@ NetspocManager.PolicyManager = Ext.extend(
 		    store      : store,
 		    viewConfig : {
 			forceFit         : true,
-			selectedRowClass : 'x-grid3-row-over'
+			selectedRowClass : 'x-grid3-row-over',
+			getRowClass: function( record, rowIndex, rp, ds ) { // rp = rowParams
+			    return 'big-font';
+			}
 		    },
-		    colModel : colModel
+		    colModel   : colModel
 		}
 	    );
 
