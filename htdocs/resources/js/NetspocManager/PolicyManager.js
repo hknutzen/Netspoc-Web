@@ -80,7 +80,8 @@ NetspocManager.PolicyManager = Ext.extend(
                     {
 			text         : 'Suche',
 			toggleGroup  : 'polNavBtnGrp',
-			enableToggle : false,
+			enableToggle : true,
+			allowDepress : false,
 			scope        : this,
 			handler      : this.displaySearchWindow
                     },
@@ -512,11 +513,7 @@ NetspocManager.PolicyManager = Ext.extend(
 		    }
 		}
 	    );
-/*
- * .x-grid3-row-selected .x-grid3-cell-inner {
-        font-size : large;
-    }
- */
+
 	    var grid  = new Ext.grid.GridPanel(
 		{
 		    id         : 'grdRulesId',
@@ -524,10 +521,7 @@ NetspocManager.PolicyManager = Ext.extend(
 		    store      : store,
 		    viewConfig : {
 			forceFit         : true,
-			selectedRowClass : 'x-grid3-row-over',
-			getRowClass: function( record, rowIndex, rp, ds ) { // rp = rowParams
-			    return 'big-font';
-			}
+			selectedRowClass : 'x-grid3-row-over'
 		    },
 		    colModel   : colModel
 		}
