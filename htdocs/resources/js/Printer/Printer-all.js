@@ -154,9 +154,6 @@ Ext.ux.Printer.BaseRenderer = Ext.extend(Object, {
         '</head>',
         '<body>',
 	'<br>',
-	'<style type="text/css"> @media print { input#btnPrint { display: none; } } </style>',
-	'<form><input type="button" id="btnPrint" value="Drucken" onclick="window.print();return false;" /></form>',
-	'<br>',
           this.generateBody(component),
         '</body>',
       '</html>'
