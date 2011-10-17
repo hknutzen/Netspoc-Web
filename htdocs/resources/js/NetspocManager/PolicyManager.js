@@ -444,7 +444,7 @@ NetspocManager.PolicyManager = Ext.extend(
 		    { name : 'action',   mapping : 'action'  },
 		    { name : 'src',      mapping : function( node ) {
 			  if ( node.has_user == 'src' || node.has_user == 'both' ) {
-			      return 'User';
+			      return '<span style="font-weight:bold;"> User </span>';
 			  }
 			  else {
 			      return node.src.join( '<br>' );
@@ -453,7 +453,7 @@ NetspocManager.PolicyManager = Ext.extend(
 		    },
 		    { name : 'dst',      mapping : function( node ) {
 			  if ( node.has_user == 'dst' || node.has_user == 'both' ) {
-			      return 'User';
+			      return '<span style="font-weight:bold;"> User </span>';
 			  }
 			  else {
 			      return node.dst.join( '<br>' );
@@ -467,23 +467,6 @@ NetspocManager.PolicyManager = Ext.extend(
 		]
 	    };
 	    
-	    function src_user_bold( value, metaData, record, rowIndex, colIndex, store ) {
-		if ( record.data.src == 'User' ) {
-		    return '<span style="font-weight:bold;">' + value + '</span>';
-		}
-		else {
-		    return value;
-		}
-	    } 
-	    function dst_user_bold( value, metaData, record, rowIndex, colIndex, store ) {
-		if ( record.data.dst == 'User' ) {
-		    return '<span style="font-weight:bold;">' + value + '</span>';
-		}
-		else {
-		    return value;
-		}
-	    } 
-	    
 	    var colModel = new Ext.grid.ColumnModel(
 		{
 		    columns    : [
@@ -495,13 +478,11 @@ NetspocManager.PolicyManager = Ext.extend(
 			},
 			{
 			    header    : 'Quelle',
-			    dataIndex : 'src',
-			    renderer  : src_user_bold
+			    dataIndex : 'src'
 			},
 			{
 			    header    : 'Ziel',
-			    dataIndex : 'dst',
-			    renderer  : dst_user_bold
+			    dataIndex : 'dst'
 			},
 			{
 			    header    : 'Protokoll',
