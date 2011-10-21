@@ -396,7 +396,9 @@ my %text2css = ( '+' => 'icon-add',
                  '-' => 'icon-delete',
                  '!' => 'icon-page_edit',
                  );
-                
+
+my %toplevel_sort = (objects => 1, services => 2, );
+
 sub get_diff {
     my ($cgi, $session) = @_;
     my $owner = $cgi->param('active_owner');
@@ -449,7 +451,9 @@ sub get_diff {
             return [ map { $convert->($_) } @$in ];
         }
     };
-    return $convert->($changed);
+    return
+        [ sort { ($toplevel_sort{$a->{text}} || 999) <=> ($toplevel_sort{$b->{text}} || 999) }
+          @{ $convert->($changed) } ];
 }
 
 ####################################################################
