@@ -33,6 +33,9 @@ NetspocManager.appstate = function () {
     state.getOwner = function () {
 	return owner;
     };
+    state.getPolicy = function () {
+        return history.policy;
+    };
     state.getHistory = function () {
 	if (history.current) {
 	    return history.policy;
@@ -254,6 +257,18 @@ NetspocManager.workspace = function () {
 	},
 
 	buildViewport : function () {
+            // Must be instantiated early, because this store is used
+            // - in toolbar of cardpaned and
+            // - in toolbar of diffmanager.
+            var historyStore = Ext.create( 
+                {
+		    xtype      : 'netspocstore',
+	            storeId    : 'historyStore',
+		    proxyurl   : 'get_history',
+		    autoDestroy: true,
+		    fields     : [ 'policy', 'date', 'time', 'current' ]
+	        }
+            );
 	    var cardPanel = new Ext.Panel(
 		{
 		    layout     : 'card',
@@ -262,14 +277,15 @@ NetspocManager.workspace = function () {
 		    defaults   :  { workspace : this },
 		    items      :  [
 			{ xtype : 'policymanager'  },
-			{ xtype : 'networkmanager' }
+			{ xtype : 'networkmanager' },
+			{ xtype : 'diffmanager'    }
 		    ],
 		    tbar   : [
 			{
 			    text          : 'Dienste, Freischaltungen',
 			    iconCls       : 'icon-chart_curve',
-			    toggleGroup   : 'navGrp',
 			    itemType      : 'policymanager',
+			    toggleGroup   : 'navGrp',
 			    enableToggle  : true,
 			    pressed       : true,
 			    scope         : this,
@@ -289,6 +305,19 @@ NetspocManager.workspace = function () {
 				this.switchToCard(button, 1);
 			    }
 			},
+			'-',
+			{
+			    text         : 'Diff',
+			    iconCls      : 'icon-chart_curve_edit',
+			    itemType     : 'diffmanager',
+			    toggleGroup  : 'navGrp',
+			    enableToggle : true,
+			    scope        : this,
+			    handler       : function ( button ) {
+				this.switchToCard(button, 2);
+			    }
+			},
+			'-',
 			'->',
 			{
 			    text    : 'Abmelden',
@@ -301,7 +330,7 @@ NetspocManager.workspace = function () {
 			'->',
 			'Verantwortungsbereich',
 			'->',
-			this.buildHistoryCombo(),
+			this.buildHistoryCombo(historyStore),
 			'->',
 			'Stand'
 		    ]
@@ -322,32 +351,12 @@ NetspocManager.workspace = function () {
 	    cardPanel.layout.setActiveItem( index );
 	},
 
-	buildHistoryCombo : function () {
-	    var tpl =
-		'<tpl for="."><div class="x-combo-list-item">'
-		+ '{date} {time} ({policy})'
-		+ '</div></tpl>';
+	buildHistoryCombo : function (store) {
 	    return {
-		xtype          : 'combo',
-		forceSelection : true, 
-		autoselect     : true,
-		editable       : false,
-		allowblank     : false,
-		displayField   : undefined,
-		valueField     : undefined,
-		loadingText    : 'Abfrage l&auml;uft ...',
-		mode           : 'remote',
-		triggerAction  : 'all',
-		store          : {
-		    xtype      : 'netspocstore',
-		    proxyurl   : 'get_history',
-		    autoDestroy: true,
-		    fields     : [ 'policy', 'date', 'time', 'current' ]
-		},
-		tpl            : tpl,
-		listWidth      : 400,
+		xtype          : 'historycombo',
+                store          : store,
 
-		// Show selected history.
+		// Show initially selected history (i.e curent version).
 		value          : NetspocManager.appstate.showHistory(),
 		listeners:{
 		    scope  : this,
