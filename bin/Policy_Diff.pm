@@ -29,10 +29,10 @@ sub compare_global {
     my $old = $data->load_json_version($v1, $path)->{$key};
     my $new = $data->load_json_version($v2, $path)->{$key};
     if (not $new) {
-	return($hash->{$key} = 'removed');
+	return($hash->{$key} = '-');
     }
     elsif (not $old) {
-	return($hash->{$key} = 'added');
+	return($hash->{$key} = '+');
     }
     else {
 	return($hash->{$key} = diff($state, $old, $new));
@@ -46,7 +46,8 @@ sub diff {
     my $type = ref($old);
     if (not $type) {
 	if ($old ne $new) {
-	    $result = "$old => $new";
+            # Use unicode arrow.
+	    $result = "$old \N{U+2794} $new";
 	}
     }
     elsif ($type eq 'HASH') {
@@ -55,7 +56,7 @@ sub diff {
 
 	    # Key has been removed in new version.
 	    if (not exists($new->{$key})) {
-		$result->{$key} = 'removed';
+		$result->{$key} = '-';
 		next;
 	    }
 	    my $n_val = $new->{$key} || '';
@@ -69,7 +70,7 @@ sub diff {
 	# Key has been added in new version.
 	for my $key (keys %$new) {
 	    next if $ignore{$key};
-	    exists($old->{$key}) or $result->{$key} = 'added';
+	    exists($old->{$key}) or $result->{$key} = '+';
 	}
     }
     elsif ($type eq 'ARRAY') {
@@ -81,7 +82,7 @@ sub diff {
 		       : 0;
 	    if ($is_ref) {
 		if (@$new - @$old) {
-		    $result = 'changed';
+		    $result = '!';
 		}
 		else {
 		    for (my $i = 0; $i < @$old; $i++) {
@@ -100,16 +101,16 @@ sub diff {
                         next if not $global;
 			for my $elt ($diff->Same()) {
 			    if (compare_global($state, $global, $elt)) {
-				push(@{ $result->{changed} }, $elt);
+				push(@{ $result->{'!'} }, $elt);
 			    }
 			}
 		    }
 		    else {
 			if($diff->Items(1)) {
-			    push(@{ $result->{removed} }, $diff->Items(1));
+			    push(@{ $result->{'-'} }, $diff->Items(1));
 			}
 			if($diff->Items(2)) {
-			    push(@{ $result->{added} }, $diff->Items(2));
+			    push(@{ $result->{'+'} }, $diff->Items(2));
 			}
 		    }
 		}
@@ -145,16 +146,16 @@ sub diff_users {
 	    if ($diff->Same()) {
 		for my $elt ($diff->Same()) {
 		    if (compare_global($state, 'objects', $elt)) {
-			push(@{ $result->{$key}->{changed} }, $elt);
+			push(@{ $result->{$key}->{'!'} }, $elt);
 		    }
 		}
 	    }
 	    else {
 		if($diff->Items(1)) {
-		    push(@{ $result->{$key}->{deleted} }, $diff->Items(1));
+		    push(@{ $result->{$key}->{'-'} }, $diff->Items(1));
 		}
 		if($diff->Items(2)) {
-		    push(@{ $result->{$key}->{added} }, $diff->Items(2));
+		    push(@{ $result->{$key}->{'+'} }, $diff->Items(2));
 		}
 	    }
 	}
