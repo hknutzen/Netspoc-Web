@@ -14,6 +14,7 @@ use Encode;
 
 use FindBin;
 use lib $FindBin::Bin;
+use Policy_Diff;
 
 # Exportierte Funktionen
 # - sub load_json_version($path, $version)
@@ -391,6 +392,66 @@ sub get_users {
     return get_users_for_owner_and_service( $owner, $sname );
 }
 
+my %text2css = ( '+' => 'icon-add',
+                 '-' => 'icon-delete',
+                 '!' => 'icon-page_edit',
+                 );
+                
+sub get_diff {
+    my ($cgi, $session) = @_;
+    my $owner = $cgi->param('active_owner');
+    my $version = $cgi->param('version') or 
+        abort "Missing parameter 'version'";
+    my $changed = 
+        Policy_Diff::compare($cache, $version, $selected_history, $owner);
+    return undef if not $changed;
+
+    # Convert to ExtJS tree.
+    # Node: Hash with attributes "text" and 
+    # - either "leaf: true"
+    # - or "children: [ .. ]"
+    # Add css class to special +,-,! nodes.
+    # Toplevel: array of nodes
+    my $node = sub {
+        my ($text, $childs) = @_;
+        my $result = {};
+        if (my $css = $text2css{$text}) {
+            $result->{iconCls} = $css;
+        }
+        else {
+            $result->{text} = $text;
+        }
+        if ($childs) {
+            $result->{children} = $childs;
+        }
+        else {
+            $result ->{leaf} = JSON::true;
+        }
+        return $result;
+    };
+    my $convert;
+    $convert = sub {
+        my ($in) = @_;
+        my $type = ref($in);
+        if (not $type) {
+            return $node->($in);
+        }
+        elsif ($type eq 'HASH') {
+            my @result;
+            for my $key (sort keys %$in) {
+                my $val = $convert->($in->{$key});
+                push @result, $node->($key, 
+                                      ref($val) eq 'ARRAY' ? $val : [$val]);
+            }
+            return \@result;
+        }
+        elsif ($type eq 'ARRAY') {
+            return [ map { $convert->($_) } @$in ];
+        }
+    };
+    return $convert->($changed);
+}
+
 ####################################################################
 # Save session data
 ####################################################################
@@ -679,18 +740,19 @@ my %path2sub =
      verify        => [ \&verify,        { anon => 1, html  => 1, } ],
      session_email => [ \&session_email, { anon => 1, html => 1, 
 					   err_status => 500} ],
-     get_policy    => [ \&get_policy,    { anon => 1, } ],
-     logout        => [ \&logout,        {} ],
-     get_owner     => [ \&get_owner,     {} ],
-     get_owners    => [ \&get_owners,    {} ],
-     get_history   => [ \&get_history,   {} ],
-     set           => [ \&set_session_data, {} ],
-     service_list  => [ \&service_list,  { owner => 1, } ],
-     get_emails    => [ \&get_emails,    { owner => 1, } ],
-     get_rules     => [ \&get_rules,     { owner => 1, } ],
-     get_users     => [ \&get_users,     { owner => 1, } ],
-     get_networks  => [ \&get_networks,  { owner => 1, } ],
-     get_hosts     => [ \&get_hosts,     { owner => 1, } ],
+     get_policy    => [ \&get_policy,    { anon => 1, add_success => 1, } ],
+     logout        => [ \&logout,        { add_success => 1, } ],
+     get_owner     => [ \&get_owner,     { add_success => 1, } ],
+     get_owners    => [ \&get_owners,    { add_success => 1, } ],
+     get_history   => [ \&get_history,   { add_success => 1, } ],
+     set           => [ \&set_session_data, { add_success => 1, } ],
+     service_list  => [ \&service_list,  { owner => 1, add_success => 1, } ],
+     get_emails    => [ \&get_emails,    { owner => 1, add_success => 1, } ],
+     get_rules     => [ \&get_rules,     { owner => 1, add_success => 1, } ],
+     get_users     => [ \&get_users,     { owner => 1, add_success => 1, } ],
+     get_networks  => [ \&get_networks,  { owner => 1, add_success => 1, } ],
+     get_hosts     => [ \&get_hosts,     { owner => 1, add_success => 1, } ],
+     get_diff      => [ \&get_diff,      { owner => 1, } ],
       ); 
 
 sub handle_request {
@@ -734,22 +796,22 @@ sub handle_request {
 	    print $cgi->redirect( -uri => $data, 
 				  -cookie => $cookie);
 	}
-	else
-	{
-	    if (ref $data eq 'ARRAY') {
-		$data = {
-		    totalCount => scalar @$data,
-		    records => $data
-		    };
-	    }
-	    elsif ($data) {
-		$data = { data => $data, };
-	    }
-	    else {
-		$data = {};
-	    }
-	    $data->{success} = JSON::true;
-		
+	else {
+            if ($flags->{add_success}) {
+                if (ref $data eq 'ARRAY') {
+                    $data = {
+                        totalCount => scalar @$data,
+                        records => $data
+                        };
+                }
+                elsif ($data) {
+                    $data = { data => $data, };
+                }
+                else {
+                    $data = {};
+                }
+                $data->{success} = JSON::true;
+            }
 	    print $cgi->header( -type    => 'text/x-json',
 				-charset => 'utf-8',
 				-cookie  => $cookie);
