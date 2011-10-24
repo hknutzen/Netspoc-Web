@@ -89,7 +89,9 @@ sub diff {
 			my $o_elt = $old->[$i];
 			my $n_elt = $new->[$i];
 			if (my $diff = diff($state, $o_elt, $n_elt)) {
-			    @{$result->{$i}}{keys %$diff} = values %$diff;
+
+                            # Start counting at 1.
+			    @{$result->{$i+1}}{keys %$diff} = values %$diff;
 			}
 		    }
 		}
