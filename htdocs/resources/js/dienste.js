@@ -328,22 +328,19 @@ NetspocManager.workspace = function () {
 				this.switchToCard(button, 2);
 			    }
 			},
-			'-',
+			' ',
 			'->',
+			'Stand',
+			this.buildHistoryCombo(historyStore),
+                        ' ',
+			'Verantwortungsbereich',
+			this.buildOwnerCombo(this.buildOwnersStore()),
 			{
 			    text    : 'Abmelden',
 			    iconCls : 'icon-door_out',
 			    scope   : this,
 			    handler : this.onLogout
-			},
-			'->',
-			this.buildOwnerCombo(this.buildOwnersStore()),
-			'->',
-			'Verantwortungsbereich',
-			'->',
-			this.buildHistoryCombo(historyStore),
-			'->',
-			'Stand'
+			}
 		    ]
 		}
 	    );
