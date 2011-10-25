@@ -68,7 +68,7 @@ NetspocManager.DiffManager = Ext.extend(
             var store = Ext.StoreMgr.get('historyStore');
             var combo = this.buildHistoryCombo(store);
             this.combo = combo;
-            this.tbar =  [ 'Vergleiche mit', '-', combo ],
+            this.tbar =  [ 'Vergleiche mit', combo ],
             NetspocManager.DiffManager.
                 superclass.initComponent.call(this);
             appstate.addListener(
