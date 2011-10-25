@@ -103,10 +103,22 @@ NetspocManager.DiffManager = Ext.extend(
                                 return (pnum2 < pnum);
                             }; 
                             var store = qe.combo.getStore();
-                            if (! store.lastOptions) {
+
+                            // If store has never been loaded or
+                            // records have been removed, then load store.
+                            if (store.needLoad) {
                                 delete qe.combo.lastQuery;
+                                store.needLoad = false;
+                                store.on('load', 
+                                         function () {
+                                             store.filterBy(filter);
+                                         },
+                                         this,
+                                         { single : true });
                             }
-                            store.filterBy(filter);
+                            else {
+                                store.filterBy(filter);
+                            }
                         },
                         // Set selected version to 'id' of root. 
                         // Will be used as parameter 'version' during load.
