@@ -143,7 +143,9 @@ sub load_json_version {
 	}
 	{
 	    local $/ = undef;
-	    $data = from_json( <$fh> );
+
+            # Ignore JSON error if input was empty.
+	    $data = eval { from_json( <$fh> ) };
 	}
 	close($fh);
 	$data = $self->postprocess_json($path, $data);
