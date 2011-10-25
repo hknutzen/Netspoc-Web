@@ -11,14 +11,17 @@ Ext.QuickTips.init();
 NetspocManager.appstate = function () {
     var owner, history;
     var state = new Ext.util.Observable();
-    state.addEvents('changed');
-    state.changeOwner = function (newOwner) {
+    state.addEvents('changed', 'ownerChanged');
+    state.changeOwner = function (newOwner, silent) {
 	if (newOwner !== owner) {
 	    owner = newOwner;
-	    state.fireEvent('changed');
+            if (! silent) {
+	        state.fireEvent('changed');
+	        state.fireEvent('ownerChanged');
+            }
 	}
     };
-    state.changeHistory = function (record) {
+    state.changeHistory = function (record, silent) {
 	var data = { policy  : record.get('policy'),
 		     date    : record.get('date'),
 		     time    : record.get('time'),
@@ -27,7 +30,9 @@ NetspocManager.appstate = function () {
 	    data.policy !== history.policy) 
 	{
 	    history = data;
-	    state.fireEvent('changed');
+            if (! silent) {
+                state.fireEvent('changed');
+            }
 	}
     };
     state.getOwner = function () {
@@ -61,31 +66,10 @@ NetspocManager.appstate = function () {
 }();
 
 NetspocManager.workspace = function () {
+    var viewport;
     return {
 	
 	init : function () {
-	    this.getCurrentPolicy();
-	},
-	getCurrentPolicy : function() {
-	    var store = new NetspocWeb.store.Netspoc(
-		{
-		    proxyurl : 'get_policy',
-		    autoDestroy: true,
-		    fields     : [ 'policy', 'date', 'time', 'current' ]
-		}
-	    );
-	    store.load({ scope    : this,
-			 store    : store, // make store available for callback
-			 callback : this.onPolicyLoaded
-		       });
-	},
-	onPolicyLoaded : function(records, options, success) {
-	    var record;
-	    if (success && records.length) {
-		record = records[0];
-		NetspocManager.appstate.changeHistory(record);
-	    }
-	    options.store.destroy();
 	    this.getActiveOwner();
 	},
 	getActiveOwner : function() {
@@ -103,7 +87,7 @@ NetspocManager.workspace = function () {
 			     // Keep already selected owner.
 			     if (success && records.length) {
 				 var new_owner = records[0].get('name');
-				 this.startApp(new_owner);
+				 this.setOwnerState(new_owner);
 			     }
 			     // Owner was never selected, 
 			     // check number of available owners.
@@ -154,7 +138,6 @@ NetspocManager.workspace = function () {
  		).show();
 	    }
 	},
-
 	buildOwnersStore : function() {
 	    var config =
 		{
@@ -191,7 +174,6 @@ NetspocManager.workspace = function () {
 	    };
 	    return config;
 	},
-
 	onOwnerChosen : function() {
 	    var combo = Ext.getCmp( 'cbOwnerId' );
 	    var new_owner = combo.getValue();
@@ -200,7 +182,6 @@ NetspocManager.workspace = function () {
 	    }
 	    this.setOwner(new_owner);
 	},
-
 	setOwner : function(new_owner) {
 	    var store =  new NetspocWeb.store.Netspoc(
 		{
@@ -214,7 +195,6 @@ NetspocManager.workspace = function () {
 			 scope    : this
 		       });
 	},
-
 	onSetOwnerSuccess : function(records, options, success) {
 	    var new_owner = options.params.owner;
 	    var window = Ext.getCmp( 'ownerWindow' );
@@ -223,13 +203,39 @@ NetspocManager.workspace = function () {
 	    if (window) {
 		window.close();
 	    }
-	    this.startApp(new_owner);
+	    this.setOwnerState(new_owner);
 	},
-
-	startApp : function(new_owner) {
-	    NetspocManager.appstate.changeOwner(new_owner);
+	setOwnerState : function(new_owner) {
+            // Call appstate.changeOwner later, after history has been set.
+	    this.getCurrentPolicy(new_owner);            
+	},
+	getCurrentPolicy : function(new_owner) {
+	    var store = new NetspocWeb.store.Netspoc(
+		{
+		    proxyurl : 'get_policy',
+		    autoDestroy: true,
+		    fields     : [ 'policy', 'date', 'time', 'current' ]
+		}
+	    );
+	    store.load({ scope    : this,
+                         // make store and owner available for callback
+			 store    : store, 
+                         owner    : new_owner,
+			 callback : this.onPolicyLoaded
+		       });
+	},
+	onPolicyLoaded : function(records, options, success) {
+	    var record;
+	    if (success && records.length) {
+		record = records[0];
+                // Don't fire change event.
+		NetspocManager.appstate.changeHistory(record, true);
+	    }
+	    NetspocManager.appstate.changeOwner(options.owner);
+	    options.store.destroy();
 	    this.buildViewport();
 	},
+
 
 	onLogout : function() {
 	    this.doLogout();
@@ -257,16 +263,21 @@ NetspocManager.workspace = function () {
 	},
 
 	buildViewport : function () {
+            if (viewport) {
+                return;
+            }
             // Must be instantiated early, because this store is used
             // - in toolbar of cardpaned and
             // - in toolbar of diffmanager.
             var historyStore = Ext.create( 
                 {
-		    xtype      : 'netspocstore',
+		    xtype      : 'netspocstatestore',
 	            storeId    : 'historyStore',
 		    proxyurl   : 'get_history',
 		    autoDestroy: true,
-		    fields     : [ 'policy', 'date', 'time', 'current' ]
+		    fields     : [ 'policy', 'date', 'time', 'current' ],
+                    // Own option, used in combo box of diffmanager.
+                    needLoad   : true
 	        }
             );
 	    var cardPanel = new Ext.Panel(
@@ -337,7 +348,7 @@ NetspocManager.workspace = function () {
 		}
 	    );
 	    
-	    new Ext.Viewport(
+	    viewport = new Ext.Viewport(
 		{
 		    id     : 'viewportId',
 		    layout : 'fit',
@@ -352,25 +363,38 @@ NetspocManager.workspace = function () {
 	},
 
 	buildHistoryCombo : function (store) {
-	    return {
-		xtype          : 'historycombo',
-                store          : store,
+	    var appstate = NetspocManager.appstate;
+	    var combo = Ext.create(
+                {
+		    xtype          : 'historycombo',
+                    store          : store,
 
-		// Show initially selected history (i.e curent version).
-		value          : NetspocManager.appstate.showHistory(),
-		listeners:{
-		    scope  : this,
-		    // delete the previous query in the beforequery event
-		    // this will reload the store the next time it expands
-		    beforequery: function(qe){
-			delete qe.combo.lastQuery;
-		    },
-		    select : function (combo, record, index) {
-			NetspocManager.appstate.changeHistory(record);
-			combo.setValue(NetspocManager.appstate.showHistory());
+		    // Show initially selected history (i.e curent version).
+		    value          : appstate.showHistory(),
+		    listeners: {
+		        scope  : this,
+		        // Delete the previous query in the beforequery event.
+		        // This will reload the store the next time it expands.
+		        beforequery: function(qe){
+                            var combo = qe.combo;
+			    delete combo.lastQuery;
+                            combo.getStore().needLoad = false;
+		        },
+		        select : function (combo, record, index) {
+			    appstate.changeHistory(record);
+			    combo.setValue(appstate.showHistory());
+		        }
 		    }
-		}
-	    };
+	        });
+	    appstate.addListener(
+		'ownerChanged', 
+		function () {
+                    var store = this.getStore();
+                    this.setValue(appstate.showHistory()); 
+                    store.needLoad = true; 
+                }, 
+                combo);
+            return combo;
 	}
 
     }; // end of return-closure
