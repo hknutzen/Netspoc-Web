@@ -7,8 +7,32 @@ link=current
 set -e
 
 cd $data
+mkdir -p RCS
 current=$(readlink $link)
 version=$current
+
+if [ -f RCS/POLICY,v ] ; then
+
+    # Nothing to do, if current version has already been processed.
+    prev_ver=$(rlog RCS/POLICY,v |grep -A1 date:|head -2|grep -v date:)
+    [ $version = $prev_ver ] && exit
+
+    # Compare current version with latest checked in version.
+    prev_date=$(rlog -zLT RCS/POLICY,v |grep date:|head -1|cut -d ' ' -f 2)
+    changed=$(~/NetspocWeb/bin/diff.pl . $prev_date $current)
+    for owner in $changed; do
+
+        # Copy current version to owner, if diff was found. 
+        # Preserve date of file for RCS.
+        cp -p $current/POLICY $current/owner/$owner
+    done
+else
+    # Mark all owner as changed on initial checkin.
+    for opath in $current/owner/* ; do
+        cp -p $current/POLICY $opath
+    done
+        
+fi
 
 # Add current version to RCS.
 ~/NetspocWeb/bin/add_to_rcs $current RCS $version
