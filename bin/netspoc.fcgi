@@ -102,6 +102,8 @@ sub get_policy {
 }
 
 sub get_history {
+    my ($cgi, $session) = @_;
+    my $owner = $cgi->param('active_owner');
     my $current = get_policy()->[0];
     my $current_policy = $current->{policy};
     my @result = ($current);
@@ -117,7 +119,7 @@ sub get_history {
     # ----------------------------
     # ...
     # We take date, time and  first line of the log message.
-    my $RCS_path = "$config->{netspoc_data}/RCS/POLICY,v";
+    my $RCS_path = "$config->{netspoc_data}/RCS/owner/$owner/POLICY,v";
     if (-e $RCS_path) {
 	my @rlog = qx(rlog -zLT $RCS_path);
 
@@ -748,8 +750,8 @@ my %path2sub =
      logout        => [ \&logout,        { add_success => 1, } ],
      get_owner     => [ \&get_owner,     { add_success => 1, } ],
      get_owners    => [ \&get_owners,    { add_success => 1, } ],
-     get_history   => [ \&get_history,   { add_success => 1, } ],
      set           => [ \&set_session_data, { add_success => 1, } ],
+     get_history   => [ \&get_history,   { owner => 1, add_success => 1, } ],
      service_list  => [ \&service_list,  { owner => 1, add_success => 1, } ],
      get_emails    => [ \&get_emails,    { owner => 1, add_success => 1, } ],
      get_rules     => [ \&get_rules,     { owner => 1, add_success => 1, } ],
