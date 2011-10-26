@@ -21,9 +21,10 @@ for f in $(cd $dir && find . -type f) ; do
 	rcsdir=$(dirname $rcsfile)
 	mkdir -p $rcsdir
 	rcs -q -i -t-init $rcsfile
+    else
+        rcs -q -l $rcsfile
     fi
 
-    # Lock RCS file for next call of ci.
     # Use working file's time of last modification.
-    ci -q -l -d -m"$msg" $rcsfile $dir/$f
+    ci -q -u -d -m"$msg" $rcsfile $dir/$f
 done
