@@ -264,7 +264,6 @@ sub service_list {
 	$search_plist = [ sort map(@$_, @{$lists}{ @search_in } ) ];
 
 
-	use Data::Dumper;
       SERVICE:
 	for my $sname ( @$search_plist ) {
 
@@ -306,18 +305,17 @@ sub service_list {
 		my $users = get_users_for_owner_and_service( $owner, $sname );
 		if ( $users ) {
 		    for my $u ( @$users ) {
-			if ( !$u->{ip} || !$u->{name} || !$u->{owner} ) {
-			    print STDERR "IP, name or owner undefined in USER:\n";
-			    print STDERR Dumper( $u );
+			if ( $u->{ip}  &&  $u->{ip} =~ /$search/ ) {
+			    push @$plist, $sname;
+			    next SERVICE;
 			}
-			else {
-			    if ( $u->{ip}    =~ /$search/  ||
-				 $u->{name}  =~ /$search/  ||
-				 $u->{owner} =~ /$search/
-				 ) {
-				push @$plist, $sname;
-				next SERVICE;
-			    }
+			elsif ( $u->{name}  &&  $u->{name} =~ /$search/ ) {
+			    push @$plist, $sname;
+			    next SERVICE;
+			}
+			elsif ( $u->{owner}  &&  $u->{owner} =~ /$search/ ) {
+			    push @$plist, $sname;
+			    next SERVICE;
 			}
 		    }
 		}
