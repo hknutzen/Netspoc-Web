@@ -27,8 +27,18 @@ NetspocManager.PolicyManager = Ext.extend(
             ];
 	    
             NetspocManager.PolicyManager.superclass.initComponent.call(this);
-	    var plv =  this.getComponent('policyListId');
-	    plv.loadStoreByParams( { relation : 'user' } );
+	    var plv = this.getComponent('policyListId');
+	    var fn = function () {
+		plv.loadStoreByParams( { relation : 'user' } );
+	    };
+	    // Give IE some time to digest store loading and stuff,
+	    // so that it doesn't hickup.
+	    if ( Ext.isIE ) {
+		Ext.defer( fn, 10 );
+	    }
+	    else {
+		fn();
+	    }
 	},
 	
 	buildPolicyListPanel : function() {
@@ -509,10 +519,10 @@ NetspocManager.PolicyManager = Ext.extend(
 	    );
 
 	    return new Ext.Panel(
-		{ layout :'fit',
-		  region : 'center',
-		  items  : [ grid ],
-		    printView : function() { }
+		{ layout    :'fit',
+		  region    : 'center',
+		  items     : [ grid ],
+		  printView : function() { }
 		}
 	    );
 	},
