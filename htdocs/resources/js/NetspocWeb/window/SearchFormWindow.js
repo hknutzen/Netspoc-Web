@@ -13,12 +13,13 @@ NetspocWeb.window.SearchFormWindow = Ext.extend(
             // Force defaults
             Ext.apply( this,
  		       {
-			   title     : 'IP-Adresse oder Zeichenkette suchen',
- 			   width     : 450, 
- 			   height    : 290,
- 			   layout    : 'fit',
-			   resizable : false,
- 			   items     : [
+			   title       : 'IP-Adresse oder Zeichenkette suchen',
+ 			   width       : 450, 
+ 			   height      : 290,
+ 			   layout      : 'fit',
+			   resizable   : false,
+			   closeAction : 'hide',
+ 			   items       : [
 			       this.buildForm()
  			   ],
 			   focus     : function() {  // Focus search text field.
@@ -45,7 +46,7 @@ NetspocWeb.window.SearchFormWindow = Ext.extend(
 		fieldLabel : 'Suchbegriff',
 		allowBlank : false,
 		minLength  : 2,
-		listeners: {
+		listeners  : {
                     specialkey: function( field, e ){
 			// Handle ENTER key press.
 			if ( e.getKey() == e.ENTER ) {
