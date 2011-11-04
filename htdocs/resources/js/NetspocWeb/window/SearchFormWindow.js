@@ -61,7 +61,6 @@ NetspocWeb.window.SearchFormWindow = Ext.extend(
 		}
 	    };
 	    
-	    // FOO: Window bleibt immer im Vordergrund --> WIESO??
 	    var checkbox_group1 = {
 		xtype      : 'checkboxgroup',
 		fieldLabel : 'Suche in',
