@@ -317,7 +317,7 @@ NetspocManager.PolicyManager = Ext.extend(
 	},
 
 	buildPolicyDetailsDV : function() {    
-            fp = new Ext.FormPanel(
+            var fp = new Ext.FormPanel(
 		{
 		    id          : 'policyDetailsId',
 		    defaultType : 'textfield',
