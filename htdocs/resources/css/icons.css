@@ -12,7 +12,9 @@
 
 .icon-help { background-image: url(/silk-icons/help.png) !important; } 
 
-.icon-bin { background-image: url(/silk-icons/bin.png) !important; } 
+.icon-bin        { background-image: url(/silk-icons/bin.png)        !important; } 
+.icon-bin-closed { background-image: url(/silk-icons/bin_closed.png) !important; } 
+
 
 
 
