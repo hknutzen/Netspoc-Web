@@ -47,8 +47,13 @@ NetspocWeb.listpanel.NetworkList = Ext.extend(
 		sortInfo      : { field: 'ip', direction: "ASC" },
 		fields        : [
 		    { name : 'name',   mapping : 'name'  },
-		    { name : 'ip',     mapping : 'ip'    },
-		    { name : 'owner' , mapping : 'owner' }
+		    { name : 'ip',     mapping : 'ip',
+		      sortType : function ( value ) {
+			  var array = value.split('/');
+			  return ip2numeric( array[0] );
+		      }
+		    },
+		    { name : 'owner',  mapping : 'owner' }
 		],
 		listeners: {
                     scope : this,
