@@ -36,10 +36,10 @@ NetspocWeb.listpanel.PolicyList = Ext.extend(
 		storeId       : 'policyDvStoreId',
 		sortInfo      : { field: 'name', direction: "ASC" },
 		fields        : [
-		    { name : 'name',  mapping : 'name'         },
-		    { name : 'desc',  mapping : 'description'  },
-		    { name : 'ping',  mapping : 'pingallowed'  },
-		    { name : 'owner', mapping : 'owner'        }
+		    { name : 'name',  mapping : 'name', sortType : 'asUCString' },
+		    { name : 'desc',  mapping : 'description'                   },
+		    { name : 'ping',  mapping : 'pingallowed'                   },
+		    { name : 'owner', mapping : 'owner'                         }
 		],
 		listeners: {
                     scope : this,
