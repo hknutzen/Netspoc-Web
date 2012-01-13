@@ -46,7 +46,23 @@ NetspocWeb.listpanel.UserList = Ext.extend(
 		sortInfo      : { field: 'ip', direction: "ASC" },
 		fields        : [
 		    { name : 'name'  , mapping : 'name'  },
-		    { name : 'ip'    , mapping : 'ip'    },
+		    { name : 'ip'    , mapping : 'ip',
+		      sortType : function ( value ) {
+			  var m1 = /-/;
+			  var m2 = /\//;
+			  if ( value.match(m1) ) {
+			      var array = value.split('-');
+			      return ip2numeric( array[0] );
+			  }
+			  else if ( value.match(m2) ) {
+			      var array = value.split('/');
+			      return ip2numeric( array[0] );
+			  }
+			  else {
+			      return ip2numeric( value );
+			  }
+		      }
+		    },
 		    { name : 'owner' , mapping : 'owner' }
 		],
 		listeners: {
