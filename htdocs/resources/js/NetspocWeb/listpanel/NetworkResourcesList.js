@@ -46,7 +46,18 @@ NetspocWeb.listpanel.NetworkResourcesList = Ext.extend(
 		storeId       : 'stNetworkDetailsId',
 		sortInfo      : { field: 'ip', direction: "ASC" },
 		fields        : [
-		    { name : 'ip',     mapping : 'ip'    },
+		    { name : 'ip',     mapping : 'ip',
+		      sortType : function ( value ) {
+			  var m = /-/;
+			  if ( value.match(m) ) {
+			      var array = value.split('-');
+			      return ip2numeric( array[0] );
+			  }
+			  else {
+			      return ip2numeric( value );
+			  }
+		      }
+		    },
 		    { name : 'name',   mapping : 'name'  },
 		    { name : 'owner' , mapping : 'owner' }
 		]
