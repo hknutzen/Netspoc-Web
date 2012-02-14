@@ -16,5 +16,6 @@ Dataport Hellgrau
 RGB 138-145-153
 */
 
-.x-grid3-cell-inner { font-size : larger; }
-
+.grid-larger-font .x-grid3-cell-inner { 
+    font-size : larger;
+}
