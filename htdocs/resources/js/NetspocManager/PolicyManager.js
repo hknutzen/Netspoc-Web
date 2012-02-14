@@ -299,6 +299,7 @@ NetspocManager.PolicyManager = Ext.extend(
 		    id         : 'grdRulesId',
 		    border     : false,
 		    store      : store,
+		    cls        : 'grid-larger-font',
 		    viewConfig : {
 			forceFit         : true,
 			selectedRowClass : 'x-grid3-row-over'
