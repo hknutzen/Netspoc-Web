@@ -33,8 +33,9 @@ class auth_netspocweb extends auth_basic {
 	return false;
     }
     $s_id = $_COOKIE[$cookie];
-    $curl = curl_init("http://localhost/netspocweb/backend/session_email");
+    $curl = curl_init("https://10.1.22.115/netspocweb/backend/session_email");
     curl_setopt($curl, CURLOPT_HTTPHEADER, array('Cookie: '.$cookie.'='.$s_id));
+    curl_setopt($curl, CURLOPT_SSL_VERIFYPEER, false);
     curl_setopt($curl, CURLOPT_FAILONERROR, true);
     curl_setopt($curl, CURLOPT_RETURNTRANSFER, true);
     $email = curl_exec($curl);
