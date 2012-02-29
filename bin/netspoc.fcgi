@@ -676,7 +676,7 @@ sub login {
     clear_attack($email);
     $session->param('email', $email);
     $session->clear('user');		# Remove old, now unused param.
-    $session->expire('logged_in', '30m');
+    $session->expire('logged_in', '60m');
     $session->param('logged_in', 1);
     return $app_url;
 }
