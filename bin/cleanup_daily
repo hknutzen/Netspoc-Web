@@ -1,15 +1,23 @@
 #!/bin/sh
 
-data=~/export
+usage () { echo "Usage: $0 <export_dir>"; }
+
+dir=$1
 link=current
 
 # Abort on any untested error.
 set -e
 
-cd $data
-mkdir -p RCS
+abort () { [ "$1" ] && echo "Error: $1"; usage; exit 1; }
+
+[ -d "$dir" ] || abort "Missing directory '$dir'"
+
+cd $dir
 current=$(readlink $link)
+[ "$current" ] || abort "Can't read $dir/current"
+
 version=$current
+mkdir -p RCS
 
 if [ -f RCS/POLICY,v ] ; then
 
