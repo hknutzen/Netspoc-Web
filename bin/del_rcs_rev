@@ -1,0 +1,23 @@
+#!/bin/bash
+
+set -e
+usage() { 
+    echo $0 path/to/RCS yyyy/mm/dd
+    echo Removes revisions newer or equal than date
+    exit 1 
+}
+
+dir=$1
+[ -d "$dir" ] || usage
+time=$2
+[ $time ] || usage
+
+cd $dir
+for f in $(find . -type f) ; do
+    while rlog -d"$time<=" $f |grep -q 'revision ' ; do
+	rcs -o1. $f < /dev/null || 
+
+	# Remove file if final revision was tried to remove.
+	{ rm -vf $f; break; }
+    done
+done
