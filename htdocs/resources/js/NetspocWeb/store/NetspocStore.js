@@ -17,7 +17,7 @@ NetspocWeb.store.Netspoc = Ext.extend(
 	    this.addListener('beforeload', function ( store, options ) {
 				 Ext.getBody().mask('Daten werden geladen ...', 
 						    'x-mask-loading');
-				 true;			
+				 return true;			
 			     });
 	    this.addListener('load', function() { Ext.getBody().unmask(); });
 	    this.addListener('exception', this.onJsonException);
@@ -78,28 +78,46 @@ NetspocWeb.store.NetspocState = Ext.extend(
 	    NetspocWeb.store.NetspocState.superclass.constructor.call(this, 
 								      config);
 	    // Set baseParams and reload store if appstate changes.
+	    var networks_as_csv = this.getNetworksCSV( appstate.getNetworks() );
 	    this.setBaseParam('active_owner', appstate.getOwner());
 	    this.setBaseParam('history', appstate.getHistory());
+	    this.setBaseParam('chosen_networks', networks_as_csv );
 	    appstate.addListener(
 		'changed', 
 		function () {
 		    var params;
-		    var active_owner = appstate.getOwner();
-		    var history = appstate.getHistory();
+		    var active_owner    = appstate.getOwner();
+		    var history         = appstate.getHistory();
+		    var chosen_networks = appstate.getNetworks();
+		    var networks_as_csv = this.getNetworksCSV( chosen_networks );
 		    this.setBaseParam('active_owner', active_owner);
 		    this.setBaseParam('history', history);
+		    this.setBaseParam('chosen_networks', networks_as_csv );
+
 		    if (this.doReload) {
 
 			// We need to add BaseParams again because
 			// they had been copied to lastOptions internally.
 			params = {
-			    active_owner : active_owner,
-			    history : history
+			    active_owner    : active_owner,
+			    history         : history,
+			    chosen_networks : networks_as_csv
 			};
-			Ext.applyIf(params, this.lastOptions.params);
-			this.reload({params : params});
+			Ext.applyIf( params, this.lastOptions.params );
+			this.reload( { params : params } );
 		    }
 		}, this);
+	},
+	
+	getNetworksCSV : function ( networks_as_csv ) {
+	    var selected = [];
+	    Ext.each( networks_as_csv, function (item) {
+			  selected.push( item.data.name );
+		      }
+		    );
+	    var networks = selected.join( ',');
+	    //console.log( networks );
+	    return networks;
 	}
     }
 );
