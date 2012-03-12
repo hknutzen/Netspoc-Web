@@ -31,7 +31,7 @@ NetspocWeb.listpanel.PolicyList = Ext.extend(
 	buildStore : function() {
 	    return  {
 		xtype         : 'netspocstatestore',
-		proxyurl      : this.proxyurl,
+		proxyurl      : this.proxyurl, // service_list
 		doReload      : 1,
 		storeId       : 'policyDvStoreId',
 		sortInfo      : { field: 'name', direction: "ASC" },
