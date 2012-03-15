@@ -234,6 +234,16 @@ NetspocManager.PolicyManager = Ext.extend(
 
 	buildPolicyRulesDV : function() {
 
+	    var bold_user = function ( node, what ) {
+		if ( node.has_user === what || node.has_user === 'both' ) {
+		    return '<span style="font-weight:bold;"> User </span>';
+		}
+		else {
+		    return what === 'src' ?  node.src.join( '<br>' ) :
+			node.dst.join( '<br>' );
+		};
+	    };
+
 	    var store = {
 		xtype    : 'netspocstatestore',
 		proxyurl : 'get_rules',
@@ -242,21 +252,11 @@ NetspocManager.PolicyManager = Ext.extend(
 		    { name : 'has_user', mapping : 'hasuser'  },
 		    { name : 'action',   mapping : 'action'  },
 		    { name : 'src',      mapping : function( node ) {
-			  if ( node.has_user == 'src' || node.has_user == 'both' ) {
-			      return '<span style="font-weight:bold;"> User </span>';
-			  }
-			  else {
-			      return node.src.join( '<br>' );
-			  };
+			  return bold_user( node, 'src' );
 		      }
 		    },
 		    { name : 'dst',      mapping : function( node ) {
-			  if ( node.has_user == 'dst' || node.has_user == 'both' ) {
-			      return '<span style="font-weight:bold;"> User </span>';
-			  }
-			  else {
-			      return node.dst.join( '<br>' );
-			  };
+			  return bold_user( node, 'dst' );
 		      }
 		    },
 		    { name : 'srv',      mapping : function( node ) {
@@ -299,6 +299,7 @@ NetspocManager.PolicyManager = Ext.extend(
 		    id         : 'grdRulesId',
 		    border     : false,
 		    store      : store,
+		    cls        : 'grid-larger-font',
 		    viewConfig : {
 			forceFit         : true,
 			selectedRowClass : 'x-grid3-row-over'
