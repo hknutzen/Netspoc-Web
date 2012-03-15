@@ -228,7 +228,6 @@ NetspocManager.NetworkManager = Ext.extend(
 		    ]
 		}
 	    );
-
             var grid = new Ext.grid.GridPanel(
 		{
 		    store      : store,
@@ -240,7 +239,6 @@ NetspocManager.NetworkManager = Ext.extend(
 		    },
 		    colModel   : col_model,
 		    sm         : selection_model,
-		    tbar       : toolbar,
 		    listeners  : {
 			beforerender : function ( component ) {
 			    component.getStore().load();
@@ -258,11 +256,10 @@ NetspocManager.NetworkManager = Ext.extend(
 	createButton : function () {
 	    var button =  {
 		xtype      : 'button',
-		id         : 'buttonId',
 		fieldLabel : 'Sicht auf Dienste/Freischaltungen ' +
 	            'auf die selektierten Netze einschränken',
 		text       : 'Auswählen',
-		handler    : this.onButtonClick
+		handler    : this.onChooseButtonClick
 	    };
 	    var form = new Ext.form.FormPanel(
 		{
@@ -287,15 +284,42 @@ NetspocManager.NetworkManager = Ext.extend(
 	    };
 	},
 
-	onButtonClick : function ( button, event ) {
+	onChooseButtonClick : function ( button, event ) {
 	    var wnd  = button.findParentByType( 'window' );
 	    var grid = wnd.items.items[0];
-	    var sel  = grid.getSelectionModel().getSelections();
+	    var sm   = grid.getSelectionModel();
+	    var sel  = sm.getSelections();
+
 	    // Find cardpanel, activate network-list-panel
 	    // and make "Netze"-button look pressed.
 	    var card = Ext.getCmp("netlistPanelId");
-	    card.layout.setActiveItem(0);
+	    var top_card = card.findParentByType( 'panel' );
 	    var card_buttons = card.getTopToolbar().findByType( 'button' );
+	    var toolbar = top_card.getTopToolbar();
+	    var top_card_buttons = toolbar.findByType( 'button' );
+	    var own_nets_button = top_card_buttons[1];
+	    var store_count = grid.getStore().getTotalCount();
+	    var selection_count = sm.getCount();
+
+	    // Selecting all records is to be treated as
+	    // if none were selected.
+	    if ( selection_count === store_count || selection_count == 0 ) {
+		//own_nets_button.enableToggle = true;
+		//own_nets_button.removeClass( 'red-button' );
+		own_nets_button.setIconClass( 'icon-computer_connect' );
+		own_nets_button.setText( 'Eigene Netze' );
+		sel = [];
+	    }
+	    else if ( selection_count > 0 ) {
+		// Give visual feedback to user to indicate
+		// restricted view within area of ownership.
+		//own_nets_button.toggle( false );
+		//own_nets_button.enableToggle = false;
+		//own_nets_button.addClass( 'red-button' );
+		own_nets_button.setIconClass( 'icon-exclamation' );
+		own_nets_button.setText( 'Ausgewählte Netze' );
+	    }
+	    card.layout.setActiveItem(0);
 	    card_buttons[0].toggle( true );
 	    wnd.hide();
 	    NetspocManager.appstate.changeNetworks( sel );
