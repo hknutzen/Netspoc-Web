@@ -19,3 +19,7 @@ RGB 138-145-153
 .grid-larger-font .x-grid3-cell-inner { 
     font-size : larger;
 }
+
+.red-button {
+    background-color : #e96e6e;
+}
