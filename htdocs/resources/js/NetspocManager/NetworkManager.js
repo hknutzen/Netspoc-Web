@@ -45,6 +45,10 @@ NetspocManager.NetworkManager = Ext.extend(
 			var grid = choose_networks_wnd.items.items[0];
 			grid.getStore().load();
 		    }
+		    // Reset "Eigene Netze"-button to default.
+		    var top_card_panel = this.findParentByType( 'panel' );
+		    this.setOwnNetworksButton( top_card_panel, 'default' );
+
 		    // Activate network list in card panel.
 		    this.activateNetworkList();
                 },
@@ -295,29 +299,20 @@ NetspocManager.NetworkManager = Ext.extend(
 	    var card = Ext.getCmp("netlistPanelId");
 	    var top_card = card.findParentByType( 'panel' );
 	    var card_buttons = card.getTopToolbar().findByType( 'button' );
-	    var toolbar = top_card.getTopToolbar();
-	    var top_card_buttons = toolbar.findByType( 'button' );
-	    var own_nets_button = top_card_buttons[1];
 	    var store_count = grid.getStore().getTotalCount();
 	    var selection_count = sm.getCount();
+	    var nm = card.findParentByType( 'networkmanager' );
 
 	    // Selecting all records is to be treated as
 	    // if none were selected.
 	    if ( selection_count === store_count || selection_count == 0 ) {
-		//own_nets_button.enableToggle = true;
-		//own_nets_button.removeClass( 'red-button' );
-		own_nets_button.setIconClass( 'icon-computer_connect' );
-		own_nets_button.setText( 'Eigene Netze' );
+		nm.setOwnNetworksButton( top_card, 'default' );
 		sel = [];
 	    }
 	    else if ( selection_count > 0 ) {
 		// Give visual feedback to user to indicate
 		// restricted view within area of ownership.
-		//own_nets_button.toggle( false );
-		//own_nets_button.enableToggle = false;
-		//own_nets_button.addClass( 'red-button' );
-		own_nets_button.setIconClass( 'icon-exclamation' );
-		own_nets_button.setText( 'Ausgewählte Netze' );
+		nm.setOwnNetworksButton( top_card );
 	    }
 	    card.layout.setActiveItem(0);
 	    card_buttons[0].toggle( true );
@@ -330,9 +325,24 @@ NetspocManager.NetworkManager = Ext.extend(
 	    // and make "Netze"-button look pressed.
 	    var card = Ext.getCmp("netlistPanelId");
 	    card.layout.setActiveItem(0);
+	    card.doLayout();
 	    var card_buttons = card.getTopToolbar().findByType( 'button' );
 	    card_buttons[0].toggle( true );
-	}	    
+	},
+
+	setOwnNetworksButton : function ( panel, status ) {
+	    var toolbar = panel.getTopToolbar();
+	    var top_buttons = toolbar.findByType( 'button' );
+	    var own_nets_button = top_buttons[1];
+	    if ( status === 'default' ) {
+		own_nets_button.setIconClass( 'icon-computer_connect' );
+		own_nets_button.setText( 'Eigene Netze' );
+	    }
+	    else {
+		own_nets_button.setIconClass( 'icon-exclamation' );
+		own_nets_button.setText( 'Ausgewählte Netze' );
+	    }
+	}
     }
 );
 
