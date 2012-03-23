@@ -306,6 +306,7 @@ NetspocManager.NetworkManager = Ext.extend(
 	    // Selecting all records is to be treated as
 	    // if none were selected.
 	    if ( selection_count === store_count || selection_count == 0 ) {
+		// Reset button to "Eigene Netze".
 		nm.setOwnNetworksButton( top_card, 'default' );
 		sel = [];
 	    }
