@@ -264,14 +264,80 @@ sub service_list {
     my $lists    = load_json("owner/$owner/service_lists");
     my $assets   = load_json("owner/$owner/assets");
     my $services = load_json('services');
+    my $copy;
     my $plist;
-    my $search_plist = [];
 
+    # Make a real copy not a reference.
+    map { $copy->{$_} = $lists->{$_} } keys %$lists;
+
+    # Are we in restricted mode with only selected networks?
+    if ( $chosen ) {
+
+	# Reset user and owner on copy of $lists.
+	$copy->{user}  = [];
+	$copy->{owner} = [];
+
+	# Untaint: Intersect chosen networks with all networks
+	# within area of ownership.
+	my $chosen_networks = [ split /,/, $chosen ];
+	my $network_names = $assets->{network_list};
+	$network_names = intersect( $chosen_networks,
+				    $network_names  );
+
+	# Only collect services that are relevant for chosen
+	# networks stored in $network_names.
+      SERVICE:
+	for my $pname ( sort map(@$_, @{$lists}{qw(owner user)}) ) {
+	    my $users = get_users_for_owner_and_service( $owner, $pname );
+	    for my $rule ( @{$services->{$pname}->{rules}} ) {
+		my $src = $rule->{src};
+		my $dst = $rule->{dst};
+		for my $network ( @$network_names ) {
+                    my %children;
+		    map { $children{$_} = 1 } @{$assets->{net2childs}->{$network}};
+		    if ( $relation && $relation eq 'user' && $users ) {
+			# Check if network or any of its contained resources
+			# can be found in user-data-structure.
+			for my $user ( @$users ) {
+			    my $uname = $user->{name};
+			    if ( $uname eq $network || $children{$uname} ) {
+				push @{$copy->{user}}, $pname;
+				next SERVICE;
+			    }
+			}
+		    }
+		    else {  # Only check src and dst for own services.
+			my $src_match = grep { $_ eq $network } @$src;
+			my $dst_match = grep { $_ eq $network } @$dst;
+			if ( $src_match > 0 || $dst_match > 0 ) {
+			    push @{$copy->{owner}}, $pname;
+			    next SERVICE;
+			}
+			for my $s ( @$src ) {
+			    if ( $children{$s} ) {
+				push @{$copy->{owner}}, $pname;
+				next SERVICE;
+			    }
+			} 
+			for my $d ( @$dst ) {
+			    if ( $children{$d} ) {
+				push @{$copy->{owner}}, $pname;
+				next SERVICE;
+			    }
+			} 
+		    }
+		}
+	    }
+	}
+    }
+
+    # $plist is filled here but is overridden in code
+    # handling search, IF we are in search mode.
     if ( not $relation ) {
-	$plist = [ sort map(@$_, @{$lists}{qw(owner user visible)}) ]
+	$plist = [ sort map(@$_, @{$copy}{qw(owner user visible)}) ]
     }
     else {
-	$plist = $lists->{$relation};
+	$plist = $copy->{$relation};
     }
 
     # Searching services?
@@ -286,6 +352,7 @@ sub service_list {
 	    $search = "(?i)$search";
 	}
 
+	# Reset $plist, it gets filled with search results below.
 	$plist = [];
 	my @search_in = ();
 	if ( $cgi->param( 'search_own' ) ) {
@@ -297,8 +364,7 @@ sub service_list {
 	if ( $cgi->param( 'search_visible' ) ) {
 	    push @search_in, 'visible';
 	}
-	$search_plist = [ sort map(@$_, @{$lists}{ @search_in } ) ];
-
+	my $search_plist = [ sort map(@$_, @{$copy}{ @search_in } ) ];
 
       SERVICE:
 	for my $sname ( @$search_plist ) {
@@ -360,60 +426,6 @@ sub service_list {
 		    if ( $desc =~ /$search/ ) {
 			push @$plist, $sname;
 			next SERVICE;
-		    }
-		}
-	    }
-	}
-    }
-
-    # Are we in restricted mode with only selected networks?
-    if ( $chosen && $relation =~ /(owner|user)/ ) {
-	my $local_plist = $plist;
-	$plist = [];
-
-	my $chosen_networks = [ split /,/, $chosen ];
-	my $network_names = $assets->{network_list};
-	$network_names = intersect( $chosen_networks,
-				    $network_names  );
-      SERVICE:
-	for my $pname ( @$local_plist ) {
-	    for my $rule ( @{$services->{$pname}->{rules}} ) {
-		my $users = get_users_for_owner_and_service( $owner, $pname );
-		my $src = $rule->{src};
-		my $dst = $rule->{dst};
-		for my $network ( @$network_names ) {
-                    my %children;
-		    map { $children{$_} = 1 } @{$assets->{net2childs}->{$network}};
-		    if ( $relation eq 'user'  && $users ) {
-			# Check if network or any of its contained resources
-			# can be found in user-data-structure.
-			for my $user ( @$users ) {
-			    my $uname = $user->{name};
-			    if ( $uname eq $network || $children{$uname} ) {
-				push @$plist, $pname;
-				next SERVICE;
-			    }
-			}
-		    }
-		    else {  # Only check src and dst for own services.
-			my $src_match = grep { $_ eq $network } @$src;
-			my $dst_match = grep { $_ eq $network } @$dst;
-			if ( $src_match > 0 || $dst_match > 0 ) {
-			    push @$plist, $pname;
-			    next SERVICE;
-			}
-			for my $s ( @$src ) {
-			    if ( $children{$s} ) {
-				push @$plist, $pname;
-				next SERVICE;
-			    }
-			} 
-			for my $d ( @$dst ) {
-			    if ( $children{$d} ) {
-				push @$plist, $pname;
-				next SERVICE;
-			    }
-			} 
 		    }
 		}
 	    }
