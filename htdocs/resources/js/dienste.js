@@ -9,7 +9,7 @@ Ext.QuickTips.init();
 // - history is an object { policy : .., date : .., time : .., current : ..}
 // This is used by netspocstatestore to set and update its baseParams.
 NetspocManager.appstate = function () {
-    var owner, history;
+    var owner, history, networks;
     var state = new Ext.util.Observable();
     state.addEvents('changed', 'ownerChanged');
     state.changeOwner = function (newOwner, silent) {
@@ -35,6 +35,15 @@ NetspocManager.appstate = function () {
             }
 	}
     };
+    state.changeNetworks = function ( chosen_networks, silent) {
+	if ( chosen_networks !== networks ) {
+	    networks = chosen_networks;
+            if ( ! silent ) {
+	        state.fireEvent('changed');
+	        state.fireEvent('networksChanged');
+            }
+	}
+    };
     state.getOwner = function () {
 	return owner;
     };
@@ -48,6 +57,9 @@ NetspocManager.appstate = function () {
 	else {
 	    return history.date;
 	}
+    };
+    state.getNetworks = function () {
+        return networks;
     };
     state.showHistory = function () {
 	var now = new Date();
@@ -335,8 +347,8 @@ NetspocManager.workspace = function () {
                         ' ',
 			'Verantwortungsbereich',
 			this.buildOwnerCombo(this.buildOwnersStore()),
+			'Abmelden',
 			{
-			    text    : 'Abmelden',
 			    iconCls : 'icon-door_out',
 			    scope   : this,
 			    handler : this.onLogout
