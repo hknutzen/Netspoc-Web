@@ -93,6 +93,12 @@ sub ip_nat_for_object {
 	    elsif ($obj->{loopback}) {
 		print_ip($obj->{ip});
 	    }
+
+            # Print no mask for aggregate with mask 0, for compatibility
+            # with old version.
+            elsif ($obj->{is_aggregate} && $obj->{mask} == 0) {
+		print_ip($obj->{ip});
+	    }
 	    else {
 		join('/', print_ip($obj->{ip}), print_ip($obj->{mask}));
 	    }
@@ -189,9 +195,6 @@ sub ip_nat_for_object {
 		$nat->{$tag} = $get_ip->($obj, $nat_obj);
 	    }
 	}
-    }
-    elsif ( Netspoc::is_any( $obj ) ) {
-	$ip = print_ip( 0 );
     }
     else {
         internal_err "Unexpected object $obj->{name}";
@@ -307,6 +310,7 @@ sub proto_descr {
 	    for my $key (sort keys %$flags) {
 		next if $key eq 'stateless_icmp';
 		next if $key eq 'overlaps';
+		next if $key eq 'no_check_supernet_rules';
 		if ($key eq 'src' or $key eq 'dst') {
 		    for my $part (sort keys %{$flags->{$key}}) {
 			$desc .= ", ${key}_$part";
@@ -354,25 +358,25 @@ sub find_visibility {
 # All objects referenced in rules and in networks and hosts of owners.
 my %all_objects;
 
-sub setup_policy_info {
-    progress("Setup policy info");
-    for my $policy (values %policies) {
-        next if $policy->{disabled};
-	my $pname = $policy->{name};
+sub setup_service_info {
+    progress("Setup service info");
+    for my $service (values %services) {
+        next if $service->{disabled};
+	my $pname = $service->{name};
 
-	my $users = $policy->{expanded_user} =
-	    Netspoc::expand_group($policy->{user}, "user of $pname");
+	my $users = $service->{expanded_user} =
+	    Netspoc::expand_group($service->{user}, "user of $pname");
 
 	# Non 'user' objects.
 	my @objects;
 
-	# Check, if policy contains a coupling rule with only "user" elements.
+	# Check, if service contains a coupling rule with only "user" elements.
 	my $is_coupling = 0;
 
-	for my $rule (@{ $policy->{rules} }) {
+	for my $rule (@{ $service->{rules} }) {
 	    my $has_user = $rule->{has_user};
-	    $rule->{expanded_srv} =
-		proto_descr(Netspoc::expand_services($rule->{srv}, 
+	    $rule->{expanded_prt} =
+		proto_descr(Netspoc::expand_protocols($rule->{prt}, 
 						     "rule in $pname"));
 	    if ($has_user eq 'both') {
 		$is_coupling = 1;
@@ -384,7 +388,7 @@ sub setup_policy_info {
 		my $all = 
 
 		    # Store expanded src and dst for later use 
-		    # in export_services.
+		    # in export_protocols.
 		    $rule->{"expanded_$what"} = 
 		    [ sort by_name
 		    @{ Netspoc::expand_group($rule->{$what}, 
@@ -406,7 +410,7 @@ sub setup_policy_info {
 	# Store referenced objects for later use during export.
 	@all_objects{@objects, @$users} = (@objects, @$users);
 
-	# Take elements of 'user' object, if policy has coupling rule.
+	# Take elements of 'user' object, if service has coupling rule.
 	if ($is_coupling) {
 	    @objects = unique(@objects, @$users);
 	}
@@ -416,14 +420,14 @@ sub setup_policy_info {
 
 	# Add artificial owner :unknown if owner is unknown.
 	push @$owners, ':unknown' if not @$owners;
-	$policy->{owners} = $owners;
-	$policy->{sub_owners} = sub_owners_for_objects(\@objects);
-	my $uowners = $policy->{uowners} = $is_coupling ? [] : owners_for_objects($users);
-	$policy->{sub_uowners} = $is_coupling ? [] : sub_owners_for_objects($users);
+	$service->{owners} = $owners;
+	$service->{sub_owners} = sub_owners_for_objects(\@objects);
+	my $uowners = $service->{uowners} = $is_coupling ? [] : owners_for_objects($users);
+	$service->{sub_uowners} = $is_coupling ? [] : sub_owners_for_objects($users);
 
 	# Für Übergangszeit aus aktueller Benutzung bestimmen.
-	$policy->{visible} ||= find_visibility($owners, $uowners);
-	$policy->{visible} and $policy->{visible} =~ s/\*$/.*/;
+	$service->{visible} ||= find_visibility($owners, $uowners);
+	$service->{visible} and $service->{visible} =~ s/\*$/.*/;
     }
 }
 
@@ -432,13 +436,14 @@ sub setup_policy_info {
 # belonging to other owners.
 ######################################################################
 
-# We can't use %anys from Netspoc.pm because it only holds named any objects.
-# But we need all any objects like any:[network:XX] here.
-my @all_anys;
+# We can't use %aggregates from Netspoc.pm because it only holds named
+# aggregates.  But we need unnamed aggregates like any:[network:XX]
+# as well.
+my @all_zones;
 
 sub setup_sub_owners {
     progress("Setup sub owners");
-    my %all_anys;
+    my %all_zones;
     for my $host (values %hosts) {
 	$host->{disabled} and next;
 	my $host_owner = $host->{owner} or next;
@@ -456,28 +461,28 @@ sub setup_sub_owners {
 	    @owners = values %$hash;
 
 	    # Substitute hash by array. 
-	    # Use a copy because @owner is changed below.
+	    # Use a copy because @owners is changed below.
 	    $network->{sub_owners} = [ @owners ];
 	}
 	if (my $net_owner = $network->{owner}) {
 	    push @owners, $net_owner;
 	}
-	my $any = $network->{any};
-	$all_anys{$any} = $any;
-	my $any_owner = $any->{owner};
+	my $zone = $network->{zone};
+	$all_zones{$zone} = $zone;
+	my $zone_owner = $zone->{owner};
 	for my $owner (@owners) {
-	    if ( not ($any_owner and $owner eq $any_owner)) {
-		$any->{sub_owners}->{$owner} = $owner;
-#		Netspoc::debug "$any->{name} : $owner->{name}";
+	    if ( not ($zone_owner and $owner eq $zone_owner)) {
+		$zone->{sub_owners}->{$owner} = $owner;
+#		Netspoc::debug "$zone->{name} : $owner->{name}";
 	    }
 	}
     }
 
     # Substitute hash by array.
-    @all_anys = values %all_anys;
-    for my $any (@all_anys) {
-	if (my $hash = $any->{sub_owners}) {
-	    $any->{sub_owners} = [ values %$hash ];
+    @all_zones = values %all_zones;
+    for my $zone (@all_zones) {
+	if (my $hash = $zone->{sub_owners}) {
+	    $zone->{sub_owners} = [ values %$hash ];
 	}
     }
 }
@@ -540,16 +545,29 @@ sub export_no_nat_set {
 }
 
 ####################################################################
-# Export hosts, networks and 'any' objects for each owner and
-# sub_owner.
+# Export hosts, networks and zones (represented by aggregate 0/0) for
+# each owner and sub_owner.
 ####################################################################
+
+# {networks} only contains toplevel networks.
+# Add subnets recursively.
+sub add_subnetworks {
+    my ($networks) = @_;
+    my @sub_networks;
+    for my $network (@$networks) {
+        if (my $sub = $network->{networks}) {
+            push @sub_networks, @{ add_subnetworks($sub) };
+        }
+    }
+    return @sub_networks ? [ @$networks, @sub_networks ] : $networks;
+}
 
 sub export_assets {
     progress("Export assets");
     my %result;
 
     my $export_networks = sub {
-	my ($networks, $owner, $own_any) = @_;
+	my ($networks, $owner, $own_zone) = @_;
 	my %sub_result;
 	for my $net (@$networks) {
 	    next if $net->{disabled};
@@ -564,7 +582,7 @@ sub export_assets {
 
 	    # Show only own childs in foreign network.
 	    my $own_network = $net_owner eq $owner;
-	    if (not $own_network and not $own_any) {
+	    if (not $own_network and not $own_zone) {
 		@childs = 
 		    grep { my $o = owner_for_object($_); $o and $o eq $owner } 
 		         @childs;
@@ -577,25 +595,31 @@ sub export_assets {
 	return \%sub_result;
     };
 
-    for my $any (@all_anys) {
-	next if $any->{disabled};
-	next if $any->{loopback};
-	if(@{ $any->{networks} } == 1 and 
-	   $any->{networks}->[0]->{ip} eq 'tunnel') 
-	{
-	    next;
-	}
-	$all_objects{$any} = $any;
-	my $any_name = $any->{name};
-	my $any_owner = owner_for_object($any) || '';
-	for my $owner (owner_for_object($any), sub_owners_for_object($any)) {
-	    
-	    # Export networks.
-	    my $networks = $any->{networks};
+    for my $zone (@all_zones) {
+	next if $zone->{disabled};
+	next if $zone->{loopback};
 
-	    # Show only own or sub_own networks in foreign any object.
-	    my $own_any = $any_owner eq $owner;
-	    if (not $own_any) {
+        # Ignore empty zone with only tunnel or unnumbered networks.
+        next if not @{ $zone->{networks} };
+
+        # All aggregates can be used in rules.
+        for my $aggregate (values %{ $zone->{ipmask2aggregate} }) {
+            $all_objects{$aggregate} = $aggregate;
+        }
+
+        # Zone with network 0/0 doesn't have an aggregate 0/0.
+        my $any = $zone->{ipmask2aggregate}->{'0/0'};
+	my $zone_name = $any ? $any->{name} : $zone->{name};
+	my $zone_owner = owner_for_object($zone) || '';
+	for my $owner (owner_for_object($zone), sub_owners_for_object($zone)) {
+
+	    # Export networks.
+            # Set $networks inside the loop, because it is changed below.
+            my $networks = add_subnetworks($zone->{networks});
+
+	    # Show only own or sub_own networks in foreign zone.
+	    my $own_zone = $zone_owner eq $owner;
+	    if (not $own_zone) {
 		$networks = 
 		    [ grep 
 		      grep({ $owner eq $_ } 
@@ -603,8 +627,8 @@ sub export_assets {
 		      @$networks ];
 	    }
 
-            $result{$owner}->{anys}->{$any_name}->{networks} = 
-		$export_networks->($networks, $owner, $own_any);
+            $result{$owner}->{anys}->{$zone_name}->{networks} = 
+		$export_networks->($networks, $owner, $own_zone);
 	}
     }
 
@@ -624,31 +648,31 @@ sub export_services {
     progress("Export services");
     my %phash;
     my %owner2type2phash;
-    for my $policy (sort by_name values %policies) {
-        next if $policy->{disabled};
-	for my $owner (@{ $policy->{owners} }, @{ $policy->{sub_owners} }) {
-	    $owner2type2phash{$owner}->{owner}->{$policy} = $policy;
+    for my $service (sort by_name values %services) {
+        next if $service->{disabled};
+	for my $owner (@{ $service->{owners} }, @{ $service->{sub_owners} }) {
+	    $owner2type2phash{$owner}->{owner}->{$service} = $service;
 	}
-	for my $owner (@{ $policy->{uowners} }, @{ $policy->{sub_uowners} }) {
-	    if (not $owner2type2phash{$owner}->{owner}->{$policy}) {
-		$owner2type2phash{$owner}->{user}->{$policy} = $policy;
+	for my $owner (@{ $service->{uowners} }, @{ $service->{sub_uowners} }) {
+	    if (not $owner2type2phash{$owner}->{owner}->{$service}) {
+		$owner2type2phash{$owner}->{user}->{$service} = $service;
 	    }
 	}
 	for my $owner (keys %owners) {
-	    if (not ($owner2type2phash{$owner}->{owner}->{$policy} or 
-		     $owner2type2phash{$owner}->{user}->{$policy})) 
+	    if (not ($owner2type2phash{$owner}->{owner}->{$service} or 
+		     $owner2type2phash{$owner}->{user}->{$service})) 
 	    {
-		if ($policy->{visible} and $owner =~ /^$policy->{visible}/) {
-		    $owner2type2phash{$owner}->{visible}->{$policy} = $policy;
+		if ($service->{visible} and $owner =~ /^$service->{visible}/) {
+		    $owner2type2phash{$owner}->{visible}->{$service} = $service;
 		}
 	    }
 	}
 	my $details = {
-	    description => $policy->{description},
-	    owner => $policy->{owners},
+	    description => $service->{description},
+	    owner => $service->{owners},
 	};
-	if (@{ $policy->{sub_owners} }) {
-	    $details->{sub_owners} = $policy->{sub_owners};
+	if (@{ $service->{sub_owners} }) {
+	    $details->{sub_owners} = $service->{sub_owners};
 	}
 	my @rules = map {
 	    { 
@@ -656,10 +680,10 @@ sub export_services {
 		has_user => $_->{has_user},
 		src => [ map $_->{name}, @{ $_->{expanded_src} } ],
 		dst => [ map $_->{name}, @{ $_->{expanded_dst} } ],
-		srv => $_->{expanded_srv},
+		srv => $_->{expanded_prt},
 	    }
-	} @{ $policy->{rules} };
-	(my $pname = $policy->{name}) =~ s/^\w+://;
+	} @{ $service->{rules} };
+	(my $pname = $service->{name}) =~ s/^\w+://;
 	$phash{$pname} = { details => $details, rules => \@rules };
     }
     export("services", \%phash);
@@ -669,17 +693,17 @@ sub export_services {
     for my $owner (sort keys %owner2type2phash) {
 	my $type2phash = $owner2type2phash{$owner} || {};
 	my %type2pnames;
-	my %policy2users;
+	my %service2users;
 	for my $type (qw(owner user visible)) {
-	    my $policies = [ sort by_name values %{ $type2phash->{$type} } ];
+	    my $services = [ sort by_name values %{ $type2phash->{$type} } ];
 	    my $pnames = $type2pnames{$type} = [];
-	    for my $policy (@$policies) { 
-		(my $pname = $policy->{name}) =~ s/^\w+://;
+	    for my $service (@$services) { 
+		(my $pname = $service->{name}) =~ s/^\w+://;
 		push @$pnames, $pname;
 		next if $type eq 'visible';
 		my @users;
 		if ($type eq 'owner') {
-		    @users = @{ $policy->{expanded_user} };
+		    @users = @{ $service->{expanded_user} };
 		}
 		elsif ($type eq 'user') {
 		    @users = 
@@ -696,15 +720,15 @@ sub export_services {
 				0;
 			    }
 			}
-		    @{ $policy->{expanded_user} };
+		    @{ $service->{expanded_user} };
 		}
 		@users = sort map $_->{name}, @users;
-		$policy2users{$pname} = \@users;
+		$service2users{$pname} = \@users;
 	    }
 	}
 	create_dirs("owner/$owner");
 	export("owner/$owner/service_lists", \%type2pnames);
-	export("owner/$owner/users", \%policy2users);
+	export("owner/$owner/users", \%service2users);
     }
 }
 
@@ -793,16 +817,16 @@ set_config({time_stamps => 1, max_errors => 9999});
 # Set global config variable of Netspoc to store attribute 'description'.
 store_description(1);
 read_file_or_dir($netspoc_data);
-order_services();
+order_protocols();
 link_topology();
 mark_disabled();
 distribute_nat_info();
-find_subnets();
-setany();
+set_zone();
 setpath();
+find_subnets();
 setup_sub_owners();
-set_policy_owner();
-setup_policy_info();
+set_service_owner();
+setup_service_info();
 
 ####################################################################
 # Export data
