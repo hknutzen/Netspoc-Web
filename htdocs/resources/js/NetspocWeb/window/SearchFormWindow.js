@@ -15,7 +15,7 @@ NetspocWeb.window.SearchFormWindow = Ext.extend(
  		       {
 			   title       : 'IP-Adresse oder Zeichenkette suchen',
  			   width       : 450, 
- 			   height      : 290,
+ 			   height      : 310,
  			   layout      : 'fit',
 			   resizable   : false,
 			   closeAction : 'hide',
@@ -153,6 +153,12 @@ NetspocWeb.window.SearchFormWindow = Ext.extend(
 			name       : 'search_case_sensitive'
 		    },
 		    {
+			boxLabel   : 'Suchergebnisse nur mit ' 
+			    + 'exakter Übereinstimmung',
+			name       : 'search_exact',
+			checked    : false
+		    },
+		    {
 			boxLabel   : 'Such-Fenster im Vordergrund halten',
 			name       : 'keep_front',
 			checked    : false
@@ -192,7 +198,7 @@ NetspocWeb.window.SearchFormWindow = Ext.extend(
 		{
 		    id           : 'myFormPanelId',
 		    width        : 350,
-		    height       : 250,
+		    height       : 270,
 		    frame        : true,
 		    bodyStyle    : 'padding: 6px',
 		    labelWidth   : 70,

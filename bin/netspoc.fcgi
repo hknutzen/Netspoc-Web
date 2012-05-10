@@ -352,6 +352,11 @@ sub service_list {
 	    $search = "(?i)$search";
 	}
 
+	# Exact matches only?
+	if ( $cgi->param('search_exact') ) {
+	    $search = '^' . $search . '$';
+	}
+
 	# Reset $plist, it gets filled with search results below.
 	$plist = [];
 	my @search_in = ();
