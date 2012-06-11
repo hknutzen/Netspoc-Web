@@ -23,3 +23,17 @@ RGB 138-145-153
 .red-button {
     background-color : #e96e6e;
 }
+
+.print-services {
+    background-image : url( "../../images/drucken-dienste.png" ) !important;
+}
+.print-services-user {
+    background-image : url( "../../images/drucken-dienste-user.png" ) !important;
+}
+.print-services-owner {
+    background-image : url( "../../images/drucken-dienste-owner.png" ) !important;
+}
+.print-services-user-owner {
+    background-image : url( "../../images/drucken-dienste-user-owner.png" ) !important;
+}
+

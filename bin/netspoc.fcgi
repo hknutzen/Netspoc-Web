@@ -251,6 +251,39 @@ sub get_hosts {
     return get_nat_obj_list($child_names, $owner);
 }
 
+sub get_data {
+    my ($cgi, $session) = @_;
+    my $owner    = $cgi->param('active_owner');
+    my $relation = $cgi->param('relation');
+    my $lists    = load_json("owner/$owner/service_lists");
+    my $assets   = load_json("owner/$owner/assets");
+    my $services = load_json('services');
+    my $data = [];
+
+    if ( not $relation ) {
+	$plist = [ sort map(@$_, @{$lists}{qw(owner user visible)}) ]
+    }
+    else {
+	$plist = $lists->{$relation};
+    }
+  SERVICE:
+    for my $sname ( @$plist ) {
+	my $rules   = get_rules_for_owner_and_service( $owner, $sname );
+	my $users   = get_users_for_owner_and_service( $owner, $sname );
+	my $sowner  = $services->{$sname};
+	my $semails = load_json("owner/$sowner/emails");
+	push @$data, {
+	    name   => $sname,
+	    rules  => $rules,
+	    owner  => $sowner,
+	    users  => $users,
+	    emails => $semails,
+	};
+    }
+    return $data;
+}
+
+
 ####################################################################
 # Services, rules, users
 ####################################################################
@@ -294,7 +327,8 @@ sub service_list {
 		my $dst = $rule->{dst};
 		for my $network ( @$network_names ) {
                     my %children;
-		    map { $children{$_} = 1 } @{$assets->{net2childs}->{$network}};
+		    map { $children{$_} = 1 }
+		        @{$assets->{net2childs}->{$network}};
 		    if ( $relation && $relation eq 'user' && $users ) {
 			# Check if network or any of its contained resources
 			# can be found in user-data-structure.

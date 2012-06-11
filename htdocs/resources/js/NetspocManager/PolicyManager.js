@@ -12,6 +12,7 @@ Ext.ns("NetspocManager");
  **/
 
 var search_window;
+var print_window;
 
 NetspocManager.PolicyManager = Ext.extend(
     Ext.Container,
@@ -99,7 +100,10 @@ NetspocManager.PolicyManager = Ext.extend(
                     },
 		    '->',
 		    {
-			 xtype : 'printbutton'
+			iconCls : 'icon-printer',
+			tooltip : 'Druck-Fenster öffnen',
+			scope   : this,
+			handler : this.displayPrintWindow
 		    }
 		]
 	    };
@@ -133,6 +137,16 @@ NetspocManager.PolicyManager = Ext.extend(
 	    else {
 		search_window = new NetspocWeb.window.SearchFormWindow();
  		search_window.show();
+	    }
+	},
+
+	displayPrintWindow :  function( button, event ) {
+	    if ( Ext.isObject( print_window ) ) {
+		print_window.show();
+	    }
+	    else {
+		print_window = new NetspocWeb.window.PrintWindow();
+ 		print_window.show();
 	    }
 	},
 
