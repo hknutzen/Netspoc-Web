@@ -162,7 +162,8 @@ NetspocManager.workspace = function () {
                     autoLoad   : true,
 		    proxyurl   : 'get_owners',
 		    autoDestroy: true,
-		    fields     : [ 'name' ]
+		    sortInfo   : { field: 'name', direction: "ASC" },
+		    fields     : [ { name : 'name', sortType : 'asUCString' } ]
 		};
             if (options) {
                 config = Ext.apply(config, options);
