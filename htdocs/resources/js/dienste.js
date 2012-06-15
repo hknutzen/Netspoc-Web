@@ -162,7 +162,7 @@ NetspocManager.workspace = function () {
                     autoLoad   : true,
 		    proxyurl   : 'get_owners',
 		    autoDestroy: true,
-		    fields     : [ 'name', 'id' ]
+		    fields     : [ 'name' ]
 		};
             if (options) {
                 config = Ext.apply(config, options);
