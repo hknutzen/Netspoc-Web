@@ -885,9 +885,16 @@ sub handle_request {
 	    if ($flags->{create_cookie}) {
 		$session->new();
 	    }
-	    else {
-		die "Cookies must be activated\n";
+            elsif ($flags->{anon}) {
+		abort "Cookies must be activated";
 	    }
+
+            # This could happen if the user calls the application URL
+            # directly, bypassing the login page.
+            # This error message triggers a redirect to the login page.
+            else {
+                abort "Login required";
+            }
 	}
 	select_history($cgi, $flags->{owner});
 	validate_owner($cgi, $session, $flags->{owner});
