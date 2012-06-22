@@ -26,11 +26,13 @@ if [ -f RCS/POLICY,v ] ; then
     [ $version = $prev_ver ] && exit
 
     # Compare current version with latest checked in version.
+    # Mark each changed owner by copying the topelevel POLICY file
+    # into the owners directory.
     prev_date=$(rlog -zLT RCS/POLICY,v |grep date:|head -1|cut -d ' ' -f 2)
     changed=$(~/NetspocWeb/bin/diff.pl . $prev_date $current)
     for owner in $changed; do
 
-        # Copy current version to owner, if diff was found. 
+        # Copy current POLICY file to owner, if diff was found. 
         # Preserve date of file for RCS.
         cp -p $current/POLICY $current/owner/$owner
     done
