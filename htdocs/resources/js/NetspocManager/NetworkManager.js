@@ -34,10 +34,27 @@ NetspocManager.NetworkManager = Ext.extend(
 	    // Listen to "ownerChanged" event.
             var appstate = NetspocManager.appstate;
             appstate.addListener(
+                'networksChanged', 
+                function () {
+		    // Reset possibly previously chosen networks.
+		    NetspocManager.appstate.changeNetworks( [], true );
+		    // If network-chooser-window was created before,
+		    // reload store of grid that gets 
+		    // displayed in choose-network-window.
+		    if ( Ext.isObject( choose_networks_wnd ) ) {
+			var grid = choose_networks_wnd.items.items[0];
+			grid.getStore().load();
+		    }
+		    // Activate network list in card panel.
+		    this.activateNetworkList();
+                },
+		this
+	    );                    
+            appstate.addListener(
                 'ownerChanged', 
                 function () {
 		    // Reset possibly previously chosen networks.
-		    NetspocManager.appstate.changeNetworks( [] );
+		    NetspocManager.appstate.changeNetworks( [], true );
 		    // If network-chooser-window was created before,
 		    // reload store of grid that gets 
 		    // displayed in choose-network-window.
@@ -48,9 +65,6 @@ NetspocManager.NetworkManager = Ext.extend(
 		    // Reset "Eigene Netze"-button to default.
 		    var top_card_panel = this.findParentByType( 'panel' );
 		    this.setOwnNetworksButton( top_card_panel, 'default' );
-
-		    // Activate network list in card panel.
-		    this.activateNetworkList();
                 },
 		this
 	    );                    

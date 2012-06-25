@@ -11,7 +11,7 @@ Ext.QuickTips.init();
 NetspocManager.appstate = function () {
     var owner, history, networks;
     var state = new Ext.util.Observable();
-    state.addEvents('changed', 'ownerChanged');
+    state.addEvents('changed', 'ownerChanged', 'networksChanged');
     state.changeOwner = function (newOwner, silent) {
 	if (newOwner !== owner) {
 	    owner = newOwner;
