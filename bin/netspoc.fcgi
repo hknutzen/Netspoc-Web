@@ -15,6 +15,7 @@ use Encode;
 use FindBin;
 use lib $FindBin::Bin;
 use Load_Config;
+use User_Store;
 use JSON_Cache;
 use Policy_Diff;
 
@@ -34,8 +35,6 @@ my $nproc  = shift @ARGV;
 
 $listen and ($listen =~ /^(?:[:]\d+|0)$/ or usage());
 $nproc and ($nproc =~/^\d+$/ or usage());
-
-$CGI::Session::Driver::file::FileName = "%s";
 
 sub abort {
     my ($msg) = @_;
@@ -628,28 +627,19 @@ sub send_verification_mail {
     close $mail or warn "Can't close $sendmail: $!\n";
 }
 
-# Password is stored with CGI::Session using email as ID.
-sub get_user_store {
-    my ($email) = @_;
-    new CGI::Session ('driver:file;id:static', $email, 
-		      { Directory=> $config->{password_dir} } 
-		      ) 
-	or abort(CGI::Session->errstr());
-}
-
 # Get / set password for user.
 # New password is already encrypted in sub register below.
 sub store_password {
     my ($email, $pass) = @_;
-    my $store = get_user_store($email);
+    my $store = User_Store::get($email);
     $store->param('pass', $pass);
     $store->flush();
 }
 
 sub check_password  {
     my ($email, $pass) = @_;
-    my $pass_store = get_user_store($email);
-    $pass_store->param('pass') eq md5_hex($pass);
+    my $store = User_Store::get($email);
+    $store->param('pass') eq md5_hex($pass);
 }
 
 sub register {
@@ -705,7 +695,7 @@ sub verify {
 # Wait for 10, 20, .., 300 seconds after submitting wrong password.
 sub set_attack {
     my ($email) = @_;
-    my $store = get_user_store($email);
+    my $store = User_Store::get($email);
     my $wait = $store->param('login_wait') || 5;
     $wait *= 2;
     $wait = 300 if $wait > 300;
@@ -717,7 +707,7 @@ sub set_attack {
 
 sub check_attack {
     my ($email) = @_;
-    my $store = get_user_store($email);
+    my $store = User_Store::get($email);
     my $wait = $store->param('login_wait');
     return if not $wait;
     my $remain = $store->param('failed_time') + $wait - time();
@@ -728,7 +718,7 @@ sub check_attack {
 
 sub clear_attack {
     my ($email) = @_;
-    my $store = get_user_store($email);
+    my $store = User_Store::get($email);
     $store->clear('login_wait');
     $store->flush();
 }
@@ -842,6 +832,7 @@ sub handle_request {
 
     # Catch errors.
     eval {
+        $CGI::Session::Driver::file::FileName = "%s";
 	my $session = CGI::Session->load("driver:file", $cgi,
 					 { Directory => 
 					       $config->{session_dir} }
