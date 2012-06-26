@@ -31,7 +31,7 @@ NetspocManager.NetworkManager = Ext.extend(
             NetspocManager.NetworkManager.
 		superclass.initComponent.call(this);
 
-	    // Listen to "ownerChanged" event.
+	    // Listen to "networksChanged" event.
             var appstate = NetspocManager.appstate;
             appstate.addListener(
                 'networksChanged', 
@@ -50,6 +50,7 @@ NetspocManager.NetworkManager = Ext.extend(
                 },
 		this
 	    );                    
+	    // Listen to "ownerChanged" event.
             appstate.addListener(
                 'ownerChanged', 
                 function () {
@@ -65,6 +66,11 @@ NetspocManager.NetworkManager = Ext.extend(
 		    // Reset "Eigene Netze"-button to default.
 		    var top_card_panel = this.findParentByType( 'panel' );
 		    this.setOwnNetworksButton( top_card_panel, 'default' );
+
+		    // Clear network details view.
+		    var nrl = this.findByType( 'networkresourceslist' );
+		    var view = nrl[0];
+		    view.getStore().removeAll();
                 },
 		this
 	    );                    
