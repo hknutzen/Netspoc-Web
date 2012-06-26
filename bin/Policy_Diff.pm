@@ -46,7 +46,7 @@ sub diff {
     my $type = ref($old);
     if (not $type) {
 	if ($old ne $new) {
-            # Use unicode arrow.
+            # Use arrow from unicodeblock Dingbats.
 	    $result = "$old \N{U+2794} $new";
 	}
     }
