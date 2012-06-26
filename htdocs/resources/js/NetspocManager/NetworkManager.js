@@ -219,7 +219,12 @@ NetspocManager.NetworkManager = Ext.extend(
 		sortInfo      : { field: 'ip', direction: "ASC" },
 		fields        : [
 		    { name : 'name',   mapping : 'name'  },
-		    { name : 'ip',     mapping : 'ip'    },
+		    { name : 'ip',     mapping : 'ip',
+		      sortType : function ( value ) {
+			  var array = value.split('/');
+			  return ip2numeric( array[0] );
+		      }
+		    },
 		    { name : 'owner' , mapping : 'owner' }
 		]
 	    };
