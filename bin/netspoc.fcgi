@@ -11,24 +11,17 @@ use CGI::Session::Driver::file;
 use Digest::MD5 qw/md5_hex/;
 use String::MkPasswd qw(mkpasswd);
 use Encode;
-#use Data::Dumper;
 
 use FindBin;
 use lib $FindBin::Bin;
-use Policy_Diff;
-
-# Exportierte Funktionen
-# - sub load_json_version($path, $version)
-# - sub list_all_owners($version)
+use Load_Config;
 use JSON_Cache;
+use Policy_Diff;
 
 
 # Input from template files is encoded in utf8.
 # Output is explicitly sent as utf8.
 use open IN => ':utf8';
-
-my $VERSION = ( split ' ',
- '$Id$' )[2];
 
 sub usage {
     die "Usage: $0 CONFIG [:PORT | 0 [#PROC]]\n";
@@ -43,21 +36,6 @@ $listen and ($listen =~ /^(?:[:]\d+|0)$/ or usage());
 $nproc and ($nproc =~/^\d+$/ or usage());
 
 $CGI::Session::Driver::file::FileName = "%s";
-
-# Valid config options.
-my %conf_keys = map { ($_ => 1) } 
-qw(
-   error_page
-   netspoc_data
-   noreply_address
-   password_dir
-   sendmail_command
-   session_dir
-   show_passwd_template
-   verify_fail_template
-   verify_mail_template
-   verify_ok_template
-   );
 
 sub abort {
     my ($msg) = @_;
@@ -98,21 +76,6 @@ sub intersect {
 }
     
 my $config;
-sub load_config {
-    open( my $fh, $conf_file ) or internal_err "Can't open $conf_file: $!";
-    {
-	local $/ = undef;
-	$config = from_json(  <$fh>, { relaxed  => 1 } );
-    }    
-    my %required;
-    for my $key (keys %conf_keys) {
-        next if $conf_keys{$key} eq 'optional';
-        defined $config->{$key} or abort "Missing key '$key' in $conf_file";
-    }
-    for my $key (keys %$config) {
-        $conf_keys{$key} or abort("Invalid key '$key' in $conf_file");
-    }
-}
 
 sub get_policy {
 
@@ -671,7 +634,6 @@ sub get_user_store {
 		      { Directory=> $config->{password_dir} } 
 		      ) 
 	or abort(CGI::Session->errstr());
-			  
 }
 
 # Get / set password for user.
@@ -1010,7 +972,7 @@ sub run {
 # Start server
 ####################################################################
 
-load_config();
+$config = Load_Config::load($conf_file);
 $cache = JSON_Cache->new(netspoc_data => $config->{netspoc_data},
 			 max_versions => 8);
 
