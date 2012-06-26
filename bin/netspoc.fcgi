@@ -538,6 +538,7 @@ sub set_session_data {
 	my $val = $cgi->param($param);
 	$session->param($param, $val);
     }
+    $session->flush();
     return [];
 }
 
@@ -640,8 +641,9 @@ sub get_user_store {
 # New password is already encrypted in sub register below.
 sub store_password {
     my ($email, $pass) = @_;
-    my $pass_store = get_user_store($email);
-    $pass_store->param('pass', $pass);
+    my $store = get_user_store($email);
+    $store->param('pass', $pass);
+    $store->flush();
 }
 
 sub check_password  {
@@ -666,6 +668,7 @@ sub register {
     my $reg_data = { user => $email, pass => md5_hex($pass), token => $token };
     $session->expire('register', '1d');
     $session->param('register', $reg_data);
+    $session->flush();
     my $url = "$base_url/verify?email=$email&token=$token";
 
     # Send remote address to the recipient to allow tracking of abuse.
@@ -687,6 +690,7 @@ sub verify {
     {
 	store_password($email, $reg_data->{pass});
 	$session->clear('register');
+        $session->flush();
 	return get_substituted_html($config->{verify_ok_template}, {})
     }
     else {
@@ -707,6 +711,7 @@ sub set_attack {
     $wait = 300 if $wait > 300;
     $store->param('login_wait', $wait);
     $store->param('failed_time', time());
+    $store->flush();
     $wait;
 }
 
@@ -725,6 +730,7 @@ sub clear_attack {
     my ($email) = @_;
     my $store = get_user_store($email);
     $store->clear('login_wait');
+    $store->flush();
 }
 
 sub login {
@@ -746,6 +752,7 @@ sub login {
     $session->clear('user');		# Remove old, now unused param.
     $session->expire('logged_in', '60m');
     $session->param('logged_in', 1);
+    $session->flush();
     return $app_url;
 }
 
@@ -773,6 +780,7 @@ sub validate_owner {
 sub logout {
     my ($cgi, $session) = @_;
     $session->clear('logged_in');
+    $session->flush();
     return [];
 }
 
