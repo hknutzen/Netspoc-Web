@@ -8,6 +8,7 @@ use JSON;
 # Valid config options.
 my %conf_keys = map { ($_ => 1) } 
 qw(
+   diff_mail_template
    error_page
    netspoc_data
    noreply_address
