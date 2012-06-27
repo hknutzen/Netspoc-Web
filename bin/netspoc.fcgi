@@ -16,13 +16,10 @@ use FindBin;
 use lib $FindBin::Bin;
 use Load_Config;
 use User_Store;
+use Template;
 use JSON_Cache;
 use Policy_Diff;
 
-
-# Input from template files is encoded in utf8.
-# Output is explicitly sent as utf8.
-use open IN => ':utf8';
 
 sub usage {
     die "Usage: $0 CONFIG [:PORT | 0 [#PROC]]\n";
@@ -612,10 +609,10 @@ sub get_substituted_html {
 
 sub send_verification_mail {
     my ($email, $url, $ip) = @_;
-    my $text = read_template($config->{verify_mail_template});
-    $text = process_template($text, { email => $email, 
-				      url => $url, 
-				      ip => $ip });
+    my $text = Template::get($config->{verify_mail_template},
+                             { email => $email, 
+                               url => $url, 
+                               ip => $ip });
     my $sendmail = $config->{sendmail_command};
 
     # -t: read recipient address from mail text
@@ -665,7 +662,7 @@ sub register {
     my $ip = $cgi->remote_addr();
     set_attack($email);
     send_verification_mail ($email, $url, $ip);
-    return get_substituted_html($config->{show_passwd_template},
+    return Template::get($config->{show_passwd_template},
 				{ pass => $cgi->escapeHTML($pass) });
 }
 
@@ -681,10 +678,10 @@ sub verify {
 	store_password($email, $reg_data->{pass});
 	$session->clear('register');
         $session->flush();
-	return get_substituted_html($config->{verify_ok_template}, {})
+	return Template::get($config->{verify_ok_template}, {})
     }
     else {
-	return get_substituted_html($config->{verify_fail_template}, {});
+	return Template::get($config->{verify_fail_template}, {});
     }
 }					 
     
@@ -908,7 +905,7 @@ sub handle_request {
 				-type    => 'text/html',
 				-charset => 'utf-8',
 				-cookie => $cookie);
-	    print get_substituted_html($config->{error_page}, {msg => $msg});
+	    print Template::get($config->{error_page}, {msg => $msg});
 	}
 	else
 	{
