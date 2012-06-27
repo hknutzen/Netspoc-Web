@@ -8,7 +8,7 @@ sub get {
     my ($config, $email) = @_;
     $CGI::Session::Driver::file::FileName = "%s";
     CGI::Session->new ('driver:file;id:static', $email, 
-		      { Directory=> $config->{password_dir} } 
+		      { Directory=> $config->{user_dir} } 
 		      ) 
 	or abort(CGI::Session->errstr());
 }

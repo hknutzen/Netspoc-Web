@@ -12,10 +12,10 @@ qw(
    error_page
    netspoc_data
    noreply_address
-   password_dir
    sendmail_command
    session_dir
    show_passwd_template
+   user_dir
    verify_fail_template
    verify_mail_template
    verify_ok_template
