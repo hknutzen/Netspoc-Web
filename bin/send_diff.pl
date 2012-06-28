@@ -65,7 +65,8 @@ for my $email (keys %$email2owners) {
     # über die er bei Änderungen informiert werden möchte.
     # Wir müssen alte, ungültige Owner herausnehmen, 
     # da der Benutzer inzwischen weniger Rechte haben könnte.
-    my $store = User_Store::get($config, $email);
+    my $store = User_Store::load($config, $email);
+    next if not $store;
     my $send_aref = $store->param('send_diff');
     next if not $send_aref;
     for my $owner (@{ intersect($owner_aref, $send_aref) }) {
