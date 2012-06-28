@@ -628,14 +628,14 @@ sub send_verification_mail {
 # New password is already encrypted in sub register below.
 sub store_password {
     my ($email, $pass) = @_;
-    my $store = User_Store::get($email);
+    my $store = User_Store::get($config, $email);
     $store->param('pass', $pass);
     $store->flush();
 }
 
 sub check_password  {
     my ($email, $pass) = @_;
-    my $store = User_Store::get($email);
+    my $store = User_Store::get($config, $email);
     $store->param('pass') eq md5_hex($pass);
 }
 
@@ -692,7 +692,7 @@ sub verify {
 # Wait for 10, 20, .., 300 seconds after submitting wrong password.
 sub set_attack {
     my ($email) = @_;
-    my $store = User_Store::get($email);
+    my $store = User_Store::get($config, $email);
     my $wait = $store->param('login_wait') || 5;
     $wait *= 2;
     $wait = 300 if $wait > 300;
@@ -704,7 +704,7 @@ sub set_attack {
 
 sub check_attack {
     my ($email) = @_;
-    my $store = User_Store::get($email);
+    my $store = User_Store::get($config, $email);
     my $wait = $store->param('login_wait');
     return if not $wait;
     my $remain = $store->param('failed_time') + $wait - time();
@@ -715,7 +715,7 @@ sub check_attack {
 
 sub clear_attack {
     my ($email) = @_;
-    my $store = User_Store::get($email);
+    my $store = User_Store::get($config, $email);
     $store->clear('login_wait');
     $store->flush();
 }
