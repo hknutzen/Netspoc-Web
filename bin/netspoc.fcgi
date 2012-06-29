@@ -70,7 +70,20 @@ sub intersect {
     }
     return [ keys %$result ];
 }
-    
+  
+# Delete an element from an array reference.
+# Return 1 if found, 0 otherwise.
+sub aref_delete( $$ ) {
+    my ($aref, $elt) = @_;
+    for (my $i = 0 ; $i < @$aref ; $i++) {
+        if ($aref->[$i] eq $elt) {
+            splice @$aref, $i, 1;
+            return 1;
+        }
+    }
+    return 0;
+}
+  
 my $config;
 
 sub get_policy {
@@ -521,6 +534,38 @@ sub get_diff {
           @{ $convert->($changed) } ];
 }
 
+sub get_diff_mail {
+    my ($cgi, $session) = @_;
+    my $owner = $cgi->param('active_owner');
+    my $email = $session->param('email');
+    my $store = User_Store::new($config, $email);
+    my $aref = $store->param('send_diff') || [];
+    return([{ send => 
+                  grep { $_ eq $owner } @$aref ?  JSON::true : JSON::false }]);
+}
+
+sub set_diff_mail {
+    my ($cgi, $session) = @_;
+    validate_owner($cgi, $session, 1);
+    my $owner = $cgi->param('active_owner');
+    my $send  = $cgi->param('send');
+    my $email = $session->param('email');
+    my $store = User_Store::new($config, $email);
+    my $aref = $store->param('send_diff') || [];
+    my $changed;
+    if ($send) {
+        if (! grep { $_ eq $owner } @$aref) {
+            push(@$aref, $owner);
+            $changed = 1;
+        }
+    }
+    else {
+        $changed = aref_delete($aref, $owner);
+    }
+    $store->param('send_diff', $aref) if $changed;
+    return([]);
+}
+
 ####################################################################
 # Save session data
 ####################################################################
@@ -820,6 +865,8 @@ my %path2sub =
      get_networks  => [ \&get_networks,  { owner => 1, add_success => 1, } ],
      get_hosts     => [ \&get_hosts,     { owner => 1, add_success => 1, } ],
      get_diff      => [ \&get_diff,      { owner => 1, } ],
+     get_diff_mail => [ \&get_diff_mail, { owner => 1, add_success => 1, } ],
+     set_diff_mail => [ \&set_diff_mail, { owner => 1, add_success => 1, } ],
       ); 
 
 sub handle_request {
@@ -909,7 +956,7 @@ sub handle_request {
 	}
 	else
 	{
-	    my $result = { success => JSON::false, msg => $msg };
+            my $result = { success => JSON::false, msg => $msg };
 	    print $cgi->header( -status  => 500,
 				-type    => 'text/x-json',
 				-charset => 'utf-8', );
