@@ -43,16 +43,6 @@ sub internal_err {
     abort "internal: $msg";
 }
 
-sub say {
-    my ($msg) = @_;
-    print "$msg\n";
-}
-
-sub errsay {
-    my ($msg) = @_;
-    print STDERR "$msg\n";
-}
-
 sub intersect {
     my @non_compl = @_;
     my $result;
