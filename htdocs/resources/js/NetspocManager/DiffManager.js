@@ -67,8 +67,14 @@ NetspocManager.DiffManager = Ext.extend(
             var appstate = NetspocManager.appstate;
             var store = Ext.StoreMgr.get('historyStore');
             var combo = this.buildHistoryCombo(store);
+            var checkbox = this.buildDiffMailCheckBox();
             this.combo = combo;
-            this.tbar =  [ 'Vergleiche mit', combo ],
+            this.tbar =  [ 'Vergleiche mit', 
+                           combo//,
+                           //' ',
+                           //'Diff per Mail senden',
+                           //checkbox
+                         ],
             NetspocManager.DiffManager.
                 superclass.initComponent.call(this);
             appstate.addListener(
@@ -133,6 +139,41 @@ NetspocManager.DiffManager = Ext.extend(
                     }
                 }
             );
+        },
+        buildDiffMailCheckBox : function () {
+            var checkbox = Ext.create(
+                { 
+                    xtype    : 'checkbox' 
+                }
+            );
+	    var store = new NetspocWeb.store.NetspocState(
+		{
+		    proxyurl : 'get_diff_mail',
+		    fields     : [ 'send' ],
+		    autoDestroy: true
+		}
+	    );
+	    store.load({ 
+                scope    : this,
+		callback : function(records, options, success) {
+                    var result = records[0].get('send');
+                    checkbox.setValue(result);
+
+                    // Don't handle event initial from setValue above.
+                    // Therefore, add listener after value has been set.
+                    checkbox.on('check', function (checkbox, checked) {
+	                var store = new NetspocWeb.store.NetspocState(
+		            {
+		                proxyurl : 'set_diff_mail',
+		                fields     : [],
+		                autoDestroy: true
+		            }
+	                );
+	                store.load({ params : { send : checked } });
+                    });
+                }
+            });
+            checkbox;
         }
     }
 );
