@@ -15,8 +15,8 @@ NetspocWeb.window.PrintWindow = Ext.extend(
             Ext.apply( this,
  		       {
 			   title       : 'Druckformat auswählen',
- 			   width       : 668, 
- 			   height      : 525,
+ 			   width       : 660, 
+ 			   height      : 520,
  			   layout      : 'fit',
 			   resizable   : false,
 			   closeAction : 'hide',
@@ -33,7 +33,36 @@ NetspocWeb.window.PrintWindow = Ext.extend(
 	
 	// Build four panels showing possible ways of printing.
 	buildPanels : function() {
-	    var scale_fx = function(p) {
+
+	    var displayed_services = function () {
+		// Find out which services are currently displayed,
+		// so URL-parameter "relation" can be set
+		// appropriately.
+		var v  = Ext.getCmp( 'viewportId' );
+		var pl = v.findByType( 'policylist' );
+		var tbar = pl[0].getTopToolbar();
+		var button2param = {
+		    'Eigene'   : 'owner',
+		    'Genutzte' : 'user',
+		    'Nutzbare' : 'visible',
+		    'Alle'     : ''
+		};
+		var items = tbar.items.items;
+		var currently_displayed = '';
+		for ( i in items  ) {
+		    if ( !items[i].text &&
+			 !button2param[items[i]] ) {
+			     continue;
+			 }
+		    if ( items[i].pressed === true ) {
+			currently_displayed =
+			    button2param[items[i].text];
+		    }
+		}
+		return currently_displayed;
+	    };
+
+	    var scale_fx = function( p, opt ) {
 		p.el.scale( 300, 220 );
 		p.el.addListener(
 		    'mouseenter',
@@ -47,123 +76,198 @@ NetspocWeb.window.PrintWindow = Ext.extend(
 			p.el.scale( 300, 220 );
 		    }
 		);
-		p.el.addListener(
+		if ( opt === 'scale_only' ) {
+		    return;
+		}
+		p.body.on(
 		    'click',
-		    function ( event ) {
+		    function ( event, html_el, options ) {
+
+			// Hide parent window.
+			var wnd = this.findParentByType( 'window' );
+			wnd.hide();
+
+			var currently_displayed = displayed_services();
+			
+			var reader = new Ext.data.JsonReader(
+			    {
+    				totalProperty   : 'totalCount',
+				successProperty : 'success',
+				root            : 'records',
+				remoteSort      : false,
+				fields      : [
+				    { name : 'service', mapping : 'service'  },
+				    { name : 'action',  mapping : 'action'  },
+				    { name : 'src',     mapping : function( node ) {
+					  return node.src.join( '<br>' );
+				      }
+				    },
+				    { name : 'dst',      mapping : function( node ) {
+					  return node.dst.join( '<br>' );
+				      }
+				    },
+				    { name : 'proto',      mapping : function( node ) {
+					  return node.proto.join( '<br>' );
+				      }
+				    }
+				]
+			    }
+			);
+
+			var grid_colmodel = new Ext.grid.ColumnModel(
+			    {
+				columns : [
+				    {
+					header    : 'Dienst',
+					dataIndex : 'service'
+				    },
+				    {
+					header    : 'Aktion',
+					dataIndex : 'action'
+				    },
+				    {
+					header    : 'Quelle',
+					dataIndex : 'src',
+					groupable : false
+				    },
+				    {
+					header    : 'Ziel', 
+					dataIndex : 'dst'
+				    },
+				    {
+					header    : 'Protokoll',
+					dataIndex : 'proto'
+				    }
+				]
+			    }
+			);
+
+			var tpl = '{text} ({[values.rs.length]} ' +
+			    '{[values.rs.length > 1 ? "Regeln" : "Regel"]})';
+
+			var grid_view = new Ext.grid.GroupingView(
+			    {
+				forceFit          : true,
+				hideGroupedColumn : true,
+				groupTextTpl      : tpl
+			    }
+			);
+
+			// Change ColumnModel and JsonReader appropriately.
+			if ( opt === 'get_services_owners_and_admins' ) {
+			    grid_colmodel =  new Ext.grid.ColumnModel(
+				{
+				    columns : [
+					{
+					    header    : 'Dienst',
+					    dataIndex : 'service'
+					},
+					{
+					    header    : 'Verantwortlichkeit',
+					    dataIndex : 'srv_owner'
+					},
+					{
+					    header    : 'Verantwortliche Personen',
+					    dataIndex : 'admins'
+					}
+				    ]
+				}
+			    );
+			    reader =  new Ext.data.JsonReader(
+				{
+    				    totalProperty   : 'totalCount',
+				    successProperty : 'success',
+				    root            : 'records',
+				    remoteSort      : false,
+				    fields      : [
+					{ name : 'service',   mapping : 'service'  },
+					{ name : 'srv_owner', mapping : function( node ) {
+					      return node.srv_owner.join( '<br>' );
+					  }
+					},
+					{ name : 'admins',    mapping : function( node ) {
+					      return node.admins.join( '<br>' );
+					  }
+					}
+				    ]
+				}
+			    );
+			}
+
 			var store = {
 			    xtype       : 'groupingstatestore',
-			    proxyurl    : 'get_data',
-			    storeId     : 'dataStoreId',
+			    proxyurl    : opt,
+			    autoLoad    : false,
+			    reader      : reader,
 			    sortInfo    : {
 				field     : 'service',
 				direction : 'ASC'
 			    },
 			    groupOnSort : true,
 			    remoteGroup : true,
-			    groupField  : 'service',
-			    fields      : [
-				{ name : 'service',  mapping : 'service'  },
-				{ name : 'has_user', mapping : 'hasuser'  },
-				{ name : 'action',   mapping : 'action'  },
-				{ name : 'src',      mapping : function( node ) {
-				      return bold_user( node, 'src' );
-				  }
-				},
-				{ name : 'dst',      mapping : function( node ) {
-				      return bold_user( node, 'dst' );
-				  }
-				},
-				{ name : 'srv',      mapping : function( node ) {
-				      return node.srv.join( '<br>' );
-				  }
-				}
-			    ]
+			    groupField  : 'service'
 			};
-/*
+
+			var tbar = [
+			    'Drucken:',
+			    {
+				iconCls : 'icon-printer',
+				tooltip : 'Druck-Fenster öffnen',
+				scope   : this,
+				handler : function ( button ) {
+				    var grid = button.findParentByType( 'grid' );
+				    Ext.ux.Printer.print( grid );
+				}
+			    }
+			];
+			
 			var gg = new Ext.grid.GridPanel(
 			    {
-				// A groupingStore is required for a GroupingView
-				store : store,
-				colModel: new Ext.grid.ColumnModel(
-				    {
-					columns : [
+				store     : store,
+				colModel  : grid_colmodel,
+				view      : grid_view,
+				tbar      : tbar,
+				listeners : {
+				    beforerender : function ( grid ) {
+					grid.getStore().load(
 					    {
-						id : 'company',
-						header : 'Company',
-						width: 60,
-						dataIndex: 'company'
-					    },
-					    {header: 'Price', renderer: Ext.util.Format.usMoney, dataIndex: 'price', groupable: false},
-            {header: 'Change', dataIndex: 'change', renderer: Ext.util.Format.usMoney},
-            {header: 'Industry', dataIndex: 'industry'},
-            {header: 'Last Updated', renderer: Ext.util.Format.dateRenderer('m/d/Y'), dataIndex: 'lastChange'}
-        ]			    }
+						'params' : {
+						    'relation' : currently_displayed
+						}
+					    }
+					);
+				    }
+				}
+			    }
 			);
-*/
+
 			var w = new Ext.Window(
  			    {
-				title       : 'Grid TEST',
+				title       : 'Alle Dienste im expandierten Format',
+				id          : 'srvRulesWndId', // see PolicyManager
  				width       : 640, 
  				height      : 480,
  				layout      : 'fit',
-				resizable   : false,
+				resizable   : true,
  				items       : [
 				    gg
  				]
 			    }
 			);
 			w.show();
-			console.log( "HERE!" );
-		    }
+		    },
+		    p  // the panel as scope
 		);
 	    };
-	    var v      = Ext.getCmp( 'viewportId' );
-	    var pm     = v.findByType("policymanager");
-/*
-	    var plists = v.findByType("policylist");
-	    var plv    = plists[0];
-	    var store  = plv.getStore();
-	    var records = store.getRange();
-	    var new_recs;
-	    //console.log( records );
-
-var data = [];
-store.each(function(rec){
-    data.push(rec.get('field'));
-});
-	    
-*/	    
-	    var bold_user = function ( node, what ) {
-		if ( node.has_user === what || node.has_user === 'both' ) {
-		    return '<span style="font-weight:bold;"> User </span>';
-		}
-		else {
-		    return what === 'src' ?  node.src.join( '<br>' ) :
-			node.dst.join( '<br>' );
-		};
-	    };
-
-
-/*	    
-	    var grp_store = new Ext.data.GroupingStore(
-		{
-		    autoDestroy : true,
-		    reader      : reader,
-		    data        : xg.dummyData,
-		    sortInfo    : {field: 'company', direction: 'ASC'},
-		    groupOnSort : true,
-		    remoteGroup : true,
-		    groupField  : 'industry'
-		}
-	    );
-*/
 
 	    var panel1 = {
 		width     : 320,
 		height    : 240,
 		baseCls   : 'print-services',
 		listeners : {
-		    afterrender : scale_fx
+		    afterrender : function ( p ) {
+			scale_fx( p, 'get_services_and_rules' );
+		    }
 		}
 	    };
 	    var panel2 = {
@@ -171,7 +275,9 @@ store.each(function(rec){
 		height    : 240,
 		baseCls   : 'print-services-user',
 		listeners : {
-		    afterrender : scale_fx
+		    afterrender : function ( p ) {
+			scale_fx( p, 'get_services_owners_and_admins' );
+		    }
 		}
 	    };
 	    var panel3 = {
@@ -182,13 +288,16 @@ store.each(function(rec){
 		    afterrender : scale_fx
 		}
 	    };
-	    // addListener( eventName, Function fn, scope, options ) : Ext.Element
 	    var panel4 = {
 		width     : 320,
 		height    : 240,
 		baseCls   : 'print-services-user-owner',
 		listeners : {
-		    afterrender : scale_fx
+		    afterrender : function ( p ) {
+			scale_fx( p, 'scale_only' );
+			var currently_displayed = displayed_services();
+			//console.log( currently_displayed );
+		    }
 		}
 
 	    };
@@ -225,11 +334,10 @@ store.each(function(rec){
 	},
 
 	onPanelClick : function () {
-	    console.log( "HERE!" );
-	}
-
-    }
+	    //console.log( "HERE!" );
+	},
+	
+    } // end of params extending window class
 );
-
 
 

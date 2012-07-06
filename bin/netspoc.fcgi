@@ -251,14 +251,18 @@ sub get_hosts {
     return get_nat_obj_list($child_names, $owner);
 }
 
-sub get_data {
+sub get_services_and_rules {
     my ($cgi, $session) = @_;
-    my $owner    = $cgi->param('active_owner');
-    my $relation = $cgi->param('relation');
-    my $lists    = load_json("owner/$owner/service_lists");
-    my $assets   = load_json("owner/$owner/assets");
-    my $services = load_json('services');
+    my $owner     = $cgi->param('active_owner');
+    my $relation  = $cgi->param('relation');
+    my $disp_prop = $cgi->param('display_property');
+    my $lists     = load_json("owner/$owner/service_lists");
+    my $assets    = load_json("owner/$owner/assets");
+    my $services  = load_json('services');
     my $data = [];
+    my $plist;
+    $disp_prop ||= 'ip';
+    $relation  ||= '';
 
     if ( not $relation ) {
 	$plist = [ sort map(@$_, @{$lists}{qw(owner user visible)}) ]
@@ -268,16 +272,59 @@ sub get_data {
     }
   SERVICE:
     for my $sname ( @$plist ) {
-	my $rules   = get_rules_for_owner_and_service( $owner, $sname );
-	my $users   = get_users_for_owner_and_service( $owner, $sname );
-	my $sowner  = $services->{$sname};
-	my $semails = load_json("owner/$sowner/emails");
+	my $rules = get_rules_for_owner_and_service( $owner, $sname );
+	my $users = get_users_for_owner_and_service( $owner, $sname );
+	next SERVICE unless scalar( @$users );
+	my $user_props = [];
+	map { push @$user_props, $_->{$disp_prop} } @$users;
+
+	for my $rule ( @$rules ) {
+	    push @$data, {
+		service => $sname,
+		action  => $rule->{action},
+		src     => $rule->{has_user} eq 'src' ?
+		    $user_props : $rule->{src},
+		dst     => $rule->{has_user} eq 'dst' ?
+		    $user_props : $rule->{dst},
+		proto   => $rule->{srv},
+	    };
+	}
+    }
+    return $data;
+}
+
+sub get_services_owners_and_admins {
+    my ($cgi, $session) = @_;
+    my $owner     = $cgi->param('active_owner');
+    my $relation  = $cgi->param('relation');
+    my $lists     = load_json("owner/$owner/service_lists");
+    my $assets    = load_json("owner/$owner/assets");
+    my $services  = load_json('services');
+    use Data::Dumper;
+    #errsay Dumper( $services );
+    my $data = [];
+    my $plist;
+    $relation  ||= '';
+
+    if ( not $relation ) {
+	$plist = [ sort map(@$_, @{$lists}{qw(owner user visible)}) ]
+    }
+    else {
+	$plist = $lists->{$relation};
+    }
+  SERVICE:
+    for my $srv_name ( @$plist ) {
+	my $srv_owner = $services->{$srv_name}->{details}->{owner};
+
+	my $admins;
+	for my $o ( @$srv_owner ) {
+	    my $emails = load_json("owner/$o/emails");
+	    map { push @$admins, $_->{email} } @$emails;
+	}
 	push @$data, {
-	    name   => $sname,
-	    rules  => $rules,
-	    owner  => $sowner,
-	    users  => $users,
-	    emails => $semails,
+	    service   => $srv_name,
+	    srv_owner => $srv_owner,
+	    admins    => $admins,
 	};
     }
     return $data;
@@ -891,6 +938,10 @@ my %path2sub =
      get_users     => [ \&get_users,     { owner => 1, add_success => 1, } ],
      get_networks  => [ \&get_networks,  { owner => 1, add_success => 1, } ],
      get_hosts     => [ \&get_hosts,     { owner => 1, add_success => 1, } ],
+     get_services_and_rules => [
+	 \&get_services_and_rules,       { owner => 1, add_success => 1, } ],
+     get_services_owners_and_admins => [
+	 \&get_services_owners_and_admins,{ owner => 1, add_success => 1, } ],
      get_diff      => [ \&get_diff,      { owner => 1, } ],
       ); 
 

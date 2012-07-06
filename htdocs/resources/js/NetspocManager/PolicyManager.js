@@ -119,9 +119,16 @@ NetspocManager.PolicyManager = Ext.extend(
 	    if ( params ) {
 		keep_front = params.keep_front;
 	    }
-	    
 	    if ( search_window && !keep_front ) {
 		search_window.hide();
+	    }
+	    if ( print_window ) {
+		print_window.hide();
+		// Find services-and-rules-window and close it.
+		var wnd = Ext.WindowMgr.get( 'srvRulesWndId' );
+		if ( wnd ) {
+		    wnd.close();
+		}
 	    }
 	    if ( relation ) {
 		params = { relation : relation };
@@ -141,6 +148,11 @@ NetspocManager.PolicyManager = Ext.extend(
 	},
 
 	displayPrintWindow :  function( button, event ) {
+	    // Find services-and-rules-window and close it.
+	    var wnd = Ext.WindowMgr.get( 'srvRulesWndId' );
+	    if ( wnd ) {
+		wnd.close();
+	    }
 	    if ( Ext.isObject( print_window ) ) {
 		print_window.show();
 	    }

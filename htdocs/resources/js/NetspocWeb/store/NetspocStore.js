@@ -132,21 +132,11 @@ NetspocWeb.store.NetspocGroup = Ext.extend(
     Ext.data.GroupingStore,
     {
 	constructor : function(config) {
-	    var reader = new Ext.data.JsonReader(
-		      {
-    			  totalProperty   : 'totalCount',
-			  successProperty : 'success',
-			  root            : 'records',
-			  remoteSort      : false,
-			  autoLoad        : false,
-			  url             : 'backend/' + config.proxyurl
-		      }
-	    );
-
+	    var url = 'backend/' + config.proxyurl;
 	    config = Ext.apply(
 		config,
 		{
-		    reader : reader
+		    url    : url
 		}
 	    );
 	    NetspocWeb.store.NetspocGroup.superclass.constructor.call(this, config);
@@ -161,6 +151,7 @@ NetspocWeb.store.NetspocGroup = Ext.extend(
 	onJsonException :
 	function(proxy, type, action, options, response, arg ) {
 	    Ext.getBody().unmask();
+	    console.log( arg );
 	    var msg;
 	    
 	    // status != 200
@@ -168,6 +159,11 @@ NetspocWeb.store.NetspocGroup = Ext.extend(
 		try {
 		    var jsonData = Ext.decode( response.responseText );
 		    msg = jsonData.msg;
+		    if ( !msg ) {
+			if ( arg ) {
+			    msg = arg;
+			}
+		    }
 		}
 		catch (e) {
 		    msg = response.statusText;
