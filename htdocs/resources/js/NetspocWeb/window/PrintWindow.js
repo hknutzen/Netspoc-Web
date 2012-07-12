@@ -34,34 +34,6 @@ NetspocWeb.window.PrintWindow = Ext.extend(
 	// Build four panels showing possible ways of printing.
 	buildPanels : function() {
 
-	    var displayed_services = function () {
-		// Find out which services are currently displayed,
-		// so URL-parameter "relation" can be set
-		// appropriately.
-		var v  = Ext.getCmp( 'viewportId' );
-		var pl = v.findByType( 'policylist' );
-		var tbar = pl[0].getTopToolbar();
-		var button2param = {
-		    'Eigene'   : 'owner',
-		    'Genutzte' : 'user',
-		    'Nutzbare' : 'visible',
-		    'Alle'     : ''
-		};
-		var items = tbar.items.items;
-		var currently_displayed = '';
-		for ( i in items  ) {
-		    if ( !items[i].text &&
-			 !button2param[items[i]] ) {
-			     continue;
-			 }
-		    if ( items[i].pressed === true ) {
-			currently_displayed =
-			    button2param[items[i].text];
-		    }
-		}
-		return currently_displayed;
-	    };
-
 	    var apply_fx = function( p, opt ) {
 		p.el.scale( 300, 220 );
 		p.el.addListener(
@@ -87,8 +59,6 @@ NetspocWeb.window.PrintWindow = Ext.extend(
 			var wnd = this.findParentByType( 'window' );
 			wnd.hide();
 
-			var currently_displayed = displayed_services();
-			
 			var reader = new Ext.data.JsonReader(
 			    {
     				totalProperty   : 'totalCount',
@@ -184,8 +154,8 @@ NetspocWeb.window.PrintWindow = Ext.extend(
 				    ]
 				}
 			    );
-			    singular = "Owner";
-			    plural   = "Owner";
+			    singular = "Verantwortliche";
+			    plural   = "Verantwortlicher";
 			}
 			
 			var tpl = '{text} ({[values.rs.length]} ' +
@@ -227,40 +197,63 @@ NetspocWeb.window.PrintWindow = Ext.extend(
 			    }
 			];
 			
-			var gg;
+			// Collect displayed services in policylist
+			// as CSV-string (will be passed as URL-param).
+			var services = '';
+			var viewport = Ext.getCmp( 'viewportId' );
+			var pl       = viewport.findByType( 'policylist' );
+			var pl_view  = pl[0].getView();
+			var pl_store = pl[0].getStore();
+			var concat_services = function ( rec ) {
+			    var srv_name = rec.get( 'name' );
+			    if ( srv_name ) {
+				services = services + srv_name + ',';
+			    }
+			    else {
+				return;
+			    }
+			};
+			var records  = pl_store.each( concat_services );
+			// Get rid of trailing comma
+			services = services.slice(0, -1);
+
+			// Without services it does not make 
+			// sense to continue ...
+			if ( services === '' ) {
+			    return;
+			}
+			
+			// Create GridPanel with or without grouping
+			// as needed.
+			var grid;
 			if ( opt === 'services_only' ) {
-			    var v     = Ext.getCmp( 'viewportId' );
-			    var pl    = v.findByType( 'policylist' );
-			    var view  = pl[0].getView();
-			    if ( view ) {
-				gg = new Ext.grid.GridPanel(
+			    if ( pl_view ) {
+				grid = new Ext.grid.GridPanel(
 				    {
-					store      : view.store,
+					store      : pl_view.store,
 					tbar       : tbar,
 					viewConfig : {
 					    forceFit : true
 					},
-					columns    : view.columns
+					columns    : pl_view.columns
 				    }
 				);
 				
 			    }
 			}
 			else {
-			    // USE LIST OF SERVICES AS CSV IN PARAMS INSTEAD
-			    // OF RELATION!!!!!!!!!!!!!!!!!!!!!!!!!
-			    gg = new Ext.grid.GridPanel(
+			    grid = new Ext.grid.GridPanel(
 				{
 				    store     : store,
 				    colModel  : grid_colmodel,
 				    view      : grid_view,
 				    tbar      : tbar,
 				    listeners : {
-					beforerender : function ( grid ) {
-					    grid.getStore().load(
+					beforerender : function ( thisgrid ) {
+					    thisgrid.getStore().load(
 						{
 						    'params' : {
-							'relation' : currently_displayed
+							'services' : services
 						    }
 						}
 					    );
@@ -270,16 +263,24 @@ NetspocWeb.window.PrintWindow = Ext.extend(
 			    );
 			}
 
+			var title = {
+			    'get_services_and_rules' : 'Dienste und Regeln im ' + 
+				'expandierten Format',
+			    'get_services_owners_and_admins' : 'Dienste und '
+				+ 'Verantwortlichkeiten',
+			    'services_only' : 'Liste der aktuell gewählten Dienste'	    
+			};
+
 			var w = new Ext.Window(
  			    {
-				title       : 'Alle Dienste im expandierten Format',
+				title       : title[opt],
 				id          : 'srvRulesWndId', // see PolicyManager
  				width       : 640, 
  				height      : 480,
  				layout      : 'fit',
 				resizable   : true,
  				items       : [
-				    gg
+				    grid
  				]
 			    }
 			);
@@ -326,8 +327,6 @@ NetspocWeb.window.PrintWindow = Ext.extend(
 		listeners : {
 		    afterrender : function ( p ) {
 			apply_fx( p, 'scale_only' );
-			var currently_displayed = displayed_services();
-			//console.log( currently_displayed );
 		    }
 		}
 

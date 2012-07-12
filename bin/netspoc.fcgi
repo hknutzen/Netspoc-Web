@@ -254,24 +254,22 @@ sub get_hosts {
 sub get_services_and_rules {
     my ($cgi, $session) = @_;
     my $owner     = $cgi->param('active_owner');
-    my $relation  = $cgi->param('relation');
+    my $srv_list  = $cgi->param('services');
     my $disp_prop = $cgi->param('display_property');
     my $lists     = load_json("owner/$owner/service_lists");
     my $assets    = load_json("owner/$owner/assets");
     my $services  = load_json('services');
-    my $data = [];
-    my $plist;
-    $disp_prop ||= 'ip';
-    $relation  ||= '';
+    my $data      = [];
+    my $param_services = [ split ",", $srv_list ];
+    $disp_prop  ||= 'ip';
 
-    if ( not $relation ) {
-	$plist = [ sort map(@$_, @{$lists}{qw(owner user visible)}) ]
-    }
-    else {
-	$plist = $lists->{$relation};
-    }
+    # Untaint services passed as params by intersecting
+    # with known service-names from json-data.
+    my $service_names = intersect( [ keys %$services ],
+				   $param_services );
+
   SERVICE:
-    for my $sname ( @$plist ) {
+    for my $sname ( @{$service_names} ) {
 	my $rules = get_rules_for_owner_and_service( $owner, $sname );
 	my $users = get_users_for_owner_and_service( $owner, $sname );
 	next SERVICE unless scalar( @$users );
@@ -296,24 +294,20 @@ sub get_services_and_rules {
 sub get_services_owners_and_admins {
     my ($cgi, $session) = @_;
     my $owner     = $cgi->param('active_owner');
-    my $relation  = $cgi->param('relation');
+    my $srv_list  = $cgi->param('services');
     my $lists     = load_json("owner/$owner/service_lists");
     my $assets    = load_json("owner/$owner/assets");
     my $services  = load_json('services');
-    use Data::Dumper;
-    #errsay Dumper( $services );
+    my $param_services = [ split ",", $srv_list ];
     my $data = [];
-    my $plist;
-    $relation  ||= '';
 
-    if ( not $relation ) {
-	$plist = [ sort map(@$_, @{$lists}{qw(owner user visible)}) ]
-    }
-    else {
-	$plist = $lists->{$relation};
-    }
+    # Untaint services passed as params by intersecting
+    # with known service-names from json-data.
+    my $service_names = intersect( [ keys %$services ],
+				   $param_services );
+
   SERVICE:
-    for my $srv_name ( @$plist ) {
+    for my $srv_name ( @{$service_names} ) {
 	my $srv_owner = $services->{$srv_name}->{details}->{owner};
 
 	my $admins;
