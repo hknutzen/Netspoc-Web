@@ -32,6 +32,11 @@ NetspocWeb.store.Netspoc = Ext.extend(
 		try {
 		    var jsonData = Ext.decode( response.responseText );
 		    msg = jsonData.msg;
+		    if ( !msg ) {
+			if ( arg ) {
+			    msg = arg;
+			}
+		    }
 		}
 		catch (e) {
 		    msg = response.statusText;
@@ -126,7 +131,7 @@ Ext.reg( 'netspocstatestore', NetspocWeb.store.NetspocState);
 
 
 
-// DANIEL
+// Stores with grouping for Grids using this feature.
 
 NetspocWeb.store.NetspocGroup = Ext.extend(
     Ext.data.GroupingStore,

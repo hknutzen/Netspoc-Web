@@ -25,13 +25,16 @@ RGB 138-145-153
 }
 
 .print-services {
-    background-image : url( "../../images/drucken-dienste.png" ) !important;
+    background-image : url( "../../images/services_and_rules_expanded_users.png" ) !important;
 }
 .print-services-user {
     background-image : url( "../../images/drucken-dienste-user.png" ) !important;
 }
-.print-services-owner {
-    background-image : url( "../../images/drucken-dienste-owner.png" ) !important;
+.print-services-only {
+    background-image : url( "../../images/services_only.png" ) !important;
+}
+.print-services-owner-admins {
+    background-image : url( "../../images/services_owners_and_admins.png" ) !important;
 }
 .print-services-user-owner {
     background-image : url( "../../images/drucken-dienste-user-owner.png" ) !important;

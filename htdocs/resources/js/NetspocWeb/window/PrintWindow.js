@@ -16,7 +16,7 @@ NetspocWeb.window.PrintWindow = Ext.extend(
  		       {
 			   title       : 'Druckformat auswählen',
  			   width       : 660, 
- 			   height      : 520,
+ 			   height      : 570,
  			   layout      : 'fit',
 			   resizable   : false,
 			   closeAction : 'hide',
@@ -62,7 +62,7 @@ NetspocWeb.window.PrintWindow = Ext.extend(
 		return currently_displayed;
 	    };
 
-	    var scale_fx = function( p, opt ) {
+	    var apply_fx = function( p, opt ) {
 		p.el.scale( 300, 220 );
 		p.el.addListener(
 		    'mouseenter',
@@ -141,17 +141,9 @@ NetspocWeb.window.PrintWindow = Ext.extend(
 				]
 			    }
 			);
-
-			var tpl = '{text} ({[values.rs.length]} ' +
-			    '{[values.rs.length > 1 ? "Regeln" : "Regel"]})';
-
-			var grid_view = new Ext.grid.GroupingView(
-			    {
-				forceFit          : true,
-				hideGroupedColumn : true,
-				groupTextTpl      : tpl
-			    }
-			);
+			
+			var singular = "Regel";
+			var plural   = "Regeln";
 
 			// Change ColumnModel and JsonReader appropriately.
 			if ( opt === 'get_services_owners_and_admins' ) {
@@ -192,7 +184,21 @@ NetspocWeb.window.PrintWindow = Ext.extend(
 				    ]
 				}
 			    );
+			    singular = "Owner";
+			    plural   = "Owner";
 			}
+			
+			var tpl = '{text} ({[values.rs.length]} ' +
+			    '{[values.rs.length > 1 ? "' + plural +
+			    '" : "' + singular + '" ]})';
+
+			var grid_view = new Ext.grid.GroupingView(
+			    {
+				forceFit          : true,
+				hideGroupedColumn : true,
+				groupTextTpl      : tpl
+			    }
+			);
 
 			var store = {
 			    xtype       : 'groupingstatestore',
@@ -221,25 +227,48 @@ NetspocWeb.window.PrintWindow = Ext.extend(
 			    }
 			];
 			
-			var gg = new Ext.grid.GridPanel(
-			    {
-				store     : store,
-				colModel  : grid_colmodel,
-				view      : grid_view,
-				tbar      : tbar,
-				listeners : {
-				    beforerender : function ( grid ) {
-					grid.getStore().load(
-					    {
-						'params' : {
-						    'relation' : currently_displayed
+			var gg;
+			if ( opt === 'services_only' ) {
+			    var v     = Ext.getCmp( 'viewportId' );
+			    var pl    = v.findByType( 'policylist' );
+			    var view  = pl[0].getView();
+			    if ( view ) {
+				gg = new Ext.grid.GridPanel(
+				    {
+					store      : view.store,
+					tbar       : tbar,
+					viewConfig : {
+					    forceFit : true
+					},
+					columns    : view.columns
+				    }
+				);
+				
+			    }
+			}
+			else {
+			    // USE LIST OF SERVICES AS CSV IN PARAMS INSTEAD
+			    // OF RELATION!!!!!!!!!!!!!!!!!!!!!!!!!
+			    gg = new Ext.grid.GridPanel(
+				{
+				    store     : store,
+				    colModel  : grid_colmodel,
+				    view      : grid_view,
+				    tbar      : tbar,
+				    listeners : {
+					beforerender : function ( grid ) {
+					    grid.getStore().load(
+						{
+						    'params' : {
+							'relation' : currently_displayed
+						    }
 						}
-					    }
-					);
+					    );
+					}
 				    }
 				}
-			    }
-			);
+			    );
+			}
 
 			var w = new Ext.Window(
  			    {
@@ -266,26 +295,28 @@ NetspocWeb.window.PrintWindow = Ext.extend(
 		baseCls   : 'print-services',
 		listeners : {
 		    afterrender : function ( p ) {
-			scale_fx( p, 'get_services_and_rules' );
+			apply_fx( p, 'get_services_and_rules' );
 		    }
 		}
 	    };
 	    var panel2 = {
 		width     : 320,
 		height    : 240,
-		baseCls   : 'print-services-user',
+		baseCls   : 'print-services-owner-admins',
 		listeners : {
 		    afterrender : function ( p ) {
-			scale_fx( p, 'get_services_owners_and_admins' );
+			apply_fx( p, 'get_services_owners_and_admins' );
 		    }
 		}
 	    };
 	    var panel3 = {
 		width     : 320,
 		height    : 240,
-		baseCls   : 'print-services-owner',
+		baseCls   : 'print-services-only',
 		listeners : {
-		    afterrender : scale_fx
+		    afterrender : function ( p ) {
+			apply_fx( p, 'services_only' );
+		    }
 		}
 	    };
 	    var panel4 = {
@@ -294,12 +325,46 @@ NetspocWeb.window.PrintWindow = Ext.extend(
 		baseCls   : 'print-services-user-owner',
 		listeners : {
 		    afterrender : function ( p ) {
-			scale_fx( p, 'scale_only' );
+			apply_fx( p, 'scale_only' );
 			var currently_displayed = displayed_services();
 			//console.log( currently_displayed );
 		    }
 		}
 
+	    };
+	    var top_left = {
+		width  : 320,
+		height : 25,
+		html   : '<h3> Dienste mit expandierten Regeln </h3>'
+	    };
+	    var top_right = {
+		width  : 320,
+		height : 25,
+		html   : '<h3> Dienste mit Verantwortlichkeiten </h3>'
+	    };
+	    var top_labels =  {
+		layout : 'hbox',
+		items  : [
+		    top_left,
+		    top_right
+		]
+	    };
+	    var bottom_left = {
+		width  : 320,
+		height : 25,
+		html   : '<h3> Liste der Dienste (ohne Regeln)</h3>'
+	    };
+	    var bottom_right = {
+		width  : 320,
+		height : 25,
+		html   : '<h3> Verantwortlichkeiten mit zugehörigen Diensten </h3>'
+	    };
+	    var bottom_labels =  {
+		layout : 'hbox',
+		items  : [
+		    bottom_left,
+		    bottom_right
+		]
 	    };
 	    var top_row = {
 		layout : 'hbox',
@@ -320,7 +385,9 @@ NetspocWeb.window.PrintWindow = Ext.extend(
 		layout : 'anchor',
 		frame  : true,
 		items  : [
+		    top_labels,
 		    top_row,
+		    bottom_labels,
 		    bottom_row
 		],
 		listeners : {
