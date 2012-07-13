@@ -55,6 +55,40 @@ NetspocWeb.window.PrintWindow = Ext.extend(
 		    'click',
 		    function ( event, html_el, options ) {
 
+			var opt2url = {
+			    'services_and_rules'         : 'get_services_and_rules',
+			    'services_owners_and_admins' : 'get_services_owners_and_admins',
+			    'owners_and_services'        : 'get_services_owners_and_admins'
+			};
+			var opt2group = {
+			    'services_and_rules'         : 'service',
+			    'services_owners_and_admins' : 'service',
+			    'owners_and_services'        : 'srv_owner'
+			};
+			var opt2title = {
+			    'services_and_rules' : 'Dienste und Regeln im ' + 
+				'expandierten Format',
+			    'services_owners_and_admins' : 'Dienste und '
+				+ 'Verantwortlichkeiten',
+			    'owners_and_services' : 'Verantwortlichkeiten '
+				+ 'und zugehörige Dienste',
+			    'services_only' : 'Liste der aktuell gewählten Dienste'	    
+			};
+			var opt2caption = {
+			    'services_and_rules' : {
+				'singular' : 'Regel',
+				'plural'   : 'Regeln'
+			    },
+			    'services_owners_and_admins' : {
+				'singular' : 'Verantwortungsbereich',
+				'plural'   : 'Verantwortungsbereiche'
+			    },
+			    'owners_and_services'        : {
+				'singular' : 'Dienst',
+				'plural'   : 'Dienste'
+			    }
+			};
+
 			// Hide parent window.
 			var wnd = this.findParentByType( 'window' );
 			wnd.hide();
@@ -112,11 +146,8 @@ NetspocWeb.window.PrintWindow = Ext.extend(
 			    }
 			);
 			
-			var singular = "Regel";
-			var plural   = "Regeln";
-
 			// Change ColumnModel and JsonReader appropriately.
-			if ( opt === 'get_services_owners_and_admins' ) {
+			if ( opt2url[opt] === 'get_services_owners_and_admins' ) {
 			    grid_colmodel =  new Ext.grid.ColumnModel(
 				{
 				    columns : [
@@ -154,13 +185,11 @@ NetspocWeb.window.PrintWindow = Ext.extend(
 				    ]
 				}
 			    );
-			    singular = "Verantwortliche";
-			    plural   = "Verantwortlicher";
 			}
 			
 			var tpl = '{text} ({[values.rs.length]} ' +
-			    '{[values.rs.length > 1 ? "' + plural +
-			    '" : "' + singular + '" ]})';
+			    '{[values.rs.length > 1 ? "' + opt2caption[opt].plural +
+			    '" : "' + opt2caption[opt].singular + '" ]})';
 
 			var grid_view = new Ext.grid.GroupingView(
 			    {
@@ -172,16 +201,16 @@ NetspocWeb.window.PrintWindow = Ext.extend(
 
 			var store = {
 			    xtype       : 'groupingstatestore',
-			    proxyurl    : opt,
+			    proxyurl    : opt2url[opt],
 			    autoLoad    : false,
 			    reader      : reader,
 			    sortInfo    : {
-				field     : 'service',
+				field     : opt2group[opt],
 				direction : 'ASC'
 			    },
 			    groupOnSort : true,
 			    remoteGroup : true,
-			    groupField  : 'service'
+			    groupField  : opt2group[opt]
 			};
 
 			var tbar = [
@@ -263,17 +292,9 @@ NetspocWeb.window.PrintWindow = Ext.extend(
 			    );
 			}
 
-			var title = {
-			    'get_services_and_rules' : 'Dienste und Regeln im ' + 
-				'expandierten Format',
-			    'get_services_owners_and_admins' : 'Dienste und '
-				+ 'Verantwortlichkeiten',
-			    'services_only' : 'Liste der aktuell gewählten Dienste'	    
-			};
-
 			var w = new Ext.Window(
  			    {
-				title       : title[opt],
+				title       : opt2title[opt],
 				id          : 'srvRulesWndId', // see PolicyManager
  				width       : 640, 
  				height      : 480,
@@ -293,10 +314,10 @@ NetspocWeb.window.PrintWindow = Ext.extend(
 	    var panel1 = {
 		width     : 320,
 		height    : 240,
-		baseCls   : 'print-services',
+		baseCls   : 'print-services-and-rules',
 		listeners : {
 		    afterrender : function ( p ) {
-			apply_fx( p, 'get_services_and_rules' );
+			apply_fx( p, 'services_and_rules' );
 		    }
 		}
 	    };
@@ -306,7 +327,7 @@ NetspocWeb.window.PrintWindow = Ext.extend(
 		baseCls   : 'print-services-owner-admins',
 		listeners : {
 		    afterrender : function ( p ) {
-			apply_fx( p, 'get_services_owners_and_admins' );
+			apply_fx( p, 'services_owners_and_admins' );
 		    }
 		}
 	    };
@@ -323,10 +344,10 @@ NetspocWeb.window.PrintWindow = Ext.extend(
 	    var panel4 = {
 		width     : 320,
 		height    : 240,
-		baseCls   : 'print-services-user-owner',
+		baseCls   : 'print-owners-and-services',
 		listeners : {
 		    afterrender : function ( p ) {
-			apply_fx( p, 'scale_only' );
+			apply_fx( p, 'owners_and_services' );
 		    }
 		}
 
