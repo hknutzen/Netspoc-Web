@@ -86,6 +86,10 @@ NetspocWeb.window.PrintWindow = Ext.extend(
 			    'owners_and_services'        : {
 				'singular' : 'Dienst',
 				'plural'   : 'Dienste'
+			    },
+			    'services_only'        : {
+				'singular' : '',
+				'plural'   : ''
 			    }
 			};
 
