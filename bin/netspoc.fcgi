@@ -529,9 +529,11 @@ sub get_diff_mail {
     my $owner = $cgi->param('active_owner');
     my $email = $session->param('email');
     my $store = User_Store::new($config, $email);
-    my $aref = $store->param('send_diff') || [];
+    my $aref  = $store->param('send_diff') || [];
     return([{ send => 
-                  grep { $_ eq $owner } @$aref ?  JSON::true : JSON::false }]);
+                     (grep { $_ eq $owner } @$aref) 
+                   ? JSON::true 
+                   : JSON::false }]);
 }
 
 sub set_diff_mail {
@@ -543,7 +545,10 @@ sub set_diff_mail {
     my $store = User_Store::new($config, $email);
     my $aref = $store->param('send_diff') || [];
     my $changed;
-    if ($send) {
+
+    # Javascript truth value is coded as string, because it is transferred
+    # as parameter and not as JSON data.
+    if ($send eq 'true') {
         if (! grep { $_ eq $owner } @$aref) {
             push(@$aref, $owner);
             $changed = 1;
