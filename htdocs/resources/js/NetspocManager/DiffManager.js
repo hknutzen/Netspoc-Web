@@ -68,12 +68,13 @@ NetspocManager.DiffManager = Ext.extend(
             var store = Ext.StoreMgr.get('historyStore');
             var combo = this.buildHistoryCombo(store);
             var checkbox = this.buildDiffMailCheckBox();
+            this.loadDiffMailCheckBox(checkbox);
             this.combo = combo;
             this.tbar =  [ 'Vergleiche mit', 
-                           combo//,
-                           //' ',
-                           //'Diff per Mail senden',
-                           //checkbox
+                           combo,
+                           ' ',
+                           'Diff per Mail senden',
+                           checkbox
                          ],
             NetspocManager.DiffManager.
                 superclass.initComponent.call(this);
@@ -84,7 +85,8 @@ NetspocManager.DiffManager = Ext.extend(
                     // Only direct childs, no animation.
                     node.collapse(false, false);
                     node.setText('');
-                    this.combo.setValue('');
+                    combo.setValue('');
+                    this.loadDiffMailCheckBox(checkbox);
                 }, this);                    
         },
 
@@ -141,11 +143,24 @@ NetspocManager.DiffManager = Ext.extend(
             );
         },
         buildDiffMailCheckBox : function () {
-            var checkbox = Ext.create(
-                { 
-                    xtype    : 'checkbox' 
+            var checkbox = Ext.create( { xtype    : 'checkbox' } );
+            checkbox.on('check', function (checkbox, checked) {
+                // Don't handle initial event from setValue above.
+                if (! checkbox.send_event ) {
+                    return;
                 }
-            );
+	        var store = new NetspocWeb.store.NetspocState(
+		    {
+		        proxyurl : 'set_diff_mail',
+		        fields     : [],
+		        autoDestroy: true
+		    }
+	        );
+	        store.load({ params : { send : checked } });
+            });
+            return checkbox;
+        },
+        loadDiffMailCheckBox : function (checkbox) {
 	    var store = new NetspocWeb.store.NetspocState(
 		{
 		    proxyurl : 'get_diff_mail',
@@ -153,27 +168,15 @@ NetspocManager.DiffManager = Ext.extend(
 		    autoDestroy: true
 		}
 	    );
+            checkbox.send_event = false;
 	    store.load({ 
                 scope    : this,
 		callback : function(records, options, success) {
                     var result = records[0].get('send');
                     checkbox.setValue(result);
-
-                    // Don't handle event initial from setValue above.
-                    // Therefore, add listener after value has been set.
-                    checkbox.on('check', function (checkbox, checked) {
-	                var store = new NetspocWeb.store.NetspocState(
-		            {
-		                proxyurl : 'set_diff_mail',
-		                fields     : [],
-		                autoDestroy: true
-		            }
-	                );
-	                store.load({ params : { send : checked } });
-                    });
+                    checkbox.send_event = true;
                 }
             });
-            checkbox;
         }
     }
 );
