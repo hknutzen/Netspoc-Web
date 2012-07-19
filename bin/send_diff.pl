@@ -1,4 +1,4 @@
-#!/usr/local/bin/perl -
+#!/usr/local/bin/perl
 
 use strict;
 use warnings;
@@ -11,9 +11,6 @@ use User_Store;
 use Template;
 use JSON_Cache;
 use Policy_Diff;
-
-my $VERSION = ( split ' ',
- '$Id$' )[2];
 
 # Argument processing
 sub usage {
