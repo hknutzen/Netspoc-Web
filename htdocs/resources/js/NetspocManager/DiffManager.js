@@ -44,6 +44,9 @@ NetspocManager.DiffManager = Ext.extend(
                     var appstate = NetspocManager.appstate;
                     var active_owner = appstate.getOwner();
                     var history = appstate.getHistory();
+                    if (node.id === 'none') {
+                        return false;
+                    }
                     loader.baseParams.active_owner = active_owner;
                     loader.baseParams.history = history;
                     node.setText('');
@@ -85,6 +88,7 @@ NetspocManager.DiffManager = Ext.extend(
                     // Only direct childs, no animation.
                     node.collapse(false, false);
                     node.setText('');
+                    node.setId('none');
                     combo.setValue('');
                     this.loadDiffMailCheckBox(checkbox);
                 }, this);                    
