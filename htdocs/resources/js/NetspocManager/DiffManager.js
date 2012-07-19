@@ -59,7 +59,7 @@ NetspocManager.DiffManager = Ext.extend(
         },
 
         root: {
-            text: '',
+            text: 'Bitte Stand auswählen in "Verleiche mit".',
             id: 'none'
         },
 
