@@ -11,12 +11,13 @@ set -e
 abort () { [ "$1" ] && echo "Error: $1"; usage; }
 
 read_conf () { 
-    grep "\"$1\"" $config | cut -d: -f2 | cut -d'"' -f 2
+    grep "\"$1\"" $config|cut -d: -f2|cut -d'"' -f 2
 }
 
 [ -n "$config" ] || usage
 [ -f "$config" ] || abort "Can't read '$config'"
 dir=$(read_conf netspoc_data)
+prev_dir=$(pwd)
 cd $dir
 current=$(readlink $link)
 [ "$current" ] || abort "Can't read $dir/current"
@@ -31,9 +32,10 @@ if [ -f RCS/POLICY,v ] ; then
     [ $version = $prev_ver ] && exit
 
     # Compare current version with latest checked in version.
+    prev_date=$(rlog -zLT RCS/POLICY,v |grep date:|head -1|cut -d ' ' -f 2)
+
     # Mark each changed owner by copying the topelevel POLICY file
     # into the owners directory.
-    prev_date=$(rlog -zLT RCS/POLICY,v |grep date:|head -1|cut -d ' ' -f 2)
     changed=$(~/NetspocWeb/bin/diff.pl . $prev_date $current)
     for owner in $changed; do
 
@@ -46,7 +48,6 @@ else
     for opath in $current/owner/* ; do
         cp -p $current/POLICY $opath
     done
-        
 fi
 
 # Add current version to RCS.
@@ -62,3 +63,11 @@ for f in p* ; do
 	    ;;
     esac
 done
+
+if [ -n $prev_date ] ; then
+    curr_date=$(rlog -zLT RCS/POLICY,v |grep date:|head -1|cut -d ' ' -f 2)
+    # Send diff per mail
+    # $config path is relative to original working directory.
+    cd $prev_dir
+    ~/NetspocWeb/bin/send_diff.pl $config $prev_date $curr_date
+fi
