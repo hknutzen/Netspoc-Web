@@ -76,7 +76,16 @@ NetspocManager.DiffManager = Ext.extend(
             this.tbar =  [ 'Vergleiche mit', 
                            combo,
                            ' ',
-                           'Diff per Mail senden',
+                           {
+                               xtype   : 'button',
+                               text    : 'Diff per Mail senden',
+                               handleMouseEvents : false,
+                               tooltip : 
+                               'Vergleicht am Ende eines Tages' +
+                                   ' den aktuellen Stand ' +
+                                   ' mit dem Stand des Vortags' +
+                                   ' und sendet bei Änderungen eine Mail.'
+                           },
                            checkbox
                          ],
             NetspocManager.DiffManager.
