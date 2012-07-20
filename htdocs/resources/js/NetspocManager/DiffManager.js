@@ -84,7 +84,7 @@ NetspocManager.DiffManager = Ext.extend(
                                'Vergleicht am Ende eines Tages' +
                                    ' den aktuellen Stand ' +
                                    ' mit dem Stand des Vortags' +
-                                   ' und sendet bei Änderungen eine Mail.'
+                                   ' und sendet Ihnen bei Änderungen eine Mail.'
                            },
                            checkbox
                          ],
