@@ -1,5 +1,5 @@
 To: [% email %]
-Subject: Policy-Web: Diff für [% owner %]
+Subject: Policy-Web: Diff für [% owner %], [% new_ver %]
 Content-Type: text/plain; charset=UTF-8
 
 (+): etwas wurde hinzugefügt
