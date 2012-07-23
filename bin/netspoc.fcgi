@@ -131,6 +131,10 @@ sub get_history {
     return \@result;
 }
 
+sub current_policy {
+    get_policy()->[0]->{policy};
+}
+
 my $selected_history;
 sub select_history {
     my ($cgi, $history_needed) = @_;
@@ -143,7 +147,7 @@ sub select_history {
     # Read current version tag from current/POLICY.
     else {
 	$history_needed and abort "Missing parameter 'history'";
-	$selected_history = get_policy()->[0]->{policy};
+	$selected_history = current_policy();
     }
 }
 
@@ -152,6 +156,12 @@ my $cache;
 sub load_json {
     my ($path) = @_;
     $cache->load_json_version($selected_history, $path);
+}
+
+sub load_current_json {
+    my ($path) = @_;
+    my $current_policy = current_policy();
+    $cache->load_json_version($current_policy, $path);
 }
 
 sub get_objects {
@@ -795,9 +805,9 @@ sub validate_owner {
     if (my $active_owner = $cgi->param('active_owner')) {
 	$owner_needed or abort abort "Must not send parameter 'active_owner'";
 	my $email = $session->param('email');
-	my $email2owners = load_json("email");
+	my $email2owners = load_current_json('email');
 	grep { $active_owner eq $_ } @{ $email2owners->{$email} } or
-	    abort "Invalid owner: $active_owner";
+	    abort "User $email isn't allowed to read owner $active_owner";
     } 
     else {
 	$owner_needed and abort "Missing parameter 'active_owner'";
