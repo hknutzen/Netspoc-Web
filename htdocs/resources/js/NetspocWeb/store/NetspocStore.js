@@ -83,7 +83,7 @@ NetspocWeb.store.NetspocState = Ext.extend(
 	    NetspocWeb.store.NetspocState.superclass.constructor.call(this, 
 								      config);
 	    // Set baseParams and reload store if appstate changes.
-	    var networks_as_csv = this.getNetworksCSV( appstate.getNetworks() );
+	    var networks_as_csv = appstate.getNetworks();
 	    this.setBaseParam('active_owner', appstate.getOwner());
 	    this.setBaseParam('history', appstate.getHistory());
 	    this.setBaseParam('chosen_networks', networks_as_csv );
@@ -93,8 +93,7 @@ NetspocWeb.store.NetspocState = Ext.extend(
 		    var params;
 		    var active_owner    = appstate.getOwner();
 		    var history         = appstate.getHistory();
-		    var chosen_networks = appstate.getNetworks();
-		    var networks_as_csv = this.getNetworksCSV( chosen_networks );
+		    var networks_as_csv = appstate.getNetworks();
 		    this.setBaseParam('active_owner', active_owner);
 		    this.setBaseParam('history', history);
 		    this.setBaseParam('chosen_networks', networks_as_csv );
@@ -112,17 +111,6 @@ NetspocWeb.store.NetspocState = Ext.extend(
 			this.reload( { params : params } );
 		    }
 		}, this);
-	},
-	
-	getNetworksCSV : function ( networks_as_csv ) {
-	    var selected = [];
-	    Ext.each( networks_as_csv, function (item) {
-			  selected.push( item.data.name );
-		      }
-		    );
-	    var networks = selected.join( ',');
-	    //console.log( networks );
-	    return networks;
 	}
     }
 );
@@ -236,7 +224,7 @@ NetspocWeb.store.NetspocGroupState = Ext.extend(
 		config
 	    );
 	    // Set baseParams and reload store if appstate changes.
-	    var networks_as_csv = this.getNetworksCSV( appstate.getNetworks() );
+	    var networks_as_csv = appstate.getNetworks();
 	    this.setBaseParam('active_owner', appstate.getOwner());
 	    this.setBaseParam('history', appstate.getHistory());
 	    this.setBaseParam('chosen_networks', networks_as_csv );
@@ -246,9 +234,7 @@ NetspocWeb.store.NetspocGroupState = Ext.extend(
 		    var params;
 		    var active_owner    = appstate.getOwner();
 		    var history         = appstate.getHistory();
-		    var chosen_networks = appstate.getNetworks();
-		    var networks_as_csv =
-			this.getNetworksCSV( chosen_networks );
+		    var networks_as_csv = appstate.getNetworks();
 		    this.setBaseParam('active_owner', active_owner);
 		    this.setBaseParam('history', history);
 		    this.setBaseParam('chosen_networks', networks_as_csv );
@@ -266,17 +252,6 @@ NetspocWeb.store.NetspocGroupState = Ext.extend(
 			this.reload( { params : params } );
 		    }
 		}, this);
-	},
-	
-	getNetworksCSV : function ( networks_as_csv ) {
-	    var selected = [];
-	    Ext.each( networks_as_csv, function (item) {
-			  selected.push( item.data.name );
-		      }
-		    );
-	    var networks = selected.join( ',');
-	    //console.log( networks );
-	    return networks;
 	}
     }
 );
