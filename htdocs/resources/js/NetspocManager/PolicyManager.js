@@ -100,8 +100,8 @@ NetspocManager.PolicyManager = Ext.extend(
                     },
 		    '->',
 		    {
-			iconCls : 'icon-printer',
-			tooltip : 'Druck-Fenster öffnen',
+			iconCls : 'icon-eye',
+			tooltip : 'Weitere (druckbare) Ansichten öffnen',
 			scope   : this,
 			handler : this.displayPrintWindow
 		    }

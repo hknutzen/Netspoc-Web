@@ -28,41 +28,41 @@ Ext.ux.Printer = function() {
     return {
         /**
         * @property renderers
-        * @type Object
-        * An object in the form {xtype: RendererClass} which is manages the renderers registered by xtype
-        */
+         * @type Object
+         * An object in the form {xtype: RendererClass} which is manages the renderers registered by xtype
+         */
         renderers: {},
-
+	
         /**
-        * Registers a renderer function to handle components of a given xtype
-        * @param {String} xtype The component xtype the renderer will handle
-        * @param {Function} renderer The renderer to invoke for components of this xtype
-        */
+         * Registers a renderer function to handle components of a given xtype
+         * @param {String} xtype The component xtype the renderer will handle
+         * @param {Function} renderer The renderer to invoke for components of this xtype
+         */
         registerRenderer: function(xtype, renderer) {
             this.renderers[xtype] = new (renderer)();
         },
-
+	
         /**
-        * Returns the registered renderer for a given xtype
-        * @param {String} xtype The component xtype to find a renderer for
-        * @return {Object/undefined} The renderer instance for this xtype, or null if not found
-        */
+         * Returns the registered renderer for a given xtype
+         * @param {String} xtype The component xtype to find a renderer for
+         * @return {Object/undefined} The renderer instance for this xtype, or null if not found
+         */
         getRenderer: function(xtype) {
             return this.renderers[xtype];
         },
-
+	
         /**
-        * Prints the passed grid. Reflects on the grid's column model to build a table, and fills it using the store
-        * @param {Ext.Component} component The component to print
-        */
+         * Prints the passed grid. Reflects on the grid's column model to build a table, and fills it using the store
+         * @param {Ext.Component} component The component to print
+         */
         print: function(component) {
             var xtypes = component.getXTypes().split('/');
-
+	    
             //iterate backwards over the xtypes of this component, dispatching to the most specific renderer
             for (var i = xtypes.length - 1; i >= 0; i--) {
                 var xtype = xtypes[i],
-            renderer = this.getRenderer(xtype);
-
+		renderer = this.getRenderer(xtype);
+		
                 if (renderer != undefined) {
                     renderer.print(component);
                     break;
@@ -84,6 +84,7 @@ Ext.ux.Printer = function() {
 		    break;
 		}
 	    }
+	    return '';
 	}
     };
 } ();
@@ -321,6 +322,7 @@ Ext.ux.Printer.GridPanelRenderer = Ext.extend(Ext.ux.Printer.BaseRenderer, {
     * @param {Ext.grid.GridPanel} grid The grid to print
     */
     generateBody: function(grid) {
+	console.log( "Generate body NON-GG" );
         var columns = this.getColumns(grid);
 
         //use the headerTpl and bodyTpl XTemplates to create the main XTemplate below
@@ -336,10 +338,13 @@ Ext.ux.Printer.GridPanelRenderer = Ext.extend(Ext.ux.Printer.BaseRenderer, {
     * @return {Array} Data suitable for use in the XTemplate
     */
     prepareData: function(grid) {
-        //We generate an XTemplate here by using 2 intermediary XTemplates - one to create the header,
-        //the other to create the body (see the escaped {} below)
+	console.log( "Prepare data for NON-GG" );
+        // We generate an XTemplate here by using 2 intermediary
+	// XTemplates - one to create the header,
+        // the other to create the body (see the escaped {} below)
         var columns = this.getColumns(grid);
 
+	console.log( "Still here" );
         //build a useable array of store data for the XTemplate
         var data = [];
         grid.store.data.each(function(item) {
@@ -354,6 +359,7 @@ Ext.ux.Printer.GridPanelRenderer = Ext.extend(Ext.ux.Printer.BaseRenderer, {
                     }
                 }, this);
             });
+	console.log( "Still here 2" );
 
             data.push(convertedData);
         });
@@ -367,6 +373,7 @@ Ext.ux.Printer.GridPanelRenderer = Ext.extend(Ext.ux.Printer.BaseRenderer, {
     * @return {Array} The array of grid columns
     */
     getColumns: function(grid) {
+	console.log( "Get columns for NON-GG" );
         var columns = [];
 
         Ext.each(grid.getColumnModel().config, function(col) {
@@ -403,8 +410,6 @@ Ext.ux.Printer.GridPanelRenderer = Ext.extend(Ext.ux.Printer.BaseRenderer, {
     '</tr>'
   )
 });
-
-Ext.ux.Printer.registerRenderer('grid', Ext.ux.Printer.GridPanelRenderer);
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //Customizations.
@@ -536,6 +541,7 @@ Ext.ux.Printer.GroupedGridPanelRenderer = Ext.extend(Ext.ux.Printer.GridPanelRen
                 }),
 
             prepareData: function(grid) {
+	console.log( "Prepare data for GROUPING GRID!!!" );
                 var view = grid.view;
 
                 var columns = this.getColumns(grid);
@@ -589,6 +595,7 @@ Ext.ux.Printer.GroupedGridPanelRenderer = Ext.extend(Ext.ux.Printer.GridPanelRen
             },
 
             getColumns: function(grid) {
+		console.log( "get columns for GROUPING GRID!!!" );
                 if (this.columns == null) {
                     var columns = [];
                     var columnData = grid.view.getColumnData();

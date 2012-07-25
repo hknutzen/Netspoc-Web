@@ -164,8 +164,26 @@ NetspocWeb.store.NetspocGroup = Ext.extend(
 		try {
 		    var jsonData = Ext.decode( response.responseText );
 		    msg = jsonData.msg;
+		    // The following "if-block" deals with errors in the
+		    // framework or in extensions, not with the data returned
+		    // from the backend.
 		    if ( !msg ) {
 			if ( arg ) {
+			    /* arg : Mixed
+			     The type and value of this parameter depends
+			     on the value of the type parameter:
+
+			     'response' : Error
+			     The JavaScript Error object caught if the
+			     configured Reader could not read the data.
+			     If the remote request returns success===false,
+			     this parameter will be null.
+
+			     'remote' : Record/Record[]
+			     This parameter will only exist if the action
+			     was a write action (Ext.data.Api.actions
+			     .create|update|destroy).
+			     */
 			    msg = arg;
 			}
 		    }

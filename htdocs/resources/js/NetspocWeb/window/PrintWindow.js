@@ -422,12 +422,7 @@ NetspocWeb.window.PrintWindow = Ext.extend(
 		}
 	    };
 	    return container_panel;
-	},
-
-	onPanelClick : function () {
-	    //console.log( "HERE!" );
-	},
-	
+	}
     } // end of params extending window class
 );
 
