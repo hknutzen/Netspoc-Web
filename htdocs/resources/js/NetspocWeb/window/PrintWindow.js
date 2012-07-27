@@ -216,19 +216,6 @@ NetspocWeb.window.PrintWindow = Ext.extend(
 			    remoteGroup : true,
 			    groupField  : opt2group[opt]
 			};
-
-			var tbar = [
-			    'Drucken:',
-			    {
-				iconCls : 'icon-printer',
-				tooltip : 'Druck-Fenster öffnen',
-				scope   : this,
-				handler : function ( button ) {
-				    var grid = button.findParentByType( 'grid' );
-				    Ext.ux.Printer.print( grid );
-				}
-			    }
-			];
 			
 			// Collect displayed services in policylist
 			// as CSV-string (will be passed as URL-param).
@@ -246,7 +233,7 @@ NetspocWeb.window.PrintWindow = Ext.extend(
 				return;
 			    }
 			};
-			var records  = pl_store.each( concat_services );
+			var records = pl_store.each( concat_services );
 			// Get rid of trailing comma
 			services = services.slice(0, -1);
 
@@ -256,6 +243,76 @@ NetspocWeb.window.PrintWindow = Ext.extend(
 			    return;
 			}
 			
+			// Additional elements that
+			// will be added next to print-label and
+			// -icon in the toolbar.
+			var additional_elements = [];
+
+			if ( opt === 'services_and_rules' ) {
+			    // Create checkboxgroup that has expand-user
+			    // and toggle-name-ip checkboxes and sets params
+			    // according to state of those checkboxes on
+			    // "change"-event.
+			    var cb_group = new Ext.form.CheckboxGroup(
+				{
+				    xtype   : 'checkboxgroup',
+				    width   : 210,
+				    items   : [
+					{boxLabel : 'User expandieren',
+					 name     : 'cb-exp-users'},
+					{boxLabel : 'Namen statt IPs',
+					 name     : 'cb-show-names'}
+				    ],
+				    listeners : {
+					'change' : function( cbg, checked ) {
+					    var expand_users = 0;
+					    var disp_prop    = 'ip';
+					    Ext.each( checked,
+						      function( cb, index ) {
+							  if ( cb.name === 'cb-exp-users' ) {
+								   expand_users = 1;
+							  }
+							  else if ( cb.name === 'cb-show-names' ) {
+							      disp_prop = 'name';
+							  }
+							  else { return; }
+						      }
+						    );
+					    // Get store and reload
+					    var grid = cbg.findParentByType( 'grid' );
+					    var store = grid.getStore();
+					    store.load(
+						{
+						    params : {
+							'expand_users'     : expand_users,
+							'display_property' : disp_prop,
+							'services'         : services
+						    }
+						}
+					    );
+					}
+				    }
+				}
+			    );
+			    additional_elements[0] = cb_group;
+			}
+			
+			// Create top-toolbar for the gridpanel.
+			var tbar = [
+			    'Drucken:',
+			    {
+				iconCls : 'icon-printer',
+				tooltip : 'Druck-Fenster öffnen',
+				scope   : this,
+				handler : function ( button ) {
+				    var grid = button.findParentByType( 'grid' );
+				    Ext.ux.Printer.print( grid );
+				}
+			    },
+			    '->',
+			    additional_elements
+			];
+
 			// Create GridPanel with or without grouping
 			// as needed.
 			var grid;
@@ -263,7 +320,7 @@ NetspocWeb.window.PrintWindow = Ext.extend(
 			    if ( pl_view ) {
 				grid = new Ext.grid.GridPanel(
 				    {
-					store      : pl_view.store,
+					store      : pl_store,
 					tbar       : tbar,
 					viewConfig : {
 					    forceFit : true

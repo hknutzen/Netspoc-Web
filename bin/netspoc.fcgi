@@ -253,15 +253,24 @@ sub get_hosts {
 
 sub get_services_and_rules {
     my ($cgi, $session) = @_;
-    my $owner     = $cgi->param('active_owner');
-    my $srv_list  = $cgi->param('services');
-    my $disp_prop = $cgi->param('display_property');
-    my $lists     = load_json("owner/$owner/service_lists");
-    my $assets    = load_json("owner/$owner/assets");
-    my $services  = load_json('services');
-    my $data      = [];
+    my $owner        = $cgi->param('active_owner');
+    my $srv_list     = $cgi->param('services');
+    my $disp_prop    = $cgi->param('display_property');
+    my $expand_users = $cgi->param('expand_users');
+    my $lists    = load_json("owner/$owner/service_lists");
+    my $assets   = load_json("owner/$owner/assets");
+    my $services = load_json('services');
+    my $data = [];
     my $param_services = [ split ",", $srv_list ];
-    $disp_prop  ||= 'ip';
+
+    # Untaint display property.
+    my %allowed = (
+	name => 1,
+	ip   => 1
+	);
+    if ( not $allowed{$disp_prop} ) {
+	$disp_prop = 'ip';
+    }
 
     # Untaint services passed as params by intersecting
     # with known service-names from json-data.
@@ -270,11 +279,16 @@ sub get_services_and_rules {
 
   SERVICE:
     for my $sname ( @{$service_names} ) {
-	my $rules = get_rules_for_owner_and_service( $owner, $sname );
+	my $rules = get_rules_for_owner_and_service( $owner, $sname, $disp_prop );
 	my $users = get_users_for_owner_and_service( $owner, $sname );
 	next SERVICE unless scalar( @$users );
 	my $user_props = [];
-	map { push @$user_props, $_->{$disp_prop} } @$users;
+	if ( $expand_users ) {
+	    map { push @$user_props, $_->{$disp_prop} } @$users;
+	}
+	else {
+	    $user_props = [ 'User' ];
+	}
 
 	for my $rule ( @$rules ) {
 	    push @$data, {
@@ -528,9 +542,9 @@ sub get_users_for_owner_and_service {
 }
 
 sub get_rules_for_owner_and_service {
-    my ( $owner, $sname ) = @_;
+    my ( $owner, $sname, $prop ) = @_;
     my $lists = load_json("owner/$owner/service_lists");
-
+    $prop ||= 'ip';
     # Check if owner is allowed to access this service.
     $lists->{hash}->{$sname} or abort "Unknown service '$sname'";
     my $services = load_json('services');
@@ -546,7 +560,7 @@ sub get_rules_for_owner_and_service {
 	my $crule = { %$rule };
 	for my $what (qw(src dst)) {
 	    $crule->{$what} = 
-		[ map((get_nat_obj($_, $no_nat_set))->{ip},
+		[ map((get_nat_obj($_, $no_nat_set))->{$prop},
 		      @{ $rule->{$what} }) ];
 	}
 	push @$crules, $crule;
