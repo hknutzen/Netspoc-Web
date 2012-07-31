@@ -29,7 +29,8 @@ Ext.ux.Printer = function() {
         /**
         * @property renderers
          * @type Object
-         * An object in the form {xtype: RendererClass} which is manages the renderers registered by xtype
+         * An object in the form {xtype: RendererClass} which is manages the
+	 * renderers registered by xtype
          */
         renderers: {},
 	
@@ -45,20 +46,23 @@ Ext.ux.Printer = function() {
         /**
          * Returns the registered renderer for a given xtype
          * @param {String} xtype The component xtype to find a renderer for
-         * @return {Object/undefined} The renderer instance for this xtype, or null if not found
+         * @return {Object/undefined} The renderer instance for this xtype,
+	 *   or null if not found
          */
         getRenderer: function(xtype) {
             return this.renderers[xtype];
         },
 	
         /**
-         * Prints the passed grid. Reflects on the grid's column model to build a table, and fills it using the store
+         * Prints the passed grid. Reflects on the grid's column model 
+	 * to build a table, and fills it using the store
          * @param {Ext.Component} component The component to print
          */
         print: function(component) {
             var xtypes = component.getXTypes().split('/');
 	    
-            //iterate backwards over the xtypes of this component, dispatching to the most specific renderer
+            // iterate backwards over the xtypes of this component,
+	    // dispatching to the most specific renderer
             for (var i = xtypes.length - 1; i >= 0; i--) {
                 var xtype = xtypes[i],
 		renderer = this.getRenderer(xtype);
@@ -158,7 +162,8 @@ Ext.ux.Printer.BaseRenderer = Ext.extend(Object, {
       '<html>',
         '<head>',
           '<meta content="text/html; charset=UTF-8" http-equiv="Content-Type" />',
-          '<link href="' + this.stylesheetPath + '" rel="stylesheet" type="text/css" media="screen,print" />',
+          '<link href="' + this.stylesheetPath +
+		'" rel="stylesheet" type="text/css" media="screen,print" />',
           '<title>' + this.getTitle(component) + '</title>',
         '</head>',
         '<body>',
@@ -169,11 +174,13 @@ Ext.ux.Printer.BaseRenderer = Ext.extend(Object, {
     },
 
     /**
-    * Returns the HTML that will be placed into the print window. This should produce HTML to go inside the
-    * <body> element only, as <head> is generated in the print function
-    * @param {Ext.Component} component The component to render
-    * @return {String} The HTML fragment to place inside the print window's <body> element
-    */
+     * Returns the HTML that will be placed into the print window.
+     *  This should produce HTML to go inside the
+     * <body> element only, as <head> is generated in the print function
+     * @param {Ext.Component} component The component to render
+     * @return {String} The HTML fragment to place inside the print
+     *   window's <body> element
+     */
     generateBody: Ext.emptyFn,
 
     /**
@@ -191,14 +198,16 @@ Ext.ux.Printer.BaseRenderer = Ext.extend(Object, {
     * @return {String} The window title
     */
     getTitle: function(component) {
-        return typeof component.getTitle == 'function' ? component.getTitle() : (component.title || "Printing");
+        return typeof component.getTitle == 'function' ?
+	    component.getTitle() : (component.title || "Printing");
     },
 
     /**
-    * @property stylesheetPath
-    * @type String
-    * The path at which the print stylesheet can be found (defaults to 'stylesheets/print.css')
-    */
+     * @property stylesheetPath
+     * @type String
+     * The path at which the print stylesheet can be found
+     *  (defaults to 'stylesheets/print.css')
+     */
     stylesheetPath: 'stylesheets/print.css'
 });
 
@@ -217,11 +226,13 @@ Ext.ux.Printer.ColumnTreeRenderer = Ext.extend(Ext.ux.Printer.BaseRenderer, {
     generateBody: function(tree) {
         var columns = this.getColumns(tree);
 
-        //use the headerTpl and bodyTpl XTemplates to create the main XTemplate below
+        // use the headerTpl and bodyTpl XTemplates to create
+	// the main XTemplate below
         var headings = this.headerTpl.apply(columns);
         var body = this.bodyTpl.apply(columns);
 
-        return String.format('<table>{0}<tpl for=".">{1}</tpl></table>', headings, body);
+        return String.format('<table>{0}<tpl for=".">{1}</tpl></table>',
+			     headings, body);
     },
 
     /**
@@ -234,10 +245,11 @@ Ext.ux.Printer.ColumnTreeRenderer = Ext.extend(Ext.ux.Printer.BaseRenderer, {
     },
 
     /**
-    * Descends down the tree from the root, creating an array of data suitable for use in an XTemplate
-    * @param {Ext.tree.ColumnTree} tree The column tree
-    * @return {Array} Data suitable for use in the body XTemplate
-    */
+     * Descends down the tree from the root, creating an array of
+     * data suitable for use in an XTemplate
+     * @param {Ext.tree.ColumnTree} tree The column tree
+     * @return {Array} Data suitable for use in the body XTemplate
+     */
     prepareData: function(tree) {
         var root = tree.root,
         data = [],
@@ -257,7 +269,8 @@ Ext.ux.Printer.ColumnTreeRenderer = Ext.extend(Ext.ux.Printer.BaseRenderer, {
                 }, this);
             });
 
-            //the property used in the first column is renamed to 'text' in node.attributes, so reassign it here
+            // the property used in the first column is renamed to 'text'
+	    // in node.attributes, so reassign it here
             row[this.getColumns(tree)[0].dataIndex] = node.attributes.text;
 
             data.push(row);
@@ -269,18 +282,20 @@ Ext.ux.Printer.ColumnTreeRenderer = Ext.extend(Ext.ux.Printer.BaseRenderer, {
     },
 
     /**
-    * @property indentPadding
-    * @type Number
-    * Number of pixels to indent node by. This is multiplied by the node depth, so a node with node.getDepth() == 3 will
-    * be padded by 45 (or 3x your custom indentPadding)
-    */
+     * @property indentPadding
+     * @type Number
+     * Number of pixels to indent node by. This is multiplied by the
+     *  node depth, so a node with node.getDepth() == 3 will
+     * be padded by 45 (or 3x your custom indentPadding)
+     */
     indentPadding: 15,
 
     /**
-    * @property headerTpl
-    * @type Ext.XTemplate
-    * The XTemplate used to create the headings row. By default this just uses <th> elements, override to provide your own
-    */
+     * @property headerTpl
+     * @type Ext.XTemplate
+     * The XTemplate used to create the headings row. By default this
+     *  just uses <th> elements, override to provide your own
+     */
     headerTpl: new Ext.XTemplate(
     '<tr>',
       '<tpl for=".">',
@@ -290,11 +305,13 @@ Ext.ux.Printer.ColumnTreeRenderer = Ext.extend(Ext.ux.Printer.BaseRenderer, {
   ),
 
     /**
-    * @property bodyTpl
-    * @type Ext.XTemplate
-    * The XTemplate used to create each row. This is used inside the 'print' function to build another XTemplate, to which the data
-    * are then applied (see the escaped dataIndex attribute here - this ends up as "{dataIndex}")
-    */
+     * @property bodyTpl
+     * @type Ext.XTemplate
+     * The XTemplate used to create each row. This is used inside the
+     *  'print' function to build another XTemplate, to which the data
+     * are then applied (see the escaped dataIndex attribute here -
+     *  this ends up as "{dataIndex}")
+     */
     bodyTpl: new Ext.XTemplate(
     '<tr>',
       '<tpl for=".">',
@@ -307,14 +324,18 @@ Ext.ux.Printer.ColumnTreeRenderer = Ext.extend(Ext.ux.Printer.BaseRenderer, {
 Ext.ux.Printer.registerRenderer('columntree', Ext.ux.Printer.ColumnTreeRenderer);
 
 /**
-* @class Ext.ux.Printer.GridPanelRenderer
-* @extends Ext.ux.Printer.BaseRenderer
-* @author Ed Spencer
-* Helper class to easily print the contents of a grid. Will open a new window with a table where the first row
-* contains the headings from your column model, and with a row for each item in your grid's store. When formatted
-* with appropriate CSS it should look very similar to a default grid. If renderers are specified in your column
-* model, they will be used in creating the table. Override headerTpl and bodyTpl to change how the markup is generated
-*/
+ * @class Ext.ux.Printer.GridPanelRenderer
+ * @extends Ext.ux.Printer.BaseRenderer
+ * @author Ed Spencer
+ * Helper class to easily print the contents of a grid. Will open a
+ *  new window with a table where the first row
+ * contains the headings from your column model, and with a row for
+ *  each item in your grid's store. When formatted
+ * with appropriate CSS it should look very similar to a default grid.
+ *  If renderers are specified in your column
+ * model, they will be used in creating the table.
+ *  Override headerTpl and bodyTpl to change how the markup is generated
+ */
 Ext.ux.Printer.GridPanelRenderer = Ext.extend(Ext.ux.Printer.BaseRenderer, {
 
     /**
@@ -322,14 +343,14 @@ Ext.ux.Printer.GridPanelRenderer = Ext.extend(Ext.ux.Printer.BaseRenderer, {
     * @param {Ext.grid.GridPanel} grid The grid to print
     */
     generateBody: function(grid) {
-	console.log( "Generate body NON-GG" );
         var columns = this.getColumns(grid);
 
         //use the headerTpl and bodyTpl XTemplates to create the main XTemplate below
         var headings = this.headerTpl.apply(columns);
         var body = this.bodyTpl.apply(columns);
 
-        return String.format('<table>{0}<tpl for=".">{1}</tpl></table>', headings, body);
+        return String.format('<table>{0}<tpl for=".">{1}</tpl></table>',
+			     headings, body);
     },
 
     /**
@@ -338,13 +359,11 @@ Ext.ux.Printer.GridPanelRenderer = Ext.extend(Ext.ux.Printer.BaseRenderer, {
     * @return {Array} Data suitable for use in the XTemplate
     */
     prepareData: function(grid) {
-	console.log( "Prepare data for NON-GG" );
         // We generate an XTemplate here by using 2 intermediary
 	// XTemplates - one to create the header,
         // the other to create the body (see the escaped {} below)
         var columns = this.getColumns(grid);
 
-	console.log( "Still here" );
         //build a useable array of store data for the XTemplate
         var data = [];
         grid.store.data.each(function(item) {
@@ -354,12 +373,12 @@ Ext.ux.Printer.GridPanelRenderer = Ext.extend(Ext.ux.Printer.BaseRenderer, {
             Ext.iterate(item.data, function(key, value) {
                 Ext.each(columns, function(column) {
                     if (column.dataIndex == key) {
-                        convertedData[key] = column.renderer ? column.renderer(value, null, item) : value;
+                        convertedData[key] = column.renderer ?
+			    column.renderer(value, null, item) : value;
                         return false;
                     }
                 }, this);
             });
-	console.log( "Still here 2" );
 
             data.push(convertedData);
         });
@@ -373,7 +392,6 @@ Ext.ux.Printer.GridPanelRenderer = Ext.extend(Ext.ux.Printer.BaseRenderer, {
     * @return {Array} The array of grid columns
     */
     getColumns: function(grid) {
-	console.log( "Get columns for NON-GG" );
         var columns = [];
 
         Ext.each(grid.getColumnModel().config, function(col) {
@@ -384,10 +402,11 @@ Ext.ux.Printer.GridPanelRenderer = Ext.extend(Ext.ux.Printer.BaseRenderer, {
     },
 
     /**
-    * @property headerTpl
-    * @type Ext.XTemplate
-    * The XTemplate used to create the headings row. By default this just uses <th> elements, override to provide your own
-    */
+     * @property headerTpl
+     * @type Ext.XTemplate
+     * The XTemplate used to create the headings row. By default this
+     *  just uses <th> elements, override to provide your own
+     */
     headerTpl: new Ext.XTemplate(
     '<tr>',
       '<tpl for=".">',
@@ -397,11 +416,13 @@ Ext.ux.Printer.GridPanelRenderer = Ext.extend(Ext.ux.Printer.BaseRenderer, {
   ),
 
     /**
-    * @property bodyTpl
-    * @type Ext.XTemplate
-    * The XTemplate used to create each row. This is used inside the 'print' function to build another XTemplate, to which the data
-    * are then applied (see the escaped dataIndex attribute here - this ends up as "{dataIndex}")
-    */
+     * @property bodyTpl
+     * @type Ext.XTemplate
+     * The XTemplate used to create each row. This is used inside the
+     *  'print' function to build another XTemplate, to which the data
+     * are then applied (see the escaped dataIndex attribute here -
+     *  this ends up as "{dataIndex}")
+     */
     bodyTpl: new Ext.XTemplate(
     '<tr>',
       '<tpl for=".">',
@@ -411,11 +432,12 @@ Ext.ux.Printer.GridPanelRenderer = Ext.extend(Ext.ux.Printer.BaseRenderer, {
   )
 });
 
-/////////////////////////////////////////////////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////////////
 //Customizations.
 //http://github.com/edspencer/Ext.ux.Printer/
 
-Ext.ux.Printer.BaseRenderer.prototype.stylesheetPath = 'resources/css/Ext.ux.Printer.css';
+Ext.ux.Printer.BaseRenderer.prototype.stylesheetPath =
+    'resources/css/Ext.ux.Printer.css';
 
 Ext.override(Ext.ux.Printer.GridPanelRenderer, {
     bodyTpl: new Ext.XTemplate(
@@ -428,7 +450,8 @@ Ext.override(Ext.ux.Printer.GridPanelRenderer, {
   )
 });
 
-Ext.ux.Printer.GroupedGridPanelRenderer = Ext.extend(Ext.ux.Printer.GridPanelRenderer, {
+Ext.ux.Printer.GroupedGridPanelRenderer =
+    Ext.extend(Ext.ux.Printer.GridPanelRenderer, {
 
     generateBody: function(grid) {
         var view = grid.view;
@@ -440,11 +463,16 @@ Ext.ux.Printer.GroupedGridPanelRenderer = Ext.extend(Ext.ux.Printer.GridPanelRen
 
             this.bodyTpl.numColumns = this.getColumns(grid).length;
             var cells = this.bodyTpl.cellTpl.apply(columns);
-            this.bodyTpl.innerTemplate = String.format('<tpl for="groupRecords"><tr>{0}</tr></tpl>', cells);
+            this.bodyTpl.innerTemplate =
+		String.format('<tpl for="groupRecords"><tr>{0}</tr></tpl>', cells);
 
             if (grid.hasPlugin(Ext.grid.GroupSummary)) {
-                var summaryCells = this.bodyTpl.groupSummaryCellTemplate.apply(columns);
-                this.bodyTpl.groupSummaryTemplate = String.format('<table class=\'group-summary\'><tpl for="summaries"><tr>{0}</tr></tpl></table>', summaryCells);
+                var summaryCells =
+		    this.bodyTpl.groupSummaryCellTemplate.apply(columns);
+                this.bodyTpl.groupSummaryTemplate =
+		    String.format('<table class=\'group-summary\'><tpl ' +
+				  'for="summaries"><tr>{0}</tr></tpl></table>',
+				  summaryCells);
             } else {
                 this.bodyTpl.groupSummaryTemplate = '';
             }
@@ -452,11 +480,20 @@ Ext.ux.Printer.GroupedGridPanelRenderer = Ext.extend(Ext.ux.Printer.GridPanelRen
             var headings = this.headerTpl.apply(columns);
             var body = this.bodyTpl.apply({});
 
-            return (String.format('<table class=\'table-parent\'>{0}<tpl for=".">{1}</tpl>{2}</table>', headings, body, this.generateGridTotals(grid)));
+            return (String.format('<table class=\'table-parent\'>{0}<tpl ' +
+				  'for=".">{1}</tpl>{2}</table>',
+				  headings,
+				  body,
+				  this.generateGridTotals(grid)
+				 )
+		   );
 
         } else {
             //No grouping, use base class logic.
-            return (Ext.ux.Printer.GroupedGridPanelRenderer.superclass.generateBody.call(this, grid));
+            return (
+		Ext.ux.Printer.GroupedGridPanelRenderer.superclass.generateBody.call(
+		    this.superclass(), grid)
+	    );
         }
     },
 
@@ -485,7 +522,8 @@ Ext.ux.Printer.GroupedGridPanelRenderer = Ext.extend(Ext.ux.Printer.GridPanelRen
             var rendered = new Array(columns.length);
             for (var i = 0; i < columns.length; i++) {
                 var col = columns[i];
-                rendered[i] = { total: totals[col.actualIndex], style: columns[i].style };
+                rendered[i] = { total: totals[col.actualIndex],
+				style: columns[i].style };
             }
             return (this.gridTotalsTpl.apply(rendered));
         }
@@ -518,8 +556,10 @@ Ext.ux.Printer.GroupedGridPanelRenderer = Ext.extend(Ext.ux.Printer.GridPanelRen
 
                 {
                     numColumns: 0,
-                    cellTpl: new Ext.XTemplate('<tpl for="."><td style=\'{style}\'>\{{dataIndex}\}</td></tpl>'),
-                    groupSummaryCellTemplate: new Ext.XTemplate('<tpl for="."><td style=\'{style}\'>\{{dataIndex}\}</td></tpl>'),
+                    cellTpl: new Ext.XTemplate('<tpl for="."><td style=\'{style}\'>' +
+					       '\{{dataIndex}\}</td></tpl>'),
+                    groupSummaryCellTemplate: new Ext.XTemplate(
+			'<tpl for="."><td style=\'{style}\'>\{{dataIndex}\}</td></tpl>'),
                     innerTemplate: null,
                     groupSummaryTemplate: null,
 
@@ -541,8 +581,8 @@ Ext.ux.Printer.GroupedGridPanelRenderer = Ext.extend(Ext.ux.Printer.GridPanelRen
                 }),
 
             prepareData: function(grid) {
-	console.log( "Prepare data for GROUPING GRID!!!" );
                 var view = grid.view;
+        if (view instanceof Ext.grid.GroupingView && view.canGroup()) {
 
                 var columns = this.getColumns(grid);
                 var groups = this.getGroupedData(grid);
@@ -559,7 +599,8 @@ Ext.ux.Printer.GroupedGridPanelRenderer = Ext.extend(Ext.ux.Printer.GridPanelRen
                         Ext.iterate(item.data, function(key, value) {
                             Ext.each(columns, function(column) {
                                 if (column.dataIndex == key) {
-                                    convertedData[key] = column.renderer ? column.renderer(value, null, item) : value;
+                                    convertedData[key] = column.renderer ?
+					column.renderer(value, null, item) : value;
                                     return false;
                                 }
                             }, this);
@@ -580,7 +621,10 @@ Ext.ux.Printer.GroupedGridPanelRenderer = Ext.extend(Ext.ux.Printer.GridPanelRen
                         Ext.each(columns, function(col) {
                             var rendered = '';
                             if (col.summaryType || col.summaryRenderer) {
-                                rendered = (col.summaryRenderer || col.renderer)(data[col.name], {}, { data: data }, 0, col.actualIndex, grid.store);
+				var renderer = (col.summaryRenderer || col.renderer);
+                                rendered = renderer(data[col.name], {},
+						    { data: data }, 0, col.actualIndex,
+						    grid.store);
                             }
                             if (rendered == undefined || rendered === "") rendered = "&#160;";
 
@@ -592,10 +636,14 @@ Ext.ux.Printer.GroupedGridPanelRenderer = Ext.extend(Ext.ux.Printer.GridPanelRen
                 });
 
                 return (groups);
+        } else {
+            //No grouping, use base class logic.
+            return (Ext.ux.Printer.GroupedGridPanelRenderer.superclass.prepareData.call(
+			this.superclass(), grid));
+        }
             },
 
             getColumns: function(grid) {
-		console.log( "get columns for GROUPING GRID!!!" );
                 if (this.columns == null) {
                     var columns = [];
                     var columnData = grid.view.getColumnData();
@@ -609,7 +657,7 @@ Ext.ux.Printer.GroupedGridPanelRenderer = Ext.extend(Ext.ux.Printer.GridPanelRen
                                     renderer: col.renderer,
                                     summaryType: col.summaryType,
                                     summaryRenderer: col.summaryRenderer,
-                                    style: columnData[index].style,
+                                    style: columnData[index].style + ';vertical-align : top;',
                                     name: columnData[index].name,
                                     actualIndex: index
                                 });
@@ -630,7 +678,8 @@ Ext.ux.Printer.GroupedGridPanelRenderer = Ext.extend(Ext.ux.Printer.GridPanelRen
                     colIndex = grid.colModel.findColumnIndex(groupField),
                     cfg = grid.colModel.config[colIndex],
                     groupRenderer = cfg.groupRenderer || cfg.renderer,
-                    prefix = view.showGroupName ? (cfg.groupName || cfg.header) + ': ' : '',
+                    prefix = view.showGroupName ?
+		       (cfg.groupName || cfg.header) + ': ' : '',
                     groups = [],
                     curGroup, i, len, gid;
 
@@ -639,7 +688,8 @@ Ext.ux.Printer.GroupedGridPanelRenderer = Ext.extend(Ext.ux.Printer.GridPanelRen
                         r = rs[i],
                         gvalue = r.data[groupField];
 
-                    g = view.getGroup(gvalue, r, groupRenderer, rowIndex, colIndex, ds);
+                    g = view.getGroup(gvalue, r, groupRenderer,
+				      rowIndex, colIndex, ds);
                     if (!curGroup || curGroup.group != g) {
                         gid = view.constructId(gvalue, groupField, colIndex);
                         curGroup = {
@@ -662,7 +712,8 @@ Ext.ux.Printer.GroupedGridPanelRenderer = Ext.extend(Ext.ux.Printer.GridPanelRen
         });
     }
 });
-Ext.ux.Printer.registerRenderer('grid', Ext.ux.Printer.GroupedGridPanelRenderer);
+Ext.ux.Printer.registerRenderer(
+    'grid', Ext.ux.Printer.GroupedGridPanelRenderer);
 
 //Utility Methods, not part of the Printer itself.
 Ext.Component.prototype.getPluginByType = function(constructorFn) {

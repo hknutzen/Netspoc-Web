@@ -262,15 +262,15 @@ sub get_services_and_rules {
     my $services = load_json('services');
     my $data = [];
     my $param_services = [ split ",", $srv_list ];
-
+    $disp_prop ||= 'ip';
+    
     # Untaint display property.
     my %allowed = (
 	name => 1,
 	ip   => 1
 	);
-    if ( not $allowed{$disp_prop} ) {
-	$disp_prop = 'ip';
-    }
+    abort "Unknow display property $disp_prop"
+	unless $allowed{$disp_prop};
 
     # Untaint services passed as params by intersecting
     # with known service-names from json-data.
@@ -281,7 +281,6 @@ sub get_services_and_rules {
     for my $sname ( @{$service_names} ) {
 	my $rules = get_rules_for_owner_and_service( $owner, $sname, $disp_prop );
 	my $users = get_users_for_owner_and_service( $owner, $sname );
-	next SERVICE unless scalar( @$users );
 	my $user_props = [];
 	if ( $expand_users ) {
 	    map { push @$user_props, $_->{$disp_prop} } @$users;
