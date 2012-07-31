@@ -4,6 +4,62 @@ Ext.ns( "NetspocManager" );
 
 Ext.QuickTips.init();
 
+// This is a workaround for a bug that was supposed to be fixed
+// long ago in ExtJs 3.1.1, but it has not been fixed, as it seems.
+// Without this workaround we get an error message on closing
+// the window that displays current services of policylist.
+// Error: this.config[i].destroy is not a function
+// Forum post: http://www.sencha.com/forum/showthread.php?91686-FIXED-547-3.1.1-ColumnModel-setConfig%28%29-gt-this.config-i-.destroy-not-a-function
+
+Ext.override(Ext.grid.ColumnModel, {
+    // private
+    destroyConfig: function() {
+        for (var i = 0, len = this.config.length; i < len; i++) {
+            Ext.destroy(this.config[i]);
+        }
+    },
+
+    destroy : function() {
+        this.destroyConfig();
+        this.purgeListeners();
+    },
+    
+    setConfig: function(config, initial) {
+        var i, c, len;
+        if (!initial) { // cleanup
+            delete this.totalWidth;
+            this.destroyConfig();
+        }
+
+        // backward compatibility
+        this.defaults = Ext.apply({
+            width: this.defaultWidth,
+            sortable: this.defaultSortable
+        }, this.defaults);
+
+        this.config = config;
+        this.lookup = {};
+
+        for (i = 0, len = config.length; i < len; i++) {
+            c = Ext.applyIf(config[i], this.defaults);
+            // if no id, create one using column's ordinal position
+            if (Ext.isEmpty(c.id)) {
+                c.id = i;
+            }
+            if (!c.isColumn) {
+                var Cls = Ext.grid.Column.types[c.xtype || 'gridcolumn'];
+                c = new Cls(c);
+                config[i] = c;
+            }
+            this.lookup[c.id] = c;
+        }
+        if (!initial) {
+            this.fireEvent('configchange', this);
+        }
+    }
+});
+
+
 // Store state of currently selected owner and history.
 // - owner is a string
 // - history is an object { policy : .., date : .., time : .., current : ..}
