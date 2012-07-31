@@ -401,8 +401,19 @@ NetspocManager.PolicyManager = Ext.extend(
 
 	    // Handle multiple owners.
  	    var owner = selectedPolicy.get( 'owner' );
-	    // Hide trigger button if only one owner available.
-	    Ext.getCmp("trigger").setHideTrigger(owner.indexOf(',') == -1);
+            var trigger = Ext.getCmp("trigger");
+            if (owner.indexOf(',') == -1) {
+	        // Hide trigger button if only one owner available.
+	        trigger.setHideTrigger(true);
+                trigger.el.dom.style.backgroundColor = "#FFFFFF";
+            }
+            else {
+	        // Multiple owners available.
+                trigger.setHideTrigger(false);
+                // Give a visual hint in case of multiple owners.
+                // This paints a coloured line below the text.
+                trigger.el.dom.style.backgroundColor = "#FFC0C0";
+            }
 	    // Show emails for first owner.
 	    this.onTriggerClick();
 

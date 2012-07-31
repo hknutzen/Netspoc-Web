@@ -1,0 +1,13 @@
+To: [% email %]
+Subject: Policy-Web: Diff für [% owner %], [% new_ver %]
+Content-Type: text/plain; charset=UTF-8
+
+(+): etwas wurde hinzugefügt
+(-): etwas wurde entfernt
+(!): etwas wurde geändert
+ ➔ : trennt alten von neuem Wert
+
+Unterschiede für den Verantwortungsbereich [% owner %]
+zwischen [% old_ver %] und [% new_ver %].
+
+[% diff %]

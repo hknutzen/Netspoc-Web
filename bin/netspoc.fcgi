@@ -11,24 +11,15 @@ use CGI::Session::Driver::file;
 use Digest::MD5 qw/md5_hex/;
 use String::MkPasswd qw(mkpasswd);
 use Encode;
-#use Data::Dumper;
 
 use FindBin;
 use lib $FindBin::Bin;
+use Load_Config;
+use User_Store;
+use Template;
+use JSON_Cache;
 use Policy_Diff;
 
-# Exportierte Funktionen
-# - sub load_json_version($path, $version)
-# - sub list_all_owners($version)
-use JSON_Cache;
-
-
-# Input from template files is encoded in utf8.
-# Output is explicitly sent as utf8.
-use open IN => ':utf8';
-
-my $VERSION = ( split ' ',
- '$Id$' )[2];
 
 sub usage {
     die "Usage: $0 CONFIG [:PORT | 0 [#PROC]]\n";
@@ -42,23 +33,6 @@ my $nproc  = shift @ARGV;
 $listen and ($listen =~ /^(?:[:]\d+|0)$/ or usage());
 $nproc and ($nproc =~/^\d+$/ or usage());
 
-$CGI::Session::Driver::file::FileName = "%s";
-
-# Valid config options.
-my %conf_keys = map { ($_ => 1) } 
-qw(
-   error_page
-   netspoc_data
-   noreply_address
-   password_dir
-   sendmail_command
-   session_dir
-   show_passwd_template
-   verify_fail_template
-   verify_mail_template
-   verify_ok_template
-   );
-
 sub abort {
     my ($msg) = @_;
     die "$msg\n";
@@ -67,16 +41,6 @@ sub abort {
 sub internal_err {
     my ($msg) = @_;
     abort "internal: $msg";
-}
-
-sub say {
-    my ($msg) = @_;
-    print "$msg\n";
-}
-
-sub errsay {
-    my ($msg) = @_;
-    print STDERR "$msg\n";
 }
 
 sub intersect {
@@ -96,23 +60,21 @@ sub intersect {
     }
     return [ keys %$result ];
 }
-    
-my $config;
-sub load_config {
-    open( my $fh, $conf_file ) or internal_err "Can't open $conf_file: $!";
-    {
-	local $/ = undef;
-	$config = from_json(  <$fh>, { relaxed  => 1 } );
-    }    
-    my %required;
-    for my $key (keys %conf_keys) {
-        next if $conf_keys{$key} eq 'optional';
-        defined $config->{$key} or abort "Missing key '$key' in $conf_file";
+  
+# Delete an element from an array reference.
+# Return 1 if found, 0 otherwise.
+sub aref_delete( $$ ) {
+    my ($aref, $elt) = @_;
+    for (my $i = 0 ; $i < @$aref ; $i++) {
+        if ($aref->[$i] eq $elt) {
+            splice @$aref, $i, 1;
+            return 1;
+        }
     }
-    for my $key (keys %$config) {
-        $conf_keys{$key} or abort("Invalid key '$key' in $conf_file");
-    }
+    return 0;
 }
+  
+my $config;
 
 sub get_policy {
 
@@ -169,6 +131,10 @@ sub get_history {
     return \@result;
 }
 
+sub current_policy {
+    get_policy()->[0]->{policy};
+}
+
 my $selected_history;
 sub select_history {
     my ($cgi, $history_needed) = @_;
@@ -181,7 +147,7 @@ sub select_history {
     # Read current version tag from current/POLICY.
     else {
 	$history_needed and abort "Missing parameter 'history'";
-	$selected_history = get_policy()->[0]->{policy};
+	$selected_history = current_policy();
     }
 }
 
@@ -190,6 +156,12 @@ my $cache;
 sub load_json {
     my ($path) = @_;
     $cache->load_json_version($selected_history, $path);
+}
+
+sub load_current_json {
+    my ($path) = @_;
+    my $current_policy = current_policy();
+    $cache->load_json_version($current_policy, $path);
 }
 
 sub get_objects {
@@ -650,6 +622,43 @@ sub get_diff {
           @{ $convert->($changed) } ];
 }
 
+sub get_diff_mail {
+    my ($cgi, $session) = @_;
+    my $owner = $cgi->param('active_owner');
+    my $email = $session->param('email');
+    my $store = User_Store::new($config, $email);
+    my $aref  = $store->param('send_diff') || [];
+    return([{ send => 
+                     (grep { $_ eq $owner } @$aref) 
+                   ? JSON::true 
+                   : JSON::false }]);
+}
+
+sub set_diff_mail {
+    my ($cgi, $session) = @_;
+    validate_owner($cgi, $session, 1);
+    my $owner = $cgi->param('active_owner');
+    my $send  = $cgi->param('send');
+    my $email = $session->param('email');
+    my $store = User_Store::new($config, $email);
+    my $aref = $store->param('send_diff') || [];
+    my $changed;
+
+    # Javascript truth value is coded as string, because it is transferred
+    # as parameter and not as JSON data.
+    if ($send eq 'true') {
+        if (! grep { $_ eq $owner } @$aref) {
+            push(@$aref, $owner);
+            $changed = 1;
+        }
+    }
+    else {
+        $changed = aref_delete($aref, $owner);
+    }
+    $store->param('send_diff', $aref) if $changed;
+    return([]);
+}
+
 ####################################################################
 # Save session data
 ####################################################################
@@ -663,6 +672,7 @@ sub set_session_data {
 	my $val = $cgi->param($param);
 	$session->param($param, $val);
     }
+    $session->flush();
     return [];
 }
 
@@ -737,10 +747,10 @@ sub get_substituted_html {
 
 sub send_verification_mail {
     my ($email, $url, $ip) = @_;
-    my $text = read_template($config->{verify_mail_template});
-    $text = process_template($text, { email => $email, 
-				      url => $url, 
-				      ip => $ip });
+    my $text = Template::get($config->{verify_mail_template},
+                             { email => $email, 
+                               url => $url, 
+                               ip => $ip });
     my $sendmail = $config->{sendmail_command};
 
     # -t: read recipient address from mail text
@@ -752,28 +762,19 @@ sub send_verification_mail {
     close $mail or warn "Can't close $sendmail: $!\n";
 }
 
-# Password is stored with CGI::Session using email as ID.
-sub get_user_store {
-    my ($email) = @_;
-    new CGI::Session ('driver:file;id:static', $email, 
-		      { Directory=> $config->{password_dir} } 
-		      ) 
-	or abort(CGI::Session->errstr());
-			  
-}
-
 # Get / set password for user.
 # New password is already encrypted in sub register below.
 sub store_password {
     my ($email, $pass) = @_;
-    my $pass_store = get_user_store($email);
-    $pass_store->param('pass', $pass);
+    my $store = User_Store::new($config, $email);
+    $store->param('pass', $pass);
+    $store->flush();
 }
 
 sub check_password  {
     my ($email, $pass) = @_;
-    my $pass_store = get_user_store($email);
-    $pass_store->param('pass') eq md5_hex($pass);
+    my $store = User_Store::new($config, $email);
+    $store->param('pass') eq md5_hex($pass);
 }
 
 sub register {
@@ -792,13 +793,14 @@ sub register {
     my $reg_data = { user => $email, pass => md5_hex($pass), token => $token };
     $session->expire('register', '1d');
     $session->param('register', $reg_data);
+    $session->flush();
     my $url = "$base_url/verify?email=$email&token=$token";
 
     # Send remote address to the recipient to allow tracking of abuse.
     my $ip = $cgi->remote_addr();
     set_attack($email);
     send_verification_mail ($email, $url, $ip);
-    return get_substituted_html($config->{show_passwd_template},
+    return Template::get($config->{show_passwd_template},
 				{ pass => $cgi->escapeHTML($pass) });
 }
 
@@ -813,10 +815,11 @@ sub verify {
     {
 	store_password($email, $reg_data->{pass});
 	$session->clear('register');
-	return get_substituted_html($config->{verify_ok_template}, {})
+        $session->flush();
+	return Template::get($config->{verify_ok_template}, {})
     }
     else {
-	return get_substituted_html($config->{verify_fail_template}, {});
+	return Template::get($config->{verify_fail_template}, {});
     }
 }					 
     
@@ -827,18 +830,19 @@ sub verify {
 # Wait for 10, 20, .., 300 seconds after submitting wrong password.
 sub set_attack {
     my ($email) = @_;
-    my $store = get_user_store($email);
+    my $store = User_Store::new($config, $email);
     my $wait = $store->param('login_wait') || 5;
     $wait *= 2;
     $wait = 300 if $wait > 300;
     $store->param('login_wait', $wait);
     $store->param('failed_time', time());
+    $store->flush();
     $wait;
 }
 
 sub check_attack {
     my ($email) = @_;
-    my $store = get_user_store($email);
+    my $store = User_Store::new($config, $email);
     my $wait = $store->param('login_wait');
     return if not $wait;
     my $remain = $store->param('failed_time') + $wait - time();
@@ -849,8 +853,9 @@ sub check_attack {
 
 sub clear_attack {
     my ($email) = @_;
-    my $store = get_user_store($email);
+    my $store = User_Store::new($config, $email);
     $store->clear('login_wait');
+    $store->flush();
 }
 
 sub login {
@@ -872,6 +877,7 @@ sub login {
     $session->clear('user');		# Remove old, now unused param.
     $session->expire('logged_in', '60m');
     $session->param('logged_in', 1);
+    $session->flush();
     return $app_url;
 }
 
@@ -887,9 +893,9 @@ sub validate_owner {
     if (my $active_owner = $cgi->param('active_owner')) {
 	$owner_needed or abort abort "Must not send parameter 'active_owner'";
 	my $email = $session->param('email');
-	my $email2owners = load_json("email");
+	my $email2owners = load_current_json('email');
 	grep { $active_owner eq $_ } @{ $email2owners->{$email} } or
-	    abort "Invalid owner: $active_owner";
+	    abort "User $email isn't allowed to read owner $active_owner";
     } 
     else {
 	$owner_needed and abort "Missing parameter 'active_owner'";
@@ -899,6 +905,7 @@ sub validate_owner {
 sub logout {
     my ($cgi, $session) = @_;
     $session->clear('logged_in');
+    $session->flush();
     return [];
 }
 
@@ -955,6 +962,8 @@ my %path2sub =
      get_services_owners_and_admins => [
 	 \&get_services_owners_and_admins,{ owner => 1, add_success => 1, } ],
      get_diff      => [ \&get_diff,      { owner => 1, } ],
+     get_diff_mail => [ \&get_diff_mail, { owner => 1, add_success => 1, } ],
+     set_diff_mail => [ \&set_diff_mail, { owner => 1, add_success => 1, } ],
       ); 
 
 sub handle_request {
@@ -964,6 +973,7 @@ sub handle_request {
 
     # Catch errors.
     eval {
+        $CGI::Session::Driver::file::FileName = "%s";
 	my $session = CGI::Session->load("driver:file", $cgi,
 					 { Directory => 
 					       $config->{session_dir} }
@@ -977,9 +987,16 @@ sub handle_request {
 	    if ($flags->{create_cookie}) {
 		$session->new();
 	    }
-	    else {
-		die "Cookies must be activated\n";
+            elsif ($flags->{anon}) {
+		abort "Cookies must be activated";
 	    }
+
+            # This could happen if the user calls the application URL
+            # directly, bypassing the login page.
+            # This error message triggers a redirect to the login page.
+            else {
+                abort "Login required";
+            }
 	}
 	select_history($cgi, $flags->{owner});
 	validate_owner($cgi, $session, $flags->{owner});
@@ -1032,11 +1049,11 @@ sub handle_request {
 				-type    => 'text/html',
 				-charset => 'utf-8',
 				-cookie => $cookie);
-	    print get_substituted_html($config->{error_page}, {msg => $msg});
+	    print Template::get($config->{error_page}, {msg => $msg});
 	}
 	else
 	{
-	    my $result = { success => JSON::false, msg => $msg };
+            my $result = { success => JSON::false, msg => $msg };
 	    print $cgi->header( -status  => 500,
 				-type    => 'text/x-json',
 				-charset => 'utf-8', );
@@ -1095,7 +1112,7 @@ sub run {
 # Start server
 ####################################################################
 
-load_config();
+$config = Load_Config::load($conf_file);
 $cache = JSON_Cache->new(netspoc_data => $config->{netspoc_data},
 			 max_versions => 8);
 

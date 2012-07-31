@@ -44,6 +44,9 @@ NetspocManager.DiffManager = Ext.extend(
                     var appstate = NetspocManager.appstate;
                     var active_owner = appstate.getOwner();
                     var history = appstate.getHistory();
+                    if (node.id === 'none') {
+                        return false;
+                    }
                     loader.baseParams.active_owner = active_owner;
                     loader.baseParams.history = history;
                     node.setText('');
@@ -59,7 +62,7 @@ NetspocManager.DiffManager = Ext.extend(
         },
 
         root: {
-            text: '',
+            text: 'Bitte Stand auswählen in "Vergleiche mit".',
             id: 'none'
         },
 
@@ -67,8 +70,24 @@ NetspocManager.DiffManager = Ext.extend(
             var appstate = NetspocManager.appstate;
             var store = Ext.StoreMgr.get('historyStore');
             var combo = this.buildHistoryCombo(store);
+            var checkbox = this.buildDiffMailCheckBox();
+            this.loadDiffMailCheckBox(checkbox);
             this.combo = combo;
-            this.tbar =  [ 'Vergleiche mit', combo ],
+            this.tbar =  [ 'Vergleiche mit', 
+                           combo,
+                           ' ',
+                           {
+                               xtype   : 'button',
+                               text    : 'Diff per Mail senden',
+                               handleMouseEvents : false,
+                               tooltip : 
+                               'Vergleicht am Ende eines Tages' +
+                                   ' den aktuellen Stand ' +
+                                   ' mit dem Stand des Vortags' +
+                                   ' und sendet Ihnen bei Änderungen eine Mail.'
+                           },
+                           checkbox
+                         ],
             NetspocManager.DiffManager.
                 superclass.initComponent.call(this);
             appstate.addListener(
@@ -78,7 +97,9 @@ NetspocManager.DiffManager = Ext.extend(
                     // Only direct childs, no animation.
                     node.collapse(false, false);
                     node.setText('');
-                    this.combo.setValue('');
+                    node.setId('none');
+                    combo.setValue('');
+                    this.loadDiffMailCheckBox(checkbox);
                 }, this);                    
         },
 
@@ -133,6 +154,42 @@ NetspocManager.DiffManager = Ext.extend(
                     }
                 }
             );
+        },
+        buildDiffMailCheckBox : function () {
+            var checkbox = Ext.create( { xtype    : 'checkbox' } );
+            checkbox.on('check', function (checkbox, checked) {
+                // Don't handle initial event from setValue above.
+                if (! checkbox.send_event ) {
+                    return;
+                }
+	        var store = new NetspocWeb.store.NetspocState(
+		    {
+		        proxyurl : 'set_diff_mail',
+		        fields     : [],
+		        autoDestroy: true
+		    }
+	        );
+	        store.load({ params : { send : checked } });
+            });
+            return checkbox;
+        },
+        loadDiffMailCheckBox : function (checkbox) {
+	    var store = new NetspocWeb.store.NetspocState(
+		{
+		    proxyurl : 'get_diff_mail',
+		    fields     : [ 'send' ],
+		    autoDestroy: true
+		}
+	    );
+            checkbox.send_event = false;
+	    store.load({ 
+                scope    : this,
+		callback : function(records, options, success) {
+                    var result = records[0].get('send');
+                    checkbox.setValue(result);
+                    checkbox.send_event = true;
+                }
+            });
         }
     }
 );

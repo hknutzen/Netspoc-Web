@@ -38,7 +38,7 @@ for my $aref (values %$email2owners) {
 # Vergleiche Dateien für jeden Owner.
 for my $owner (sort keys %owners) {
     my $changes = Policy_Diff::compare($cache, $old_ver, $new_ver, $owner);
-    if ($changes && keys %$changes) {
+    if ($changes) {
         print "$owner\n";
     }
 }

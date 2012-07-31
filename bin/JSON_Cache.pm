@@ -10,6 +10,10 @@ use open qw(:std :utf8);
 our $VERSION = ( split ' ',
  '$Id$' )[2];
 
+
+# Exported method
+# - sub load_json_version($path, $version)
+
 # Creates a new JSON_Cache object.
 #
 # Store data of file or RCS revision in memory.
@@ -125,29 +129,32 @@ sub load_json_version {
 	my $fh;
 	my $dir = $self->{netspoc_data};
 
-	# Check out from RCS revision of some date.
-	if ($version =~ /^\d\d\d\d-\d\d-\d\d$/) {
-	    my $cmd = "co -q -p -d'$version 23:59' -zLT $dir/RCS/$path,v";
-	    $cmd = Encode::encode('UTF-8', $cmd);
-	    open ($fh, '-|', $cmd) or die "Can't open $cmd: $!\n";
-	}
+        # Catch errors rcs/file/JSON errors, if old or new version
+        # doesn't exist or JSON file is empty.
+        eval {
 
-	# Get selected policy from today.
-	elsif ($version =~ /^p\d{1,8}$/) {
-	    my $real_path = "$dir/$version/$path";
-	    $real_path = Encode::encode('UTF-8', $real_path);
-	    open ($fh, '<', $real_path) or die "Can't open $real_path\n";
-	}
-	else {
-	    croak "Internal: Invalid version requested";
-	}
-	{
-	    local $/ = undef;
+            # Check out from RCS revision of some date.
+            if ($version =~ /^\d\d\d\d-\d\d-\d\d$/) {
+                my $cmd = "co -q -p -d'$version 23:59' -zLT $dir/RCS/$path,v";
+                $cmd = Encode::encode('UTF-8', $cmd);
+                open ($fh, '-|', $cmd) or die "Can't open $cmd: $!\n";
+            }
 
-            # Ignore JSON error if input was empty.
-	    $data = eval { from_json( <$fh> ) };
-	}
-	close($fh);
+            # Get selected policy from today.
+            elsif ($version =~ /^p\d{1,8}$/) {
+                my $real_path = "$dir/$version/$path";
+                $real_path = Encode::encode('UTF-8', $real_path);
+                open ($fh, '<', $real_path) or die "Can't open $real_path\n";
+            }
+            else {
+                die "Internal: Invalid version requested";
+            }
+            {
+                local $/ = undef;
+                $data = from_json( <$fh> );
+            }
+            close($fh);
+        };
 	$data = $self->postprocess_json($path, $data);
 	$self->{cache}->{$version}->{$path} = $data;
     }

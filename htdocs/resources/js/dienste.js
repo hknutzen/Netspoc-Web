@@ -160,7 +160,12 @@ NetspocManager.workspace = function () {
 			     // Owner was never selected, 
 			     // check number of available owners.
 			     else {
-				 var store = Ext.create(this.buildOwnersStore());
+				 var store = 
+                                     Ext.create(
+                                         this.buildOwnersStore( 
+                                             { autoLoad : true }
+                                         )
+                                     );
 				 store.load({ callback : this.onOwnerLoaded,
 					      scope    : this,
 					      store    : store
@@ -206,14 +211,19 @@ NetspocManager.workspace = function () {
  		).show();
 	    }
 	},
-	buildOwnersStore : function() {
+	buildOwnersStore : function(options) {
 	    var config =
 		{
 		    xtype      : 'netspocstore',
+                    autoLoad   : true,
 		    proxyurl   : 'get_owners',
 		    autoDestroy: true,
-		    fields     : [ 'name', 'id' ]
+		    sortInfo   : { field: 'name', direction: "ASC" },
+		    fields     : [ { name : 'name', sortType : 'asUCString' } ]
 		};
+            if (options) {
+                config = Ext.apply(config, options);
+            }
 	    return config;
 	},
 	buildOwnerCombo : function(store) {
@@ -222,14 +232,17 @@ NetspocManager.workspace = function () {
 		id             : 'cbOwnerId',
 		forceSelection : true, 
 		autoselect     : true,
-		editable       : false,
+		editable       : true,
 		allowblank     : false,
+                selectOnFocus  : true,
+                typeAhead      : true,
+                minChars       : 1,
 		displayField   : 'name',
 		valueField     : 'name',
 		loadingText    : 'Abfrage l&auml;uft ...',
-		mode           : 'remote',
-		triggerAction  : 'all',
+		mode           : 'local',
 		store          : store,
+		triggerAction  : 'all',
 		listWidth      : 400,
 
 		// Show active owner.

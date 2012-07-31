@@ -46,7 +46,7 @@ sub diff {
     my $type = ref($old);
     if (not $type) {
 	if ($old ne $new) {
-            # Use unicode arrow.
+            # Use arrow from unicodeblock Dingbats.
 	    $result = "$old \N{U+2794} $new";
 	}
     }
@@ -229,9 +229,11 @@ sub compare {
     }
 
     # Change result: {service_list}->{$key} to {"service_list $key"}
-    if (my $hash = delete $result->{service_lists}) {
-        for my $key (keys %$hash) {
-            $result->{"service_lists $key"} = $hash->{$key};
+    if ($result) {
+        if (my $hash = delete $result->{service_lists}) {
+            for my $key (keys %$hash) {
+                $result->{"service_lists $key"} = $hash->{$key};
+            }
         }
     }
 
