@@ -269,10 +269,12 @@ NetspocWeb.window.PrintWindow = Ext.extend(
 					    var disp_prop    = 'ip';
 					    Ext.each( checked,
 						      function( cb, index ) {
-							  if ( cb.name === 'cb-exp-users' ) {
+							  if ( cb.name ===
+							       'cb-exp-users' ) {
 								   expand_users = 1;
 							  }
-							  else if ( cb.name === 'cb-show-names' ) {
+							  else if ( cb.name ===
+								    'cb-show-names' ) {
 							      disp_prop = 'name';
 							  }
 							  else { return; }
@@ -309,8 +311,10 @@ NetspocWeb.window.PrintWindow = Ext.extend(
 				    Ext.ux.Printer.print( grid );
 				}
 			    },
-			    '->',
-			    additional_elements
+			    ' ',
+			    cb_group
+			    //'->',
+			    //additional_elements
 			];
 
 			// Create GridPanel with or without grouping

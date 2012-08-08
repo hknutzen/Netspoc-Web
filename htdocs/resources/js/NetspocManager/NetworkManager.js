@@ -199,6 +199,19 @@ NetspocManager.NetworkManager = Ext.extend(
 	    if ( !choose_networks_wnd ) {
 		choose_networks_wnd = this.createNetworkChooserWindow();
 	    }
+	    // Always reset store-param 'chosen_networks', so that
+	    // all networks are shown.
+	    var grids = choose_networks_wnd.findByType( 'grid' );
+	    var grid  = grids[0];
+	    if ( grid ) {
+		var store = grid.getStore();
+		store.setBaseParam( 'chosen_networks', '' );
+		store.reload();
+	    }
+	    else {
+		// ToDo: we should abort with an error here.
+		return;
+	    }
 	    choose_networks_wnd.show();
 	},
 
@@ -334,7 +347,6 @@ NetspocManager.NetworkManager = Ext.extend(
 	    if ( selection_count === store_count || selection_count == 0 ) {
 		// Reset button to "Eigene Netze".
 		nm.setOwnNetworksButton( top_card, 'default' );
-		sel = [];
 	    }
 	    else if ( selection_count > 0 ) {
 		// Give visual feedback to user to indicate
