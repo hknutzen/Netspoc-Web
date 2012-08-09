@@ -311,10 +311,8 @@ NetspocWeb.window.PrintWindow = Ext.extend(
 				    Ext.ux.Printer.print( grid );
 				}
 			    },
-			    ' ',
-			    cb_group
-			    //'->',
-			    //additional_elements
+			    '->',
+			    additional_elements
 			];
 
 			// Create GridPanel with or without grouping
