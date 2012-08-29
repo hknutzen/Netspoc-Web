@@ -23,3 +23,17 @@ RGB 138-145-153
 .red-button {
     background-color : #e96e6e;
 }
+
+.print-services-and-rules {
+    background-image : url( "../../images/services_and_rules_expanded_users.png" ) !important;
+}
+.print-services-only {
+    background-image : url( "../../images/services_only.png" ) !important;
+}
+.print-services-owner-admins {
+    background-image : url( "../../images/services_owners_and_admins.png" ) !important;
+}
+.print-owners-and-services {
+    background-image : url( "../../images/owners_and_services.png" ) !important;
+}
+

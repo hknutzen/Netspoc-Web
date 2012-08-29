@@ -12,6 +12,7 @@ Ext.ns("NetspocManager");
  **/
 
 var search_window;
+var print_window;
 
 NetspocManager.PolicyManager = Ext.extend(
     Ext.Container,
@@ -99,7 +100,10 @@ NetspocManager.PolicyManager = Ext.extend(
                     },
 		    '->',
 		    {
-			 xtype : 'printbutton'
+			iconCls : 'icon-eye',
+			tooltip : 'Weitere (druckbare) Ansichten öffnen',
+			scope   : this,
+			handler : this.displayPrintWindow
 		    }
 		]
 	    };
@@ -115,9 +119,16 @@ NetspocManager.PolicyManager = Ext.extend(
 	    if ( params ) {
 		keep_front = params.keep_front;
 	    }
-	    
 	    if ( search_window && !keep_front ) {
 		search_window.hide();
+	    }
+	    if ( print_window ) {
+		print_window.hide();
+		// Find services-and-rules-window and close it.
+		var wnd = Ext.WindowMgr.get( 'srvRulesWndId' );
+		if ( wnd ) {
+		    wnd.close();
+		}
 	    }
 	    if ( relation ) {
 		params = { relation : relation };
@@ -133,6 +144,21 @@ NetspocManager.PolicyManager = Ext.extend(
 	    else {
 		search_window = new NetspocWeb.window.SearchFormWindow();
  		search_window.show();
+	    }
+	},
+
+	displayPrintWindow :  function( button, event ) {
+	    // Find services-and-rules-window and close it.
+	    var wnd = Ext.WindowMgr.get( 'srvRulesWndId' );
+	    if ( wnd ) {
+		wnd.close();
+	    }
+	    if ( Ext.isObject( print_window ) ) {
+		print_window.show();
+	    }
+	    else {
+		print_window = new NetspocWeb.window.PrintWindow();
+ 		print_window.show();
 	    }
 	},
 

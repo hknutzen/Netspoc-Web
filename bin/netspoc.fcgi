@@ -43,6 +43,11 @@ sub internal_err {
     abort "internal: $msg";
 }
 
+sub errsay {
+    my $msg = shift;
+    print STDERR "$msg\n";
+}
+
 sub intersect {
     my @non_compl = @_;
     my $result;
@@ -223,16 +228,105 @@ sub get_hosts {
     return get_nat_obj_list($child_names, $owner);
 }
 
+sub get_services_and_rules {
+    my ($cgi, $session) = @_;
+    my $owner        = $cgi->param('active_owner');
+    my $srv_list     = $cgi->param('services');
+    my $disp_prop    = $cgi->param('display_property');
+    my $expand_users = $cgi->param('expand_users');
+    my $lists    = load_json("owner/$owner/service_lists");
+    my $assets   = load_json("owner/$owner/assets");
+    my $services = load_json('services');
+    my $data = [];
+    my $param_services = [ split ",", $srv_list ];
+    $disp_prop ||= 'ip';
+    
+    # Untaint display property.
+    my %allowed = (
+	name => 1,
+	ip   => 1
+	);
+    abort "Unknown display property $disp_prop"
+	unless $allowed{$disp_prop};
+
+    # Untaint services passed as params by intersecting
+    # with known service-names from json-data.
+    my $service_names = intersect( [ keys %$services ],
+				   $param_services );
+
+  SERVICE:
+    for my $sname ( @{$service_names} ) {
+	my $rules = get_rules_for_owner_and_service( $owner, $sname, $disp_prop );
+	my $users = get_users_for_owner_and_service( $owner, $sname );
+	my $user_props = [];
+	if ( $expand_users ) {
+	    map { push @$user_props, $_->{$disp_prop} } @$users;
+	}
+	else {
+	    $user_props = [ 'User' ];
+	}
+
+	for my $rule ( @$rules ) {
+	    push @$data, {
+		service => $sname,
+		action  => $rule->{action},
+		src     => $rule->{has_user} eq 'src' ?
+		    $user_props : $rule->{src},
+		dst     => $rule->{has_user} eq 'dst' ?
+		    $user_props : $rule->{dst},
+		proto   => $rule->{srv},
+	    };
+	}
+    }
+    return $data;
+}
+
+sub get_services_owners_and_admins {
+    my ($cgi, $session) = @_;
+    my $owner     = $cgi->param('active_owner');
+    my $srv_list  = $cgi->param('services');
+    my $lists     = load_json("owner/$owner/service_lists");
+    my $assets    = load_json("owner/$owner/assets");
+    my $services  = load_json('services');
+    my $param_services = [ split ",", $srv_list ];
+    my $data = [];
+
+    # Untaint services passed as params by intersecting
+    # with known service-names from json-data.
+    my $service_names = intersect( [ keys %$services ],
+				   $param_services );
+
+  SERVICE:
+    for my $srv_name ( @{$service_names} ) {
+	my $srv_owner = $services->{$srv_name}->{details}->{owner};
+
+	my $admins;
+	for my $o ( @$srv_owner ) {
+	    my $emails = load_json("owner/$o/emails");
+	    map { push @$admins, $_->{email} } @$emails;
+	}
+	push @$data, {
+	    service   => $srv_name,
+	    srv_owner => $srv_owner,
+	    admins    => $admins,
+	};
+    }
+    return $data;
+}
+
+
 ####################################################################
 # Services, rules, users
 ####################################################################
 
 sub service_list {
     my ($cgi, $session) = @_;
-    my $owner    = $cgi->param('active_owner');
-    my $relation = $cgi->param('relation');
-    my $search   = $cgi->param('search_string');
-    my $chosen   = $cgi->param('chosen_networks');
+    my $owner       = $cgi->param('active_owner');
+    my $relation    = $cgi->param('relation');
+    my $search      = $cgi->param('search_string');
+    my $chosen      = $cgi->param('chosen_networks');
+    my $search_own  = $cgi->param( 'search_own' );
+    my $search_used = $cgi->param( 'search_used' );
     my $lists    = load_json("owner/$owner/service_lists");
     my $assets   = load_json("owner/$owner/assets");
     my $services = load_json('services');
@@ -266,8 +360,10 @@ sub service_list {
 		my $dst = $rule->{dst};
 		for my $network ( @$network_names ) {
                     my %children;
-		    map { $children{$_} = 1 } @{$assets->{net2childs}->{$network}};
-		    if ( $relation && $relation eq 'user' && $users ) {
+		    map { $children{$_} = 1 }
+		        @{$assets->{net2childs}->{$network}};
+		    if ( $search_used || !$relation ||
+			 ( $relation eq 'user' && $users ) ) {
 			# Check if network or any of its contained resources
 			# can be found in user-data-structure.
 			for my $user ( @$users ) {
@@ -278,7 +374,8 @@ sub service_list {
 			    }
 			}
 		    }
-		    else {  # Only check src and dst for own services.
+		    if ( $search_own || !$relation || $relation eq 'owner' ) {
+			# Only check src and dst for own services.
 			my $src_match = grep { $_ eq $network } @$src;
 			my $dst_match = grep { $_ eq $network } @$dst;
 			if ( $src_match > 0 || $dst_match > 0 ) {
@@ -332,10 +429,10 @@ sub service_list {
 	# Reset $plist, it gets filled with search results below.
 	$plist = [];
 	my @search_in = ();
-	if ( $cgi->param( 'search_own' ) ) {
+	if ( $search_own ) {
 	    push @search_in, 'owner';
 	}
-	if ( $cgi->param( 'search_used' ) ) {
+	if ( $search_used ) {
 	    push @search_in, 'user';
 	}
 	if ( $cgi->param( 'search_visible' ) ) {
@@ -430,9 +527,9 @@ sub get_users_for_owner_and_service {
 }
 
 sub get_rules_for_owner_and_service {
-    my ( $owner, $sname ) = @_;
+    my ( $owner, $sname, $prop ) = @_;
     my $lists = load_json("owner/$owner/service_lists");
-
+    $prop ||= 'ip';
     # Check if owner is allowed to access this service.
     $lists->{hash}->{$sname} or abort "Unknown service '$sname'";
     my $services = load_json('services');
@@ -448,7 +545,7 @@ sub get_rules_for_owner_and_service {
 	my $crule = { %$rule };
 	for my $what (qw(src dst)) {
 	    $crule->{$what} = 
-		[ map((get_nat_obj($_, $no_nat_set))->{ip},
+		[ map((get_nat_obj($_, $no_nat_set))->{$prop},
 		      @{ $rule->{$what} }) ];
 	}
 	push @$crules, $crule;
@@ -869,6 +966,10 @@ my %path2sub =
      get_users     => [ \&get_users,     { owner => 1, add_success => 1, } ],
      get_networks  => [ \&get_networks,  { owner => 1, add_success => 1, } ],
      get_hosts     => [ \&get_hosts,     { owner => 1, add_success => 1, } ],
+     get_services_and_rules => [
+	 \&get_services_and_rules,       { owner => 1, add_success => 1, } ],
+     get_services_owners_and_admins => [
+	 \&get_services_owners_and_admins,{ owner => 1, add_success => 1, } ],
      get_diff      => [ \&get_diff,      { owner => 1, } ],
      get_diff_mail => [ \&get_diff_mail, { owner => 1, add_success => 1, } ],
      set_diff_mail => [ \&set_diff_mail, { owner => 1, add_success => 1, } ],

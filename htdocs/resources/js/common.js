@@ -34,3 +34,14 @@ function numerip2ip( num ) {
     }
     return d;
 }
+
+function record_names_as_csv( records ) {
+    var selected = [];
+    Ext.each( records, function (item) {
+		  selected.push( item.data.name );
+	      }
+	    );
+    var record_names = selected.join( ',');
+    return record_names;
+}
+

@@ -31,13 +31,11 @@ NetspocManager.NetworkManager = Ext.extend(
             NetspocManager.NetworkManager.
 		superclass.initComponent.call(this);
 
-	    // Listen to "ownerChanged" event.
+	    // Listen to "networksChanged" event.
             var appstate = NetspocManager.appstate;
             appstate.addListener(
                 'networksChanged', 
                 function () {
-		    // Reset possibly previously chosen networks.
-		    NetspocManager.appstate.changeNetworks( [], true );
 		    // If network-chooser-window was created before,
 		    // reload store of grid that gets 
 		    // displayed in choose-network-window.
@@ -50,11 +48,13 @@ NetspocManager.NetworkManager = Ext.extend(
                 },
 		this
 	    );                    
+	    // Listen to "ownerChanged" event.
             appstate.addListener(
                 'ownerChanged', 
                 function () {
 		    // Reset possibly previously chosen networks.
-		    NetspocManager.appstate.changeNetworks( [], true );
+		    NetspocManager.appstate.changeNetworks( '' );
+
 		    // If network-chooser-window was created before,
 		    // reload store of grid that gets 
 		    // displayed in choose-network-window.
@@ -65,6 +65,11 @@ NetspocManager.NetworkManager = Ext.extend(
 		    // Reset "Eigene Netze"-button to default.
 		    var top_card_panel = this.findParentByType( 'panel' );
 		    this.setOwnNetworksButton( top_card_panel, 'default' );
+
+		    // Clear network details view.
+		    var nrl = this.findByType( 'networkresourceslist' );
+		    var view = nrl[0];
+		    view.getStore().removeAll();
                 },
 		this
 	    );                    
@@ -192,6 +197,19 @@ NetspocManager.NetworkManager = Ext.extend(
 	    if ( !choose_networks_wnd ) {
 		choose_networks_wnd = this.createNetworkChooserWindow();
 	    }
+	    // Always reset store-param 'chosen_networks', so that
+	    // all networks are shown.
+	    var grids = choose_networks_wnd.findByType( 'grid' );
+	    var grid  = grids[0];
+	    if ( grid ) {
+		var store = grid.getStore();
+		store.setBaseParam( 'chosen_networks', '' );
+		store.reload();
+	    }
+	    else {
+		// ToDo: we should abort with an error here.
+		return;
+	    }
 	    choose_networks_wnd.show();
 	},
 
@@ -219,7 +237,12 @@ NetspocManager.NetworkManager = Ext.extend(
 		sortInfo      : { field: 'ip', direction: "ASC" },
 		fields        : [
 		    { name : 'name',   mapping : 'name'  },
-		    { name : 'ip',     mapping : 'ip'    },
+		    { name : 'ip',     mapping : 'ip',
+		      sortType : function ( value ) {
+			  var array = value.split('/');
+			  return ip2numeric( array[0] );
+		      }
+		    },
 		    { name : 'owner' , mapping : 'owner' }
 		]
 	    };
@@ -303,6 +326,7 @@ NetspocManager.NetworkManager = Ext.extend(
 	},
 
 	onChooseButtonClick : function ( button, event ) {
+	    var networks = '';
 	    var wnd  = button.findParentByType( 'window' );
 	    var grid = wnd.items.items[0];
 	    var sm   = grid.getSelectionModel();
@@ -322,17 +346,17 @@ NetspocManager.NetworkManager = Ext.extend(
 	    if ( selection_count === store_count || selection_count == 0 ) {
 		// Reset button to "Eigene Netze".
 		nm.setOwnNetworksButton( top_card, 'default' );
-		sel = [];
 	    }
 	    else if ( selection_count > 0 ) {
 		// Give visual feedback to user to indicate
 		// restricted view within area of ownership.
 		nm.setOwnNetworksButton( top_card );
+		networks = record_names_as_csv( sel );
 	    }
+	    NetspocManager.appstate.changeNetworks( networks );
 	    card.layout.setActiveItem(0);
 	    card_buttons[0].toggle( true );
 	    wnd.hide();
-	    NetspocManager.appstate.changeNetworks( sel );
 	},
 
 	activateNetworkList : function () {
