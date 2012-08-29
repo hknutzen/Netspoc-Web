@@ -43,6 +43,11 @@ sub internal_err {
     abort "internal: $msg";
 }
 
+sub errsay {
+    my $msg = shift;
+    print STDERR "$msg\n";
+}
+
 sub intersect {
     my @non_compl = @_;
     my $result;
@@ -241,7 +246,7 @@ sub get_services_and_rules {
 	name => 1,
 	ip   => 1
 	);
-    abort "Unknow display property $disp_prop"
+    abort "Unknown display property $disp_prop"
 	unless $allowed{$disp_prop};
 
     # Untaint services passed as params by intersecting
@@ -316,10 +321,12 @@ sub get_services_owners_and_admins {
 
 sub service_list {
     my ($cgi, $session) = @_;
-    my $owner    = $cgi->param('active_owner');
-    my $relation = $cgi->param('relation');
-    my $search   = $cgi->param('search_string');
-    my $chosen   = $cgi->param('chosen_networks');
+    my $owner       = $cgi->param('active_owner');
+    my $relation    = $cgi->param('relation');
+    my $search      = $cgi->param('search_string');
+    my $chosen      = $cgi->param('chosen_networks');
+    my $search_own  = $cgi->param( 'search_own' );
+    my $search_used = $cgi->param( 'search_used' );
     my $lists    = load_json("owner/$owner/service_lists");
     my $assets   = load_json("owner/$owner/assets");
     my $services = load_json('services');
@@ -355,7 +362,8 @@ sub service_list {
                     my %children;
 		    map { $children{$_} = 1 }
 		        @{$assets->{net2childs}->{$network}};
-		    if ( $relation && $relation eq 'user' && $users ) {
+		    if ( $search_used || !$relation ||
+			 ( $relation eq 'user' && $users ) ) {
 			# Check if network or any of its contained resources
 			# can be found in user-data-structure.
 			for my $user ( @$users ) {
@@ -366,7 +374,8 @@ sub service_list {
 			    }
 			}
 		    }
-		    else {  # Only check src and dst for own services.
+		    if ( $search_own || !$relation || $relation eq 'owner' ) {
+			# Only check src and dst for own services.
 			my $src_match = grep { $_ eq $network } @$src;
 			my $dst_match = grep { $_ eq $network } @$dst;
 			if ( $src_match > 0 || $dst_match > 0 ) {
@@ -420,10 +429,10 @@ sub service_list {
 	# Reset $plist, it gets filled with search results below.
 	$plist = [];
 	my @search_in = ();
-	if ( $cgi->param( 'search_own' ) ) {
+	if ( $search_own ) {
 	    push @search_in, 'owner';
 	}
-	if ( $cgi->param( 'search_used' ) ) {
+	if ( $search_used ) {
 	    push @search_in, 'user';
 	}
 	if ( $cgi->param( 'search_visible' ) ) {

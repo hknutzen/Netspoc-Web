@@ -36,8 +36,6 @@ NetspocManager.NetworkManager = Ext.extend(
             appstate.addListener(
                 'networksChanged', 
                 function () {
-		    // Reset possibly previously chosen networks.
-		    NetspocManager.appstate.changeNetworks( '', true );
 		    // If network-chooser-window was created before,
 		    // reload store of grid that gets 
 		    // displayed in choose-network-window.
@@ -328,6 +326,7 @@ NetspocManager.NetworkManager = Ext.extend(
 	},
 
 	onChooseButtonClick : function ( button, event ) {
+	    var networks = '';
 	    var wnd  = button.findParentByType( 'window' );
 	    var grid = wnd.items.items[0];
 	    var sm   = grid.getSelectionModel();
@@ -352,12 +351,12 @@ NetspocManager.NetworkManager = Ext.extend(
 		// Give visual feedback to user to indicate
 		// restricted view within area of ownership.
 		nm.setOwnNetworksButton( top_card );
+		networks = record_names_as_csv( sel );
 	    }
+	    NetspocManager.appstate.changeNetworks( networks );
 	    card.layout.setActiveItem(0);
 	    card_buttons[0].toggle( true );
 	    wnd.hide();
-	    var networks = record_names_as_csv( sel );
-	    NetspocManager.appstate.changeNetworks( networks );
 	},
 
 	activateNetworkList : function () {
