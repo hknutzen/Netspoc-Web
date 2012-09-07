@@ -825,6 +825,7 @@ sub verify {
 	store_password($email, $reg_data->{pass});
 	$session->clear('register');
         $session->flush();
+        clear_attack($email);
 	return Template::get($config->{verify_ok_template}, {})
     }
     else {
