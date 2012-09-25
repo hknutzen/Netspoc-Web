@@ -65,12 +65,13 @@ Ext.override(Ext.grid.ColumnModel, {
 // - history is an object { policy : .., date : .., time : .., current : ..}
 // This is used by netspocstatestore to set and update its baseParams.
 NetspocManager.appstate = function () {
-    var owner, history, networks;
+    var owner, owner_alias, history, networks;
     var state = new Ext.util.Observable();
     state.addEvents('changed', 'ownerChanged', 'networksChanged');
-    state.changeOwner = function (newOwner, silent) {
-	if (newOwner !== owner) {
-	    owner = newOwner;
+    state.changeOwner = function (name, alias, silent) {
+        owner_alias = alias;
+	if (name !== owner) {
+	    owner = name;
             if (! silent) {
 	        state.fireEvent('changed');
 	        state.fireEvent('ownerChanged');
@@ -102,6 +103,9 @@ NetspocManager.appstate = function () {
     };
     state.getOwner = function () {
 	return owner;
+    };
+    state.getOwnerAlias = function () {
+	return owner_alias;
     };
     state.getPolicy = function () {
         return history.policy;
@@ -145,7 +149,16 @@ NetspocManager.workspace = function () {
 		{
 		    proxyurl : 'get_owner',
 		    autoDestroy: true,
-		    fields     : [ 'name' ]
+		    fields     : [ 'name',
+                                   { name : 'alias',
+
+                                     // Take name, if no alias available.
+                                     mapping : function(node) {
+                                         return node.alias || node.name;
+                                     },
+                                     sortType : 'asUCString' 
+                                   } 
+                                 ]
 		}
 	    );
 	    store.load({ scope    : this,
@@ -154,8 +167,10 @@ NetspocManager.workspace = function () {
 
 			     // Keep already selected owner.
 			     if (success && records.length) {
-				 var new_owner = records[0].get('name');
-				 this.setOwnerState(new_owner);
+				 var owner = records[0].get('name');
+				 var alias = records[0].get('alias');
+				 this.setOwnerState({ name : owner, 
+                                                      alias : alias });
 			     }
 			     // Owner was never selected, 
 			     // check number of available owners.
@@ -182,8 +197,9 @@ NetspocManager.workspace = function () {
 	    }
 	    // Automatically select owner if only one is available.
 	    if (records.length === 1) {
-		var new_owner = records[0].get('name');
-		this.setOwner(new_owner);
+		var owner = records[0].get('name');
+		var alias = records[0].get('alias');
+		this.setOwner(owner, alias);
 	    }
 	    // Ask user to select one owner.
 	    else {
@@ -218,8 +234,15 @@ NetspocManager.workspace = function () {
                     autoLoad   : true,
 		    proxyurl   : 'get_owners',
 		    autoDestroy: true,
-		    sortInfo   : { field: 'name', direction: "ASC" },
-		    fields     : [ { name : 'name', sortType : 'asUCString' } ]
+		    sortInfo   : { field: 'alias', direction: 'ASC' },
+		    fields     : [ { name : 'name' },
+                                   { name : 'alias',
+                                     mapping : function(node) {
+                                         return node.alias || node.name;
+                                     },
+                                     sortType : 'asUCString' 
+                                   }
+                                 ]
 		};
             if (options) {
                 config = Ext.apply(config, options);
@@ -237,7 +260,7 @@ NetspocManager.workspace = function () {
                 selectOnFocus  : true,
                 typeAhead      : true,
                 minChars       : 1,
-		displayField   : 'name',
+		displayField   : 'alias',
 		valueField     : 'name',
 		loadingText    : 'Abfrage l&auml;uft ...',
 		mode           : 'local',
@@ -246,7 +269,7 @@ NetspocManager.workspace = function () {
 		listWidth      : 400,
 
 		// Show active owner.
-		value          : NetspocManager.appstate.getOwner(),
+		value          : NetspocManager.appstate.getOwnerAlias(),
 		listeners:{
 		    scope    : this,
 		    'select' : this.onOwnerChosen
@@ -257,13 +280,19 @@ NetspocManager.workspace = function () {
 	},
 	onOwnerChosen : function() {
 	    var combo = Ext.getCmp( 'cbOwnerId' );
-	    var new_owner = combo.getValue();
-	    if (NetspocManager.appstate.getOwner() === new_owner) {
+	    var owner = combo.getValue();
+            var store, alias;
+	    if (NetspocManager.appstate.getOwner() === owner) {
 		return;
 	    }
-	    this.setOwner(new_owner);
+
+            // Get alias name as well
+            store = combo.store;
+            alias = 
+                store.getAt(store.findExact('name', owner)).get('alias');
+	    this.setOwner(owner, alias);
 	},
-	setOwner : function(new_owner) {
+	setOwner : function(owner, alias) {
 	    var store =  new NetspocWeb.store.Netspoc(
 		{
 		    proxyurl : 'set',
@@ -271,26 +300,29 @@ NetspocManager.workspace = function () {
 		    autoDestroy : true
 		}
 	    );
-	    store.load({ params   : { owner : new_owner },
+	    store.load({ params   : { owner : owner },
 			 callback : this.onSetOwnerSuccess,
-			 scope    : this
+			 scope    : this,
+
+                         // private option
+                         owner    : {  name : owner, alias : alias }
 		       });
 	},
 	onSetOwnerSuccess : function(records, options, success) {
-	    var new_owner = options.params.owner;
+	    var owner_obj = options.owner;
 	    var window = Ext.getCmp( 'ownerWindow' );
 
 	    // Close window late, otherwise we get some extjs error.
 	    if (window) {
 		window.close();
 	    }
-	    this.setOwnerState(new_owner);
+	    this.setOwnerState(owner_obj);
 	},
-	setOwnerState : function(new_owner) {
+	setOwnerState : function(owner_obj) {
             // Call appstate.changeOwner later, after history has been set.
-	    this.getCurrentPolicy(new_owner);            
+	    this.getCurrentPolicy(owner_obj);            
 	},
-	getCurrentPolicy : function(new_owner) {
+	getCurrentPolicy : function(owner_obj) {
 	    var store = new NetspocWeb.store.Netspoc(
 		{
 		    proxyurl : 'get_policy',
@@ -299,20 +331,21 @@ NetspocManager.workspace = function () {
 		}
 	    );
 	    store.load({ scope    : this,
-                         // make store and owner available for callback
+                         // Make store and owner available for callback.
 			 store    : store, 
-                         owner    : new_owner,
+                         owner    : owner_obj,
 			 callback : this.onPolicyLoaded
 		       });
 	},
 	onPolicyLoaded : function(records, options, success) {
+            var owner_ob = options.owner;
 	    var record;
 	    if (success && records.length) {
 		record = records[0];
                 // Don't fire change event.
 		NetspocManager.appstate.changeHistory(record, true);
 	    }
-	    NetspocManager.appstate.changeOwner(options.owner);
+	    NetspocManager.appstate.changeOwner(owner_ob.name, owner_ob.alias);
 	    options.store.destroy();
 	    this.buildViewport();
 	},

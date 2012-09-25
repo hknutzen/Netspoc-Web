@@ -296,6 +296,7 @@ sub get_services_owners_and_admins {
     my $service_names = intersect( [ keys %$services ],
 				   $param_services );
 
+    my $owner2alias = load_json('owner2alias');
   SERVICE:
     for my $srv_name ( @{$service_names} ) {
 	my $srv_owner = $services->{$srv_name}->{details}->{owner};
@@ -307,7 +308,7 @@ sub get_services_owners_and_admins {
 	}
 	push @$data, {
 	    service   => $srv_name,
-	    srv_owner => $srv_owner,
+	    srv_owner => [ map { $owner2alias->{$_} || $_ } @$srv_owner ],
 	    admins    => $admins,
 	};
     }
@@ -506,11 +507,18 @@ sub service_list {
 	}
     }
 
+    my $owner2alias = load_json('owner2alias');
     return [ map {
 	my $hash = { name => $_, %{ $services->{$_}->{details}} };
 
-	# Convert [ owner, .. ] to "owner, .."
-	$hash->{owner} = join(',', @{ $hash->{owner} });
+	# Add alias name
+	$hash->{owner} =
+            [ map({ my $v = { name => $_ }; 
+                    if (my $a = $owner2alias->{$_}) {
+                        $v->{alias} = $a;
+                    }
+                    $v
+                  } @{ $hash->{owner} }) ];
 	$hash;
     } @$plist ];
 }
@@ -692,8 +700,13 @@ sub set_session_data {
 # Get currently selected owner.
 sub get_owner {
     my ($cgi, $session) = @_;
+    my $owner2alias = load_json('owner2alias');
     if (my $active_owner = $session->param('owner')) {
-	return [ { name => $active_owner } ];
+        my $v = { name => $active_owner };
+        if (my $a = $owner2alias->{$active_owner}) { 
+            $v->{alias} = $a; 
+        }
+	return [ $v ];
     }
     else {
 	return [];
@@ -701,11 +714,18 @@ sub get_owner {
 }
 
 # Get list of all owners available for current email.
+# Return array of hashes { name => $name, [ alias => $alias ] }
 sub get_owners {
     my ($cgi, $session) = @_;
     my $email = $session->param('email');
-    my $email2owners = load_json("email");
-    return [ map({ name => $_}, @{ $email2owners->{$email} }) ];
+    my $email2owners = load_json('email');
+    my $owner2alias = load_json('owner2alias');
+    return [ map({ my $v = { name => $_ }; 
+                   if (my $a = $owner2alias->{$_}) { 
+                       $v->{alias} = $a; 
+                   } $v 
+                 }
+                 @{ $email2owners->{$email} }) ];
 }
 
 # Get list of all emails for given owner.
