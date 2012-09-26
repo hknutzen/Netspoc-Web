@@ -181,13 +181,18 @@ sub get_no_nat_set {
 sub get_nat_obj {
     my ($obj_name, $no_nat_set) = @_;
     my $objects = get_objects();
+    my $owner2alias = load_json('owner2alias');
     my $obj = $objects->{$obj_name};
     if (my $href = $obj->{nat} and $no_nat_set) {
 	for my $tag (keys %$href) {
 	    next if $no_nat_set->{$tag};
 	    my $nat_ip = $href->{$tag};
-	    return { %$obj, ip => $nat_ip };
+	    $obj = { %$obj, ip => $nat_ip };
+            last;
 	}
+    }
+    if (my $alias = $owner2alias->{$obj->{owner}}) {
+        $obj = { %$obj, owner_alias => $alias };
     }
     return $obj;
 }

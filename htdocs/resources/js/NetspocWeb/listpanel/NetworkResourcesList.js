@@ -59,7 +59,11 @@ NetspocWeb.listpanel.NetworkResourcesList = Ext.extend(
 		      }
 		    },
 		    { name : 'name',   mapping : 'name'  },
-		    { name : 'owner' , mapping : 'owner' }
+		    { name : 'owner' , 
+                      mapping :  function (node) {
+                          return node.owner_alias || node.owner;
+                      }
+                    }
 		]
 	    };
 	}

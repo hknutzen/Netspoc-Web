@@ -243,7 +243,11 @@ NetspocManager.NetworkManager = Ext.extend(
 			  return ip2numeric( array[0] );
 		      }
 		    },
-		    { name : 'owner' , mapping : 'owner' }
+		    { name : 'owner' , 
+                      mapping : function (node) {
+                          return node.owner_alias || node.owner;
+                      } 
+                    }
 		]
 	    };
 	    

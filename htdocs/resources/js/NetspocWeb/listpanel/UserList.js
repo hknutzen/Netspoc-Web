@@ -31,7 +31,7 @@ NetspocWeb.listpanel.UserList = Ext.extend(
 		    },
 		    {
 			header    : 'Verantwortungsbereich',
-			dataIndex : 'owner',
+			dataIndex : 'owner_alias',
 			width     : .25
 		    }
 		]
@@ -63,7 +63,14 @@ NetspocWeb.listpanel.UserList = Ext.extend(
 			  }
 		      }
 		    },
-		    { name : 'owner' , mapping : 'owner' }
+                    // Not shown, but needed to select the corresponding
+                    // email addresses.
+		    { name : 'owner', mapping : 'owner' },
+                    { name : 'owner_alias', 
+                      mapping : function (node) { 
+                          return node.owner_alias || node.owner;
+                      }
+                    }
 		],
 		listeners: {
                     scope : this,
