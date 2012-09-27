@@ -26,7 +26,7 @@ function ip2numeric( dot ) {
     return ((((((+d[0])*256)+(+d[1]))*256)+(+d[2]))*256)+(+d[3]);
 }
 
-function numerip2ip( num ) {
+function numeric2ip( num ) {
     var d = num%256;
     for (var i = 3; i > 0; i--) {
 	num = Math.floor(num/256);
