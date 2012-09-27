@@ -334,7 +334,7 @@ sub service_list {
     my $plist;
 
     # Make a real copy not a reference.
-    map { $copy->{$_} = $lists->{$_} } keys %$lists;
+    my $copy = { %$lists };
 
     # Are we in restricted mode with only selected networks?
     if ( $chosen ) {
