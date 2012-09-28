@@ -14,7 +14,8 @@ Ext.ns('NetspocWeb.listpanel');
  *    only header, width; 
  *    dataindex is taken fom 'name'
  *  - fields for the store (all other attributes)
- * sortInfo : value used by store
+ * sortInfo : value is used by store
+ * doReload : values is used by store
  **/
 
 NetspocWeb.listpanel.Simple = Ext.extend(
@@ -56,6 +57,7 @@ NetspocWeb.listpanel.Simple = Ext.extend(
 		xtype         : 'netspocstatestore',
 		proxyurl      : this.proxyurl,
 		sortInfo      : this.sortInfo,
+                doReload      : this.doReload,
 		fields        : fields,
 		listeners: {
                     scope : this,
