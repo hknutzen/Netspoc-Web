@@ -250,7 +250,7 @@ sub get_services_and_rules {
 
     # Untaint services passed as params by intersecting
     # with known service-names from json-data.
-    my $service_names = intersect( [ keys %$lists ],
+    my $service_names = intersect( [ map(@$_, @{$lists}{qw(owner user visible)}) ],
 				   $param_services );
 
   SERVICE:
@@ -292,7 +292,7 @@ sub get_services_owners_and_admins {
 
     # Untaint services passed as params by intersecting
     # with known service-names from json-data.
-    my $service_names = intersect( [ keys %$lists ],
+    my $service_names = intersect( [ map(@$_, @{$lists}{qw(owner user visible)}) ],
 				   $param_services );
 
   SERVICE:
