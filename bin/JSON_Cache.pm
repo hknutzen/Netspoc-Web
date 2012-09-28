@@ -122,9 +122,9 @@ sub load_json_version {
 
     # Last access time for data of this version.
     $self->{atime}->{$version} = time();
-    my $data = $self->{cache}->{$version}->{$path};
+    my $data;
 
-    if (not $data) {
+    if (not exists $self->{cache}->{$version}->{$path}) {
 	$self->clean_cache();
 	my $fh;
 	my $dir = $self->{netspoc_data};
@@ -157,6 +157,9 @@ sub load_json_version {
         };
 	$data = $self->postprocess_json($path, $data);
 	$self->{cache}->{$version}->{$path} = $data;
+    }
+    else {
+        $data = $self->{cache}->{$version}->{$path};
     }
     return $data;
 }
