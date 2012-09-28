@@ -453,7 +453,7 @@ NetspocManager.PolicyManager = Ext.extend(
 
             var dvRules = Ext.StoreMgr.get('dvRulesStoreId');
             dvRules.removeAll();
-            var stUserDetails = Ext.StoreMgr.get('user');
+            var stUserDetails = this.findById('userListId').getStore();
             stUserDetails.removeAll();
             this.clearEmail('PolicyEmails');
             this.clearEmail('UserEmails');
@@ -461,9 +461,44 @@ NetspocManager.PolicyManager = Ext.extend(
 
         buildUserDetailsDV : function() {
             return {
-                xtype     : 'userlist',
+                xtype     : 'simplelist',
                 region    : 'center',
                 proxyurl  : 'get_users',
+                sortInfo  : { field: 'ip', direction: "ASC" },
+		fieldsInfo : [
+		    { name     : 'name'  , 
+                      header   : 'Name'
+                    },
+		    { name     : 'ip',
+		      header   : 'IP-Adressen',
+		      width    : .25,
+		      sortType : function ( value ) {
+			  var m1 = /-/;
+			  var m2 = /\//;
+			  if ( value.match(m1) ) {
+			      var array = value.split('-');
+			      return ip2numeric( array[0] );
+			  }
+			  else if ( value.match(m2) ) {
+			      var array = value.split('/');
+			      return ip2numeric( array[0] );
+			  }
+			  else {
+			      return ip2numeric( value );
+			  }
+		      }
+		    },
+                    // Not shown, but needed to select the corresponding
+                    // email addresses.
+		    { name    : 'owner' },
+                    { name    : 'owner_alias', 
+		      header  : 'Verantwortungsbereich',
+		      width   : .25,
+                      mapping : function (node) { 
+                          return node.owner_alias || node.owner;
+                      }
+                    }
+                ],
                 id        : 'userListId',
                 listeners : {
                     scope : this,
