@@ -30,7 +30,7 @@ NetspocManager.PolicyManager = Ext.extend(
             ];
             
             NetspocManager.PolicyManager.superclass.initComponent.call(this);
-            var plv = this.getComponent('policyListId');
+            var plv = Ext.getCmp('policyListId');
             var fn = function () {
                 plv.loadStoreByParams( { relation : 'user' } );
             };
@@ -58,7 +58,7 @@ NetspocManager.PolicyManager = Ext.extend(
 		    { name : 'desc',  mapping : 'description' },
 		    { name : 'owner' }
 		],
-                itemId   : 'policyListId',
+                id   : 'policyListId',
                 flex     : 1,
                 border   : false,
                 listeners : {
@@ -121,7 +121,7 @@ NetspocManager.PolicyManager = Ext.extend(
         },
         
         onButtonClick :  function(button, event) {
-            var plv        = this.getComponent('policyListId');
+            var plv        = Ext.getCmp('policyListId');
             var relation   = button.relation;
             var params     = button.search_params;
             var keep_front = false;
@@ -397,7 +397,7 @@ NetspocManager.PolicyManager = Ext.extend(
         },
 
         onPolicySelected : function() {
-            var selectedPolicy = this.getComponent('policyListId').getSelected();
+            var selectedPolicy = Ext.getCmp('policyListId').getSelected();
             if (! selectedPolicy) {
                 this.clearDetails();
                 return;

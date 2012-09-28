@@ -220,10 +220,9 @@ NetspocWeb.window.PrintWindow = Ext.extend(
 			// Collect displayed services in policylist
 			// as CSV-string (will be passed as URL-param).
 			var services = '';
-			var viewport = Ext.getCmp( 'viewportId' );
-			var pl       = viewport.findByType( 'policylist' );
-			var pl_view  = pl[0].getView();
-			var pl_store = pl[0].getStore();
+			var pl       = Ext.getCmp( 'policyListId' );
+			var pl_view  = pl.getView();
+			var pl_store = pl.getStore();
 			var concat_services = function ( rec ) {
 			    var srv_name = rec.get( 'name' );
 			    if ( srv_name ) {
