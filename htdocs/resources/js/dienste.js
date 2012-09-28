@@ -394,70 +394,74 @@ NetspocManager.workspace = function () {
                     needLoad   : true
 	        }
             );
-	    var cardPanel = new Ext.Panel(
-		{
-		    layout     : 'card',
-		    activeItem : 0,
-		    border     : false,
-		    defaults   :  { workspace : this },
-		    items      :  [
-			{ xtype : 'policymanager'  },
-			{ xtype : 'networkmanager' },
-			{ xtype : 'diffmanager'    }
+	    var cardPanel = {
+                xtype          : 'panel',
+		layout         : 'card',
+		activeItem     : 0,
+                layoutConfig   : { deferredRender : false },
+		border         : false,
+
+                // Add this workspace as attribute to every child.
+                // So we can access workspace methods from childs.
+	        defaults       :  { workspace : this },
+		items          :  [
+
+                    // Index of items must be the same as
+                    // index of buttons in toolbar below.
+		    { xtype : 'policymanager'  },
+		    { xtype : 'networkmanager' },
+		    { xtype : 'diffmanager'    },
+                    { xtype : 'accountmanager' }
 		    ],
-		    tbar   : [
-			{
-			    text          : 'Dienste, Freischaltungen',
-			    iconCls       : 'icon-chart_curve',
-			    itemType      : 'policymanager',
-			    toggleGroup   : 'navGrp',
-			    enableToggle  : true,
-			    pressed       : true,
-			    scope         : this,
-			    handler       : function ( button ) {
-				this.switchToCard(button, 0);
-			    }
-			},
-			'-',
-			{
-			    text         : 'Eigene Netze',
-			    iconCls      : 'icon-computer_connect',
-			    itemType     : 'networkmanager',
-			    toggleGroup  : 'navGrp',
-			    enableToggle : true,
-			    scope        : this,
-			    handler       : function ( button ) {
-				this.switchToCard(button, 1);
-			    }
-			},
-			'-',
-			{
-			    text         : 'Diff',
-			    iconCls      : 'icon-chart_curve_edit',
-			    itemType     : 'diffmanager',
-			    toggleGroup  : 'navGrp',
-			    enableToggle : true,
-			    scope        : this,
-			    handler       : function ( button ) {
-				this.switchToCard(button, 2);
-			    }
-			},
-			' ',
-			'->',
-			'Stand',
-			this.buildHistoryCombo(historyStore),
-                        ' ',
-			'Verantwortungsbereich',
-			this.buildOwnerCombo(this.buildOwnersStore()),
-			'Abmelden',
-			{
-			    iconCls : 'icon-door_out',
-			    scope   : this,
-			    handler : this.onLogout
-			}
-		    ]
-		}
-	    );
+		tbar   : [
+		    {
+			text         : 'Dienste, Freischaltungen',
+			iconCls      : 'icon-chart_curve',
+			toggleGroup  : 'navGrp',
+			enableToggle : true,
+			pressed      : true,
+			scope        : this,
+			handler      : this.switchToCard
+		    },
+		    {
+			text         : 'Eigene Netze',
+			iconCls      : 'icon-computer_connect',
+			toggleGroup  : 'navGrp',
+			enableToggle : true,
+			scope        : this,
+			handler      : this.switchToCard
+		    },
+		    {
+			text         : 'Diff',
+			iconCls      : 'icon-chart_curve_edit',
+			toggleGroup  : 'navGrp',
+			enableToggle : true,
+			scope        : this,
+			handler      : this.switchToCard
+		    },
+		    {
+			text         : 'Berechtigungen',
+			iconCls      : 'icon-group',
+			toggleGroup  : 'navGrp',
+			enableToggle : true,
+			scope        : this,
+			handler      : this.switchToCard
+		    },
+		    '->',
+		    'Stand',
+		    this.buildHistoryCombo(historyStore),
+                    ' ',
+		    'Verantwortungsbereich',
+		    this.buildOwnerCombo(this.buildOwnersStore()),
+                    ' ',
+		    'Abmelden',
+		    {
+			iconCls : 'icon-door_out',
+			scope   : this,
+			handler : this.onLogout
+		    }
+		]
+	    };
 	    
 	    viewport = new Ext.Viewport(
 		{
@@ -468,7 +472,8 @@ NetspocManager.workspace = function () {
 	    );
 	},  // end of buildViewport
 
-	switchToCard : function( button, index ) {
+	switchToCard : function( button ) {
+            var index = button.ownerCt.items.indexOf(button);
 	    var cardPanel = button.findParentByType('panel');
 	    cardPanel.layout.setActiveItem( index );
 	},
