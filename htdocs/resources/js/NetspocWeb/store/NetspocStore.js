@@ -97,7 +97,7 @@ NetspocWeb.store.NetspocState = Ext.extend(
 		    this.setBaseParam('history', history);
 		    this.setBaseParam('chosen_networks', networks_as_csv );
 
-		    if (this.doReload) {
+		    if (this.doReload && this.lastOptions) {
 
 			// We need to add BaseParams again because
 			// they had been copied to lastOptions internally.
@@ -238,7 +238,7 @@ NetspocWeb.store.NetspocGroupState = Ext.extend(
 		    this.setBaseParam('history', history);
 		    this.setBaseParam('chosen_networks', networks_as_csv );
 
-		    if (this.doReload) {
+		    if (this.doReload && this.lastOptions) {
 
 			// We need to add BaseParams again because
 			// they had been copied to lastOptions internally.
