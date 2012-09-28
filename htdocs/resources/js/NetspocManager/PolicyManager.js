@@ -46,8 +46,18 @@ NetspocManager.PolicyManager = Ext.extend(
         
         buildPolicyListPanel : function() {
             return {
-                xtype    : 'policylist',
+                xtype    : 'simplelist',
                 proxyurl : 'service_list',
+		doReload : 1,
+		sortInfo : { field: 'name', direction: "ASC" },
+                fieldsInfo :  [
+		    { name     : 'name', 
+		      header   : 'Dienstname',
+                      sortType : 'asUCString' 
+                    },
+		    { name : 'desc',  mapping : 'description' },
+		    { name : 'owner' }
+		],
                 itemId   : 'policyListId',
                 flex     : 1,
                 border   : false,
