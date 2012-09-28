@@ -200,7 +200,6 @@ NetspocManager.PolicyManager = Ext.extend(
                             region      : 'south',
                             id          : 'PolicyEmails',
                             xtype       : 'emaillist',
-                            proxyurl    : 'get_emails',
                             title       : 'Verantwortliche',
                             collapsible : true,
                             split       : true,
@@ -217,7 +216,6 @@ NetspocManager.PolicyManager = Ext.extend(
                         {
                             id          : 'UserEmails',
                             xtype       : 'emaillist',
-                            proxyurl    : 'get_emails',
                             title       : 'Verantwortliche',
                             region      : 'south',
                             collapsible : true,

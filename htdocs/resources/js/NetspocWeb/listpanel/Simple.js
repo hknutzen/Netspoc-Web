@@ -8,14 +8,15 @@ Ext.ns('NetspocWeb.listpanel');
  * <br />
  * @constructor
  * @param {Object} config The config object
- * proxyurl : value used by the store
  * fieldsInfo : a combined object, describing
  *  - columns for the listview 
  *    only header, width; 
  *    dataindex is taken fom 'name'
  *  - fields for the store (all other attributes)
+ * proxyurl : value is used by the store
  * sortInfo : value is used by store
  * doReload : values is used by store
+ * hideHeaders : value is forwarded to listview
  **/
 
 NetspocWeb.listpanel.Simple = Ext.extend(
@@ -43,7 +44,8 @@ NetspocWeb.listpanel.Simple = Ext.extend(
 		singleSelect  : true,
 		autoScroll    : true,
 		store         : this.buildStore(),
-		columns       : columns
+		columns       : columns,
+                hideHeaders   : this.hideHeaders
 	    };
 	},
 	

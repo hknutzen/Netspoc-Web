@@ -11,36 +11,21 @@ Ext.ns("NetspocWeb.listpanel");
  **/
 
 NetspocWeb.listpanel.EmailList = Ext.extend(
-    NetspocWeb.listpanel.ListPanelBaseCls,
-    {
-	buildListView : function() {
-	    return {
-		xtype         : 'listview',
-		singleSelect  : true,
-		autoScroll    : true,
-		store         : this.buildStore(),
-		hideHeaders   : true,
-		columns       : [
-		    {
-			header    : 'Verantwortliche',
-			dataIndex : 'email'
-		    }
-		]
-	    };
-	},
-	
-	buildStore : function() {
-	    return  {
-		xtype         : 'netspocstatestore',
-		proxyurl      : this.proxyurl,
-		storeId       : 'email',
-		sortInfo      : { field: 'email', direction: "ASC" },
-		fields        : [
-		    { name : 'email',  mapping : 'email' }
-		]
-	    };
-	}
-	
+    NetspocWeb.listpanel.Simple, {
+	initComponent : function() {
+            Ext.apply(this, 
+                  {
+                      proxyurl    : 'get_emails',
+	              sortInfo    : { field: 'email', direction: "ASC" },
+                      hideHeaders : true,
+	              fieldsInfo  : [
+	                  { name : 'email', header : 'Verantwortliche' }
+	              ]
+                  }
+                 );
+            NetspocWeb.listpanel.EmailList.
+                superclass.initComponent.call(this);
+        }
     }
 );
 
