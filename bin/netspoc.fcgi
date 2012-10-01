@@ -737,12 +737,20 @@ sub get_owners {
 # If parameter 'owner' is missing, take 'active_owner'.
 sub get_emails {
     my ($cgi, $session) = @_;
-    my $owner_name = $cgi->param('owner') || $cgi->param('active_owner') 
+    my $owner = $cgi->param('owner') || $cgi->param('active_owner') 
         or abort "Missing param 'owner'";
-    if ($owner_name eq ':unknown') {
+    if ($owner eq ':unknown') {
 	return [];
     }
-    return load_json("owner/$owner_name/emails");
+    return load_json("owner/$owner/emails");
+}
+
+# Get list of all watcher emails for active owner.
+sub get_watchers {
+    my ($cgi, $session) = @_;
+    my $owner = $cgi->param('active_owner') 
+        or abort "Missing param 'active_owner'";
+    return load_json("owner/$owner/watchers");
 }
 
 
@@ -990,6 +998,7 @@ my %path2sub =
      get_history   => [ \&get_history,   { owner => 1, add_success => 1, } ],
      service_list  => [ \&service_list,  { owner => 1, add_success => 1, } ],
      get_emails    => [ \&get_emails,    { owner => 1, add_success => 1, } ],
+     get_watchers  => [ \&get_watchers,  { owner => 1, add_success => 1, } ],
      get_rules     => [ \&get_rules,     { owner => 1, add_success => 1, } ],
      get_users     => [ \&get_users,     { owner => 1, add_success => 1, } ],
      get_networks  => [ \&get_networks,  { owner => 1, add_success => 1, } ],

@@ -21,19 +21,22 @@ NetspocManager.AccountManager = Ext.extend(
         },
 
         initComponent : function() {
-            var active_owner, emailPanel, store;
+            var active_owner, panel, store;
             this.items =  [
-                this.buildAdminListPanel()
+                this.buildAdminListPanel(),
+                this.buildWatcherListPanel()
             ];
             
             NetspocManager.AccountManager.
 		superclass.initComponent.call(this);
-            active_owner = NetspocManager.appstate.getOwner();
-            emailPanel   = this.findById('AdminEmails');
-            store        = emailPanel.getStore();
-            // Don't set paramter 'owner', use 'active_owner' instead.
-            // Otherwise he old owner would be displayed, 
+            panel = this.findById('AdminEmails');
+            store = panel.getStore();
+            // Don't set parameter 'owner', use 'active_owner' instead.
+            // Otherwise the old owner would be displayed, 
             // if owner is changed later.
+            store.load ();
+            panel = this.findById('WatcherEmails');
+            store = panel.getStore();
             store.load ();
         },
 
@@ -43,7 +46,21 @@ NetspocManager.AccountManager = Ext.extend(
                 xtype    : 'emaillist',
 		doReload : 1,
                 flex     : 1,
-                title    : 'Verantwortliche',
+                title    : 'Verantwortliche'
+            };
+        },
+
+        buildWatcherListPanel : function() {
+            return {
+                id          : 'WatcherEmails',
+                xtype       : 'simplelist',
+                proxyurl    : 'get_watchers',
+                sortInfo    : { field: 'email', direction: 'ASC' },
+                hideHeaders : true,
+                fieldsInfo  : [ { name : 'email', header : 'x' } ],
+                doReload    : 1,
+                flex        : 1,
+                title       : 'Zuschauer (Watcher)'
             };
         }
     }
