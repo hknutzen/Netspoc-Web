@@ -734,9 +734,11 @@ sub get_owners {
 }
 
 # Get list of all emails for given owner.
+# If parameter 'owner' is missing, take 'active_owner'.
 sub get_emails {
     my ($cgi, $session) = @_;
-    my $owner_name = $cgi->param('owner') or abort "Missing param 'owner'";
+    my $owner_name = $cgi->param('owner') || $cgi->param('active_owner') 
+        or abort "Missing param 'owner'";
     if ($owner_name eq ':unknown') {
 	return [];
     }
