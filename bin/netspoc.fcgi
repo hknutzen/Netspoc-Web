@@ -241,7 +241,6 @@ sub get_services_and_rules {
     my $expand_users = $cgi->param('expand_users');
     my $lists    = load_json("owner/$owner/service_lists");
     my $assets   = load_json("owner/$owner/assets");
-    my $services = load_json('services');
     my $data = [];
     my $param_services = [ split ",", $srv_list ];
     $disp_prop ||= 'ip';
@@ -256,7 +255,7 @@ sub get_services_and_rules {
 
     # Untaint services passed as params by intersecting
     # with known service-names from json-data.
-    my $service_names = intersect( [ keys %$services ],
+    my $service_names = intersect( [ map(@$_, @{$lists}{qw(owner user visible)}) ],
 				   $param_services );
 
   SERVICE:
@@ -298,7 +297,7 @@ sub get_services_owners_and_admins {
 
     # Untaint services passed as params by intersecting
     # with known service-names from json-data.
-    my $service_names = intersect( [ keys %$services ],
+    my $service_names = intersect( [ map(@$_, @{$lists}{qw(owner user visible)}) ],
 				   $param_services );
 
     my $owner2alias = load_json('owner2alias');
@@ -336,11 +335,10 @@ sub service_list {
     my $lists    = load_json("owner/$owner/service_lists");
     my $assets   = load_json("owner/$owner/assets");
     my $services = load_json('services');
-    my $copy;
     my $plist;
 
     # Make a real copy not a reference.
-    map { $copy->{$_} = $lists->{$_} } keys %$lists;
+    my $copy = { %$lists };
 
     # Are we in restricted mode with only selected networks?
     if ( $chosen ) {

@@ -80,8 +80,8 @@ NetspocWeb.window.PrintWindow = Ext.extend(
 				'plural'   : 'Regeln'
 			    },
 			    'services_owners_and_admins' : {
-				'singular' : 'Verantwortungsbereich',
-				'plural'   : 'Verantwortungsbereiche'
+				'singular' : '',
+				'plural'   : ''
 			    },
 			    'owners_and_services'        : {
 				'singular' : 'Dienst',
