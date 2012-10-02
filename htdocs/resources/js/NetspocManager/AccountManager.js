@@ -38,9 +38,8 @@ NetspocManager.AccountManager = Ext.extend(
 
         buildAdminListPanel : function() {
             return {
-                id       : 'Admins',
                 xtype    : 'emaillist',
-		doReload : 1,
+		doReload : true,
                 flex     : 1,
                 title    : 'Verantwortliche'
             };
@@ -48,12 +47,11 @@ NetspocManager.AccountManager = Ext.extend(
 
         buildWatcherListPanel : function() {
             return {
-                id          : 'Watchers',
                 xtype       : 'simplelist',
                 proxyurl    : 'get_watchers',
                 hideHeaders : true,
                 fieldsInfo  : [ { name : 'email', header : 'x' } ],
-                doReload    : 1,
+                doReload    : true,
                 flex        : 1,
                 title       : 'Zuschauer (Watcher)'
             };
@@ -61,9 +59,9 @@ NetspocManager.AccountManager = Ext.extend(
 
         buildExtendedByListPanel : function() {
             return {
-                id          : 'Supervisors',
                 xtype       : 'simplelist',
                 proxyurl    : 'get_supervisors',
+                autoSelect  : 'true',
                 hideHeaders : true,
                 fieldsInfo  : [ { 
                     name : 'name', 
@@ -72,7 +70,7 @@ NetspocManager.AccountManager = Ext.extend(
                         return node.alias || node.name;
                     }
                 } ],
-                doReload    : 1,
+                doReload    : true,
                 flex        : 1,
                 title       : 'Übergeordnet'
             };

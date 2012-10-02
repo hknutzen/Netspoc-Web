@@ -79,7 +79,8 @@ NetspocManager.NetworkManager = Ext.extend(
             var networklist = {
                 xtype      : 'simplelist',
                 proxyurl   : 'get_networks',
-		doReload   : 1,
+                autoSelect : true,
+		doReload   : true,
 		sortInfo   : { field: 'ip', direction: "ASC" },
                 fieldsInfo : [
 		    { name     : 'ip',   

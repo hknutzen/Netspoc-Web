@@ -46,11 +46,12 @@ NetspocManager.PolicyManager = Ext.extend(
         
         buildPolicyListPanel : function() {
             return {
-                xtype    : 'simplelist',
-                proxyurl : 'service_list',
-		doReload : 1,
-		sortInfo : { field: 'name', direction: "ASC" },
-                fieldsInfo :  [
+                xtype      : 'simplelist',
+                proxyurl   : 'service_list',
+                autoSelect : true,
+		doReload   : true,
+		sortInfo   : { field: 'name', direction: "ASC" },
+                fieldsInfo : [
 		    { name     : 'name', 
 		      header   : 'Dienstname',
                       sortType : 'asUCString' 
@@ -58,14 +59,14 @@ NetspocManager.PolicyManager = Ext.extend(
 		    { name : 'desc',  mapping : 'description' },
 		    { name : 'owner' }
 		],
-                id   : 'policyListId',
-                flex     : 1,
-                border   : false,
+                id        : 'policyListId',
+                flex      : 1,
+                border    : false,
                 listeners : {
                     scope : this,
                     selectionchange : this.onPolicySelected
                 },
-                tbar      :  [
+                tbar      : [
                     {
                         text         : 'Eigene',
                         toggleGroup  : 'polNavBtnGrp',
@@ -469,10 +470,11 @@ NetspocManager.PolicyManager = Ext.extend(
 
         buildUserDetailsDV : function() {
             return {
-                xtype     : 'simplelist',
-                region    : 'center',
-                proxyurl  : 'get_users',
-                sortInfo  : { field: 'ip', direction: "ASC" },
+                xtype      : 'simplelist',
+                region     : 'center',
+                proxyurl   : 'get_users',
+                autoSelect : true,
+                sortInfo   : { field: 'ip', direction: "ASC" },
 		fieldsInfo : [
 		    { name     : 'name'  , 
                       header   : 'Name'

@@ -17,6 +17,7 @@ Ext.ns('NetspocWeb.listpanel');
  * sortInfo : value is used by store
  * doReload : values is used by store
  * hideHeaders : value is forwarded to listview
+ * autoSelect  : first loaded record is selected
  **/
 
 NetspocWeb.listpanel.Simple = Ext.extend(
@@ -50,10 +51,17 @@ NetspocWeb.listpanel.Simple = Ext.extend(
 	},
 	
 	buildStore : function() {
+            var listeners;
             var fields = this.fieldsInfo;
             for (var i=0; i < fields.length; i++) {
                 delete fields[i].header;
                 delete fields[i].width;
+            }
+            if (this.autoSelect) {
+                listeners = {
+                    scope : this,
+		    load  : this.selectRow0
+		};
             }
 	    return  {
 		xtype         : 'netspocstatestore',
@@ -61,10 +69,7 @@ NetspocWeb.listpanel.Simple = Ext.extend(
 		sortInfo      : this.sortInfo,
                 doReload      : this.doReload,
 		fields        : fields,
-		listeners: {
-                    scope : this,
-		    load  : this.selectRow0
-		}
+		listeners     : listeners
 	    };
 	}
 	
