@@ -24,15 +24,17 @@ NetspocManager.AccountManager = Ext.extend(
             this.items =  [
                 this.buildAdminListPanel(),
                 this.buildWatcherListPanel(),
-                this.buildExtendedByListPanel()
+                this.buildSupervisorListPanel(),
+                this.buildSupervisorEmailsListpanel()
             ];
             
             NetspocManager.AccountManager.
 		superclass.initComponent.call(this);
 
             this.items.each(function (item, index, length) {
-                var store = item.getStore();
-                store.load ();
+                if(item.doReload) {
+                    item.getStore().load();
+                }
             });
         },
 
@@ -57,23 +59,52 @@ NetspocManager.AccountManager = Ext.extend(
             };
         },
 
-        buildExtendedByListPanel : function() {
+        buildSupervisorListPanel : function() {
             return {
                 xtype       : 'simplelist',
                 proxyurl    : 'get_supervisors',
                 autoSelect  : 'true',
                 hideHeaders : true,
-                fieldsInfo  : [ { 
-                    name : 'name', 
-                    header : 'x',
-                    mapping : function (node) { 
-                        return node.alias || node.name;
-                    }
-                } ],
+                fieldsInfo  : [ 
+                    { 
+                        name : 'alias', 
+                        header : 'x',
+                        mapping : function(node) { 
+                            return node.alias || node.name;
+                        }
+                    },
+                    { name : 'name' }
+                ],
                 doReload    : true,
                 flex        : 1,
-                title       : 'Übergeordnet'
+                title       : 'Übergeordnet',
+                listeners : {
+                    scope : this,
+                    selectionchange : function(dv, selections) {
+                        if(! selections.length) {
+                            return; 
+                        }
+                        var selected = dv.getRecord(selections[0]);
+                        var emailPanel = this.findById('SupervisorEmails');
+                        if(selected) {
+                            emailPanel.show(selected.get('name'),
+                                            selected.get('alias') );
+                        }
+                        else {
+                            emailPanel.clear();
+                        }
+                    }
+                }
             };
+        },
+
+        buildSupervisorEmailsListpanel : function() {
+            return {
+                xtype       : 'emaillist',
+                title       : ' ',
+                id          : 'SupervisorEmails',
+                flex        : 1,
+            }
         }
     }
 );
