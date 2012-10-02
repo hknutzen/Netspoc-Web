@@ -451,9 +451,11 @@ NetspocManager.PolicyManager = Ext.extend(
             // Otherwise, array would become stringified.
             var array = hidden.value;
             var owner1 = array.shift();
+            var name = owner1.name;
+            var alias = owner1.alias || name;
             array.push(owner1);
-            Ext.getCmp("trigger").setValue(owner1.alias || owner1.name);
-            this.showEmail(owner1.name, 'PolicyEmails');
+            Ext.getCmp('trigger').setValue(alias);
+            Ext.getCmp('PolicyEmails').show(name, alias);
         },
 
         clearDetails : function() {
@@ -464,8 +466,8 @@ NetspocManager.PolicyManager = Ext.extend(
             dvRules.removeAll();
             var stUserDetails = this.findById('userListId').getStore();
             stUserDetails.removeAll();
-            this.clearEmail('PolicyEmails');
-            this.clearEmail('UserEmails');
+            Ext.getCmp('PolicyEmails').clear();
+            Ext.getCmp('UserEmails').clear();
         },
 
         buildUserDetailsDV : function() {
@@ -517,45 +519,17 @@ NetspocManager.PolicyManager = Ext.extend(
             };
         },
 
-        onUserDetailsSelected : function() {
-            var selectedPolicy =
-                this.findById('userListId').getSelected();
-            if (! selectedPolicy) {
-                return;
+        onUserDetailsSelected : function(dv, selections) {
+            var node = selections[0];
+            var record = node && dv.getRecord(node);
+            var emailPanel = this.findById('UserEmails');
+            if(record) {
+                emailPanel.show(record.get('owner'),
+                                record.get('owner_alias') );
             }
-            var name = selectedPolicy.get( 'owner' );
-            this.showEmail(name, 'UserEmails');
-        },
-
-        showEmail : function(owner, name) {
-            if (! owner) {
-                this. clearEmail(name);
-                return;
+            else {
+                emailPanel.clear();
             }
-            var emailPanel   = this.findById(name);
-            var store        = emailPanel.getStore();
-            var appstate     = NetspocManager.appstate;
-            var active_owner = appstate.getOwner();
-            var history      = appstate.getHistory();
-            var lastOptions  = store.lastOptions;
-            if ( lastOptions 
-                 && lastOptions.params.owner === owner
-                 && lastOptions.params.history === history
-                 && lastOptions.params.active_owner === active_owner
-                 // Reload if data was removed previously.
-                 && store.getCount()) 
-            {
-                return;
-            }
-            store.load ({ params : { owner : owner } });
-            emailPanel.setTitle('Verantwortliche f&uuml;r ' + owner);
-        },
-
-        clearEmail : function(name) {
-            var emailPanel = this.findById(name);
-            var store = emailPanel.getStore();
-            store.removeAll();
-            emailPanel.setTitle('Verantwortliche');
         }
 
     }
