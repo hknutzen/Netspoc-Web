@@ -745,12 +745,27 @@ sub get_emails {
     return load_json("owner/$owner/emails");
 }
 
-# Get list of all watcher emails for active owner.
+# Get list of watcher emails for active owner.
 sub get_watchers {
     my ($cgi, $session) = @_;
     my $owner = $cgi->param('active_owner') 
         or abort "Missing param 'active_owner'";
     return load_json("owner/$owner/watchers");
+}
+
+# Get list of supervisor owners for active owner.
+sub get_supervisors {
+    my ($cgi, $session) = @_;
+    my $owner = $cgi->param('active_owner') 
+        or abort "Missing param 'active_owner'";
+    my $supervisors = load_json("owner/$owner/extended_by");
+    my $owner2alias = load_json('owner2alias');
+    return [ map({ if (my $a = $owner2alias->{$_->{name}}) { 
+                       { %$_, alias => $a } 
+                   } else { 
+                       $_ 
+                   }
+                 } @$supervisors) ];
 }
 
 
@@ -999,6 +1014,8 @@ my %path2sub =
      service_list  => [ \&service_list,  { owner => 1, add_success => 1, } ],
      get_emails    => [ \&get_emails,    { owner => 1, add_success => 1, } ],
      get_watchers  => [ \&get_watchers,  { owner => 1, add_success => 1, } ],
+     get_supervisors  => [ 
+         \&get_supervisors,  { owner => 1, add_success => 1, } ],
      get_rules     => [ \&get_rules,     { owner => 1, add_success => 1, } ],
      get_users     => [ \&get_users,     { owner => 1, add_success => 1, } ],
      get_networks  => [ \&get_networks,  { owner => 1, add_success => 1, } ],

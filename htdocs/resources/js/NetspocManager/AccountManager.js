@@ -21,28 +21,24 @@ NetspocManager.AccountManager = Ext.extend(
         },
 
         initComponent : function() {
-            var active_owner, panel, store;
             this.items =  [
                 this.buildAdminListPanel(),
-                this.buildWatcherListPanel()
+                this.buildWatcherListPanel(),
+                this.buildExtendedByListPanel()
             ];
             
             NetspocManager.AccountManager.
 		superclass.initComponent.call(this);
-            panel = this.findById('AdminEmails');
-            store = panel.getStore();
-            // Don't set parameter 'owner', use 'active_owner' instead.
-            // Otherwise the old owner would be displayed, 
-            // if owner is changed later.
-            store.load ();
-            panel = this.findById('WatcherEmails');
-            store = panel.getStore();
-            store.load ();
+
+            this.items.each(function (item, index, length) {
+                var store = item.getStore();
+                store.load ();
+            });
         },
 
         buildAdminListPanel : function() {
             return {
-                id       : 'AdminEmails',
+                id       : 'Admins',
                 xtype    : 'emaillist',
 		doReload : 1,
                 flex     : 1,
@@ -52,15 +48,33 @@ NetspocManager.AccountManager = Ext.extend(
 
         buildWatcherListPanel : function() {
             return {
-                id          : 'WatcherEmails',
+                id          : 'Watchers',
                 xtype       : 'simplelist',
                 proxyurl    : 'get_watchers',
-                sortInfo    : { field: 'email', direction: 'ASC' },
                 hideHeaders : true,
                 fieldsInfo  : [ { name : 'email', header : 'x' } ],
                 doReload    : 1,
                 flex        : 1,
                 title       : 'Zuschauer (Watcher)'
+            };
+        },
+
+        buildExtendedByListPanel : function() {
+            return {
+                id          : 'Supervisors',
+                xtype       : 'simplelist',
+                proxyurl    : 'get_supervisors',
+                hideHeaders : true,
+                fieldsInfo  : [ { 
+                    name : 'name', 
+                    header : 'x',
+                    mapping : function (node) { 
+                        return node.alias || node.name;
+                    }
+                } ],
+                doReload    : 1,
+                flex        : 1,
+                title       : 'Übergeordnet'
             };
         }
     }
