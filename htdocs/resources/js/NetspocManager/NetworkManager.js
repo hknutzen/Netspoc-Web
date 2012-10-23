@@ -116,7 +116,7 @@ NetspocManager.NetworkManager = Ext.extend(
 		id             : 'netlistPanelId',
                 flex           : 2,
                 activeItem     : 0,
-                deferredRender : false,
+                layoutConfig   : { deferredRender : false },
                 tbar : [
                     {
                         text         : 'Netze',
@@ -153,12 +153,6 @@ NetspocManager.NetworkManager = Ext.extend(
                         xtype : 'printbutton'
                     }
                 ],
-		listeners : {
-		    beforerender :  function ( me ) {
-			var active = me.items.items[0];
-			active.loadStoreByParams( {} );
-                    }
-		},
                 items     : [
 		    networklist,
 		    routerpanel
@@ -171,7 +165,7 @@ NetspocManager.NetworkManager = Ext.extend(
                 xtype : 'cardprintactive',
                 flex           : 2,
                 activeItem     : 0,
-                deferredRender : false,
+                layoutConfig   : { deferredRender : false },
                 tbar : [
                     {
                         text          : 'Enthaltene Ressourcen',
@@ -389,6 +383,9 @@ NetspocManager.NetworkManager = Ext.extend(
 	    // Find cardpanel, activate network-list-panel
 	    // and make "Netze"-button look pressed.
 	    var card = Ext.getCmp("netlistPanelId");
+            if(!card.rendered) {
+                return;
+            }
 	    card.layout.setActiveItem(0);
 	    card.doLayout();
 	    var card_buttons = card.getTopToolbar().findByType( 'button' );
