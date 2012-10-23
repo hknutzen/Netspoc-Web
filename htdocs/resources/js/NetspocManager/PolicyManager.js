@@ -31,17 +31,8 @@ NetspocManager.PolicyManager = Ext.extend(
             
             NetspocManager.PolicyManager.superclass.initComponent.call(this);
             var plv = Ext.getCmp('policyListId');
-            var fn = function () {
-                plv.loadStoreByParams( { relation : 'user' } );
-            };
-            // Give IE some time to digest store loading and stuff,
-            // so that it doesn't hickup.
-            if ( Ext.isIE ) {
-                Ext.defer( fn, 10 );
-            }
-            else {
-                fn();
-            }
+            var store = plv.getStore();
+            store.setBaseParam('relation', 'user');
         },
         
         buildPolicyListPanel : function() {
@@ -123,6 +114,7 @@ NetspocManager.PolicyManager = Ext.extend(
         
         onButtonClick :  function(button, event) {
             var plv        = Ext.getCmp('policyListId');
+            var store      = plv.getStore();
             var relation   = button.relation;
             var params     = button.search_params;
             var keep_front = false;
@@ -141,10 +133,11 @@ NetspocManager.PolicyManager = Ext.extend(
                     wnd.close();
                 }
             }
-            if ( relation ) {
-                params = { relation : relation };
+            if ( ! relation || relation === store.baseParams.relation) {
+                return;
             }
-            plv.loadStoreByParams(params);
+            store.setBaseParam('relation', relation);
+            store.load();
             this.clearDetails();
         },
 
@@ -231,7 +224,7 @@ NetspocManager.PolicyManager = Ext.extend(
                 xtype : 'cardprintactive',
                 flex           : 2,
                 activeItem     : 0,
-                deferredRender : false,
+                layoutConfig   : { deferredRender : false },
                 tbar : [
                     {
                         text          : 'Details zum Dienst',
@@ -460,7 +453,10 @@ NetspocManager.PolicyManager = Ext.extend(
 
         clearDetails : function() {
             var form = this.findById('policyDetailsId').getForm();
+            var trigger = Ext.getCmp("trigger");
             form.reset();
+            trigger.el.dom.style.backgroundColor = "#FFFFFF";
+            trigger.setHideTrigger(true);
 
             var dvRules = Ext.StoreMgr.get('dvRulesStoreId');
             dvRules.removeAll();
