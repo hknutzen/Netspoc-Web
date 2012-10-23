@@ -37,6 +37,7 @@ NetspocWeb.listpanel.EmailList = Ext.extend(
             var history      = appstate.getHistory();
             var lastOptions  = store.lastOptions;
             if ( lastOptions 
+                 && lastOptions.params
                  && lastOptions.params.owner === owner
                  && lastOptions.params.history === history
                  && lastOptions.params.active_owner === active_owner
