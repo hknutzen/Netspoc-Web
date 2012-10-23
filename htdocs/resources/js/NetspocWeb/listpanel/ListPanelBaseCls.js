@@ -24,6 +24,15 @@ NetspocWeb.listpanel.ListPanelBaseCls = Ext.extend(
 	    
             this.relayEvents(this.getView(), ['click', 'selectionchange']);
             this.relayEvents(this.getStore(), ['load']);
+            this.addListener('beforerender',
+                             function (me) {
+                                 var store = this.getStore();
+                                 if (store.doReload) {
+                                     store.load();
+                                 }
+                                 return true;
+                             },
+                             this);
 	},
 	
 	buildListView : function() {
