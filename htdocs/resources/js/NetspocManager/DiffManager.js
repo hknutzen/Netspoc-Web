@@ -71,7 +71,6 @@ NetspocManager.DiffManager = Ext.extend(
             var store = Ext.StoreMgr.get('historyStore');
             var combo = this.buildHistoryCombo(store);
             var checkbox = this.buildDiffMailCheckBox();
-            this.loadDiffMailCheckBox(checkbox);
             this.combo = combo;
             this.tbar =  [ 'Vergleiche mit', 
                            combo,
@@ -90,10 +89,18 @@ NetspocManager.DiffManager = Ext.extend(
                          ],
             NetspocManager.DiffManager.
                 superclass.initComponent.call(this);
+            this.addListener('beforerender',
+                             function() {
+                                 this.loadDiffMailCheckBox(checkbox);
+                             });
             appstate.addListener(
                 'changed', 
                 function () {
-                    var node = this.getRootNode();
+                    var node;
+                    if (! this.rendered) {
+                        return;
+                    }
+                    node = this.getRootNode();
                     // Only direct childs, no animation.
                     node.collapse(false, false);
                     node.setText('');
@@ -156,7 +163,7 @@ NetspocManager.DiffManager = Ext.extend(
             );
         },
         buildDiffMailCheckBox : function () {
-            var checkbox = Ext.create( { xtype    : 'checkbox' } );
+            var checkbox = Ext.create( { xtype : 'checkbox' } );
             checkbox.on('check', function (checkbox, checked) {
                 // Don't handle initial event from setValue above.
                 if (! checkbox.send_event ) {
