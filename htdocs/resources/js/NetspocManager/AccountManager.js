@@ -30,12 +30,6 @@ NetspocManager.AccountManager = Ext.extend(
             
             NetspocManager.AccountManager.
 		superclass.initComponent.call(this);
-
-            this.items.each(function (item, index, length) {
-                if(item.doReload) {
-                    item.getStore().load();
-                }
-            });
         },
 
         buildAdminListPanel : function() {
