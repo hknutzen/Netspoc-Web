@@ -75,11 +75,13 @@ NetspocManager.AccountManager = Ext.extend(
                 listeners : {
                     scope : this,
                     selectionchange : function(dv, selections) {
-                        if(! selections.length) {
-                            return; 
-                        }
-                        var selected = dv.getRecord(selections[0]);
+                        var selected;
                         var emailPanel = this.findById('SupervisorEmails');
+                        if(! selections.length) {
+                            emailPanel.clear();
+                            return true;
+                        }
+                        selected = dv.getRecord(selections[0]);
                         if(selected) {
                             emailPanel.show(selected.get('name'),
                                             selected.get('alias') );
@@ -87,6 +89,7 @@ NetspocManager.AccountManager = Ext.extend(
                         else {
                             emailPanel.clear();
                         }
+                        return true;
                     }
                 }
             };
