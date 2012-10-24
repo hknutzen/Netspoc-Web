@@ -90,7 +90,9 @@ NetspocWeb.store.NetspocState = Ext.extend(
 		function () {
 		    this.changeBaseParams();
                     if (this.doReload && this.isLoaded) {
-                        this.load();
+                        // Update copy of baseParams stored in lastOptions.
+                        Ext.apply(this.lastOptions.params, this.baseParams);
+                        this.reload();
                     }
 		}, this);
 	},
