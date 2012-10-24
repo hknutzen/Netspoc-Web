@@ -18,7 +18,10 @@ NetspocWeb.store.Netspoc = Ext.extend(
 						    'x-mask-loading');
 				 return true;			
 			     });
-	    this.addListener('load', function() { Ext.getBody().unmask(); });
+	    this.addListener('load', function() { 
+                Ext.getBody().unmask();
+                this.isLoaded = true;
+            });
 	    this.addListener('exception', this.onJsonException);
 	},
 	onJsonException :
@@ -78,39 +81,25 @@ NetspocWeb.store.NetspocState = Ext.extend(
     NetspocWeb.store.Netspoc,
     {
 	constructor : function(config) {
-	    var appstate = NetspocManager.appstate;
 	    NetspocWeb.store.NetspocState.superclass.constructor.call(this, 
 								      config);
 	    // Set baseParams and reload store if appstate changes.
-	    var networks_as_csv = appstate.getNetworks();
-	    this.setBaseParam('active_owner', appstate.getOwner());
-	    this.setBaseParam('history', appstate.getHistory());
-	    this.setBaseParam('chosen_networks', networks_as_csv );
-	    appstate.addListener(
+            this.changeBaseParams();
+	    NetspocManager.appstate.addListener(
 		'changed', 
 		function () {
-		    var params;
-		    var active_owner    = appstate.getOwner();
-		    var history         = appstate.getHistory();
-		    var networks_as_csv = appstate.getNetworks();
-		    this.setBaseParam('active_owner', active_owner);
-		    this.setBaseParam('history', history);
-		    this.setBaseParam('chosen_networks', networks_as_csv );
-
-		    if (this.doReload && this.lastOptions) {
-
-			// We need to add BaseParams again because
-			// they had been copied to lastOptions internally.
-			params = {
-			    active_owner    : active_owner,
-			    history         : history,
-			    chosen_networks : networks_as_csv
-			};
-			Ext.applyIf( params, this.lastOptions.params );
-			this.reload( { params : params } );
-		    }
+		    this.changeBaseParams();
+                    if (this.doReload && this.isLoaded) {
+                        this.load();
+                    }
 		}, this);
-	}
+	},
+        changeBaseParams : function() {
+	    var appstate = NetspocManager.appstate;
+	    this.setBaseParam('active_owner', appstate.getOwner());
+	    this.setBaseParam('history', appstate.getHistory());
+	    this.setBaseParam('chosen_networks', appstate.getNetworks());
+        }
     }
 );
 
