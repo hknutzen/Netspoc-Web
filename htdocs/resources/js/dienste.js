@@ -65,7 +65,7 @@ Ext.override(Ext.grid.ColumnModel, {
 // - history is an object { policy : .., date : .., time : .., current : ..}
 // This is used by netspocstatestore to set and update its baseParams.
 NetspocManager.appstate = function () {
-    var owner, owner_alias, history, networks;
+    var owner, owner_alias, history, networks = '';
     var state = new Ext.util.Observable();
     state.addEvents('changed', 'ownerChanged', 'networksChanged');
     state.changeOwner = function (name, alias, silent) {
