@@ -133,11 +133,11 @@ NetspocManager.PolicyManager = Ext.extend(
                     wnd.close();
                 }
             }
-            if ( ! relation || relation === store.baseParams.relation) {
+            if ( relation && relation === store.baseParams.relation) {
                 return;
             }
             store.setBaseParam('relation', relation);
-            store.load();
+            store.load({params:params});
             this.clearDetails();
         },
 
