@@ -398,7 +398,7 @@ NetspocManager.workspace = function () {
                 xtype          : 'panel',
 		layout         : 'card',
 		activeItem     : 0,
-                layoutConfig   : { deferredRender : false },
+                layoutConfig   : { deferredRender : true },
 		border         : false,
 
                 // Add this workspace as attribute to every child.
