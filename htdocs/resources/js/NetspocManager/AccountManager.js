@@ -100,7 +100,7 @@ NetspocManager.AccountManager = Ext.extend(
                 xtype       : 'emaillist',
                 title       : ' ',
                 id          : 'SupervisorEmails',
-                flex        : 1,
+                flex        : 1
             }
         }
     }
