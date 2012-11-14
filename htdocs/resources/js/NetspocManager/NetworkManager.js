@@ -238,7 +238,10 @@ NetspocManager.NetworkManager = Ext.extend(
 		    width       : 600,
 		    height      : 500,
 		    closeAction : 'hide',
-		    items       : [ grid, button ]
+		    items       : [ grid, button ],
+                    listeners   : {
+                        hide : this.activateNetworkList
+                    }
 		}
 	    );
 	    return wnd;
