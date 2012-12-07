@@ -36,13 +36,6 @@ NetspocManager.NetworkManager = Ext.extend(
             appstate.addListener(
                 'networksChanged', 
                 function () {
-		    // If network-chooser-window was created before,
-		    // reload store of grid that gets 
-		    // displayed in choose-network-window.
-		    if ( Ext.isObject( choose_networks_wnd ) ) {
-			var grid = choose_networks_wnd.items.items[0];
-			grid.getStore().load();
-		    }
 		    // Activate network list in card panel.
 		    this.activateNetworkList();
                 },
@@ -304,11 +297,7 @@ NetspocManager.NetworkManager = Ext.extend(
 		    colModel   : col_model,
 		    sm         : selection_model,
 		    listeners  : {
-			beforerender : function ( component ) {
-			    component.getStore().load();
-			},
 			afterrender : function ( component ) {
-			    //console.log( component );
 			    component.getSelectionModel().selectAll();
 			}
 		    }
