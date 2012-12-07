@@ -136,15 +136,15 @@ sub load_json_version {
             # Check out from RCS revision of some date.
             if ($version =~ /^\d\d\d\d-\d\d-\d\d$/) {
                 my $cmd = "co -q -p -d'$version 23:59' -zLT $dir/RCS/$path,v";
-                $cmd = Encode::encode('UTF-8', $cmd);
-                open ($fh, '-|', $cmd) or die "Can't open $cmd: $!\n";
+                my $u8_cmd = Encode::encode('UTF-8', $cmd);
+                open ($fh, '-|', $u8_cmd) or die "Can't open $cmd: $!\n";
             }
 
             # Get selected policy from today.
             elsif ($version =~ /^p\d{1,8}$/) {
                 my $real_path = "$dir/$version/$path";
-                $real_path = Encode::encode('UTF-8', $real_path);
-                open ($fh, '<', $real_path) or die "Can't open $real_path\n";
+                my $u8_real_path = Encode::encode('UTF-8', $real_path);
+                open ($fh, '<', $u8_real_path) or die "Can't open $real_path\n";
             }
             else {
                 die "Internal: Invalid version requested";
