@@ -205,19 +205,20 @@ NetspocManager.NetworkManager = Ext.extend(
 	createAndShowNetworkChooser : function() {
 	    if ( !choose_networks_wnd ) {
 		choose_networks_wnd = this.createNetworkChooserWindow();
-	    }
-	    // Always reset store-param 'chosen_networks', so that
-	    // all networks are shown.
-	    var grids = choose_networks_wnd.findByType( 'grid' );
-	    var grid  = grids[0];
-	    if ( grid ) {
-		var store = grid.getStore();
-		store.setBaseParam( 'chosen_networks', '' );
-		store.reload();
-	    }
-	    else {
-		// ToDo: we should abort with an error here.
-		return;
+
+	        // Always reset store-param 'chosen_networks', so that
+	        // all networks are shown.
+	        var grids = choose_networks_wnd.findByType( 'grid' );
+	        var grid  = grids[0];
+	        if ( grid ) {
+		    var store = grid.getStore();
+		    store.setBaseParam( 'chosen_networks', '' );
+		    store.reload();
+	        }
+	        else {
+		    // ToDo: we should abort with an error here.
+		    return;
+	        }
 	    }
 	    choose_networks_wnd.show();
 	},
