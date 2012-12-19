@@ -1,8 +1,7 @@
 Ext.ns('NetspocWeb.store');
 
-NetspocWeb.store.Netspoc = Ext.extend(
-    Ext.data.JsonStore,
-    {
+function getConstructor ( supercls ) {
+    var constructor = {
 	constructor : function(config) {
 	    config = Ext.apply(config,
 		      {
@@ -12,7 +11,9 @@ NetspocWeb.store.Netspoc = Ext.extend(
 			  remoteSort    : false,
 			  url           : 'backend/' + config.proxyurl
 		      });
-	    NetspocWeb.store.Netspoc.superclass.constructor.call(this, config);
+
+            // Call constructor of superclass.
+	    supercls.call(this, config);
 	    this.addListener('beforeload', function ( store, options ) {
 				 Ext.getBody().mask('Daten werden geladen ...', 
 						    'x-mask-loading');
@@ -27,114 +28,6 @@ NetspocWeb.store.Netspoc = Ext.extend(
 	onJsonException :
 	function(proxy, type, action, options, response, arg ) {
 	    Ext.getBody().unmask();
-	    var msg;
-	    
-	    // status != 200
-	    if (type == 'response') {
-		try {
-		    var jsonData = Ext.decode( response.responseText );
-		    msg = jsonData.msg;
-		    if ( !msg ) {
-			if ( arg ) {
-			    msg = arg;
-			}
-		    }
-		}
-		catch (e) {
-		    msg = response.statusText;
-		}
-	    }
-
-	    // success != true
-	    else {
-		msg = response.msg;
-	    }
-	    msg = msg || 'Unbekannter Fehler (keine Meldung)';
-	    if (msg == 'Login required') {
-		Ext.MessageBox.show(
-		    { title   : 'Sitzung abgelaufen', 
-		      msg     : 'Neu anmelden',
-		      buttons : {ok:'OK', cancel:'Abbrechen'},
-		      icon    : Ext.MessageBox.WARNING,
-		      fn : function (buttonId) {
-			  if (buttonId == 'ok') {
-			      NetspocManager.workspace.onAfterLogout();
-			  }
-		      }
-		    });
-	    }
-	    else {
-		Ext.MessageBox.show(
-		    { title   : 'Fehler', 
-		      msg     : msg,
-		      buttons : Ext.MessageBox.OK,
-		      icon    : Ext.MessageBox.ERROR
-		    });
-	    }
-	}
-    }
-);
-
-Ext.reg( 'netspocstore', NetspocWeb.store.Netspoc);
-
-NetspocWeb.store.NetspocState = Ext.extend(
-    NetspocWeb.store.Netspoc,
-    {
-	constructor : function(config) {
-	    NetspocWeb.store.NetspocState.superclass.constructor.call(this, 
-								      config);
-	    // Set baseParams and reload store if appstate changes.
-            this.changeBaseParams();
-	    NetspocManager.appstate.addListener(
-		'changed', 
-		function () {
-		    this.changeBaseParams();
-                    if (this.doReload && this.isLoaded) {
-                        // Update copy of baseParams stored in lastOptions.
-                        Ext.apply(this.lastOptions.params, this.baseParams);
-                        this.reload();
-                    }
-		}, this);
-	},
-        changeBaseParams : function() {
-	    var appstate = NetspocManager.appstate;
-	    this.setBaseParam('active_owner', appstate.getOwner());
-	    this.setBaseParam('history', appstate.getHistory());
-	    this.setBaseParam('chosen_networks', appstate.getNetworks());
-        }
-    }
-);
-
-Ext.reg( 'netspocstatestore', NetspocWeb.store.NetspocState);
-
-
-
-// Stores with grouping for Grids using this feature.
-
-NetspocWeb.store.NetspocGroup = Ext.extend(
-    Ext.data.GroupingStore,
-    {
-	constructor : function(config) {
-	    var url = 'backend/' + config.proxyurl;
-	    config = Ext.apply(
-		config,
-		{
-		    url    : url
-		}
-	    );
-	    NetspocWeb.store.NetspocGroup.superclass.constructor.call(this, config);
-	    this.addListener('beforeload', function ( store, options ) {
-				 Ext.getBody().mask('Daten werden geladen ...', 
-						    'x-mask-loading');
-				 return true;			
-			     });
-	    this.addListener('load', function() { Ext.getBody().unmask(); });
-	    this.addListener('exception', this.onJsonException);
-	},
-	onJsonException :
-	function(proxy, type, action, options, response, arg ) {
-	    Ext.getBody().unmask();
-	    console.log( arg );
 	    var msg;
 	    
 	    // status != 200
@@ -198,7 +91,57 @@ NetspocWeb.store.NetspocGroup = Ext.extend(
 		    });
 	    }
 	}
-    }
+    };
+    return constructor;
+}
+
+NetspocWeb.store.Netspoc = Ext.extend(
+    Ext.data.JsonStore, (getConstructor(Ext.data.JsonStore))
+);
+
+Ext.reg( 'netspocstore', NetspocWeb.store.Netspoc);
+
+function getStateConstructor ( supercls ) {
+    var constructor = {
+	constructor : function(config) {
+
+            // Call constructor of superclass.
+	    supercls.call(this, config);
+
+	    // Set baseParams and reload store if appstate changes.
+            this.changeBaseParams();
+	    NetspocManager.appstate.addListener(
+		'changed', 
+		function () {
+		    this.changeBaseParams();
+                    if (this.doReload && this.isLoaded) {
+                        // Update copy of baseParams stored in lastOptions.
+                        Ext.apply(this.lastOptions.params, this.baseParams);
+                        this.reload();
+                    }
+		}, this);
+	},
+        changeBaseParams : function() {
+	    var appstate = NetspocManager.appstate;
+	    this.setBaseParam('active_owner', appstate.getOwner());
+	    this.setBaseParam('history', appstate.getHistory());
+	    this.setBaseParam('chosen_networks', appstate.getNetworks());
+        }
+    };
+    return constructor;
+}
+
+NetspocWeb.store.NetspocState = Ext.extend(
+    NetspocWeb.store.Netspoc,
+    (getStateConstructor(NetspocWeb.store.Netspoc))
+);
+
+Ext.reg( 'netspocstatestore', NetspocWeb.store.NetspocState);
+
+
+// Stores with grouping for Grids using this feature.
+NetspocWeb.store.NetspocGroup = Ext.extend(
+    Ext.data.GroupingStore, (getConstructor(Ext.data.GroupingStore))
 );
 
 Ext.reg( 'netspocgroupstore', NetspocWeb.store.NetspocGroup);
@@ -206,44 +149,7 @@ Ext.reg( 'netspocgroupstore', NetspocWeb.store.NetspocGroup);
 
 NetspocWeb.store.NetspocGroupState = Ext.extend(
     NetspocWeb.store.NetspocGroup,
-    {
-	constructor : function(config) {
-	    var appstate = NetspocManager.appstate;
-	    NetspocWeb.store.NetspocGroupState.superclass.constructor.call(
-		this, 
-		config
-	    );
-	    // Set baseParams and reload store if appstate changes.
-	    var networks_as_csv = appstate.getNetworks();
-	    this.setBaseParam('active_owner', appstate.getOwner());
-	    this.setBaseParam('history', appstate.getHistory());
-	    this.setBaseParam('chosen_networks', networks_as_csv );
-	    appstate.addListener(
-		'changed', 
-		function () {
-		    var params;
-		    var active_owner    = appstate.getOwner();
-		    var history         = appstate.getHistory();
-		    var networks_as_csv = appstate.getNetworks();
-		    this.setBaseParam('active_owner', active_owner);
-		    this.setBaseParam('history', history);
-		    this.setBaseParam('chosen_networks', networks_as_csv );
-
-		    if (this.doReload && this.lastOptions) {
-
-			// We need to add BaseParams again because
-			// they had been copied to lastOptions internally.
-			params = {
-			    active_owner    : active_owner,
-			    history         : history,
-			    chosen_networks : networks_as_csv
-			};
-			Ext.applyIf( params, this.lastOptions.params );
-			this.reload( { params : params } );
-		    }
-		}, this);
-	}
-    }
+    (getStateConstructor(NetspocWeb.store.NetspocGroup))
 );
 
 Ext.reg( 'groupingstatestore', NetspocWeb.store.NetspocGroupState);
