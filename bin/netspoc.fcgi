@@ -356,44 +356,31 @@ sub service_list {
 
 	# Only collect services that are relevant for chosen
 	# networks stored in $network_names.
+        my %relevant_objects = 
+            map({ $_ => 1 } (@$network_names, 
+                             map(@{ $assets->{net2childs}->{$_} },
+                                 @$network_names)));
       SERVICE:
-	for my $pname ( sort map(@$_, @{$lists}{qw(owner user)}) ) {
-	    my $users = get_users_for_owner_and_service( $owner, $pname );
-	    for my $rule ( @{$services->{$pname}->{rules}} ) {
-		my $src = $rule->{src};
-		my $dst = $rule->{dst};
-		for my $network ( @$network_names ) {
-                    my %children;
-		    map { $children{$_} = 1 }
-		        @{$assets->{net2childs}->{$network}};
-		    if ( $search_used || !$relation ||
-			 ( $relation eq 'user' && $users ) ) {
-			# Check if network or any of its contained resources
-			# can be found in user-data-structure.
-			for my $user ( @$users ) {
-			    my $uname = $user->{name};
-			    if ( $uname eq $network || $children{$uname} ) {
-				push @{$copy->{user}}, $pname;
-				next SERVICE;
-			    }
-			}
-		    }
-		    if ( $search_own || !$relation || $relation eq 'owner' ) {
-			# Only check src and dst for own services.
-			my $src_match = grep { $_ eq $network } @$src;
-			my $dst_match = grep { $_ eq $network } @$dst;
-			if ( $src_match > 0 || $dst_match > 0 ) {
-			    push @{$copy->{owner}}, $pname;
-			    next SERVICE;
-			}
-			for my $s ( @$src ) {
-			    if ( $children{$s} ) {
-				push @{$copy->{owner}}, $pname;
-				next SERVICE;
-			    }
-			} 
-			for my $d ( @$dst ) {
-			    if ( $children{$d} ) {
+	for my $pname (sort map(@$_, @{$lists}{qw(owner user)})) {
+
+            # Check if network or any of its contained resources
+            # is user of current service.
+            if ($search_used || !$relation || $relation eq 'user') {
+                my $users = get_users_for_owner_and_service($owner, $pname);
+                for my $user ( @$users ) {
+                    if ($relevant_objects{$user->{name}}) {
+                        push @{$copy->{user}}, $pname;
+                        next SERVICE;
+                    }
+                }
+            }
+
+            # Check src and dst for own services.
+            if ($search_own || !$relation || $relation eq 'owner') {
+                for my $rule (@{$services->{$pname}->{rules}}) {
+                    for my $what (qw(src dst)) {
+			for my $obj (@{ $rule->{$what} }) {
+			    if ($relevant_objects{$obj}) {
 				push @{$copy->{owner}}, $pname;
 				next SERVICE;
 			    }
