@@ -191,8 +191,10 @@ sub get_nat_obj {
             last;
 	}
     }
-    if (my $alias = $owner2alias->{$obj->{owner}}) {
-        $obj = { %$obj, owner_alias => $alias };
+    if ( $obj->{owner} ) {
+        if (my $alias = $owner2alias->{$obj->{owner}}) {
+            $obj = { %$obj, owner_alias => $alias };
+        }
     }
     return $obj;
 }
@@ -260,8 +262,10 @@ sub get_services_and_rules {
 
   SERVICE:
     for my $sname ( @{$service_names} ) {
-	my $rules = get_rules_for_owner_and_service( $owner, $sname, $disp_prop );
-	my $users = get_users_for_owner_and_service( $owner, $sname );
+	my $rules =
+            get_rules_for_owner_and_service( $cgi, $owner, $sname );
+	my $users =
+            get_users_for_owner_and_service( $cgi, $owner, $sname );
 	my $user_props = [];
 	if ( $expand_users ) {
 	    map { push @$user_props, $_->{$disp_prop} } @$users;
@@ -319,6 +323,20 @@ sub get_services_owners_and_admins {
     return $data;
 }
 
+sub relevant_objects_for_networks {
+    my ( $network_names, $assets ) = @_;
+    $network_names ||
+        internal_err "No networks specified in request for relevant objects!";
+    $assets ||
+        internal_err "No assets given in request for relevant objects!";
+
+    my %relevant_objects = 
+        map({ $_ => 1 } (@$network_names, 
+                         map(@{ $assets->{net2childs}->{$_} },
+                             @$network_names)));
+    return \%relevant_objects;
+}
+
 
 ####################################################################
 # Services, rules, users
@@ -349,26 +367,22 @@ sub service_list {
 
 	# Untaint: Intersect chosen networks with all networks
 	# within area of ownership.
-	my $chosen_networks = [ split /,/, $chosen ];
-	my $network_names = $assets->{network_list};
-	$network_names = intersect( $chosen_networks,
-				    $network_names  );
+	my $network_names = untaint_networks( $chosen, $assets );
 
 	# Only collect services that are relevant for chosen
 	# networks stored in $network_names.
-        my %relevant_objects = 
-            map({ $_ => 1 } (@$network_names, 
-                             map(@{ $assets->{net2childs}->{$_} },
-                                 @$network_names)));
+        my $relevant_objects =
+            relevant_objects_for_networks( $network_names, $assets );
+
       SERVICE:
 	for my $pname (sort map(@$_, @{$lists}{qw(owner user)})) {
 
             # Check if network or any of its contained resources
             # is user of current service.
             if ($search_used || !$relation || $relation eq 'user') {
-                my $users = get_users_for_owner_and_service($owner, $pname);
+                my $users = get_users_for_owner_and_service($cgi, $owner, $pname);
                 for my $user ( @$users ) {
-                    if ($relevant_objects{$user->{name}}) {
+                    if ($relevant_objects->{$user->{name}}) {
                         push @{$copy->{user}}, $pname;
                         next SERVICE;
                     }
@@ -380,7 +394,7 @@ sub service_list {
                 for my $rule (@{$services->{$pname}->{rules}}) {
                     for my $what (qw(src dst)) {
 			for my $obj (@{ $rule->{$what} }) {
-			    if ($relevant_objects{$obj}) {
+			    if ($relevant_objects->{$obj}) {
 				push @{$copy->{owner}}, $pname;
 				next SERVICE;
 			    }
@@ -447,7 +461,8 @@ sub service_list {
 			      'both' => 'both'
 			      );
 		# Get rules for current owner and service.
-		my $rules = get_rules_for_owner_and_service( $owner, $sname );
+		my $rules =
+                    get_rules_for_owner_and_service( $cgi, $owner, $sname );
 		if ( $rules ) {
 		    for my $r ( @$rules ) {
 			# Search in src or dst.
@@ -468,7 +483,7 @@ sub service_list {
 		}
 	    }
 	    if ( $cgi->param( 'search_in_user' ) ) {
-		my $users = get_users_for_owner_and_service( $owner, $sname );
+		my $users = get_users_for_owner_and_service( $cgi, $owner, $sname );
 		if ( $users ) {
 		    for my $u ( @$users ) {
 			if ( $u->{ip}  &&  $u->{ip} =~ /$search/ ) {
@@ -513,31 +528,101 @@ sub service_list {
     } @$plist ];
 }
 
+# Untaint: Intersect chosen networks with all networks
+# within area of ownership.
+# Return untainted networks as array-ref.
+sub untaint_networks {
+    my ( $chosen, $assets ) = @_;
+    $chosen || internal_err "No networks to untaint!";
+    my $chosen_networks = [ split /,/, $chosen ];
+    my $network_names = $assets->{network_list};
+    return intersect( $chosen_networks, $network_names  );
+}
+
 sub get_users_for_owner_and_service {
-    my ( $owner, $sname ) = @_;
+    my ( $cgi, $owner, $sname ) = @_;
+    my $chosen = $cgi->param('chosen_networks');
+    my $used_services = services_for_owner( $owner, 'user' );
+    my $relevant_objects;
+
     # Get user for current owner and service.
     my $path = "owner/$owner/users";
     my $sname2users = load_json( $path );
     
     # Empty user list is not exported intentionally.
     my $user_names = $sname2users->{$sname} || [];
-    return get_nat_obj_list($user_names, $owner);
+
+    my $res = get_nat_obj_list($user_names, $owner);
+    my @result = @$res;
+
+    # Are we in restricted mode with only selected networks?
+    # Only filter users for own services.
+    if ( $chosen &&  $used_services->{$sname} ) {
+        my $assets = load_json("owner/$owner/assets");
+        my $network_names = untaint_networks( $chosen, $assets );
+
+	# Only collect users that are relevant for chosen
+	# networks stored in $network_names.
+        $relevant_objects =
+            relevant_objects_for_networks( $network_names, $assets );
+        @result = grep { $relevant_objects->{$_->{name}} } @$res;
+    }
+    return \@result;
+}
+
+sub services_for_owner {
+    my ( $owner, $which ) = @_;
+    my $lists = load_json("owner/$owner/service_lists");
+    $which ||
+        internal_err 'Need to specify attribute "owner", "user" or "visible"';
+    my %services;
+    map { $services{$_} = 1 } @{$lists->{$which}};
+    return \%services;
 }
 
 sub get_rules_for_owner_and_service {
-    my ( $owner, $sname, $prop ) = @_;
-    my $lists = load_json("owner/$owner/service_lists");
-    $prop ||= 'ip';
+    my ( $cgi, $owner, $sname ) = @_;
+    my $chosen         = $cgi->param('chosen_networks');
+    my $prop           = $cgi->param('display_property');
+    my $lists          = load_json("owner/$owner/service_lists");
+    my $owner_services = services_for_owner( $owner, 'owner' );
+    $prop ||= 'ip';  # 'ip' as default property to display
+    my $relevant_objects;
+
     # Check if owner is allowed to access this service.
     $lists->{hash}->{$sname} or abort "Unknown service '$sname'";
     my $services = load_json('services');
+
+    my $no_nat_set = get_no_nat_set($owner);
+    my $rules = $services->{$sname}->{rules};
+
+    # If networks were selected and own services are displayed,
+    # filter rules to those containing these networks
+    # (and their child objects).
+    if ( $chosen && $owner_services->{$sname} ) {
+        my $assets = load_json("owner/$owner/assets");
+        my $network_names = untaint_networks( $chosen, $assets );
+
+	# Get relevant objects for currently chosen networks.
+        $relevant_objects =
+            relevant_objects_for_networks( $network_names, $assets );
+        my %which = (
+            src  => 'dst',
+            dst  => 'src',
+            both => 1
+            );
+        $rules = [ grep {
+            my %h; map($h{$_}=1, @{$_->{$which{$_->{has_user}}}});
+            my $i = intersect( [keys %h], [keys %$relevant_objects] );
+            my $ret = $_->{has_user} eq 'both' ? 0 : scalar( @$i );
+            $ret;
+        } @$rules ];
+    }
 
     # Rules reference objects by name.
     # Build copy with 
     # - names substituted by objects
     # - IP addresses in object with NAT applied.
-    my $no_nat_set = get_no_nat_set($owner);
-    my $rules = $services->{$sname}->{rules};
     my $crules;
     for my $rule (@$rules) {
 	my $crule = { %$rule };
@@ -555,14 +640,14 @@ sub get_rules {
     my ($cgi, $session) = @_;
     my $owner = $cgi->param('active_owner');
     my $sname = $cgi->param('service') or abort "Missing parameter 'service'";
-    return get_rules_for_owner_and_service( $owner, $sname );
+    return get_rules_for_owner_and_service( $cgi, $owner, $sname );
 }
 
 sub get_users {
     my ($cgi, $session) = @_;
     my $owner = $cgi->param('active_owner');
     my $sname = $cgi->param('service') or abort "Missing parameter 'service'";
-    return get_users_for_owner_and_service( $owner, $sname );
+    return get_users_for_owner_and_service( $cgi, $owner, $sname );
 }
 
 my %text2css = ( '+' => 'icon-add',
