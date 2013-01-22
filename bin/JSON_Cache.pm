@@ -65,8 +65,7 @@ sub postprocess_json {
 	my @snames = map @$_, values %$data;
 	@{$data->{hash}}{@snames} = (1) x @snames;
     }
-    
-    # elsif ($path =~/services$/) {
+    elsif ($path =~/services$/) {
 
 	# Input: Hash mapping service names to details and rules.
 	# { s1 => { 
@@ -79,10 +78,26 @@ sub postprocess_json {
 	#          dst => [ object_names, ..],
 	#          action => "permit|deny",
 	#          has_user => "src|dst|both",
-	#          srv => [ "ip|tcp|tcp 80|...", ..] },
+	#          srv => [ "ip|tcp|tcp 80|udp 60-70|...", ..] },
 	#        ..]},
 	#   ..}
-    # }
+
+        # Sort protocols (export.pl only sorted lexicographically)
+        # 1. by protocol type icmp, ip, proto, tcp, udp
+        # 2. by first number (port or type)
+        # using Schwarzian transformation
+        for my $service (values %$data) {
+            for my $rule (@{ $service->{rules} }) {
+                $rule->{srv} = [
+                    map  { $_->[0] }
+                    sort { $a->[1] cmp $b->[1] || $a->[2] <=> $b->[2] }
+                    map  { my($p, $n) = split; 
+                           no warnings; [ $_, $p, $n+0 ] }
+                    @{ $rule->{srv} } ];
+            }
+        }        
+    }
+
     # elsif ($path =~ m/users$/) {
 
 	# Input: Hash mapping service names to user objects.
