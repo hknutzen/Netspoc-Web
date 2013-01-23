@@ -287,8 +287,8 @@ NetspocManager.PolicyManager = Ext.extend(
                           return bold_user( node, 'dst' );
                       }
                     },
-                    { name : 'srv',      mapping : function( node ) {
-                          return node.srv.join( '<br>' );
+                    { name : 'prt',      mapping : function( node ) {
+                          return node.prt.join( '<br>' );
                       }
                     }
                 ]
@@ -313,7 +313,7 @@ NetspocManager.PolicyManager = Ext.extend(
                         },
                         {
                             header    : 'Protokoll',
-                            dataIndex : 'srv'
+                            dataIndex : 'prt'
                         }
                     ],
                     defaults : {

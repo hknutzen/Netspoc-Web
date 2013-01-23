@@ -282,7 +282,7 @@ sub get_services_and_rules {
 		    $user_props : $rule->{src},
 		dst     => $rule->{has_user} eq 'dst' ?
 		    $user_props : $rule->{dst},
-		proto   => $rule->{srv},
+		proto   => $rule->{prt},
 	    };
 	}
     }
@@ -472,8 +472,8 @@ sub service_list {
 				next SERVICE;
 			    }
 			}
-			# Search in srv.
-			for my $item ( @{$r->{srv}} ) {
+			# Search in protocol.
+			for my $item ( @{$r->{prt}} ) {
 			    if ( $item =~ /$search/ ) {
 				push @$plist, $sname;
 				next SERVICE;

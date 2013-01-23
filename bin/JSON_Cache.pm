@@ -78,7 +78,7 @@ sub postprocess_json {
 	#          dst => [ object_names, ..],
 	#          action => "permit|deny",
 	#          has_user => "src|dst|both",
-	#          srv => [ "ip|tcp|tcp 80|udp 60-70|...", ..] },
+	#          srv|prt => [ "ip|tcp|tcp 80|udp 60-70|...", ..] },
 	#        ..]},
 	#   ..}
 
@@ -88,12 +88,14 @@ sub postprocess_json {
         # using Schwarzian transformation
         for my $service (values %$data) {
             for my $rule (@{ $service->{rules} }) {
-                $rule->{srv} = [
+                $rule->{prt} = [
                     map  { $_->[0] }
                     sort { $a->[1] cmp $b->[1] || $a->[2] <=> $b->[2] }
                     map  { my($p, $n) = split; 
                            no warnings; [ $_, $p, $n+0 ] }
-                    @{ $rule->{srv} } ];
+
+                    # Support old key {prt} in history files.
+                    @{ $rule->{prt} || $rule->{srv} } ];
             }
         }        
     }
