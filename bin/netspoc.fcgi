@@ -220,8 +220,7 @@ sub get_networks {
     my $assets = load_json("owner/$owner/assets");
     my $network_names = $assets->{network_list};
     if ( $chosen ) {
-	my $chosen_networks = [ split /,/, $chosen ];
-	$network_names = intersect( $chosen_networks, $network_names  );
+	$network_names = untaint_networks( $chosen, $assets );
     }
     return get_nat_obj_list( $network_names, $owner );
 }
@@ -533,7 +532,6 @@ sub service_list {
 # Return untainted networks as array-ref.
 sub untaint_networks {
     my ( $chosen, $assets ) = @_;
-    $chosen || internal_err "No networks to untaint!";
     my $chosen_networks = [ split /,/, $chosen ];
     my $network_names = $assets->{network_list};
     return intersect( $chosen_networks, $network_names  );
