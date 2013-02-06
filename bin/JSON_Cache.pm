@@ -82,17 +82,22 @@ sub postprocess_json {
 	#        ..]},
 	#   ..}
 
-        # Sort protocols (export.pl only sorted lexicographically)
+        # Sort protocols again. 
+        # Protocols are sorted already by export.pl, 
+        # but some old history files are still sorted lexicographically.
         # 1. by protocol type icmp, ip, proto, tcp, udp
         # 2. by first number (port or type)
+        # 3. by remaining characters
         # using Schwarzian transformation
         for my $service (values %$data) {
             for my $rule (@{ $service->{rules} }) {
                 $rule->{prt} = [
                     map  { $_->[0] }
-                    sort { $a->[1] cmp $b->[1] || $a->[2] <=> $b->[2] }
-                    map  { my($p, $n) = split; 
-                           no warnings; [ $_, $p, $n+0 ] }
+                    sort { $a->[1] cmp $b->[1] || 
+                           $a->[2] <=> $b->[2] ||
+                           $a->[3] cmp $b->[3] }
+                    map  { my($p, $n, $r) = m/^(\w+) (\d*)(.*)/;
+                           [ $_, $p, $n || 0, $r ] }
 
                     # Support old key {prt} in history files.
                     @{ $rule->{prt} || $rule->{srv} } ];
