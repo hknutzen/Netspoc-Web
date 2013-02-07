@@ -48,7 +48,8 @@ NetspocManager.PolicyManager = Ext.extend(
                       sortType : 'asUCString' 
                     },
 		    { name : 'desc',  mapping : 'description' },
-		    { name : 'owner' }
+		    { name : 'owner' },
+		    { name : 'manager' }
 		],
                 id        : 'policyListId',
                 flex      : 1,
@@ -224,7 +225,12 @@ NetspocManager.PolicyManager = Ext.extend(
                 xtype : 'cardprintactive',
                 flex           : 2,
                 activeItem     : 0,
-                layoutConfig   : { deferredRender : false },
+                layoutConfig   : { deferredRender : false,
+                                   // Sonst wird der Container mit 'trigger' 
+                                   // bei multi Owner nicht korrekt angezeigt,
+                                   // wenn man zwischen User udn Details 
+                                   // wechselt.
+                                   layoutOnCardChange : true },
                 tbar : [
                     {
                         text          : 'Details zum Dienst',
@@ -365,14 +371,28 @@ NetspocManager.PolicyManager = Ext.extend(
                         },
                         { xtype : 'hidden',
                           id    : 'hiddenOwner',
-                          name  : 'owner'
+                          name  : 'all_owners'
                         },
-                        { xtype          : 'trigger',
-                          id             : 'trigger',
-                          fieldLabel     : 'Verantwortung',
-                          name           : 'owner1',
-                          editable       : false,
-                          onTriggerClick : this.bind(this.onTriggerClick)
+                        { xtype      : 'container',
+                          id         : 'verantwLabel',
+                          fieldLabel : 'Verantwortung',
+                          layout     : 'hbox',
+                          items      : [
+		              { xtype   : 'button',
+                                hidden  : true,
+                                id      : 'trigger',
+                                flex    : 0,
+			        iconCls : 'icon-group',
+			        scope   : this,
+			        handler : this.onTriggerClick
+		              },
+                              { xtype      : 'textfield',
+                                id         : 'owner1',
+                                flex       : 1,
+                                name       : 'owner1',
+                                readOnly   : true
+                              }
+                          ]
                         }
                     ]
                 }
@@ -392,30 +412,41 @@ NetspocManager.PolicyManager = Ext.extend(
 
         onPolicySelected : function() {
             var selectedPolicy = Ext.getCmp('policyListId').getSelected();
+
             if (! selectedPolicy) {
                 this.clearDetails();
                 return;
             }
+
+            // Merge delegated owner and (multiple) std. owners.
+            var manager = selectedPolicy.get( 'manager' );
+            var array = selectedPolicy.get( 'owner' );
+            var all_owners;
+            if (manager) {
+                manager.manager = true;
+                all_owners = [];
+                all_owners = all_owners.concat(manager, array);
+            }
+            else {
+                all_owners = array;
+            }
+            selectedPolicy.set('all_owners', all_owners);
 
             // Load details form with values from selected record.
             var form = Ext.getCmp("policyDetailsId").getForm();
             form.loadRecord(selectedPolicy);
 
             // Handle multiple owners.
-            var array = selectedPolicy.get( 'owner' );
             var trigger = Ext.getCmp("trigger");
-            if (array.length == 1) {
+            if (all_owners.length == 1) {
                 // Hide trigger button if only one owner available.
-                trigger.setHideTrigger(true);
-                trigger.el.dom.style.backgroundColor = "#FFFFFF";
+                trigger.hide();
             }
             else {
                 // Multiple owners available.
-                trigger.setHideTrigger(false);
-                // Give a visual hint in case of multiple owners.
-                // This paints a coloured line below the text.
-                trigger.el.dom.style.backgroundColor = "#FFC0C0";
+                trigger.show();
             }
+            trigger.ownerCt.doLayout();
             // Show emails for first owner.
             this.onTriggerClick();
 
@@ -447,16 +478,18 @@ NetspocManager.PolicyManager = Ext.extend(
             var name = owner1.name;
             var alias = owner1.alias || name;
             array.push(owner1);
-            Ext.getCmp('trigger').setValue(alias);
+            Ext.getCmp('verantwLabel').label.
+                update(owner1.manager ? 'Verwalter:' : 'Verantwortung:');
+            Ext.getCmp('owner1').setValue(alias);
             Ext.getCmp('PolicyEmails').show(name, alias);
         },
 
         clearDetails : function() {
             var form = this.findById('policyDetailsId').getForm();
-            var trigger = Ext.getCmp("trigger");
+            var trigger = Ext.getCmp('trigger');
             form.reset();
-            trigger.el.dom.style.backgroundColor = "#FFFFFF";
-            trigger.setHideTrigger(true);
+            trigger.hide();
+            trigger.ownerCt.doLayout();
 
             var dvRules = Ext.StoreMgr.get('dvRulesStoreId');
             dvRules.removeAll();
