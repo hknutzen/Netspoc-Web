@@ -512,17 +512,22 @@ sub service_list {
     }
 
     my $owner2alias = load_json('owner2alias');
+    my $add_alias = sub {
+        my ($owner) = @_;
+        my $v = { name => $owner }; 
+        if (my $a = $owner2alias->{$owner}) {
+            $v->{alias} = $a;
+        }
+        return $v
+    };
     return [ map {
 	my $hash = { name => $_, %{ $services->{$_}->{details}} };
 
-	# Add alias name
-	$hash->{owner} =
-            [ map({ my $v = { name => $_ }; 
-                    if (my $a = $owner2alias->{$_}) {
-                        $v->{alias} = $a;
-                    }
-                    $v
-                  } @{ $hash->{owner} }) ];
+	# Add alias name to 
+        # 1. list of owners, 
+        # 2. optional single manager (= service owner)
+	$hash->{owner} = [ map($add_alias->($_), @{ $hash->{owner} }) ];
+	$hash->{manager} and $hash->{manager} = $add_alias->($hash->{manager});
 	$hash;
     } @$plist ];
 }
