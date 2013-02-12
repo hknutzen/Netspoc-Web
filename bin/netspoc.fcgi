@@ -9,7 +9,9 @@ use CGI::Simple;
 use CGI::Session;
 use CGI::Session::Driver::file;
 use Digest::MD5 qw/md5_hex/;
+use Digest::SHA qw/sha256_hex/;
 use String::MkPasswd qw(mkpasswd);
+use Crypt::SaltedHash;
 use Encode;
 
 use FindBin;
@@ -897,16 +899,37 @@ sub send_verification_mail {
 # Get / set password for user.
 # New password is already encrypted in sub register below.
 sub store_password {
-    my ($email, $pass) = @_;
+    my ($email, $hash) = @_;
     my $store = User_Store::new($config, $email);
-    $store->param('pass', $pass);
+    $store->param('hash', $hash);
+    $store->clear('old_hash');
     $store->flush();
 }
 
 sub check_password  {
     my ($email, $pass) = @_;
     my $store = User_Store::new($config, $email);
-    $store->param('pass') eq md5_hex($pass);
+    my $csh = Crypt::SaltedHash->new(algorithm => 'SHA-256');
+
+    # Check password with salted hash.
+    if (my $hash = $store->param('hash')) {
+        return $csh->validate($hash, $pass);
+    }
+
+    # Check against double hashed old password.
+    elsif (my $salted_old_hash = $store->param('old_hash')) {
+        return $csh->validate($salted_old_hash, md5_hex($pass));
+    }
+
+    # Check against old unsalted hashed password
+    elsif (my $old_hash = $store->param('pass')) {
+        return ($old_hash eq md5_hex($pass));
+    }
+
+    # No password known.
+    else {
+        return undef;
+    }
 }
 
 sub register {
@@ -921,8 +944,13 @@ sub register {
     my $token = md5_hex(localtime, $email);
     my $pass = mkpasswd() or internal_err "Can't generate password";
 
-    # Store encrypted password in session until verification.
-    my $reg_data = { user => $email, pass => md5_hex($pass), token => $token };
+    # Create salted hash from password.
+    my $csh = Crypt::SaltedHash->new(algorithm => 'SHA-256');
+    $csh->add($pass);
+    my $hash = $csh->generate;
+
+    # Store hash in session until verification.
+    my $reg_data = { user => $email, hash => $hash, token => $token };
     $session->expire('register', '1d');
     $session->param('register', $reg_data);
     $session->flush();
@@ -945,7 +973,7 @@ sub verify {
 	$reg_data->{user} eq $email and
 	$reg_data->{token} eq $token) 
     {
-	store_password($email, $reg_data->{pass});
+	store_password($email, $reg_data->{hash});
 	$session->clear('register');
         $session->flush();
         clear_attack($email);
