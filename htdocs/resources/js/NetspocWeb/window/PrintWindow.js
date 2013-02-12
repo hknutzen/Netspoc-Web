@@ -255,7 +255,7 @@ NetspocWeb.window.PrintWindow = Ext.extend(
 			    var cb_group = new Ext.form.CheckboxGroup(
 				{
 				    xtype   : 'checkboxgroup',
-				    width   : 210,
+				    width   : 215,
 				    items   : [
 					{boxLabel : 'User expandieren',
 					 name     : 'cb-exp-users'},
