@@ -96,8 +96,8 @@ sub postprocess_json {
                     sort { $a->[1] cmp $b->[1] || 
                            $a->[2] <=> $b->[2] ||
                            $a->[3] cmp $b->[3] }
-                    map  { my($p, $n, $r) = m/^(\w+) (\d*)(.*)/;
-                           [ $_, $p, $n || 0, $r ] }
+                    map  { my($p, $n, $r) = m/^(\w+) ?(\d*)(.*)/;
+                           [ $_, $p, $n || 0, $r || '' ] }
 
                     # Support old key {prt} in history files.
                     @{ $rule->{prt} || $rule->{srv} } ];
