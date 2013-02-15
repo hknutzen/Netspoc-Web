@@ -307,17 +307,18 @@ sub get_services_owners_and_admins {
 
     my $owner2alias = load_json('owner2alias');
   SERVICE:
-    for my $srv_name ( @{$service_names} ) {
-	my $srv_owner = $services->{$srv_name}->{details}->{owner};
+    for my $srv_name (@{$service_names}) {
+        my $details = $services->{$srv_name}->{details};
+	my @owners = ($details ->{sub_owner} || (), @{ $details->{owner} });
 
 	my $admins;
-	for my $o ( @$srv_owner ) {
+	for my $o (@owners) {
 	    my $emails = load_json("owner/$o/emails");
-	    map { push @$admins, $_->{email} } @$emails;
+	    push @$admins, map { $_->{email} } @$emails;
 	}
 	push @$data, {
 	    service   => $srv_name,
-	    srv_owner => [ map { $owner2alias->{$_} || $_ } @$srv_owner ],
+	    srv_owner => [ map { $owner2alias->{$_} || $_ } @owners ],
 	    admins    => $admins,
 	};
     }
