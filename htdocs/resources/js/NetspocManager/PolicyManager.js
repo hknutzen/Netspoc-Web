@@ -1,4 +1,3 @@
-
 Ext.ns("NetspocManager");
 
 /**
@@ -49,7 +48,7 @@ NetspocManager.PolicyManager = Ext.extend(
                     },
 		    { name : 'desc',  mapping : 'description' },
 		    { name : 'owner' },
-		    { name : 'manager' }
+		    { name : 'sub_owner' }
 		],
                 id        : 'policyListId',
                 flex      : 1,
@@ -419,13 +418,13 @@ NetspocManager.PolicyManager = Ext.extend(
             }
 
             // Merge delegated owner and (multiple) std. owners.
-            var manager = selectedPolicy.get( 'manager' );
+            var sub_owner = selectedPolicy.get( 'sub_owner' );
             var array = selectedPolicy.get( 'owner' );
             var all_owners;
-            if (manager) {
-                manager.manager = true;
+            if (sub_owner) {
+                sub_owner.sub_owner = true;
                 all_owners = [];
-                all_owners = all_owners.concat(manager, array);
+                all_owners = all_owners.concat(sub_owner, array);
             }
             else {
                 all_owners = array;
@@ -479,7 +478,7 @@ NetspocManager.PolicyManager = Ext.extend(
             var alias = owner1.alias || name;
             array.push(owner1);
             Ext.getCmp('verantwLabel').label.
-                update(owner1.manager ? 'Verwalter:' : 'Verantwortung:');
+                update(owner1.sub_owner ? 'Verwalter:' : 'Verantwortung:');
             Ext.getCmp('owner1').setValue(alias);
             Ext.getCmp('PolicyEmails').show(name, alias);
         },

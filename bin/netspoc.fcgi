@@ -527,9 +527,10 @@ sub service_list {
 
 	# Add alias name to 
         # 1. list of owners, 
-        # 2. optional single manager (= service owner)
+        # 2. optional single sub_owner (= service owner)
 	$hash->{owner} = [ map($add_alias->($_), @{ $hash->{owner} }) ];
-	$hash->{manager} and $hash->{manager} = $add_alias->($hash->{manager});
+	$hash->{sub_owner} and 
+            $hash->{sub_owner} = $add_alias->($hash->{sub_owner});
 	$hash;
     } @$plist ];
 }
