@@ -297,17 +297,17 @@ sub get_services_owners_and_admins {
     my $lists     = load_json("owner/$owner/service_lists");
     my $assets    = load_json("owner/$owner/assets");
     my $services  = load_json('services');
-    my $param_services = [ split ",", $srv_list ];
+    my $service_names = [ split ",", $srv_list ];
     my $data = [];
 
-    # Untaint services passed as params by intersecting
-    # with known service-names from json-data.
-    my $service_names = intersect( [ map(@$_, @{$lists}{qw(owner user visible)}) ],
-				   $param_services );
-
     my $owner2alias = load_json('owner2alias');
+    my $hash = $lists->{hash};
   SERVICE:
     for my $srv_name (@{$service_names}) {
+        
+        # Check if owner is allowed to access this service.
+        $hash->{$srv_name} or abort "Unknown service '$srv_name'";
+
         my $details = $services->{$srv_name}->{details};
 	my @owners = ($details ->{sub_owner} || (), @{ $details->{owner} });
 
