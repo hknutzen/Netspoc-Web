@@ -60,9 +60,7 @@ NetspocManager.NetworkManager = Ext.extend(
 		    this.setOwnNetworksButton( top_card_panel, 'default' );
 
 		    // Clear network details view.
-		    var nrl = this.findByType( 'networkresourceslist' );
-		    var view = nrl[0];
-		    view.getStore().removeAll();
+                    this.findById('hostListId').getStore().removeAll();
                 },
 		this
 	    );                    
@@ -182,13 +180,41 @@ NetspocManager.NetworkManager = Ext.extend(
 
         buildNetworkDetails : function() {
             return {
-                xtype : 'networkresourceslist'
+                xtype      : 'simplelist',
+		proxyurl   : 'get_hosts',
+		sortInfo   : { field: 'ip', direction: "ASC" },
+                id         : 'hostListId',
+		fieldsInfo : [
+		    { name     : 'ip',
+		      header   : 'IP-Adresse',
+		      width    : .25,
+		      sortType : function ( value ) {
+			  var m = /-/;
+			  if ( value.match(m) ) {
+			      var array = value.split('-');
+			      return ip2numeric( array[0] );
+			  }
+			  else {
+			      return ip2numeric( value );
+			  }
+		      }
+		    },
+		    { name    : 'name',
+		      header  : 'Name' },
+		    { name    : 'owner', 
+		      header  : 'Verantwortungsbereich',
+		      width   : .25,
+                      mapping :  function (node) {
+                          return node.owner_alias || node.owner;
+                      }
+                    }
+		]
             };
         },
 
         onNetworkListSelected : function( dataview, selections ) {
 	    if ( dataview ) {
-		var store = Ext.StoreMgr.get('stNetworkDetailsId');
+		var store = this.findById('hostListId').getStore();
 		var selected = dataview.getSelectedRecords();
 		if ( selected ) {
 		    if ( selected[0] ) {

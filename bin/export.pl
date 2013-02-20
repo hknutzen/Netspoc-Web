@@ -218,9 +218,9 @@ sub owner_for_object {
     return ();
 }
 
-sub sub_owners_for_object {	
+sub part_owners_for_object {	
     my ($object) = @_;
-    if (my $aref = $object->{sub_owners}) {
+    if (my $aref = $object->{part_owners}) {
 	return map { (my $name = $_->{name}) =~ s/^owner://; $name } @$aref;
     }
     return ();
@@ -237,11 +237,11 @@ sub owners_for_objects {
     return [ sort values %owners ];
 }
 
-sub sub_owners_for_objects {	
+sub part_owners_for_objects {	
     my ($objects) = @_;
     my %owners;
     for my $object (@$objects) {
-	for my $name (sub_owners_for_object($object)) {
+	for my $name (part_owners_for_object($object)) {
 	    $owners{$name} = $name;
 	}
     }
@@ -274,6 +274,7 @@ sub proto_descr {
     for my $proto0 (@$protocols) {
 	my $protocol = $proto0;
 	my $desc = my $ptype = $protocol->{proto};
+        my $num;
 	if ($ptype eq 'tcp' or $ptype eq 'udp') {
 	    my $port_code = sub ( $$ ) {
 		my ($v1, $v2) = @_;
@@ -294,6 +295,7 @@ sub proto_descr {
 	    }
 	    elsif ($dport) {
 		$desc .= " $dport";
+                ($num) = split('-', $dport)
 	    }
 	}
 	elsif ($ptype eq 'icmp') {
@@ -304,6 +306,7 @@ sub proto_descr {
 		else {
 		    $desc .= " $type";
 		}
+                $num = $type;
 	    }
 	}
 	if (my $flags = $protocol->{flags}) {
@@ -321,9 +324,17 @@ sub proto_descr {
 		}
 	    }
 	}
-	push @result, $desc;
+        $num ||= 0;
+	push @result, [ $desc, $ptype, $num ];
     }
-    @result = sort @result;
+    @result = 
+        map { $_->[0] }
+
+        # Sort by protocol, port/type, all (if proto and num are equal)
+        sort { $a->[1] cmp $b->[1] || 
+               $a->[2] <=> $b->[2] || 
+               $a->[0] cmp $b->[0] }
+        @result;
     \@result;
 }
 
@@ -416,14 +427,18 @@ sub setup_service_info {
 	}
 
 	# Input: owner objects, output: owner names
-	my $owners = owners_for_objects(\@objects);
+	my $owners = owners_for_objects(\@objects); 
+        if ($service->{sub_owner}) {
+            $service->{sub_owner} = $service->{sub_owner}->{name};
+            $service->{sub_owner} =~ s/^owner://;
+        }
 
 	# Add artificial owner :unknown if owner is unknown.
 	push @$owners, ':unknown' if not @$owners;
 	$service->{owners} = $owners;
-	$service->{sub_owners} = sub_owners_for_objects(\@objects);
+	$service->{part_owners} = part_owners_for_objects(\@objects);
 	my $uowners = $service->{uowners} = $is_coupling ? [] : owners_for_objects($users);
-	$service->{sub_uowners} = $is_coupling ? [] : sub_owners_for_objects($users);
+	$service->{sub_uowners} = $is_coupling ? [] : part_owners_for_objects($users);
 
 	# Für Übergangszeit aus aktueller Benutzung bestimmen.
 	$service->{visible} ||= find_visibility($owners, $uowners);
@@ -432,7 +447,7 @@ sub setup_service_info {
 }
 
 ######################################################################
-# Fill attribute sub_owners at objects which contain objects
+# Fill attribute part_owners at objects which contain objects
 # belonging to other owners.
 ######################################################################
 
@@ -441,7 +456,7 @@ sub setup_service_info {
 # as well.
 my @all_zones;
 
-sub setup_sub_owners {
+sub setup_part_owners {
     progress("Setup sub owners");
     my %all_zones;
     for my $host (values %hosts) {
@@ -450,19 +465,19 @@ sub setup_sub_owners {
 	my $network = $host->{network};
 	my $net_owner = $network->{owner};
 	if ( not ($net_owner and $host_owner eq $net_owner)) {
-	    $network->{sub_owners}->{$host_owner} = $host_owner;
+	    $network->{part_owners}->{$host_owner} = $host_owner;
 #	    Netspoc::debug "$network->{name} : $host_owner->{name}";
 	}
     }
     for my $network (values %networks) {
 	$network->{disabled} and next;
 	my @owners;
-	if (my $hash = $network->{sub_owners}) {
+	if (my $hash = $network->{part_owners}) {
 	    @owners = values %$hash;
 
 	    # Substitute hash by array. 
 	    # Use a copy because @owners is changed below.
-	    $network->{sub_owners} = [ @owners ];
+	    $network->{part_owners} = [ @owners ];
 	}
 	if (my $net_owner = $network->{owner}) {
 	    push @owners, $net_owner;
@@ -472,7 +487,7 @@ sub setup_sub_owners {
 	my $zone_owner = $zone->{owner};
 	for my $owner (@owners) {
 	    if ( not ($zone_owner and $owner eq $zone_owner)) {
-		$zone->{sub_owners}->{$owner} = $owner;
+		$zone->{part_owners}->{$owner} = $owner;
 #		Netspoc::debug "$zone->{name} : $owner->{name}";
 	    }
 	}
@@ -481,8 +496,8 @@ sub setup_sub_owners {
     # Substitute hash by array.
     @all_zones = values %all_zones;
     for my $zone (@all_zones) {
-	if (my $hash = $zone->{sub_owners}) {
-	    $zone->{sub_owners} = [ values %$hash ];
+	if (my $hash = $zone->{part_owners}) {
+	    $zone->{part_owners} = [ values %$hash ];
 	}
     }
 }
@@ -502,8 +517,8 @@ sub find_master_owner {
 
 ######################################################################
 # Export no-NAT-set
-# - relate each network to its owner and sub_owners
-# - build a no_nat_set for each owner, where own networks are'nt translated
+# - relate each network to its owner and part_owners
+# - build a no_nat_set for each owner, where own networks aren't translated
 ######################################################################
 
 sub export_no_nat_set {
@@ -512,7 +527,7 @@ sub export_no_nat_set {
     for my $network (values %networks) {
 	$network->{disabled} and next;
 	for my $owner_name 
-	    (owner_for_object($network), sub_owners_for_object($network))
+	    (owner_for_object($network), part_owners_for_object($network))
 	{
 	    $owner2net{$owner_name}->{$network} = $network;
 	}
@@ -634,7 +649,7 @@ sub export_assets {
 	my $zone_name = $any ? $any->{name} : $zone->{name};
 	my $zone_owner = owner_for_object($zone) || '';
         my $networks = add_subnetworks($zone->{networks});
-	for my $owner (owner_for_object($zone), sub_owners_for_object($zone)) {
+	for my $owner (owner_for_object($zone), part_owners_for_object($zone)) {
 
 	    # Show only own or sub_own networks in foreign zone.
 	    my $own_zone = $zone_owner eq $owner;
@@ -643,7 +658,7 @@ sub export_assets {
 		$own_networks = 
 		    [ grep 
 		      grep({ $owner eq $_ } 
-			   owner_for_object($_), sub_owners_for_object($_)), 
+			   owner_for_object($_), part_owners_for_object($_)), 
 		      @$networks ];
 	    }
             else {
@@ -676,27 +691,30 @@ sub export_assets {
 
 sub export_services {
     progress("Export services");
-    my %phash;
-    my %owner2type2phash;
+    my %shash;
+    my %owner2type2shash;
     for my $service (sort by_name values %services) {
         next if $service->{disabled};
         if ($master_owner) {
-            $owner2type2phash{$master_owner}->{owner}->{$service} = $service;
+            $owner2type2shash{$master_owner}->{owner}->{$service} = $service;
 	}
-        for my $owner (@{ $service->{owners} }, @{ $service->{sub_owners} }) {
-            $owner2type2phash{$owner}->{owner}->{$service} = $service;
+        for my $owner ($service->{sub_owner} || (),
+                       @{ $service->{owners} }, 
+                       @{ $service->{part_owners} }) 
+        {
+            $owner2type2shash{$owner}->{owner}->{$service} = $service;
         }          
         for my $owner (@{ $service->{uowners} }, @{ $service->{sub_uowners} }) {
-            if (not $owner2type2phash{$owner}->{owner}->{$service}) {
-                $owner2type2phash{$owner}->{user}->{$service} = $service;
+            if (not $owner2type2shash{$owner}->{owner}->{$service}) {
+                $owner2type2shash{$owner}->{user}->{$service} = $service;
             }
         }
         for my $owner (keys %owners) {
-            if (not ($owner2type2phash{$owner}->{owner}->{$service} or 
-                     $owner2type2phash{$owner}->{user}->{$service})) 
+            if (not ($owner2type2shash{$owner}->{owner}->{$service} or 
+                     $owner2type2shash{$owner}->{user}->{$service})) 
             {
                 if ($service->{visible} and $owner =~ /^$service->{visible}/) {
-                    $owner2type2phash{$owner}->{visible}->{$service} = $service;
+                    $owner2type2shash{$owner}->{visible}->{$service} = $service;
                 }
             }
         }
@@ -704,35 +722,41 @@ sub export_services {
 	    description => $service->{description},
 	    owner => $service->{owners},
 	};
-	if (@{ $service->{sub_owners} }) {
-	    $details->{sub_owners} = $service->{sub_owners};
-	}
+        if ($service->{sub_owner}) {
+            $details->{sub_owner} = $service->{sub_owner};
+        }
+
+# Currently not used in backend.
+#	if (@{ $service->{part_owners} }) {
+#	    $details->{part_owners} = $service->{part_owners};
+#	}
+
 	my @rules = map {
 	    { 
 		action => $_->{action},
 		has_user => $_->{has_user},
 		src => [ map $_->{name}, @{ $_->{expanded_src} } ],
 		dst => [ map $_->{name}, @{ $_->{expanded_dst} } ],
-		srv => $_->{expanded_prt},
+		prt => $_->{expanded_prt},
 	    }
 	} @{ $service->{rules} };
-	(my $pname = $service->{name}) =~ s/^\w+://;
-	$phash{$pname} = { details => $details, rules => \@rules };
+	(my $sname = $service->{name}) =~ s/^\w+://;
+	$shash{$sname} = { details => $details, rules => \@rules };
     }
-    export("services", \%phash);
+    export("services", \%shash);
 
     progress("Export users and service_lists");
-    $owner2type2phash{$_} ||= {} for keys %owners;
-    for my $owner (sort keys %owner2type2phash) {
-	my $type2phash = $owner2type2phash{$owner} || {};
-	my %type2pnames;
+    $owner2type2shash{$_} ||= {} for keys %owners;
+    for my $owner (sort keys %owner2type2shash) {
+	my $type2shash = $owner2type2shash{$owner} || {};
+	my %type2snames;
 	my %service2users;
 	for my $type (qw(owner user visible)) {
-	    my $services = [ sort by_name values %{ $type2phash->{$type} } ];
-	    my $pnames = $type2pnames{$type} = [];
+	    my $services = [ sort by_name values %{ $type2shash->{$type} } ];
+	    my $snames = $type2snames{$type} = [];
 	    for my $service (@$services) { 
-		(my $pname = $service->{name}) =~ s/^\w+://;
-		push @$pnames, $pname;
+		(my $sname = $service->{name}) =~ s/^\w+://;
+		push @$snames, $sname;
 		next if $type eq 'visible';
 		my @users;
 		if ($type eq 'owner') {
@@ -745,9 +769,9 @@ sub export_services {
 			    if ($uowner && $uowner eq $owner) {
 				1;
 			    }
-			    elsif (my $sub_owners = $_->{sub_owners}) {
+			    elsif (my $part_owners = $_->{part_owners}) {
 				grep { $_->{name} eq "owner:$owner" } 
-				@$sub_owners;
+				@$part_owners;
 			    }
 			    else {
 				0;
@@ -756,11 +780,11 @@ sub export_services {
 		    @{ $service->{expanded_user} };
 		}
 		@users = sort map $_->{name}, @users;
-		$service2users{$pname} = \@users;
+		$service2users{$sname} = \@users;
 	    }
 	}
 	create_dirs("owner/$owner");
-	export("owner/$owner/service_lists", \%type2pnames);
+	export("owner/$owner/service_lists", \%type2snames);
 	export("owner/$owner/users", \%service2users);
     }
 }
@@ -864,7 +888,7 @@ set_zone();
 setpath();
 find_subnets();
 set_service_owner();
-setup_sub_owners();
+setup_part_owners();
 setup_service_info();
 find_master_owner();
 

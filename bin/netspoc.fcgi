@@ -9,7 +9,9 @@ use CGI::Simple;
 use CGI::Session;
 use CGI::Session::Driver::file;
 use Digest::MD5 qw/md5_hex/;
+use Digest::SHA qw/sha256_hex/;
 use String::MkPasswd qw(mkpasswd);
+use Crypt::SaltedHash;
 use Encode;
 
 use FindBin;
@@ -220,8 +222,7 @@ sub get_networks {
     my $assets = load_json("owner/$owner/assets");
     my $network_names = $assets->{network_list};
     if ( $chosen ) {
-	my $chosen_networks = [ split /,/, $chosen ];
-	$network_names = intersect( $chosen_networks, $network_names  );
+	$network_names = untaint_networks( $chosen, $assets );
     }
     return get_nat_obj_list( $network_names, $owner );
 }
@@ -282,7 +283,7 @@ sub get_services_and_rules {
 		    $user_props : $rule->{src},
 		dst     => $rule->{has_user} eq 'dst' ?
 		    $user_props : $rule->{dst},
-		proto   => $rule->{srv},
+		proto   => $rule->{prt},
 	    };
 	}
     }
@@ -296,27 +297,28 @@ sub get_services_owners_and_admins {
     my $lists     = load_json("owner/$owner/service_lists");
     my $assets    = load_json("owner/$owner/assets");
     my $services  = load_json('services');
-    my $param_services = [ split ",", $srv_list ];
+    my $service_names = [ split ",", $srv_list ];
     my $data = [];
 
-    # Untaint services passed as params by intersecting
-    # with known service-names from json-data.
-    my $service_names = intersect( [ map(@$_, @{$lists}{qw(owner user visible)}) ],
-				   $param_services );
-
     my $owner2alias = load_json('owner2alias');
+    my $hash = $lists->{hash};
   SERVICE:
-    for my $srv_name ( @{$service_names} ) {
-	my $srv_owner = $services->{$srv_name}->{details}->{owner};
+    for my $srv_name (@{$service_names}) {
+        
+        # Check if owner is allowed to access this service.
+        $hash->{$srv_name} or abort "Unknown service '$srv_name'";
+
+        my $details = $services->{$srv_name}->{details};
+	my @owners = ($details ->{sub_owner} || (), @{ $details->{owner} });
 
 	my $admins;
-	for my $o ( @$srv_owner ) {
+	for my $o (@owners) {
 	    my $emails = load_json("owner/$o/emails");
-	    map { push @$admins, $_->{email} } @$emails;
+	    push @$admins, map { $_->{email} } @$emails;
 	}
 	push @$data, {
 	    service   => $srv_name,
-	    srv_owner => [ map { $owner2alias->{$_} || $_ } @$srv_owner ],
+	    srv_owner => [ map { $owner2alias->{$_} || $_ } @owners ],
 	    admins    => $admins,
 	};
     }
@@ -472,8 +474,8 @@ sub service_list {
 				next SERVICE;
 			    }
 			}
-			# Search in srv.
-			for my $item ( @{$r->{srv}} ) {
+			# Search in protocol.
+			for my $item ( @{$r->{prt}} ) {
 			    if ( $item =~ /$search/ ) {
 				push @$plist, $sname;
 				next SERVICE;
@@ -513,17 +515,23 @@ sub service_list {
     }
 
     my $owner2alias = load_json('owner2alias');
+    my $add_alias = sub {
+        my ($owner) = @_;
+        my $v = { name => $owner }; 
+        if (my $a = $owner2alias->{$owner}) {
+            $v->{alias} = $a;
+        }
+        return $v
+    };
     return [ map {
 	my $hash = { name => $_, %{ $services->{$_}->{details}} };
 
-	# Add alias name
-	$hash->{owner} =
-            [ map({ my $v = { name => $_ }; 
-                    if (my $a = $owner2alias->{$_}) {
-                        $v->{alias} = $a;
-                    }
-                    $v
-                  } @{ $hash->{owner} }) ];
+	# Add alias name to 
+        # 1. list of owners, 
+        # 2. optional single sub_owner (= service owner)
+	$hash->{owner} = [ map($add_alias->($_), @{ $hash->{owner} }) ];
+	$hash->{sub_owner} and 
+            $hash->{sub_owner} = $add_alias->($hash->{sub_owner});
 	$hash;
     } @$plist ];
 }
@@ -533,7 +541,6 @@ sub service_list {
 # Return untainted networks as array-ref.
 sub untaint_networks {
     my ( $chosen, $assets ) = @_;
-    $chosen || internal_err "No networks to untaint!";
     my $chosen_networks = [ split /,/, $chosen ];
     my $network_names = $assets->{network_list};
     return intersect( $chosen_networks, $network_names  );
@@ -894,16 +901,37 @@ sub send_verification_mail {
 # Get / set password for user.
 # New password is already encrypted in sub register below.
 sub store_password {
-    my ($email, $pass) = @_;
+    my ($email, $hash) = @_;
     my $store = User_Store::new($config, $email);
-    $store->param('pass', $pass);
+    $store->param('hash', $hash);
+    $store->clear('old_hash');
     $store->flush();
 }
 
 sub check_password  {
     my ($email, $pass) = @_;
     my $store = User_Store::new($config, $email);
-    $store->param('pass') eq md5_hex($pass);
+    my $csh = Crypt::SaltedHash->new(algorithm => 'SHA-256');
+
+    # Check password with salted hash.
+    if (my $hash = $store->param('hash')) {
+        return $csh->validate($hash, $pass);
+    }
+
+    # Check against double hashed old password.
+    elsif (my $salted_old_hash = $store->param('old_hash')) {
+        return $csh->validate($salted_old_hash, md5_hex($pass));
+    }
+
+    # Check against old unsalted hashed password
+    elsif (my $old_hash = $store->param('pass')) {
+        return ($old_hash eq md5_hex($pass));
+    }
+
+    # No password known.
+    else {
+        return undef;
+    }
 }
 
 sub register {
@@ -918,8 +946,13 @@ sub register {
     my $token = md5_hex(localtime, $email);
     my $pass = mkpasswd() or internal_err "Can't generate password";
 
-    # Store encrypted password in session until verification.
-    my $reg_data = { user => $email, pass => md5_hex($pass), token => $token };
+    # Create salted hash from password.
+    my $csh = Crypt::SaltedHash->new(algorithm => 'SHA-256');
+    $csh->add($pass);
+    my $hash = $csh->generate;
+
+    # Store hash in session until verification.
+    my $reg_data = { user => $email, hash => $hash, token => $token };
     $session->expire('register', '1d');
     $session->param('register', $reg_data);
     $session->flush();
@@ -942,7 +975,7 @@ sub verify {
 	$reg_data->{user} eq $email and
 	$reg_data->{token} eq $token) 
     {
-	store_password($email, $reg_data->{pass});
+	store_password($email, $reg_data->{hash});
 	$session->clear('register');
         $session->flush();
         clear_attack($email);
