@@ -549,7 +549,7 @@ sub untaint_networks {
 sub get_users_for_owner_and_service {
     my ( $cgi, $owner, $sname ) = @_;
     my $chosen = $cgi->param('chosen_networks');
-    my $used_services = services_for_owner( $owner, 'user' );
+    my $lists          = load_json("owner/$owner/service_lists");
     my $relevant_objects;
 
     # Get user for current owner and service.
@@ -564,7 +564,7 @@ sub get_users_for_owner_and_service {
 
     # Are we in restricted mode with only selected networks?
     # Only filter users for own services.
-    if ( $chosen &&  $used_services->{$sname} ) {
+    if ( $chosen &&  $lists->{hash}->{$sname} eq 'user' ) {
         my $assets = load_json("owner/$owner/assets");
         my $network_names = untaint_networks( $chosen, $assets );
 
@@ -577,22 +577,11 @@ sub get_users_for_owner_and_service {
     return \@result;
 }
 
-sub services_for_owner {
-    my ( $owner, $which ) = @_;
-    my $lists = load_json("owner/$owner/service_lists");
-    $which ||
-        internal_err 'Need to specify attribute "owner", "user" or "visible"';
-    my %services;
-    map { $services{$_} = 1 } @{$lists->{$which}};
-    return \%services;
-}
-
 sub get_rules_for_owner_and_service {
     my ( $cgi, $owner, $sname ) = @_;
     my $chosen         = $cgi->param('chosen_networks');
     my $prop           = $cgi->param('display_property');
     my $lists          = load_json("owner/$owner/service_lists");
-    my $owner_services = services_for_owner( $owner, 'owner' );
     $prop ||= 'ip';  # 'ip' as default property to display
     my $relevant_objects;
 
@@ -606,7 +595,7 @@ sub get_rules_for_owner_and_service {
     # If networks were selected and own services are displayed,
     # filter rules to those containing these networks
     # (and their child objects).
-    if ( $chosen && $owner_services->{$sname} ) {
+    if ( $chosen && $lists->{hash}->{$sname} eq 'owner' ) {
         my $assets = load_json("owner/$owner/assets");
         my $network_names = untaint_networks( $chosen, $assets );
 

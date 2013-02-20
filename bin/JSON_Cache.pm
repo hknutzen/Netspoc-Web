@@ -60,10 +60,14 @@ sub postprocess_json {
     }
     elsif ($path =~ m/service_lists$/) {
 
-	# Input: Hash with owner|users|visible => [ service_name, ..]
+	# Input: Hash with owner|user|visible => [ service_name, ..]
 	# Add hash with all service names as keys.
-	my @snames = map @$_, values %$data;
-	@{$data->{hash}}{@snames} = (1) x @snames;
+        my %hash;
+        for my $key (keys %$data) {
+            my $snames = $data->{$key};
+            @hash{@$snames} = ($key) x @$snames;
+        }
+        $data->{hash} = \%hash;
     }
     elsif ($path =~/services$/) {
 
