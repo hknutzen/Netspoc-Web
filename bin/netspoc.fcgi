@@ -605,7 +605,7 @@ sub get_rules_for_owner_and_service {
         $relevant_objects =
             relevant_objects_for_networks( $network_names, $assets );
         $rules = [ grep {
-            $_->{has_user} eq 'both' ? 0 :
+            $_->{has_user} ne 'both' &&
                 grep($relevant_objects->{$_}, @{$_->{$src_or_dst{$_->{has_user}}}});
         } @$rules ];
     }
