@@ -549,7 +549,7 @@ sub untaint_networks {
 sub get_users_for_owner_and_service {
     my ( $cgi, $owner, $sname ) = @_;
     my $chosen = $cgi->param('chosen_networks');
-    my $lists          = load_json("owner/$owner/service_lists");
+    my $lists  = load_json("owner/$owner/service_lists");
     my $relevant_objects;
 
     # Get user for current owner and service.
@@ -557,14 +557,11 @@ sub get_users_for_owner_and_service {
     my $sname2users = load_json( $path );
     
     # Empty user list is not exported intentionally.
-    my $user_names = $sname2users->{$sname} || [];
-
-    my $res = get_nat_obj_list($user_names, $owner);
-    my @result = @$res;
+    my $user_objs = $sname2users->{$sname} || [];
 
     # Are we in restricted mode with only selected networks?
     # Only filter users for own services.
-    if ( $chosen &&  $lists->{hash}->{$sname} eq 'user' ) {
+    if ( $chosen && $lists->{hash}->{$sname} eq 'user' ) {
         my $assets = load_json("owner/$owner/assets");
         my $network_names = untaint_networks( $chosen, $assets );
 
@@ -572,16 +569,16 @@ sub get_users_for_owner_and_service {
 	# networks stored in $network_names.
         $relevant_objects =
             relevant_objects_for_networks( $network_names, $assets );
-        @result = grep { $relevant_objects->{$_->{name}} } @$res;
+        @{$user_objs} = grep { $relevant_objects->{$_} } @$user_objs;
     }
-    return \@result;
+    return get_nat_obj_list( $user_objs, $owner);
 }
 
 sub get_rules_for_owner_and_service {
     my ( $cgi, $owner, $sname ) = @_;
-    my $chosen         = $cgi->param('chosen_networks');
-    my $prop           = $cgi->param('display_property');
-    my $lists          = load_json("owner/$owner/service_lists");
+    my $chosen = $cgi->param('chosen_networks');
+    my $prop   = $cgi->param('display_property');
+    my $lists  = load_json("owner/$owner/service_lists");
     $prop ||= 'ip';  # 'ip' as default property to display
     my $relevant_objects;
 
