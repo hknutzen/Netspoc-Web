@@ -574,6 +574,11 @@ sub get_users_for_owner_and_service {
     return get_nat_obj_list( $user_objs, $owner);
 }
 
+my %src_or_dst =  (
+    src  => 'dst',
+    dst  => 'src',
+    both => 1
+    );
 sub get_rules_for_owner_and_service {
     my ( $cgi, $owner, $sname ) = @_;
     my $chosen = $cgi->param('chosen_networks');
@@ -599,16 +604,9 @@ sub get_rules_for_owner_and_service {
 	# Get relevant objects for currently chosen networks.
         $relevant_objects =
             relevant_objects_for_networks( $network_names, $assets );
-        my %which = (
-            src  => 'dst',
-            dst  => 'src',
-            both => 1
-            );
         $rules = [ grep {
-            my %h; map($h{$_}=1, @{$_->{$which{$_->{has_user}}}});
-            my $i = intersect( [keys %h], [keys %$relevant_objects] );
-            my $ret = $_->{has_user} eq 'both' ? 0 : scalar( @$i );
-            $ret;
+            $_->{has_user} eq 'both' ? 0 :
+                grep($relevant_objects->{$_}, @{$_->{$src_or_dst{$_->{has_user}}}});
         } @$rules ];
     }
 
