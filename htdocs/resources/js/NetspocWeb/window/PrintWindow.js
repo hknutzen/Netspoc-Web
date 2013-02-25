@@ -34,6 +34,43 @@ NetspocWeb.window.PrintWindow = Ext.extend(
 	// Build four panels showing possible ways of printing.
 	buildPanels : function() {
 
+	    var opt2url = {
+		'services_and_rules'         : 'get_services_and_rules',
+		'services_owners_and_admins' : 'get_services_owners_and_admins',
+		'owners_and_services'        : 'get_services_owners_and_admins'
+	    };
+	    var opt2group = {
+		'services_and_rules'         : 'service',
+		'services_owners_and_admins' : 'service',
+		'owners_and_services'        : 'srv_owner'
+	    };
+	    var opt2title = {
+		'services_and_rules' : 'Dienste und Regeln im ' + 
+		    'expandierten Format',
+		'services_owners_and_admins' : 'Dienste und '
+		    + 'Verantwortlichkeiten',
+		'owners_and_services' : 'Verantwortlichkeiten '
+		    + 'und zugehörige Dienste',
+		'services_only' : 'Liste der aktuell gewählten Dienste'	    
+	    };
+	    var opt2caption = {
+		'services_and_rules' : {
+		    'singular' : 'Regel',
+		    'plural'   : 'Regeln'
+		},
+		'services_owners_and_admins' : {
+		    'singular' : '',
+		    'plural'   : ''
+		},
+		'owners_and_services'        : {
+		    'singular' : 'Dienst',
+		    'plural'   : 'Dienste'
+		},
+		'services_only'        : {
+		    'singular' : '',
+		    'plural'   : ''
+		}
+	    };
 	    var apply_fx = function( p, opt ) {
 		p.el.scale( 300, 220 );
 		p.el.addListener(
@@ -54,44 +91,6 @@ NetspocWeb.window.PrintWindow = Ext.extend(
 		p.body.on(
 		    'click',
 		    function ( event, html_el, options ) {
-
-			var opt2url = {
-			    'services_and_rules'         : 'get_services_and_rules',
-			    'services_owners_and_admins' : 'get_services_owners_and_admins',
-			    'owners_and_services'        : 'get_services_owners_and_admins'
-			};
-			var opt2group = {
-			    'services_and_rules'         : 'service',
-			    'services_owners_and_admins' : 'service',
-			    'owners_and_services'        : 'srv_owner'
-			};
-			var opt2title = {
-			    'services_and_rules' : 'Dienste und Regeln im ' + 
-				'expandierten Format',
-			    'services_owners_and_admins' : 'Dienste und '
-				+ 'Verantwortlichkeiten',
-			    'owners_and_services' : 'Verantwortlichkeiten '
-				+ 'und zugehörige Dienste',
-			    'services_only' : 'Liste der aktuell gewählten Dienste'	    
-			};
-			var opt2caption = {
-			    'services_and_rules' : {
-				'singular' : 'Regel',
-				'plural'   : 'Regeln'
-			    },
-			    'services_owners_and_admins' : {
-				'singular' : '',
-				'plural'   : ''
-			    },
-			    'owners_and_services'        : {
-				'singular' : 'Dienst',
-				'plural'   : 'Dienste'
-			    },
-			    'services_only'        : {
-				'singular' : '',
-				'plural'   : ''
-			    }
-			};
 
 			// Hide parent window.
 			var wnd = this.findParentByType( 'window' );
@@ -471,13 +470,7 @@ NetspocWeb.window.PrintWindow = Ext.extend(
 		    top_row,
 		    bottom_labels,
 		    bottom_row
-		],
-		listeners : {
-		    afterrender : function(p) {
-			//p.el.boxWrap( "x-box-blue" );
-		    },
-		    single : true  // Remove the listener after first invocation
-		}
+		]
 	    };
 	    return container_panel;
 	}

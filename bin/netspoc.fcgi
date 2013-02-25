@@ -355,6 +355,8 @@ sub service_list {
     my $lists    = load_json("owner/$owner/service_lists");
     my $assets   = load_json("owner/$owner/assets");
     my $services = load_json('services');
+    my $relevant_objects;
+    my $network_names;
     my $plist;
 
     # Make a real copy not a reference.
@@ -369,11 +371,11 @@ sub service_list {
 
 	# Untaint: Intersect chosen networks with all networks
 	# within area of ownership.
-	my $network_names = untaint_networks( $chosen, $assets );
+	$network_names = untaint_networks( $chosen, $assets );
 
 	# Only collect services that are relevant for chosen
 	# networks stored in $network_names.
-        my $relevant_objects =
+        $relevant_objects =
             relevant_objects_for_networks( $network_names, $assets );
 
       SERVICE:
@@ -382,7 +384,8 @@ sub service_list {
             # Check if network or any of its contained resources
             # is user of current service.
             if ($search_used || !$relation || $relation eq 'user') {
-                my $users = get_users_for_owner_and_service($cgi, $owner, $pname);
+                my $users = get_users_for_owner_and_service($cgi, $owner, $pname,
+                    $network_names, $relevant_objects);
                 for my $user ( @$users ) {
                     if ($relevant_objects->{$user->{name}}) {
                         push @{$copy->{user}}, $pname;
@@ -485,7 +488,8 @@ sub service_list {
 		}
 	    }
 	    if ( $cgi->param( 'search_in_user' ) ) {
-		my $users = get_users_for_owner_and_service( $cgi, $owner, $sname );
+		my $users = get_users_for_owner_and_service( $cgi, $owner, $sname,
+                    $network_names, $relevant_objects );
 		if ( $users ) {
 		    for my $u ( @$users ) {
 			if ( $u->{ip}  &&  $u->{ip} =~ /$search/ ) {
@@ -547,52 +551,42 @@ sub untaint_networks {
 }
 
 sub get_users_for_owner_and_service {
-    my ( $cgi, $owner, $sname ) = @_;
+    my ( $cgi, $owner, $sname, $networks, $relevant_objects ) = @_;
     my $chosen = $cgi->param('chosen_networks');
-    my $used_services = services_for_owner( $owner, 'user' );
-    my $relevant_objects;
+    my $lists  = load_json("owner/$owner/service_lists");
 
     # Get user for current owner and service.
     my $path = "owner/$owner/users";
     my $sname2users = load_json( $path );
     
     # Empty user list is not exported intentionally.
-    my $user_names = $sname2users->{$sname} || [];
-
-    my $res = get_nat_obj_list($user_names, $owner);
-    my @result = @$res;
+    my $user_objs = $sname2users->{$sname} || [];
 
     # Are we in restricted mode with only selected networks?
     # Only filter users for own services.
-    if ( $chosen &&  $used_services->{$sname} ) {
+    if ( $chosen && $lists->{hash}->{$sname} eq 'user' ) {
         my $assets = load_json("owner/$owner/assets");
-        my $network_names = untaint_networks( $chosen, $assets );
+        $networks ||= untaint_networks( $chosen, $assets );
 
 	# Only collect users that are relevant for chosen
 	# networks stored in $network_names.
-        $relevant_objects =
-            relevant_objects_for_networks( $network_names, $assets );
-        @result = grep { $relevant_objects->{$_->{name}} } @$res;
+        $relevant_objects ||=
+            relevant_objects_for_networks( $networks, $assets );
+        @{$user_objs} = grep { $relevant_objects->{$_} } @$user_objs;
     }
-    return \@result;
+    return get_nat_obj_list( $user_objs, $owner);
 }
 
-sub services_for_owner {
-    my ( $owner, $which ) = @_;
-    my $lists = load_json("owner/$owner/service_lists");
-    $which ||
-        internal_err 'Need to specify attribute "owner", "user" or "visible"';
-    my %services;
-    map { $services{$_} = 1 } @{$lists->{$which}};
-    return \%services;
-}
-
+my %src_or_dst =  (
+    src  => 'dst',
+    dst  => 'src',
+    both => 1
+    );
 sub get_rules_for_owner_and_service {
     my ( $cgi, $owner, $sname ) = @_;
-    my $chosen         = $cgi->param('chosen_networks');
-    my $prop           = $cgi->param('display_property');
-    my $lists          = load_json("owner/$owner/service_lists");
-    my $owner_services = services_for_owner( $owner, 'owner' );
+    my $chosen = $cgi->param('chosen_networks');
+    my $prop   = $cgi->param('display_property');
+    my $lists  = load_json("owner/$owner/service_lists");
     $prop ||= 'ip';  # 'ip' as default property to display
     my $relevant_objects;
 
@@ -606,23 +600,16 @@ sub get_rules_for_owner_and_service {
     # If networks were selected and own services are displayed,
     # filter rules to those containing these networks
     # (and their child objects).
-    if ( $chosen && $owner_services->{$sname} ) {
+    if ( $chosen && $lists->{hash}->{$sname} eq 'owner' ) {
         my $assets = load_json("owner/$owner/assets");
         my $network_names = untaint_networks( $chosen, $assets );
 
 	# Get relevant objects for currently chosen networks.
         $relevant_objects =
             relevant_objects_for_networks( $network_names, $assets );
-        my %which = (
-            src  => 'dst',
-            dst  => 'src',
-            both => 1
-            );
         $rules = [ grep {
-            my %h; map($h{$_}=1, @{$_->{$which{$_->{has_user}}}});
-            my $i = intersect( [keys %h], [keys %$relevant_objects] );
-            my $ret = $_->{has_user} eq 'both' ? 0 : scalar( @$i );
-            $ret;
+            $_->{has_user} ne 'both' &&
+                grep($relevant_objects->{$_}, @{$_->{$src_or_dst{$_->{has_user}}}});
         } @$rules ];
     }
 
