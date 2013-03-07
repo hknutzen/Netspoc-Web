@@ -535,6 +535,7 @@ NetspocManager.PolicyManager = Ext.extend(
                     { name    : 'owner_alias', 
                       header  : 'Verantwortungsbereich',
                       width   : 0.25,
+                      width   : .25,
                       mapping : function (node) { 
                           return node.owner_alias || node.owner;
                       }

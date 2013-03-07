@@ -103,8 +103,9 @@ sub postprocess_json {
                     map  { my($p, $n, $r) = m/^(\w+) ?(\d*)(.*)/;
                            [ $_, $p, $n || 0, $r || '' ] }
 
-                    # Support old key {prt} in history files.
-                    @{ $rule->{prt} || $rule->{srv} } ];
+                    # Support old key {srv} in history files,
+                    # but delete it to not confuse Policy_Diff.
+                    @{ $rule->{prt} || delete($rule->{srv}) } ];
             }
         }        
     }
