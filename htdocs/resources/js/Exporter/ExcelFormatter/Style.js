@@ -41,7 +41,7 @@ Ext.ux.Exporter.ExcelFormatter.Style = Ext.extend(Object, {
     
     Ext.ux.Exporter.ExcelFormatter.Style.superclass.constructor.apply(this, arguments);
     
-    if (this.id == undefined) throw new Error("An ID must be provided to Style");
+    if (this.id === undefined) throw new Error("An ID must be provided to Style");
     
     this.preparePropertyStrings();
   },

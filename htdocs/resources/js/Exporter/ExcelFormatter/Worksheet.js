@@ -17,7 +17,7 @@ Ext.ux.Exporter.ExcelFormatter.Worksheet = Ext.extend(Object, {
       stripeRows : true,
       
       title      : "Workbook",
-      columns    : store.fields == undefined ? {} : store.fields.items
+      columns    : store.fields === undefined ? {} : store.fields.items
     });
     
     Ext.apply(this, config);
@@ -118,7 +118,7 @@ Ext.ux.Exporter.ExcelFormatter.Worksheet = Ext.extend(Object, {
     Ext.each(this.columns, function(col) {
       var title;
       
-      if (col.header != undefined) {
+      if (col.header !== undefined) {
         title = col.header;
       } else {
         //make columns taken from Record fields (e.g. with a col.name) human-readable
@@ -133,20 +133,22 @@ Ext.ux.Exporter.ExcelFormatter.Worksheet = Ext.extend(Object, {
   },
   
   buildRow: function(record, index) {
-    var style,
-        cells = [];
-    if (this.stripeRows === true) style = index % 2 == 0 ? 'even' : 'odd';
+      var style;
+      var cells = [];
+      var value;
+      var type;
+    if (this.stripeRows === true) style = index % 2 === 0 ? 'even' : 'odd';
     
     Ext.each(this.columns, function(col) {
       var name  = col.name || col.dataIndex;
       
       //if given a renderer via a ColumnModel, use it and ensure data type is set to String
       if (Ext.isFunction(col.renderer)) {
-        var value = col.renderer(record.get(name), null, record),
-            type = "String";
+          value = col.renderer(record.get(name), null, record);
+          type = "String";
       } else {
-        var value = record.get(name),
-            type  = this.typeMappings[col.type || record.fields.item(name).type];
+          value = record.get(name);
+          type  = this.typeMappings[col.type || record.fields.item(name).type];
       }
       
       cells.push(this.buildCell(value, type, style).render());

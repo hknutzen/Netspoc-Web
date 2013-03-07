@@ -10,8 +10,10 @@ Ext.ux.Printer.BaseRenderer = Ext.extend(Object, {
    * @param {Ext.Component} component The component to print
    */
   print: function(component) {
-    var name = component && component.getXType
-             ? String.format("print_{0}_{1}", component.getXType(), component.id.replace(/-/g, '_'))
+    var name = component && component.getXType ?
+          String.format("print_{0}_{1}",
+                        component.getXType(),
+                        component.id.replace(/-/g, '_'))
              : "print";
              
     var win = window.open('', name);

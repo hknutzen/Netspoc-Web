@@ -298,7 +298,9 @@ Ext.ux.Exporter.ExcelFormatter.Workbook = Ext.extend(Object, {
     });
     
     Ext.each(['even', 'odd'], function(parentStyle) {
-      this.addChildNumberFormatStyle(parentStyle, parentStyle + 'date', "[ENG][$-409]dd\-mmm\-yyyy;@");
+      this.addChildNumberFormatStyle(parentStyle, parentStyle +
+                                     'date', "[ENG][$-409]dd\\-mmm\\-yyyy;@");
+//                                     'date', "[ENG][$-409]dd\-mmm\-yyyy;@");
       this.addChildNumberFormatStyle(parentStyle, parentStyle + 'int', "0");
       this.addChildNumberFormatStyle(parentStyle, parentStyle + 'float', "0.00");
     }, this);    

@@ -11,7 +11,7 @@ function captureEvents(observable) {
             console.info(eventName);
         },
         this
-    );		
+    );          
 }
 
 function ip2numeric( dot ) {
@@ -22,8 +22,8 @@ function ip2numeric( dot ) {
 function numeric2ip( num ) {
     var d = num%256;
     for (var i = 3; i > 0; i--) {
-	num = Math.floor(num/256);
-	d = num%256 + '.' + d;
+        num = Math.floor(num/256);
+        d = num%256 + '.' + d;
     }
     return d;
 }
@@ -31,9 +31,9 @@ function numeric2ip( num ) {
 function record_names_as_csv( records ) {
     var selected = [];
     Ext.each( records, function (item) {
-		  selected.push( item.data.name );
-	      }
-	    );
+                  selected.push( item.data.name );
+              }
+            );
     var record_names = selected.join( ',');
     return record_names;
 }

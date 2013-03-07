@@ -19,10 +19,10 @@ Ext.ux.Exporter.Button = Ext.extend(Ext.Button, {
       disabled      : true,
 //      text          : 'Download',
 //      cls           : 'download'
-		    iconCls      : 'icon-page_excel'
+                    iconCls      : 'icon-page_excel'
     });
     
-    if (config.store == undefined && config.component != undefined) {
+    if (config.store === undefined && config.component !== undefined) {
       Ext.applyIf(config, {
         store: config.component.store
       });
@@ -75,7 +75,7 @@ Ext.ux.Exporter.Button = Ext.extend(Ext.Button, {
     },
 
     onClick : function(e){
-      if (e.button != 0) return;
+      if (e.button !== 0) return;
       
       if (!this.disabled){
         this.fireEvent("click", this, e);

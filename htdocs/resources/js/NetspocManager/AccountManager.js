@@ -101,7 +101,7 @@ NetspocManager.AccountManager = Ext.extend(
                 title       : ' ',
                 id          : 'SupervisorEmails',
                 flex        : 1
-            }
+            };
         }
     }
 );

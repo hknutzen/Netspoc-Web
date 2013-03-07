@@ -23,7 +23,7 @@ Ext.ns('NetspocWeb.listpanel');
 NetspocWeb.listpanel.Simple = Ext.extend(
     NetspocWeb.listpanel.ListPanelBaseCls,
     {
-	buildListView : function() {
+        buildListView : function() {
             var fields = this.fieldsInfo;
             var columns = [];
             var column, header, width;
@@ -40,17 +40,17 @@ NetspocWeb.listpanel.Simple = Ext.extend(
                 }
             }
                     
-	    return {
-		xtype         : 'listview',
-		singleSelect  : true,
-		autoScroll    : true,
-		store         : this.buildStore(),
-		columns       : columns,
+            return {
+                xtype         : 'listview',
+                singleSelect  : true,
+                autoScroll    : true,
+                store         : this.buildStore(),
+                columns       : columns,
                 hideHeaders   : this.hideHeaders
-	    };
-	},
-	
-	buildStore : function() {
+            };
+        },
+        
+        buildStore : function() {
             var listeners;
             var fields = this.fieldsInfo;
             for (var i=0; i < fields.length; i++) {
@@ -60,19 +60,19 @@ NetspocWeb.listpanel.Simple = Ext.extend(
             if (this.autoSelect) {
                 listeners = {
                     scope : this,
-		    load  : this.selectRow0
-		};
+                    load  : this.selectRow0
+                };
             }
-	    return  {
-		xtype         : 'netspocstatestore',
-		proxyurl      : this.proxyurl,
-		sortInfo      : this.sortInfo,
+            return  {
+                xtype         : 'netspocstatestore',
+                proxyurl      : this.proxyurl,
+                sortInfo      : this.sortInfo,
                 doReload      : this.doReload,
-		fields        : fields,
-		listeners     : listeners
-	    };
-	}
-	
+                fields        : fields,
+                listeners     : listeners
+            };
+        }
+        
     }
 );
 

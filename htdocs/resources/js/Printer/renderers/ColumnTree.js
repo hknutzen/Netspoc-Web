@@ -94,7 +94,8 @@ Ext.ux.Printer.ColumnTreeRenderer = Ext.extend(Ext.ux.Printer.BaseRenderer, {
   bodyTpl:  new Ext.XTemplate(
     '<tr>',
       '<tpl for=".">',
-        '<td style="padding-left: {[xindex == 1 ? "\\{depth\\}" : "0"]}px">\{{dataIndex}\}</td>',
+//        '<td style="padding-left: {[xindex == 1 ? "\\{depth\\}" : "0"]}px">\{{dataIndex}\}</td>',
+        '<td style="padding-left: {[xindex == 1 ? "\\{depth\\}" : "0"]}px">\\{{dataIndex}\\}</td>',
       '</tpl>',
     '</tr>'
   )

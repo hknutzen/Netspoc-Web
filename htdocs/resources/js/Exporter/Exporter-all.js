@@ -138,7 +138,7 @@ Ext.ux.Exporter.Button = Ext.extend(Ext.Button, {
       text           : 'Default Button Text'
     });
     
-    if (config.store == undefined && config.component != undefined) {
+    if (config.store === undefined && config.component !== undefined) {
       Ext.applyIf(config, {
         store: config.component.store
       });
@@ -191,7 +191,7 @@ Ext.ux.Exporter.Button = Ext.extend(Ext.Button, {
     },
 
     onClick : function(e){
-      if (e.button != 0) return;
+      if (e.button !== 0) return;
       
       if (!this.disabled){
         this.fireEvent("click", this, e);
@@ -538,7 +538,9 @@ Ext.ux.Exporter.ExcelFormatter.Workbook = Ext.extend(Object, {
     });
     
     Ext.each(['even', 'odd'], function(parentStyle) {
-      this.addChildNumberFormatStyle(parentStyle, parentStyle + 'date', "[ENG][$-409]dd\-mmm\-yyyy;@");
+      this.addChildNumberFormatStyle(parentStyle, parentStyle +
+                                     'date', "[ENG][$-409]dd\\-mmm\\-yyyy;@");
+//                                     'date', "[ENG][$-409]dd\-mmm\-yyyy;@");
       this.addChildNumberFormatStyle(parentStyle, parentStyle + 'int', "0");
       this.addChildNumberFormatStyle(parentStyle, parentStyle + 'float', "0.00");
     }, this);    
@@ -583,7 +585,7 @@ Ext.ux.Exporter.ExcelFormatter.Worksheet = Ext.extend(Object, {
       stripeRows : true,
       
       title      : "Workbook",
-      columns    : store.fields == undefined ? {} : store.fields.items
+      columns    : store.fields === undefined ? {} : store.fields.items
     });
     
     Ext.apply(this, config);
@@ -684,7 +686,7 @@ Ext.ux.Exporter.ExcelFormatter.Worksheet = Ext.extend(Object, {
     Ext.each(this.columns, function(col) {
       var title;
       
-      if (col.header != undefined) {
+      if (col.header !== undefined) {
         title = col.header;
       } else {
         //make columns taken from Record fields (e.g. with a col.name) human-readable
@@ -699,20 +701,23 @@ Ext.ux.Exporter.ExcelFormatter.Worksheet = Ext.extend(Object, {
   },
   
   buildRow: function(record, index) {
-    var style,
-        cells = [];
-    if (this.stripeRows === true) style = index % 2 == 0 ? 'even' : 'odd';
+      var style;
+      var cells = [];
+      var value;
+      var type;
+
+    if (this.stripeRows === true) style = index % 2 === 0 ? 'even' : 'odd';
     
     Ext.each(this.columns, function(col) {
       var name  = col.name || col.dataIndex;
       
       //if given a renderer via a ColumnModel, use it and ensure data type is set to String
       if (Ext.isFunction(col.renderer)) {
-        var value = col.renderer(record.get(name), null, record),
-            type = "String";
+          value = col.renderer(record.get(name), null, record);
+          type = "String";
       } else {
-        var value = record.get(name),
-            type  = this.typeMappings[col.type || record.fields.item(name).type];
+          value = record.get(name);
+          type  = this.typeMappings[col.type || record.fields.item(name).type];
       }
       
       cells.push(this.buildCell(value, type, style).render());
@@ -815,7 +820,7 @@ Ext.ux.Exporter.ExcelFormatter.Style = Ext.extend(Object, {
     
     Ext.ux.Exporter.ExcelFormatter.Style.superclass.constructor.apply(this, arguments);
     
-    if (this.id == undefined) throw new Error("An ID must be provided to Style");
+    if (this.id === undefined) throw new Error("An ID must be provided to Style");
     
     this.preparePropertyStrings();
   },

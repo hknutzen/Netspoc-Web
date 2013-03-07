@@ -30,10 +30,10 @@ Ext.ux.Printer = function() {
         * @property renderers
          * @type Object
          * An object in the form {xtype: RendererClass} which is manages the
-	 * renderers registered by xtype
+         * renderers registered by xtype
          */
         renderers: {},
-	
+        
         /**
          * Registers a renderer function to handle components of a given xtype
          * @param {String} xtype The component xtype the renderer will handle
@@ -42,54 +42,53 @@ Ext.ux.Printer = function() {
         registerRenderer: function(xtype, renderer) {
             this.renderers[xtype] = new (renderer)();
         },
-	
+        
         /**
          * Returns the registered renderer for a given xtype
          * @param {String} xtype The component xtype to find a renderer for
          * @return {Object/undefined} The renderer instance for this xtype,
-	 *   or null if not found
+         *   or null if not found
          */
         getRenderer: function(xtype) {
             return this.renderers[xtype];
         },
-	
+        
         /**
          * Prints the passed grid. Reflects on the grid's column model 
-	 * to build a table, and fills it using the store
+         * to build a table, and fills it using the store
          * @param {Ext.Component} component The component to print
          */
         print: function(component) {
             var xtypes = component.getXTypes().split('/');
-	    
+            
             // iterate backwards over the xtypes of this component,
-	    // dispatching to the most specific renderer
+            // dispatching to the most specific renderer
             for (var i = xtypes.length - 1; i >= 0; i--) {
                 var xtype = xtypes[i],
-		renderer = this.getRenderer(xtype);
-		
-                if (renderer != undefined) {
+                renderer = this.getRenderer(xtype);
+                
+                if (renderer !== undefined) {
                     renderer.print(component);
                     break;
                 }
             }
         },
 
-	print2html: function(component) {
-	    var xtypes = component.getXTypes().split('/');
-	    
-	    // iterate backwards over the xtypes of this component,
-	    // dispatching to the most specific renderer
-	    for ( var i = xtypes.length - 1; i >= 0; i-- ) {
-		var xtype = xtypes[i],        
-		renderer  = this.getRenderer(xtype);
-		
-		if (renderer != undefined) {
-		    return renderer.print2html( component );
-		    break;
-		}
-	    }
-	    return '';
-	}
+        print2html: function(component) {
+            var xtypes = component.getXTypes().split('/');
+            
+            // iterate backwards over the xtypes of this component,
+            // dispatching to the most specific renderer
+            for ( var i = xtypes.length - 1; i >= 0; i-- ) {
+                var xtype = xtypes[i],        
+                renderer  = this.getRenderer(xtype);
+                
+                if (renderer !== undefined) {
+                    return renderer.print2html( component );
+                }
+            }
+            return '';
+        }
     };
 } ();
 
@@ -104,7 +103,7 @@ Ext.override(Ext.Component, {
             var c = [], sc = this;
             while (sc) { //was: while(sc && sc.constructor.xtype) {
                 var xtype = sc.constructor.xtype;
-                if (xtype != undefined) c.unshift(xtype);
+                if (xtype !== undefined) c.unshift(xtype);
 
                 sc = sc.constructor.superclass;
             }
@@ -127,8 +126,8 @@ Ext.ux.Printer.BaseRenderer = Ext.extend(Object, {
     * @param {Ext.Component} component The component to print
     */
     print: function(component) {
-        var name = component && component.getXType
-             ? String.format("print_{0}_{1}", component.getXType(), component.id.replace(/-/g, '_'))
+        var name = component && component.getXType ?
+            String.format("print_{0}_{1}", component.getXType(), component.id.replace(/-/g, '_'))
              : "print";
 
         var win = window.open('', name);
@@ -163,7 +162,7 @@ Ext.ux.Printer.BaseRenderer = Ext.extend(Object, {
         '<head>',
           '<meta content="text/html; charset=UTF-8" http-equiv="Content-Type" />',
           '<link href="' + this.stylesheetPath +
-		'" rel="stylesheet" type="text/css" media="screen,print" />',
+                '" rel="stylesheet" type="text/css" media="screen,print" />',
           '<title>' + this.getTitle(component) + '</title>',
         '</head>',
         '<body>',
@@ -199,7 +198,7 @@ Ext.ux.Printer.BaseRenderer = Ext.extend(Object, {
     */
     getTitle: function(component) {
         return typeof component.getTitle == 'function' ?
-	    component.getTitle() : (component.title || "Printing");
+            component.getTitle() : (component.title || "Printing");
     },
 
     /**
@@ -227,12 +226,12 @@ Ext.ux.Printer.ColumnTreeRenderer = Ext.extend(Ext.ux.Printer.BaseRenderer, {
         var columns = this.getColumns(tree);
 
         // use the headerTpl and bodyTpl XTemplates to create
-	// the main XTemplate below
+        // the main XTemplate below
         var headings = this.headerTpl.apply(columns);
         var body = this.bodyTpl.apply(columns);
 
         return String.format('<table>{0}<tpl for=".">{1}</tpl></table>',
-			     headings, body);
+                             headings, body);
     },
 
     /**
@@ -270,7 +269,7 @@ Ext.ux.Printer.ColumnTreeRenderer = Ext.extend(Ext.ux.Printer.BaseRenderer, {
             });
 
             // the property used in the first column is renamed to 'text'
-	    // in node.attributes, so reassign it here
+            // in node.attributes, so reassign it here
             row[this.getColumns(tree)[0].dataIndex] = node.attributes.text;
 
             data.push(row);
@@ -315,7 +314,8 @@ Ext.ux.Printer.ColumnTreeRenderer = Ext.extend(Ext.ux.Printer.BaseRenderer, {
     bodyTpl: new Ext.XTemplate(
     '<tr>',
       '<tpl for=".">',
-        '<td style="padding-left: {[xindex == 1 ? "\\{depth\\}" : "0"]}px">\{{dataIndex}\}</td>',
+//        '<td style="padding-left: {[xindex == 1 ? "\\{depth\\}" : "0"]}px">\{{dataIndex}\}</td>',
+        '<td style="padding-left: {[xindex == 1 ? "\\{depth\\}" : "0"]}px">\\{{dataIndex}\\}</td>',
       '</tpl>',
     '</tr>'
   )
@@ -350,7 +350,7 @@ Ext.ux.Printer.GridPanelRenderer = Ext.extend(Ext.ux.Printer.BaseRenderer, {
         var body = this.bodyTpl.apply(columns);
 
         return String.format('<table>{0}<tpl for=".">{1}</tpl></table>',
-			     headings, body);
+                             headings, body);
     },
 
     /**
@@ -360,7 +360,7 @@ Ext.ux.Printer.GridPanelRenderer = Ext.extend(Ext.ux.Printer.BaseRenderer, {
     */
     prepareData: function(grid) {
         // We generate an XTemplate here by using 2 intermediary
-	// XTemplates - one to create the header,
+        // XTemplates - one to create the header,
         // the other to create the body (see the escaped {} below)
         var columns = this.getColumns(grid);
 
@@ -374,7 +374,7 @@ Ext.ux.Printer.GridPanelRenderer = Ext.extend(Ext.ux.Printer.BaseRenderer, {
                 Ext.each(columns, function(column) {
                     if (column.dataIndex == key) {
                         convertedData[key] = column.renderer ?
-			    column.renderer(value, null, item) : value;
+                            column.renderer(value, null, item) : value;
                         return false;
                     }
                 }, this);
@@ -395,7 +395,7 @@ Ext.ux.Printer.GridPanelRenderer = Ext.extend(Ext.ux.Printer.BaseRenderer, {
         var columns = [];
 
         Ext.each(grid.getColumnModel().config, function(col) {
-            if (col.hidden != true) columns.push(col);
+            if (col.hidden !== true) columns.push(col);
         }, this);
 
         return columns;
@@ -426,7 +426,7 @@ Ext.ux.Printer.GridPanelRenderer = Ext.extend(Ext.ux.Printer.BaseRenderer, {
     bodyTpl: new Ext.XTemplate(
     '<tr>',
       '<tpl for=".">',
-        '<td>\{{dataIndex}\}</td>',
+        '<td>\\{{dataIndex}\\}</td>',
       '</tpl>',
     '</tr>'
   )
@@ -443,7 +443,7 @@ Ext.override(Ext.ux.Printer.GridPanelRenderer, {
     bodyTpl: new Ext.XTemplate(
         '<tr>',
           '<tpl for=".">',
-            '<tpl if="dataIndex"><td>\{{dataIndex}\}</td></tpl>',
+            '<tpl if="dataIndex"><td>\\{{dataIndex}\\}</td></tpl>',
             '<tpl if="!dataIndex"><td>&nbsp;</td></tpl>',
           '</tpl>',
         '</tr>'
@@ -464,15 +464,15 @@ Ext.ux.Printer.GroupedGridPanelRenderer =
             this.bodyTpl.numColumns = this.getColumns(grid).length;
             var cells = this.bodyTpl.cellTpl.apply(columns);
             this.bodyTpl.innerTemplate =
-		String.format('<tpl for="groupRecords"><tr>{0}</tr></tpl>', cells);
+                String.format('<tpl for="groupRecords"><tr>{0}</tr></tpl>', cells);
 
             if (grid.hasPlugin(Ext.grid.GroupSummary)) {
                 var summaryCells =
-		    this.bodyTpl.groupSummaryCellTemplate.apply(columns);
+                    this.bodyTpl.groupSummaryCellTemplate.apply(columns);
                 this.bodyTpl.groupSummaryTemplate =
-		    String.format('<table class=\'group-summary\'><tpl ' +
-				  'for="summaries"><tr>{0}</tr></tpl></table>',
-				  summaryCells);
+                    String.format('<table class=\'group-summary\'><tpl ' +
+                                  'for="summaries"><tr>{0}</tr></tpl></table>',
+                                  summaryCells);
             } else {
                 this.bodyTpl.groupSummaryTemplate = '';
             }
@@ -481,19 +481,19 @@ Ext.ux.Printer.GroupedGridPanelRenderer =
             var body = this.bodyTpl.apply({});
 
             return (String.format('<table class=\'table-parent\'>{0}<tpl ' +
-				  'for=".">{1}</tpl>{2}</table>',
-				  headings,
-				  body,
-				  this.generateGridTotals(grid)
-				 )
-		   );
+                                  'for=".">{1}</tpl>{2}</table>',
+                                  headings,
+                                  body,
+                                  this.generateGridTotals(grid)
+                                 )
+                   );
 
         } else {
             //No grouping, use base class logic.
             return (
-		Ext.ux.Printer.GroupedGridPanelRenderer.superclass.generateBody.call(
-		    this.superclass(), grid)
-	    );
+                Ext.ux.Printer.GroupedGridPanelRenderer.superclass.generateBody.call(
+                    this.superclass(), grid)
+            );
         }
     },
 
@@ -523,7 +523,7 @@ Ext.ux.Printer.GroupedGridPanelRenderer =
             for (var i = 0; i < columns.length; i++) {
                 var col = columns[i];
                 rendered[i] = { total: totals[col.actualIndex],
-				style: columns[i].style };
+                                style: columns[i].style };
             }
             return (this.gridTotalsTpl.apply(rendered));
         }
@@ -557,9 +557,11 @@ Ext.ux.Printer.GroupedGridPanelRenderer =
                 {
                     numColumns: 0,
                     cellTpl: new Ext.XTemplate('<tpl for="."><td style=\'{style}\'>' +
-					       '\{{dataIndex}\}</td></tpl>'),
+                                               '\\{{dataIndex}\\}</td></tpl>'),
+//                                               '\{{dataIndex}\}</td></tpl>'),
                     groupSummaryCellTemplate: new Ext.XTemplate(
-			'<tpl for="."><td style=\'{style}\'>\{{dataIndex}\}</td></tpl>'),
+                        '<tpl for="."><td style=\'{style}\'>\\{{dataIndex}\\}</td></tpl>'),
+//                        '<tpl for="."><td style=\'{style}\'>\{{dataIndex}\}</td></tpl>'),
                     innerTemplate: null,
                     groupSummaryTemplate: null,
 
@@ -600,7 +602,7 @@ Ext.ux.Printer.GroupedGridPanelRenderer =
                             Ext.each(columns, function(column) {
                                 if (column.dataIndex == key) {
                                     convertedData[key] = column.renderer ?
-					column.renderer(value, null, item) : value;
+                                        column.renderer(value, null, item) : value;
                                     return false;
                                 }
                             }, this);
@@ -621,12 +623,12 @@ Ext.ux.Printer.GroupedGridPanelRenderer =
                         Ext.each(columns, function(col) {
                             var rendered = '';
                             if (col.summaryType || col.summaryRenderer) {
-				var renderer = (col.summaryRenderer || col.renderer);
+                                var renderer = (col.summaryRenderer || col.renderer);
                                 rendered = renderer(data[col.name], {},
-						    { data: data }, 0, col.actualIndex,
-						    grid.store);
+                                                    { data: data }, 0, col.actualIndex,
+                                                    grid.store);
                             }
-                            if (rendered == undefined || rendered === "") rendered = "&#160;";
+                            if (rendered === undefined || rendered === "") rendered = "&#160;";
 
                             group.summaries[col.dataIndex] = rendered;
                         });
@@ -639,17 +641,17 @@ Ext.ux.Printer.GroupedGridPanelRenderer =
         } else {
             //No grouping, use base class logic.
             return (Ext.ux.Printer.GroupedGridPanelRenderer.superclass.prepareData.call(
-			this.superclass(), grid));
+                        this.superclass(), grid));
         }
             },
 
             getColumns: function(grid) {
-                if (this.columns == null) {
+                if (this.columns === null) {
                     var columns = [];
                     var columnData = grid.view.getColumnData();
 
                     Ext.each(grid.getColumnModel().config, function(col, index) {
-                        if (col.hidden != true) {
+                        if (col.hidden !== true) {
                             columns.push(
                                 {
                                     dataIndex: col.dataIndex,
@@ -679,7 +681,7 @@ Ext.ux.Printer.GroupedGridPanelRenderer =
                     cfg = grid.colModel.config[colIndex],
                     groupRenderer = cfg.groupRenderer || cfg.renderer,
                     prefix = view.showGroupName ?
-		       (cfg.groupName || cfg.header) + ': ' : '',
+                       (cfg.groupName || cfg.header) + ': ' : '',
                     groups = [],
                     curGroup, i, len, gid;
 
@@ -689,7 +691,7 @@ Ext.ux.Printer.GroupedGridPanelRenderer =
                         gvalue = r.data[groupField];
 
                     g = view.getGroup(gvalue, r, groupRenderer,
-				      rowIndex, colIndex, ds);
+                                      rowIndex, colIndex, ds);
                     if (!curGroup || curGroup.group != g) {
                         gid = view.constructId(gvalue, groupField, colIndex);
                         curGroup = {
@@ -734,9 +736,9 @@ Ext.Component.prototype.getPluginByType = function(constructorFn) {
     }
 
     return (null);
-}
+};
 
 Ext.Component.prototype.hasPlugin = function(constructorFn) {
     var plugin = this.getPluginByType(constructorFn);
     return (!Ext.isEmpty(plugin));
-}
+};

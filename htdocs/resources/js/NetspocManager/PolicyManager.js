@@ -39,17 +39,17 @@ NetspocManager.PolicyManager = Ext.extend(
                 xtype      : 'simplelist',
                 proxyurl   : 'service_list',
                 autoSelect : true,
-		doReload   : true,
-		sortInfo   : { field: 'name', direction: "ASC" },
+                doReload   : true,
+                sortInfo   : { field: 'name', direction: "ASC" },
                 fieldsInfo : [
-		    { name     : 'name', 
-		      header   : 'Dienstname',
+                    { name     : 'name', 
+                      header   : 'Dienstname',
                       sortType : 'asUCString' 
                     },
-		    { name : 'desc',  mapping : 'description' },
-		    { name : 'owner' },
-		    { name : 'sub_owner' }
-		],
+                    { name : 'desc',  mapping : 'description' },
+                    { name : 'owner' },
+                    { name : 'sub_owner' }
+                ],
                 id        : 'policyListId',
                 flex      : 1,
                 border    : false,
@@ -274,7 +274,7 @@ NetspocManager.PolicyManager = Ext.extend(
                 else {
                     return what === 'src' ?  node.src.join( '<br>' ) :
                         node.dst.join( '<br>' );
-                };
+                }
             };
 
             var store = {
@@ -377,14 +377,14 @@ NetspocManager.PolicyManager = Ext.extend(
                           fieldLabel : 'Verantwortung',
                           layout     : 'hbox',
                           items      : [
-		              { xtype   : 'button',
+                              { xtype   : 'button',
                                 hidden  : true,
                                 id      : 'trigger',
                                 flex    : 0,
-			        iconCls : 'icon-group',
-			        scope   : this,
-			        handler : this.onTriggerClick
-		              },
+                                iconCls : 'icon-group',
+                                scope   : this,
+                                handler : this.onTriggerClick
+                              },
                               { xtype      : 'textfield',
                                 id         : 'owner1',
                                 flex       : 1,
@@ -505,35 +505,36 @@ NetspocManager.PolicyManager = Ext.extend(
                 proxyurl   : 'get_users',
                 autoSelect : true,
                 sortInfo   : { field: 'ip', direction: "ASC" },
-		fieldsInfo : [
-		    { name     : 'name'  , 
+                fieldsInfo : [
+                    { name     : 'name'  , 
                       header   : 'Name'
                     },
-		    { name     : 'ip',
-		      header   : 'IP-Adressen',
-		      width    : .25,
-		      sortType : function ( value ) {
-			  var m1 = /-/;
-			  var m2 = /\//;
-			  if ( value.match(m1) ) {
-			      var array = value.split('-');
-			      return ip2numeric( array[0] );
-			  }
-			  else if ( value.match(m2) ) {
-			      var array = value.split('/');
-			      return ip2numeric( array[0] );
-			  }
-			  else {
-			      return ip2numeric( value );
-			  }
-		      }
-		    },
+                    { name     : 'ip',
+                      header   : 'IP-Adressen',
+                      width    : 0.25,
+                      sortType : function ( value ) {
+                          var m1 = /-/;
+                          var m2 = /\//;
+                          var array;
+                          if ( value.match(m1) ) {
+                              array = value.split('-');
+                              return ip2numeric( array[0] );
+                          }
+                          else if ( value.match(m2) ) {
+                              array = value.split('/');
+                              return ip2numeric( array[0] );
+                          }
+                          else {
+                              return ip2numeric( value );
+                          }
+                      }
+                    },
                     // Not shown, but needed to select the corresponding
                     // email addresses.
-		    { name    : 'owner' },
+                    { name    : 'owner' },
                     { name    : 'owner_alias', 
-		      header  : 'Verantwortungsbereich',
-		      width   : .25,
+                      header  : 'Verantwortungsbereich',
+                      width   : 0.25,
                       mapping : function (node) { 
                           return node.owner_alias || node.owner;
                       }

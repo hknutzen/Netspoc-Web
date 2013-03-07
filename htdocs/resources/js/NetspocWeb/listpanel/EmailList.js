@@ -12,15 +12,15 @@ Ext.ns("NetspocWeb.listpanel");
 
 NetspocWeb.listpanel.EmailList = Ext.extend(
     NetspocWeb.listpanel.Simple, {
-	initComponent : function() {
+        initComponent : function() {
             Ext.apply(this, 
                   {
                       proxyurl    : 'get_emails',
-	              sortInfo    : { field: 'email', direction: "ASC" },
+                      sortInfo    : { field: 'email', direction: "ASC" },
                       hideHeaders : true,
-	              fieldsInfo  : [
-	                  { name : 'email', header : 'Verantwortliche' }
-	              ]
+                      fieldsInfo  : [
+                          { name : 'email', header : 'Verantwortliche' }
+                      ]
                   }
                  );
             NetspocWeb.listpanel.EmailList.
@@ -36,13 +36,13 @@ NetspocWeb.listpanel.EmailList = Ext.extend(
             var active_owner = appstate.getOwner();
             var history      = appstate.getHistory();
             var lastOptions  = store.lastOptions;
-            if ( lastOptions 
-                 && lastOptions.params
-                 && lastOptions.params.owner === owner
-                 && lastOptions.params.history === history
-                 && lastOptions.params.active_owner === active_owner
-                 // Reload if data was removed previously.
-                 && store.getCount()) 
+            if ( lastOptions  &&
+                 lastOptions.params  &&
+                 lastOptions.params.owner === owner  &&
+                 lastOptions.params.history === history  &&
+                 lastOptions.params.active_owner === active_owner  &&
+                 store.getCount() // Reload if data was removed previously.
+               ) 
             {
                 return;
             }

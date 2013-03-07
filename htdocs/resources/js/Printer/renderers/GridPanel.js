@@ -62,11 +62,11 @@ Ext.ux.Printer.GridPanelRenderer = Ext.extend(Ext.ux.Printer.BaseRenderer, {
   getColumns: function(grid) {
     var columns = [];
     
-  	Ext.each(grid.getColumnModel().config, function(col) {
-  	  if (col.hidden != true) columns.push(col);
-  	}, this);
-  	
-  	return columns;
+        Ext.each(grid.getColumnModel().config, function(col) {
+          if (col.hidden !== true) columns.push(col);
+        }, this);
+        
+        return columns;
   },
   
   /**
@@ -91,7 +91,7 @@ Ext.ux.Printer.GridPanelRenderer = Ext.extend(Ext.ux.Printer.BaseRenderer, {
   bodyTpl:  new Ext.XTemplate(
     '<tr>',
       '<tpl for=".">',
-        '<td>\{{dataIndex}\}</td>',
+      '<td>\\{{dataIndex}\\}</td>',
       '</tpl>',
     '</tr>'
   )
