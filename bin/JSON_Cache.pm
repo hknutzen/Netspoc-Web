@@ -191,4 +191,14 @@ sub load_json_version {
     return $data;
 }
 
+sub load_json_current {
+    my ($self, $path) = @_;
+    my $policy_path = "$self->{netspoc_data}/current/POLICY";
+    my $policy = qx(cat $policy_path);
+    $policy =~ m/^# (\S+)/ or 
+        die "Internal: Can't find policy name in $policy_path";
+    $policy = $1;
+    $self->load_json_version($policy, $path);
+}
+
 1;
