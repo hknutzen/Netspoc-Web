@@ -8,8 +8,10 @@ Ext.define(
             type : 'ajax',
             url  : '/daniel4/backend/return_data',
             reader : {
-                type : 'json',
-                root : 'records'
+                type            : 'json',
+                root            : 'records',
+                totalProperty   : 'totalCount',
+                successProperty : 'success'
             }
         }
     }
