@@ -165,12 +165,6 @@ sub load_json {
     $cache->load_json_version($selected_history, $path);
 }
 
-sub load_current_json {
-    my ($path) = @_;
-    my $current_policy = current_policy();
-    $cache->load_json_version($current_policy, $path);
-}
-
 sub get_objects {
     return load_json('objects');
 }
@@ -1043,7 +1037,7 @@ sub validate_owner {
     if (my $active_owner = $cgi->param('active_owner')) {
 	$owner_needed or abort abort "Must not send parameter 'active_owner'";
 	my $email = $session->param('email');
-	my $email2owners = load_current_json('email');
+	my $email2owners = $cache->load_json_current('email');
 	grep { $active_owner eq $_ } @{ $email2owners->{$email} } or
 	    abort "User $email isn't allowed to read owner $active_owner";
     } 
