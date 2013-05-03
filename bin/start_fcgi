@@ -64,8 +64,8 @@ sub fcgi2stdin {
 	or die "failed to open FastCGI socket '$listen': $!"; 
     close STDIN;
     close STDOUT;
-    open STDIN, "<&$sock" or die "Couldn't open STDIN to $listen: $!";
-    open STDOUT, ">&$sock" or die "Couldn't open STDOUT to $listen: $!";
+    open STDIN, '<&', $sock or die "Couldn't open STDIN to $listen: $!";
+    open STDOUT, '>&', $sock or die "Couldn't open STDOUT to $listen: $!";
     select(STDOUT);
 }
 

@@ -833,7 +833,7 @@ sub get_supervisors {
 
 sub read_template {
     my ($file) = @_;
-    open(my $fh, $file) or internal_err "Can't open $file: $!";
+    open(my $fh, '<', $file) or internal_err "Can't open $file: $!";
     local $/ = undef;
     my $text = <$fh>;
     close $fh;
@@ -873,7 +873,7 @@ sub send_verification_mail {
     # -t: read recipient address from mail text
     # -f: set sender address
     # -F: don't use sender full name
-    open(my $mail, "|$sendmail -t -F '' -f $config->{noreply_address}") or 
+    open(my $mail, '|-', "$sendmail -t -F '' -f $config->{noreply_address}") or 
 	internal_err "Can't open $sendmail: $!";
     print $mail Encode::encode('UTF-8', $text);
     close $mail or warn "Can't close $sendmail: $!\n";

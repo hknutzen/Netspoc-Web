@@ -127,8 +127,8 @@ for my $owner (sort keys %owners) {
         # -t: read recipient address from mail text
         # -f: set sender address
         # -F: don't use sender full name
-        open(my $mail, "|$sendmail -t -F '' -f $config->{noreply_address}") or 
-            die "Can't open $sendmail: $!";
+        open(my $mail, '|-', "$sendmail -t -F '' -f $config->{noreply_address}")
+          or die "Can't open $sendmail: $!";
         print $mail Encode::encode('UTF-8', $text);
         close $mail or warn "Can't close $sendmail: $!"; 
     }

@@ -10,7 +10,7 @@ use open IN => ':utf8';
 
 sub read_file {
     my ($file) = @_;
-    open(my $fh, $file) or croak "Can't open $file: $!";
+    open(my $fh, '<', $file) or croak "Can't open $file: $!";
     local $/ = undef;
     my $text = <$fh>;
     close $fh;
