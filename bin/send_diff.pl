@@ -90,11 +90,11 @@ sub convert {
         return(' ' x $level . $in);
     }
     elsif ($type eq 'HASH') {
-        return(map(convert($_, $level+1), 
-                   map { ($_, $in->{$_}) } sort keys %$in));
+        return(map { convert($_, $level+1) }
+                   map { ($_, $in->{$_}) } sort keys %$in);
     }
     elsif ($type eq 'ARRAY') {
-        return(map(convert($_, $level+1), @$in));
+        return(map { convert($_, $level+1) } @$in);
     }
 }
 
@@ -109,7 +109,7 @@ for my $owner (sort keys %owners) {
 
     my $changes = Policy_Diff::compare($cache, $old_ver, $new_ver, $owner);
     next if not $changes;
-    my $diff = join("\n", map(convert({ $_, $changes->{$_} }, -1),
+    my $diff = join("\n", map( { convert({ $_, $changes->{$_} }, -1) }
                               (sort { ($toplevel_sort{$a} || 999) <=> 
                                           ($toplevel_sort{$b} || 999) }
                                keys %$changes)));

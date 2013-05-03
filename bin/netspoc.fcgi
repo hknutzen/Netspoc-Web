@@ -194,7 +194,7 @@ sub get_nat_obj {
 sub get_nat_obj_list {
     my ($obj_names, $owner) = @_;
     my $no_nat_set = get_no_nat_set($owner);
-    return [ map(get_nat_obj($_, $no_nat_set), @$obj_names) ];
+    return [ map { get_nat_obj($_, $no_nat_set) } @$obj_names ];
 }
 
 sub get_any {
@@ -248,7 +248,8 @@ sub get_services_and_rules {
 
     # Untaint services passed as params by intersecting
     # with known service-names from json-data.
-    my $service_names = intersect( [ map(@$_, @{$lists}{qw(owner user visible)}) ],
+    my $service_names = intersect( [ map { @$_ } 
+                                         @{$lists}{qw(owner user visible)} ],
 				   $param_services );
 
   SERVICE:
@@ -324,7 +325,7 @@ sub relevant_objects_for_networks {
 
     my %relevant_objects = 
         map({ $_ => 1 } (@$network_names, 
-                         map(@{ $assets->{net2childs}->{$_} },
+                         map({ @{ $assets->{net2childs}->{$_} } }
                              @$network_names)));
     return \%relevant_objects;
 }
@@ -369,7 +370,7 @@ sub service_list {
             relevant_objects_for_networks( $network_names, $assets );
 
       SERVICE:
-	for my $pname (sort map(@$_, @{$lists}{qw(owner user)})) {
+	for my $pname (sort map { @$_ } @{$lists}{qw(owner user)}) {
 
             # Check if network or any of its contained resources
             # is user of current service.
@@ -403,7 +404,7 @@ sub service_list {
     # $plist is filled here but is overridden in code
     # handling search, IF we are in search mode.
     if ( not $relation ) {
-	$plist = [ sort map(@$_, @{$copy}{qw(owner user visible)}) ]
+	$plist = [ sort map { @$_ } @{$copy}{qw(owner user visible)} ]
     }
     else {
 	$plist = $copy->{$relation};
@@ -438,7 +439,7 @@ sub service_list {
 	if ( $cgi->param( 'search_visible' ) ) {
 	    push @search_in, 'visible';
 	}
-	my $search_plist = [ sort map(@$_, @{$copy}{ @search_in } ) ];
+	my $search_plist = [ sort map { @$_ } @{$copy}{ @search_in } ];
 
       SERVICE:
 	for my $sname ( @$search_plist ) {
@@ -523,7 +524,7 @@ sub service_list {
 	# Add alias name to 
         # 1. list of owners, 
         # 2. optional single sub_owner (= service owner)
-	$hash->{owner} = [ map($add_alias->($_), @{ $hash->{owner} }) ];
+	$hash->{owner} = [ map { $add_alias->($_) } @{ $hash->{owner} } ];
 	$hash->{sub_owner} and 
             $hash->{sub_owner} = $add_alias->($hash->{sub_owner});
 	$hash;
@@ -599,7 +600,8 @@ sub get_rules_for_owner_and_service {
             relevant_objects_for_networks( $network_names, $assets );
         $rules = [ grep {
             $_->{has_user} ne 'both' &&
-                grep($relevant_objects->{$_}, @{$_->{$src_or_dst{$_->{has_user}}}});
+                grep({ $relevant_objects->{$_} } 
+                     @{$_->{$src_or_dst{$_->{has_user}}}});
         } @$rules ];
     }
 
@@ -612,7 +614,7 @@ sub get_rules_for_owner_and_service {
 	my $crule = { %$rule };
 	for my $what (qw(src dst)) {
 	    $crule->{$what} = 
-		[ map((get_nat_obj($_, $no_nat_set))->{$prop},
+		[ map( { (get_nat_obj($_, $no_nat_set))->{$prop} }
 		      @{ $rule->{$what} }) ];
 	}
 	push @$crules, $crule;
@@ -979,8 +981,7 @@ sub set_attack {
     $store->param('login_wait', $wait);
     $store->param('failed_time', time());
     $store->flush();
-    $wait;
-    return;
+    return $wait;
 }
 
 sub check_attack {
