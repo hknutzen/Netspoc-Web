@@ -70,7 +70,7 @@ sub intersect {
   
 # Delete an element from an array reference.
 # Return 1 if found, 0 otherwise.
-sub aref_delete( $$ ) {
+sub aref_delete {
     my ($aref, $elt) = @_;
     for (my $i = 0 ; $i < @$aref ; $i++) {
         if ($aref->[$i] eq $elt) {
