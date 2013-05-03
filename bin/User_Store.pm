@@ -1,5 +1,7 @@
 package User_Store;
 
+use strict;
+use warnings;
 use CGI::Session;
 use CGI::Session::Driver::file;
 
