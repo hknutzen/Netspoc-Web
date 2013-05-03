@@ -652,7 +652,7 @@ sub get_diff {
         abort "Missing parameter 'version'";
     my $changed = 
         Policy_Diff::compare($cache, $version, $selected_history, $owner);
-    return undef if not $changed;
+    return if not $changed;
 
     # Convert to ExtJS tree.
     # Node: Hash with attributes "text" and 
@@ -911,7 +911,7 @@ sub check_password  {
 
     # No password known.
     else {
-        return undef;
+        return;
     }
 }
 
