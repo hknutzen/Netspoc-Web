@@ -34,7 +34,6 @@ sub do_fork {
 	return;
     }
     my $ppid = $$;
-    my $child_fh;
     warn "Forking child\n";
     my $pid = fork;
     if (not defined $pid) {
