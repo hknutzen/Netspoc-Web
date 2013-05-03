@@ -45,11 +45,6 @@ sub internal_err {
     abort "internal: $msg";
 }
 
-sub errsay {
-    my $msg = shift;
-    print STDERR "$msg\n";
-}
-
 sub intersect {
     my @non_compl = @_;
     my $result;
@@ -139,7 +134,7 @@ sub get_history {
 }
 
 sub current_policy {
-    get_policy()->[0]->{policy};
+    return get_policy()->[0]->{policy};
 }
 
 my $selected_history;
@@ -156,13 +151,14 @@ sub select_history {
 	$history_needed and abort "Missing parameter 'history'";
 	$selected_history = current_policy();
     }
+    return;
 }
 
 my $cache;
 
 sub load_json {
     my ($path) = @_;
-    $cache->load_json_version($selected_history, $path);
+    return $cache->load_json_version($selected_history, $path);
 }
 
 sub get_objects {
@@ -837,7 +833,7 @@ sub read_template {
     local $/ = undef;
     my $text = <$fh>;
     close $fh;
-    $text;
+    return $text;
 }
 
 # Do simple variable substitution.
@@ -847,14 +843,14 @@ sub process_template {
     while (my ($key, $value) = each %$vars) {
 	$text =~ s/\[% $key %\]/$value/g;
     }
-    $text;
+    return $text;
 }
 
 sub get_substituted_html {
     my ($file, $vars ) = @_;
     my $text = read_template($file);
     $text = process_template($text, $vars);
-    $text;
+    return $text;
 }					 
    
 
@@ -877,6 +873,7 @@ sub send_verification_mail {
 	internal_err "Can't open $sendmail: $!";
     print $mail Encode::encode('UTF-8', $text);
     close $mail or warn "Can't close $sendmail: $!\n";
+    return;
 }
 
 # Get / set password for user.
@@ -887,6 +884,7 @@ sub store_password {
     $store->param('hash', $hash);
     $store->clear('old_hash');
     $store->flush();
+    return;
 }
 
 sub check_password  {
@@ -982,6 +980,7 @@ sub set_attack {
     $store->param('failed_time', time());
     $store->flush();
     $wait;
+    return;
 }
 
 sub check_attack {
@@ -993,6 +992,7 @@ sub check_attack {
     if ($remain > 0) {
 	abort("Wait for $remain seconds after wrong password" );
     }
+    return;
 }
 
 sub clear_attack {
@@ -1000,6 +1000,7 @@ sub clear_attack {
     my $store = User_Store::new($config, $email);
     $store->clear('login_wait');
     $store->flush();
+    return;
 }
 
 sub login {
@@ -1044,6 +1045,7 @@ sub validate_owner {
     else {
 	$owner_needed and abort "Missing parameter 'active_owner'";
     }
+    return;
 }
 
 sub logout {
@@ -1071,6 +1073,7 @@ sub decode_params {
 	my $val =  Encode::decode('UTF-8', $cgi->param($param));
 	$cgi->param($param, $val);
     }
+    return;
 }
 
 my %path2sub =
@@ -1207,6 +1210,7 @@ sub handle_request {
 	    print encode_json($result), "\n";
 	}
     }
+    return;
 }
 
 sub run {
@@ -1253,6 +1257,7 @@ sub run {
         $params{request_handler}->();
         $nproc && $proc_manager->pm_post_dispatch();
     }
+    return;
 }
 
 ####################################################################

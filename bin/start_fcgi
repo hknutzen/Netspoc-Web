@@ -67,6 +67,7 @@ sub fcgi2stdin {
     open STDIN, '<&', $sock or die "Couldn't open STDIN to $listen: $!";
     open STDOUT, '>&', $sock or die "Couldn't open STDOUT to $listen: $!";
     select(STDOUT);
+    return;
 }
 
 sub terminate {
@@ -81,11 +82,13 @@ sub write_pidfile {
     open(my $fh, '>', $pidfile) or die "Can't open $pidfile: $!\n";
     print $fh "$$\n";
     close $fh or die "Can't close $pidfile: $!\n";
+    return;
 }
 
 sub remove_pidfile {
     return if not $pidfile;
     unlink $pidfile or warn "Can't remove $pidfile: $!\n";
+    return;
 }
 
 my $hup_watcher = AnyEvent->signal (signal => "HUP", 

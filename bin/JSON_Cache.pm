@@ -41,6 +41,7 @@ sub clean_cache {
 	sort { $atime->{$a} <=> $atime->{$b} } keys %$cache;
     my $delete_to = @versions_by_atime - $self->{max_versions} - 1;
     delete @{$cache}{ @versions_by_atime[0..$delete_to] };
+    return;
 }
 
 sub postprocess_json {
@@ -198,7 +199,7 @@ sub load_json_current {
     $policy =~ m/^# (\S+)/ or 
         die "Internal: Can't find policy name in $policy_path";
     $policy = $1;
-    $self->load_json_version($policy, $path);
+    return $self->load_json_version($policy, $path);
 }
 
 1;
