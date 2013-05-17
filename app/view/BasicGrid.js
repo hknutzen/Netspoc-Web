@@ -1,20 +1,18 @@
 
-Ext.ns('NetspocWeb.listpanel');
-
 /**
  * A base class that contains the reusable bits of configuration
  * for Grids.
  **/
 
 Ext.define(
-    'PolicyWeb.model.GridBasics',
+    'PolicyWeb.view.BasicGrid',
     {
-        extend : 'Ext.grid.Panel',
+        extend : 'Ext.container.Container',
 
         initComponent : function() {
             this.items = this.buildGrid();
             this.callParent();            
-            this.relayEvents(this.getView(), ['click', 'selectionchange']);
+            this.relayEvents(this.getGrid(), ['click', 'selectionchange']);
             this.relayEvents(this.getStore(), ['load']);
             this.addListener('beforerender',
                              function (me) {
@@ -27,7 +25,7 @@ Ext.define(
                              this);
         },
         
-        buildListView : function() {
+        buildGrid : function() {
             return {};
         },
         
@@ -45,7 +43,7 @@ Ext.define(
         },
         
         createAndSelectRecord : function(o) {
-            var view = this.getView();
+            var view = this.getGrid();
             var record = new view.store.recordType(o);
             
             view.store.addSorted(record);
@@ -57,21 +55,27 @@ Ext.define(
         },
         
         clearSelections : function() {
-            return this.getView().clearSelections();
+            return this.getSelModel().deselectAll();
         },
-        getView : function() {
+
+        getGrid : function() {
             return this.items.items[0];
         },
-        
+
         getStore : function() {
-            return this.getView().store;
+            return this.getGrid().getStore();
         },
-        
+
         getSelectedRecords : function() {
             return this.getView().getSelectedRecords();
         },
+
         getSelected : function() {
             return this.getSelectedRecords()[0];    
+        },
+        
+        getSelModel : function() {
+            return this.getGrid().getSelectionModel();
         },
         
         refreshView : function() {
@@ -87,7 +91,7 @@ Ext.define(
             }
         },
         selectRow0 : function() {
-            this.getView().select(0);
+            this.getSelModel().select(0);
         },
         
         loadStoreByParams : function(params) {

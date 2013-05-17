@@ -18,6 +18,7 @@ var appstate = (
             }
         };
         state.changeHistory = function (record, silent) {
+            console.log( 'CHANGE HISTORY to date:' +  record.get('date') );
             var data = { policy  : record.get('policy'),
                          date    : record.get('date'),
                          time    : record.get('time'),
@@ -62,13 +63,14 @@ var appstate = (
         };
         state.showHistory = function () {
             var now = new Date();
-            
+
             // history.date: 'yyyy-mm-dd'
             var ymd = history.date.split('-');
             
             // month for 'new Date' is counted from 0.
             var pdate = new Date(ymd[0], ymd[1]-1, ymd[2]);
-            var when = (now.getDayOfYear() === pdate.getDayOfYear()) ?
+            //var when = (now.getDayOfYear() === pdate.getDayOfYear()) ?
+            var when = (Ext.Date.getDayOfYear(now) === Ext.Date.getDayOfYear(pdate)) ?
                 history.time : history.date;
             var version = history.current ? 'aktuell' : history.policy; 
             return (when + ' (' + version + ')');

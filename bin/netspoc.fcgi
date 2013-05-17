@@ -976,15 +976,6 @@ sub verify {
     }
 }
 
-sub return_some_data {
-    my ($cgi, $session) = @_;
-    return [
-        { name => 'Eins' },
-        { name => 'Zwei' },
-        { name => 'Drei' },
-        ];
-}
-    
 ####################################################################
 # Login
 ####################################################################
@@ -1129,8 +1120,6 @@ my %path2sub =
      get_diff      => [ \&get_diff,      { owner => 1, } ],
      get_diff_mail => [ \&get_diff_mail, { owner => 1, add_success => 1, } ],
      set_diff_mail => [ \&set_diff_mail, { owner => 1, add_success => 1, } ],
-     return_data => [ \&return_some_data, { anon => 1, add_success => 1,
-					   create_cookie => 1, } ],
       ); 
 
 sub handle_request {

@@ -3,10 +3,13 @@ Ext.define(
     'PolicyWeb.store.NetspocState', {
         extend      : 'PolicyWeb.store.Netspoc',
         alias       : 'store.netspocstatestore',
-        constructor : function() {
+        constructor : function( config ) {
 
+            if ( !config ) {
+                console.log( 'STATE STORE WITHOUT CONFIG!!!!!!!' );
+            }
             // Call constructor of superclass.
-            this.callParent();
+            this.callParent( config );
 
             // Set baseParams and reload store if appstate changes.
             this.changeBaseParams();
@@ -22,7 +25,7 @@ Ext.define(
                 }, this);
         },
         changeBaseParams : function() {
-            console.log( 'CHANGEBASEPARAMS' );
+            //console.log( 'CHANGE BASE PARAMS' );
             this.getProxy().extraParams.active_owner    = appstate.getOwner();
             this.getProxy().extraParams.history         = appstate.getHistory();
             this.getProxy().extraParams.chosen_networks = appstate.getNetworks();
@@ -30,20 +33,3 @@ Ext.define(
     }
 );
 
-/*
-Ext.define(
-    'PolicyWeb.store.NetspocGroup', {
-        extend      : 'Ext.data.JsonStore',
-        constructor : (getConstructor(Ext.data.JsonStore)),
-        alias       : 'store.netspocgroupstore'
-    }
-);
-
-Ext.define(
-    'PolicyWeb.store.NetspocGroupState', {
-        extend      : 'PolicyWeb.store.NetspocGroup',
-        constructor : (getStateConstructor(PolicyWeb.store.NetspocGroup)),
-        alias       : 'store.groupingstatestore'
-    }
-);
-*/

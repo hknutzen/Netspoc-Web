@@ -4,23 +4,56 @@ Ext.define(
         extend      : 'Ext.data.Store',
         model       : 'PolicyWeb.model.Netspoc',
         alias       : 'store.netspocstore',
+        autoLoad    : false,
         constructor : function( config ) {
-            // Call constructor of superclass.
-            this.callParent();
+            var url = '';
             var proxy;
-            var model = Ext.ModelManager.getModel( 'PolicyWeb.model.Netspoc' );
-            if ( model ) {
-                proxy = model.getProxy();
-            }
             if ( config ) {
                 if ( config.proxyurl ) {
+                    url = 'backend/' + config.proxyurl;
+                    console.log( 'Set proxyurl to: ' + url );
+                    proxy = {
+                        type       : 'ajax',
+                        url        : url,
+                        pageParam  : false, //to remove param "page"
+                        startParam : false, //to remove param "start"
+                        limitParam : false, //to remove param "limit"
+                        noCache    : false, //to remove param "_dc<xyz>"
+                        reader : {
+                            type            : 'json',
+                            root            : 'records',
+                            totalProperty   : 'totalCount',
+                            successProperty : 'success'
+                        }
+                    };
+                    this.setProxy( proxy );
+                }
+            }
+            else {
+                console.log( 'NETSPOC STORE WITHOUT CONFIG!' );
+                //debugger;
+            }
+
+            // Call constructor of superclass.
+            this.callParent( config );
+
+/*
+            var proxy = this.getProxy();
+            //console.dir( proxy );
+            var model = proxy.getModel();
+            if ( config ) {
+                if ( config.proxyurl ) {
+                    console.log( 'Set proxyurl to: ' + config.proxyurl );
                     proxy.url = 'backend/' + config.proxyurl;
                 }
-                if ( config.fields && model ) {
+                if ( model && config.fields ) {
                     model.setFields( config.fields );
                 }
             }
-            
+            else {
+                //alert( 'NETSPOC STORE WITHOUT CONFIG!' );
+            }
+*/
             this.addListener('beforeload', function ( store, options ) {
                                  Ext.getBody().mask('Daten werden geladen ...', 
                                                     'x-mask-loading');
