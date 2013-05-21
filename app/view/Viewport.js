@@ -8,6 +8,7 @@ Ext.define(
 	requires : [
             'PolicyWeb.view.Service',
             'PolicyWeb.view.ServiceList',
+            'PolicyWeb.view.OwnerCombo',
             'PolicyWeb.store.Owner'
             //'PolicyWeb.view.Ressources',
 	],
@@ -137,10 +138,11 @@ Ext.define(
                     '->',
                     'Stand',
                     //this.buildHistoryCombo(historyStore),
-                    //this.buildHistoryCombo(),
+                    { xtype : 'historycombo' },
                     ' ',
                     'Verantwortungsbereich',
                     //this.buildOwnerCombo(this.buildOwnersStore()),
+                    { xtype : 'ownercombo' },
                     ' ',
                     'Abmelden',
                     {

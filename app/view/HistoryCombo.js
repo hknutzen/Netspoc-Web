@@ -4,6 +4,7 @@ Ext.define(
     'PolicyWeb.view.HistoryCombo', {
         extend         : 'Ext.form.field.ComboBox',
         alias          : 'widget.historycombo',
+        store          : 'Policies',
         forceSelection : true, 
         autoselect     : true,
         editable       : false,
@@ -17,6 +18,8 @@ Ext.define(
                           '{date} {time} ({policy})' +
                           '</div></tpl>'),
         width          : 100,
-        listWidth      : 200
+        listConfig     : {
+            minWidth : 200
+        }
     }
 );

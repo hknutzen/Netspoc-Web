@@ -5,55 +5,13 @@ Ext.define(
         model       : 'PolicyWeb.model.Netspoc',
         alias       : 'store.netspocstore',
         autoLoad    : false,
-        constructor : function( config ) {
-            var url = '';
-            var proxy;
-            if ( config ) {
-                if ( config.proxyurl ) {
-                    url = 'backend/' + config.proxyurl;
-                    console.log( 'Set proxyurl to: ' + url );
-                    proxy = {
-                        type       : 'ajax',
-                        url        : url,
-                        pageParam  : false, //to remove param "page"
-                        startParam : false, //to remove param "start"
-                        limitParam : false, //to remove param "limit"
-                        noCache    : false, //to remove param "_dc<xyz>"
-                        reader : {
-                            type            : 'json',
-                            root            : 'records',
-                            totalProperty   : 'totalCount',
-                            successProperty : 'success'
-                        }
-                    };
-                    this.setProxy( proxy );
-                }
-            }
-            else {
-                console.log( 'NETSPOC STORE WITHOUT CONFIG!' );
-                //debugger;
-            }
+        proxy       : {
+            type     : 'policyweb',
+            proxyurl : 'override_me'
+        },
+        constructor : function() {
+            this.callParent( arguments );
 
-            // Call constructor of superclass.
-            this.callParent( config );
-
-/*
-            var proxy = this.getProxy();
-            //console.dir( proxy );
-            var model = proxy.getModel();
-            if ( config ) {
-                if ( config.proxyurl ) {
-                    console.log( 'Set proxyurl to: ' + config.proxyurl );
-                    proxy.url = 'backend/' + config.proxyurl;
-                }
-                if ( model && config.fields ) {
-                    model.setFields( config.fields );
-                }
-            }
-            else {
-                //alert( 'NETSPOC STORE WITHOUT CONFIG!' );
-            }
-*/
             this.addListener('beforeload', function ( store, options ) {
                                  Ext.getBody().mask('Daten werden geladen ...', 
                                                     'x-mask-loading');
@@ -68,6 +26,7 @@ Ext.define(
             this.addListener('exception', this.onJsonException);
             
         },
+
         onJsonException :
         function(proxy, type, action, options, response, arg ) {
             Ext.getBody().unmask();

@@ -11,13 +11,16 @@ Ext.Loader.setConfig(
 );
 
 Ext.require( [
+                 'PolicyWeb.proxy.Custom',
                  'PolicyWeb.store.ServiceList',
                  'PolicyWeb.store.Netspoc',
                  'PolicyWeb.store.NetspocState',
                  'PolicyWeb.store.History',
                  'PolicyWeb.store.Owner',
-                 'PolicyWeb.store.Test',
+                 'PolicyWeb.store.Policies',
                  'PolicyWeb.view.Viewport',
+                 'PolicyWeb.view.OwnerCombo',
+                 'PolicyWeb.view.HistoryCombo',
                  'PolicyWeb.view.Service'
              ]
            );
@@ -29,30 +32,25 @@ Ext.application(
 	autoCreateViewport : true,
 	models             : [ 'Netspoc', 'ServiceList', 'Owner' ],
 	stores             : [ 'Netspoc', 'NetspocState', 'ServiceList',
-                               'Owner', 'History' ],
+                               'Owner', 'AllOwners', 'History', 'Policies' ],
 	controllers        : [ 'Main', 'Service' ],
-        //views              : [ 'Service', 'ServiceList', 'HistoryCombo' ],
+        //views              : [ 'Service', 'ServiceList', 'OwnerCombo' ],
+        refs   : [
+            {
+                selector : 'mainview',
+                ref      : 'mainView'   
+            },
+            {
+                selector : 'historycombo',
+                ref      : 'historyCombo'   
+            },
+            {
+                selector : 'ownercombo',
+                ref      : 'ownerCombo'   
+            }
+        ],
 	launch             : function() {
-            this.getActiveOwner();
-        },
-        
-        getActiveOwner : function() {
-            var store = Ext.create(
-                'PolicyWeb.store.Owner', {
-                    proxyurl    : 'get_owner',
-                    autoDestroy : true,
-                    fields      : [ 'name',
-                                    { name : 'alias',
-                                      
-                                      // Take name, if no alias available.
-                                      mapping : function(node) {
-                                          return node.alias || node.name;
-                                      },
-                                      sortType : 'asUCString' 
-                                    } 
-                                  ]
-                }
-            );
+            var store = this.getOwnerStore();
             store.load(
                 {
                     scope    : this,
@@ -68,15 +66,16 @@ Ext.application(
                         // Owner was never selected, 
                         // check number of available owners.
                         else {
-                            var store = this.buildOwnersStore( 
-                                { autoLoad : true }
+                            // FOO
+                            var store = this.getAllOwnersStore();
+                            store.load(
+                                { callback : this.onOwnerLoaded,
+                                  autoLoad : true,
+                                  scope    : this,
+                                  store    : store
+                                }
                             );
-                            store.load({ callback : this.onOwnerLoaded,
-                                         scope    : this,
-                                         store    : store
-                                       });
                         }
-                        options.store.destroy();
                     }
                 }
             );
@@ -94,26 +93,19 @@ Ext.application(
             }
             // Ask user to select one owner.
             else {
-                var combo = this.buildOwnerCombo(options.store);
-                new Ext.Window(
+                var combo = Ext.create(
+                    'PolicyWeb.view.OwnerCombo'
+                );
+                var win = Ext.create(
+                    'Ext.window.Window',
                     {
                         id       : 'ownerWindow',
                         title    : 'Verantwortungsbereich ausw&auml;hlen',
                         width    : 400, 
                         height   : 80,
-                        layout   : 'fit', 
-                        items    : [
-                            {
-                                xtype  : 'panel',
-                                frame  : true,
-                                layout : {
-                                    type    : 'fit',
-                                    padding : '5',
-                                    align   : 'center'
-                                },
-                                items : combo
-                            }
-                        ]
+                        layout   : 'fit',
+                        bodyPadding  : 10,
+                        items    : [ combo ]
                     }
                 ).show();
             }
@@ -123,18 +115,20 @@ Ext.application(
             var store = Ext.create(
                 'PolicyWeb.store.Netspoc',
                 {
-                    proxyurl : 'set',
-                    fields   : [],
+                    proxyurl    : 'set',
+                    fields      : [],
                     autoDestroy : true
                 }
             );
-            store.load({ params   : { owner : owner },
-                         callback : this.onSetOwnerSuccess,
-                         scope    : this,
-
-                         // private option
-                         owner    : {  name : owner, alias : alias }
-                       });
+            store.load(
+                { params   : { owner : owner },
+                  callback : this.onSetOwnerSuccess,
+                  scope    : this,
+                  
+                  // private option
+                  owner    : {  name : owner, alias : alias }
+                }
+            );
         },
         onSetOwnerSuccess : function(records, options, success) {
             var owner_obj = options.owner;
@@ -144,6 +138,7 @@ Ext.application(
             if (window) {
                 window.close();
             }
+            this.fireEvent( 'ownerSet' );
             this.setOwnerState(owner_obj);
         },
         setOwnerState : function(owner_obj) {
@@ -167,14 +162,7 @@ Ext.application(
         },
 
         getCurrentPolicy : function(owner_obj) {
-            var store = Ext.create(
-                'PolicyWeb.store.Netspoc',
-                {
-                    proxyurl    : 'get_policy',
-                    autoDestroy : true,
-                    fields      : [ 'policy', 'date', 'time', 'current' ]
-                }
-            );
+            var store = this.getPoliciesStore();
             store.load(
                 { scope    : this,
                   // Make store and owner available for callback.
@@ -195,10 +183,8 @@ Ext.application(
             }
             appstate.changeOwner(owner_ob.name, owner_ob.alias);
             options.store.destroy();
-            //this.add( this.buildViewport() );
+            this.fireEvent( 'policyLoaded' );
         }
-
-
     }
 );
 

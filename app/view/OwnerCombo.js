@@ -4,7 +4,7 @@ Ext.define(
     'PolicyWeb.view.OwnerCombo', {
         extend         : 'Ext.form.field.ComboBox',
         alias          : 'widget.ownercombo',
-        id             : 'cbOwnerId',
+        store          : 'AllOwners',
         forceSelection : true, 
         autoselect     : true,
         editable       : true,
@@ -16,8 +16,9 @@ Ext.define(
         valueField     : 'name',
         loadingText    : 'Abfrage l&auml;uft ...',
         mode           : 'local',
-        store          : 'Owner',
         triggerAction  : 'all',
-        listWidth      : 400
+        listConfig     : {
+            minWidth   : 400
+        }
     }
 );
