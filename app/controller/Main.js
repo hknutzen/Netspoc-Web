@@ -2,12 +2,16 @@
 Ext.define(
     'PolicyWeb.controller.Main', {
         extend : 'Ext.app.Controller',
-        views  : [ 'Viewport' ],
+        views  : [ 'Viewport', 'Service' ],
         stores : [ 'Owner', 'AllOwners', 'History', 'Policies' ],
         refs   : [
             {
                 selector : 'mainview',
                 ref      : 'mainView'   
+            },
+            {
+                selector : 'mainview > panel',
+                ref      : 'mainCardPanel'   
             },
             {
                 selector : 'historycombo',
@@ -19,59 +23,134 @@ Ext.define(
             }
         ],
 
-        init: function() {
+        init : function() {
             
             this.control(
                 {
                     'mainview': {
-                        beforerender   : this.beforeViewportRendered,
-                        logout         : this.onLogout
+                        beforerender : this.beforeViewportRendered,
+                        logout       : this.onLogout
                     },
                     'ownercombo' : {
-                        select         : this.onOwnerSelected
+                        select       : this.onOwnerSelected
+                    },
+                    'historycombo' : {
+                        select       : this.onPolicySelected,
+                        beforequery  : function(qe){
+                            var combo = qe.combo;
+                            delete combo.lastQuery;
+                            combo.getStore().needLoad = false;
+                        }
                     }
                 }
             );
 
+/*
+                        // Delete the previous query in the beforequery event.
+                        // This will reload the store the next time it expands.
+                        beforequery: function(qe){
+                            var combo = qe.combo;
+                            delete combo.lastQuery;
+                            combo.getStore().needLoad = false;
+                        },
+                        select : function (combo, record, index) {
+                            appstate.changeHistory(record);
+                            combo.setValue(appstate.showHistory());
+                        }
+*/
             // Handle application wide events.
             this.application.on(
+/*
                 {
                     policyLoaded : this.onPolicyLoaded,
                     scope    : this
                 }
+*/
             );
         },
-        
-/*
-        onOwnerChosen : function() {
-            var combo = Ext.getCmp( 'cbOwnerId' );
-            var owner = combo.getValue();
-            var store, alias;
-            if (NetspocManager.appstate.getOwner() === owner) {
+
+	onLaunch : function() {
+            var store = this.getOwnerStore();
+            store.load(
+                {
+                    scope    : this,
+                    store    : store,
+                    callback : function(records, options, success) {
+                        // Keep already selected owner.
+                        if (success && records.length) {
+                            var owner = records[0].get('name');
+                            var alias = records[0].get('alias');
+                            this.setOwnerState({ name  : owner, 
+                                                 alias : alias });
+                        }
+                        // Owner was never selected, 
+                        // check number of available owners.
+                        else {
+                            var store = this.getAllOwnersStore();
+                            store.load(
+                                { callback : this.onOwnerLoaded,
+                                  autoLoad : true,
+                                  scope    : this,
+                                  store    : store
+                                }
+                            );
+                        }
+                    }
+                }
+            );
+        },
+
+        onOwnerLoaded : function(records, options, success) {
+            if (! success) {
                 return;
             }
-
-            // Get alias name as well
-            store = combo.store;
-            alias = 
-                store.getAt(store.findExact('name', owner)).get('alias');
-            this.setOwner(owner, alias);
+            // Automatically select owner if only one is available.
+            if (records.length === 1) {
+                var owner = records[0].get('name');
+                var alias = records[0].get('alias');
+                this.setOwner(owner, alias);
+            }
+            // Ask user to select one owner.
+            else {
+                var combo = Ext.create(
+                    'PolicyWeb.view.OwnerCombo'
+                );
+                var win = Ext.create(
+                    'Ext.window.Window',
+                    {
+                        id          : 'ownerWindow',
+                        title       : 'Verantwortungsbereich ausw&auml;hlen',
+                        width       : 400, 
+                        height      : 80,
+                        layout      : 'fit',
+                        bodyPadding : 10,
+                        items       : [ combo ]
+                    }
+                ).show();
+            }
         },
+
         setOwner : function(owner, alias) {
-            var store =  new NetspocWeb.store.Netspoc(
+            var store = Ext.create(
+                'PolicyWeb.store.Netspoc',
                 {
-                    proxyurl : 'set',
-                    fields   : [],
+                    proxy       : {
+                        type     : 'policyweb',
+                        proxyurl : 'set'
+                    },
+                    fields      : [],
                     autoDestroy : true
                 }
             );
-            store.load({ params   : { owner : owner },
-                         callback : this.onSetOwnerSuccess,
-                         scope    : this,
-
-                         // private option
-                         owner    : {  name : owner, alias : alias }
-                       });
+            store.load(
+                { params   : { owner : owner },
+                  callback : this.onSetOwnerSuccess,
+                  scope    : this,
+                  
+                  // private option
+                  owner    : {  name : owner, alias : alias }
+                }
+            );
         },
         onSetOwnerSuccess : function(records, options, success) {
             var owner_obj = options.owner;
@@ -88,9 +167,24 @@ Ext.define(
             this.getCurrentPolicy(owner_obj);            
         },
 
- */
+        getCurrentPolicy : function(owner_obj) {
+            var store = this.getPoliciesStore();
+            store.load(
+                { scope    : this,
+                  // Make store and owner available for callback.
+                  store    : store, 
+                  owner    : owner_obj,
+                  callback : this.onPolicyLoaded
+                }
+            );
+        },
+        
+        onPolicySelected : function(  combo, records, eOpts ) {
+            appstate.changeHistory(record);
+            combo.setValue(appstate.showHistory());
+        },
+
         onOwnerSelected : function(  combo, records, eOpts ) {
-            console.log( 'SELECTED OWNER ' + records[0].get( 'name' ) );
             var owner = combo.getValue();
             var store, alias;
             if ( appstate.getOwner() === owner ) {
@@ -101,19 +195,42 @@ Ext.define(
             store = combo.store;
             alias = 
                 store.getAt(store.findExact('name', owner)).get('alias');
-            //this.setOwner(owner, alias);
+            this.setOwner(owner, alias);
         },
         
-        onPolicyLoaded : function() {
-            var store = this.getAllOwnersStore();
-            store.load();
+        onPolicyLoaded : function(records, options, success) {
+            var owner_ob = options.owner;
+            var record;
+            if (success && records.length) {
+                record = records[0];
+                // Don't fire change event.
+                appstate.changeHistory(record, true);
+            }
+            appstate.changeOwner(owner_ob.name, owner_ob.alias);
+            options.store.destroy();
+
             var ownercombo = this.getOwnerCombo();
             ownercombo.setValue( appstate.getOwnerAlias() );
 
-            store = this.getPoliciesStore();
-            store.load();
             var historycombo = this.getHistoryCombo();
             historycombo.setValue( appstate.showHistory() );
+        },
+            
+        addServiceViewItems : function() {
+
+            this.addServiceList();
+            this.addServiceProperties();
+        },
+
+        addServiceList : function() {
+            var card = this.getMainCardPanel();
+            var sv = card.items.items[0];
+            sv.add( { xtype : 'servicelist' } );
+        },
+        
+        addServiceProperties : function() {
+            //var details = this.addServiceDetails();
+            //var rules   = this.addServiceRules();
         },
         
         onLogout : function() {
@@ -142,7 +259,6 @@ Ext.define(
 
         beforeViewportRendered: function( view ) {
             //console.log('BEFORE The viewport is rendered');
-            
         }
     }
 );

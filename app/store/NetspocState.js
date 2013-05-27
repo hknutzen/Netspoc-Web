@@ -3,13 +3,9 @@ Ext.define(
     'PolicyWeb.store.NetspocState', {
         extend      : 'PolicyWeb.store.Netspoc',
         alias       : 'store.netspocstatestore',
-        constructor : function( config ) {
-
-            if ( !config ) {
-                console.log( 'STATE STORE WITHOUT CONFIG!!!!!!!' );
-            }
+        constructor : function() {
             // Call constructor of superclass.
-            this.callParent( config );
+            this.callParent(arguments);
 
             // Set baseParams and reload store if appstate changes.
             this.changeBaseParams();

@@ -4,21 +4,20 @@ Ext.define(
     {
         extend      : 'Ext.grid.Panel',
         alias       : 'widget.servicelist',
-        requires    : [ 'PolicyWeb.store.ServiceList',
-                        'PolicyWeb.view.Service'
-                     ],
         controllers : [ 'Service' ],
-        //store       : 'ServiceList',
-
-        initComponent : function() {
-            this.callParent();            
-        },
-
-        flex        : 1,
+        store       : 'ServiceList',
+        forceFit    : true,
+        flex        : 2,
         border      : false,
-        columns     : [
-            { text : 'DName',  dataIndex : 'name' }
-        ],
+        columns     : {
+            items : [
+                { text : 'Dienstname',  dataIndex : 'name' }
+            ],
+            defaults : {
+                flex : 1,
+                menuDisabled : true
+            }
+        },
         tbar        : [
             {
                 text         : 'Eigene',

@@ -3,14 +3,18 @@
 Ext.define(
     'PolicyWeb.store.ServiceList',
     {
-        //extend    : 'Ext.data.Store',
-        extend      : 'PolicyWeb.store.NetspocState',
-        model       : 'PolicyWeb.model.ServiceList',
-        controllers : [ 'Service' ],
-        autoLoad    : false,
+        extend   : 'PolicyWeb.store.NetspocState',
+        model    : 'PolicyWeb.model.ServiceList',
+        autoLoad : false,
+        sorters  : [
+            {
+                property  : 'name',
+                direction : 'ASC'
+            }
+        ],
         proxy       : {
             type     : 'policyweb',
-            proxyurl : 'get_history'
+            proxyurl : 'service_list'
         }
     }
 );

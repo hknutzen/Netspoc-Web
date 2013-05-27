@@ -9,14 +9,13 @@ Ext.define(
             'PolicyWeb.view.Service',
             'PolicyWeb.view.ServiceList',
             'PolicyWeb.view.OwnerCombo',
-            'PolicyWeb.store.Owner'
-            //'PolicyWeb.view.Ressources',
+            'PolicyWeb.view.HistoryCombo'
 	],
 	layout   : 'fit',
         
 	initComponent : function() {
             this.items = this.buildViewport();
-            this.callParent();
+            this.callParent(arguments);
         },
 
 
@@ -35,54 +34,13 @@ Ext.define(
             }
             return store;
         },
-/*
-        buildOwnerCombo : function(store) {
-            var config = {
-                xtype          : 'combo',
-                id             : 'cbOwnerId',
-                forceSelection : true, 
-                autoselect     : true,
-                editable       : true,
-                allowblank     : false,
-                selectOnFocus  : true,
-                typeAhead      : true,
-                minChars       : 1,
-                displayField   : 'alias',
-                valueField     : 'name',
-                loadingText    : 'Abfrage l&auml;uft ...',
-                mode           : 'local',
-                store          : store,
-                triggerAction  : 'all',
-                listWidth      : 400,
 
-                // Show active owner.
-                value          : appstate.getOwnerAlias(),
-                listeners:{
-                    scope    : this,
-                    'select' : this.onOwnerChosen
-                }
-                
-            };
-            return config;
-        },
-*/
         buildViewport : function () {
-            // Must be instantiated early, because this store is used
-            // - in toolbar of cardpaned and
-            // - in toolbar of diffmanager.
-/*
-            var historyStore = Ext.create(
-                'PolicyWeb.store.NetspocState',
-                {
-                    storeId     : 'historyStore',
-                    proxyurl    : 'get_history',
-                    autoDestroy : true,
-                    fields      : [ 'policy', 'date', 'time', 'current' ],
-                    // Own option, used in combo box of diffmanager.
-                    needLoad    : true
-                }
+
+            var sv = Ext.create(
+                'PolicyWeb.view.Service'
             );
-*/
+            //debugger;
             var cardPanel = {
                 xtype          : 'panel',
                 layout         : 'card',
@@ -90,10 +48,11 @@ Ext.define(
                 layoutConfig   : { deferredRender : true },
                 border         : false,
                 items          :  [
+                    sv
+/*,
                     {
                         xtype : 'serviceview'
                     }
-/*,
                     // Index of items must be the same as
                     // index of buttons in toolbar below.
                     //{ xtype : 'policymanager'  },

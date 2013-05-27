@@ -6,7 +6,8 @@ var appstate = (
         var history     = '';
         var networks    = '';
         var state = Ext.create( 'Ext.util.Observable' );
-        state.addEvents('changed', 'ownerChanged', 'networksChanged');
+        state.addEvents('changed', 'ownerChanged',
+                        'networksChanged', 'historySet' );
         state.changeOwner = function (name, alias, silent) {
             owner_alias = alias;
             if (name !== owner) {
@@ -31,6 +32,7 @@ var appstate = (
                     state.fireEvent('changed');
                 }
             }
+            //this.application.fireEvent( 'historySet' );
         };
         state.changeNetworks = function ( chosen_networks, silent) {
             if ( chosen_networks !== networks ) {
@@ -72,7 +74,7 @@ var appstate = (
             //var when = (now.getDayOfYear() === pdate.getDayOfYear()) ?
             var when = (Ext.Date.getDayOfYear(now) === Ext.Date.getDayOfYear(pdate)) ?
                 history.time : history.date;
-            var version = history.current ? 'aktuell' : history.policy; 
+            var version = history.current ? 'aktuell' : history.policy;
             return (when + ' (' + version + ')');
         };
         return state;
