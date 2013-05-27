@@ -1,6 +1,6 @@
 
 Ext.define(
-    'PolicyWeb.model.ServiceList',
+    'PolicyWeb.model.Service',
     {
         extend : 'PolicyWeb.model.Netspoc',
         fields : [

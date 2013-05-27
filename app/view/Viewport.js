@@ -7,7 +7,7 @@ Ext.define(
         alias    : 'widget.mainview',
 	requires : [
             'PolicyWeb.view.Service',
-            'PolicyWeb.view.ServiceList',
+            'PolicyWeb.view.Services',
             'PolicyWeb.view.OwnerCombo',
             'PolicyWeb.view.HistoryCombo'
 	],

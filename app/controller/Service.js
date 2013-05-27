@@ -2,8 +2,8 @@
 Ext.define(
     'PolicyWeb.controller.Service', {
         extend : 'Ext.app.Controller',
-        views  : [ 'ServiceList', 'panel.form.ServiceDetails' ],
-        stores : [ 'ServiceList' ],
+        views  : [ 'Services', 'panel.form.ServiceDetails' ],
+        stores : [ 'Service' ],
         refs   : [
             {
                 selector : 'servicelist',
@@ -42,7 +42,7 @@ Ext.define(
         },
 
         onLaunch : function () {
-            var store = this.getServiceListStore();
+            var store = this.getServiceStore();
             var grid  = this.getServiceGrid();
             store.on( 'load',
                       function () {
@@ -121,7 +121,7 @@ Ext.define(
 
         onButtonClick : function( button, event, eOpts ) {
             var relation = button.relation || '';
-            var store    = this.getServiceListStore();
+            var store    = this.getServiceStore();
             var proxy    = store.getProxy();
             var grid     = this.getServiceGrid();
             // Don't reload store if button clicked on is the one

@@ -12,7 +12,7 @@ Ext.Loader.setConfig(
 
 Ext.require( [
                  'PolicyWeb.proxy.Custom',
-                 'PolicyWeb.store.ServiceList',
+                 'PolicyWeb.store.Service',
                  'PolicyWeb.store.Netspoc',
                  'PolicyWeb.store.NetspocState',
                  'PolicyWeb.store.History',
@@ -34,8 +34,8 @@ Ext.application(
 	name               : 'PolicyWeb',
         appFolder          : './app',
 	autoCreateViewport : true,
-	models             : [ 'Netspoc', 'ServiceList', 'Owner' ],
-	stores             : [ 'Netspoc', 'NetspocState', 'ServiceList',
+	models             : [ 'Netspoc', 'Service', 'Owner' ],
+	stores             : [ 'Netspoc', 'NetspocState', 'Service',
                                'Owner', 'AllOwners', 'History', 'Policies' ],
 	controllers        : [ 'Main', 'Service' ],
 	launch             : function() {

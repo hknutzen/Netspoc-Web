@@ -1,10 +1,10 @@
 
 
 Ext.define(
-    'PolicyWeb.store.ServiceList',
+    'PolicyWeb.store.Service',
     {
         extend   : 'PolicyWeb.store.NetspocState',
-        model    : 'PolicyWeb.model.ServiceList',
+        model    : 'PolicyWeb.model.Service',
         autoLoad : false,
         sorters  : [
             {

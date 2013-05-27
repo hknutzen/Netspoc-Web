@@ -216,23 +216,6 @@ Ext.define(
             historycombo.setValue( appstate.showHistory() );
         },
             
-        addServiceViewItems : function() {
-
-            this.addServiceList();
-            this.addServiceProperties();
-        },
-
-        addServiceList : function() {
-            var card = this.getMainCardPanel();
-            var sv = card.items.items[0];
-            sv.add( { xtype : 'servicelist' } );
-        },
-        
-        addServiceProperties : function() {
-            //var details = this.addServiceDetails();
-            //var rules   = this.addServiceRules();
-        },
-        
         onLogout : function() {
             var store = Ext.create(
                 'PolicyWeb.store.Netspoc',

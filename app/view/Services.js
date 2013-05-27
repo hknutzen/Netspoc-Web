@@ -1,11 +1,11 @@
 
 Ext.define(
-    'PolicyWeb.view.ServiceList',
+    'PolicyWeb.view.Services',
     {
         extend      : 'Ext.grid.Panel',
         alias       : 'widget.servicelist',
         controllers : [ 'Service' ],
-        store       : 'ServiceList',
+        store       : 'Service',
         forceFit    : true,
         flex        : 2,
         border      : false,
