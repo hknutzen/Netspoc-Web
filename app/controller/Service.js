@@ -2,7 +2,7 @@
 Ext.define(
     'PolicyWeb.controller.Service', {
         extend : 'Ext.app.Controller',
-        views  : [ 'Services', 'panel.form.ServiceDetails' ],
+        views  : [ 'panel.grid.Services', 'panel.form.ServiceDetails' ],
         stores : [ 'Service' ],
         refs   : [
             {

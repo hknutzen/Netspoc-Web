@@ -23,6 +23,7 @@ Ext.require( [
                  'PolicyWeb.view.OwnerCombo',
                  'PolicyWeb.view.HistoryCombo',
                  'PolicyWeb.view.Service',
+                 'PolicyWeb.view.panel.grid.Services',
                  'PolicyWeb.view.panel.CardPrintActive',
                  'PolicyWeb.view.panel.form.ServiceDetails',
                  'PolicyWeb.view.button.PrintButton'

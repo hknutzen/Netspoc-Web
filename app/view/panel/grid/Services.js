@@ -1,6 +1,6 @@
 
 Ext.define(
-    'PolicyWeb.view.Services',
+    'PolicyWeb.view.panel.grid.Services',
     {
         extend      : 'Ext.grid.Panel',
         alias       : 'widget.servicelist',
