@@ -3,7 +3,7 @@ Ext.define(
     'PolicyWeb.controller.Main', {
         extend : 'Ext.app.Controller',
         views  : [ 'Viewport', 'Service' ],
-        stores : [ 'Owner', 'AllOwners', 'History', 'Policies' ],
+        stores : [ 'Owner', 'AllOwners', 'History', 'CurrentPolicy' ],
         refs   : [
             {
                 selector : 'mainview',
@@ -168,7 +168,7 @@ Ext.define(
         },
 
         getCurrentPolicy : function(owner_obj) {
-            var store = this.getPoliciesStore();
+            var store = this.getCurrentPolicyStore();
             store.load(
                 { scope    : this,
                   // Make store and owner available for callback.

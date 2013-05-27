@@ -18,7 +18,7 @@ Ext.require( [
                  'PolicyWeb.store.History',
                  'PolicyWeb.store.Owner',
                  'PolicyWeb.store.AllOwners',
-                 'PolicyWeb.store.Policies',
+                 'PolicyWeb.store.CurrentPolicy',
                  'PolicyWeb.view.Viewport',
                  'PolicyWeb.view.OwnerCombo',
                  'PolicyWeb.view.HistoryCombo',
@@ -37,7 +37,8 @@ Ext.application(
 	autoCreateViewport : true,
 	models             : [ 'Netspoc', 'Service', 'Owner' ],
 	stores             : [ 'Netspoc', 'NetspocState', 'Service',
-                               'Owner', 'AllOwners', 'History', 'Policies' ],
+                               'Owner', 'AllOwners', 'History',
+                               'CurrentPolicy' ],
 	controllers        : [ 'Main', 'Service' ],
 	launch             : function() {
         }

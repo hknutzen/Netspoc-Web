@@ -1,10 +1,10 @@
 
 
 Ext.define(
-    'PolicyWeb.store.Policies',
+    'PolicyWeb.store.CurrentPolicy',
     {
         extend   : 'PolicyWeb.store.Netspoc',
-        model    : 'PolicyWeb.model.Policies',
+        model    : 'PolicyWeb.model.CurrentPolicy',
         autoLoad : false,
         proxy    : {
             type     : 'policyweb',

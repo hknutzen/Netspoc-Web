@@ -1,6 +1,6 @@
 
 Ext.define(
-    'PolicyWeb.model.Policies',
+    'PolicyWeb.model.CurrentPolicy',
     {
         extend : 'Ext.data.Model',
         fields : [
