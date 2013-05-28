@@ -96,11 +96,12 @@ Ext.define(
         },
 
         buildServiceRules : function() {
-            var rules = {
-                region : 'center',
-                html   : 'RULES'
-            };
-            return rules;
+            return Ext.create(
+                'PolicyWeb.view.panel.grid.Rules',
+                {
+                    region : 'center'
+                }
+            );
         },
 
         buildServiceEmails : function() {

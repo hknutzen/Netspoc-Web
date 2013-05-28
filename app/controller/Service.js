@@ -4,7 +4,7 @@ Ext.define(
         extend : 'Ext.app.Controller',
         views  : [ 'panel.grid.Services', 'panel.form.ServiceDetails' ],
         models : [ 'Service' ],
-        stores : [ 'Service' ],
+        stores : [ 'Service', 'Rules' ],
         refs   : [
             {
                 selector : 'servicelist',
@@ -119,25 +119,41 @@ Ext.define(
             // Show emails for first owner. Sets "owner1"-property
             // displayed as owner, too.
             this.onTriggerClick();
+
+            // Load rules.
+            var name  = service.get( 'name' );
+            var store = this.getRulesStore();
+            store.getProxy().extraParams.service = name;
+            store.load();
+
+            // Load users.
             
+            //debugger;            
+            // FOO
+/*            
+            var name  = selectedPolicy.get( 'name' );
+            var dvRules = Ext.StoreMgr.get('dvRulesStoreId');
+            dvRules.load({ params : { service : name } });
+            
+            var ulv = this.findById('userListId');
+            ulv.loadStoreByParams( { service : name } );
+*/
         },
         
         onTriggerClick : function() {
-            var container = this.getOwnerField();
-            var formpanel = this.getServiceDetailsForm();
-            var form      = formpanel.getForm();
-            var record    = form.getRecord();
+            var owner_field = this.getOwnerField();
+            var owner_text  = this.getOwnerTextfield();
+            var formpanel   = this.getServiceDetailsForm();
+            var form   = formpanel.getForm();
+            var record = form.getRecord();
             var array  = record.get( 'all_owners' );
-            var text = this.getOwnerTextfield();
-            //debugger;            
-            // FOO
             var owner1 = array.shift();
             var name   = owner1.name;
             var alias  = owner1.alias || name;
             array.push(owner1);
-            container.setFieldLabel(
+            owner_field.setFieldLabel(
                 owner1.sub_owner ? 'Verwalter:' : 'Verantwortung:');
-            text.setValue( alias );
+            owner_text.setValue( alias );
             //Ext.getCmp('PolicyEmails').show(name, alias);
         },
 

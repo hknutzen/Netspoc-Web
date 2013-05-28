@@ -13,6 +13,7 @@ Ext.Loader.setConfig(
 Ext.require( [
                  'PolicyWeb.proxy.Custom',
                  'PolicyWeb.store.Service',
+                 'PolicyWeb.store.Rules',
                  'PolicyWeb.store.Netspoc',
                  'PolicyWeb.store.NetspocState',
                  'PolicyWeb.store.History',
@@ -24,6 +25,7 @@ Ext.require( [
                  'PolicyWeb.view.HistoryCombo',
                  'PolicyWeb.view.Service',
                  'PolicyWeb.view.panel.grid.Services',
+                 'PolicyWeb.view.panel.grid.Rules',
                  'PolicyWeb.view.panel.CardPrintActive',
                  'PolicyWeb.view.panel.form.ServiceDetails',
                  'PolicyWeb.view.button.PrintButton'
@@ -35,9 +37,9 @@ Ext.application(
 	name               : 'PolicyWeb',
         appFolder          : './app',
 	autoCreateViewport : true,
-	models             : [ 'Netspoc', 'Service', 'Owner' ],
+	models             : [ 'Netspoc', 'Service', 'Rule', 'Owner' ],
 	stores             : [ 'Netspoc', 'NetspocState', 'Service',
-                               'Owner', 'AllOwners', 'History',
+                               'Rules', 'Owner', 'AllOwners', 'History',
                                'CurrentPolicy' ],
 	controllers        : [ 'Main', 'Service' ],
 	launch             : function() {
