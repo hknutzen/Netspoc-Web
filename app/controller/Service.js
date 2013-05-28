@@ -3,15 +3,28 @@ Ext.define(
     'PolicyWeb.controller.Service', {
         extend : 'Ext.app.Controller',
         views  : [ 'panel.grid.Services', 'panel.form.ServiceDetails' ],
+        models : [ 'Service' ],
         stores : [ 'Service' ],
         refs   : [
             {
                 selector : 'servicelist',
-                ref      : 'serviceGrid'
+                ref      : 'servicesGrid'
             },
             {
                 selector : 'servicedetails',
                 ref      : 'serviceDetailsForm'
+            },
+            {
+                selector : 'servicedetails > fieldcontainer > button',
+                ref      : 'ownerTrigger'
+            },
+            {
+                selector : 'servicedetails > fieldcontainer > textfield',
+                ref      : 'ownerTextfield'
+            },
+            {
+                selector : 'servicedetails > fieldcontainer',
+                ref      : 'ownerField'
             }
         ],
 
@@ -24,7 +37,11 @@ Ext.define(
                     'serviceview > servicelist' : {
                         beforerender    : this.beforeRenderServices,
                         afterrender     : this.afterRenderServices,
-                        selectionchange : this.onServiceSelected
+                        select          : this.onServiceSelected
+                    },
+                    'servicedetails button' : {
+                        click           : this.onTriggerClick
+                        //click : function () { alert("HERE!" ); }
                     },
                     'serviceview > grid button' : {
                         click : this.onButtonClick
@@ -43,19 +60,13 @@ Ext.define(
 
         onLaunch : function () {
             var store = this.getServiceStore();
-            var grid  = this.getServiceGrid();
             store.on( 'load',
                       function () {
-                          grid.on( 'afterrender',
-                                   function () {
-                                       var selmodel = grid.getSelectionModel();
-                                       selmodel.select(0);
-                                       debugger;
-                                   }
-                                 );
-                          //var selmodel = grid.getSelectionModel();
-                          //selmodel.select(0);
-                      }
+                          var g = this.getServicesGrid();;
+                          var selmodel = g.getSelectionModel();
+                          selmodel.select(0);
+                      },
+                      this
                     );
 
             appstate.addListener(
@@ -68,15 +79,9 @@ Ext.define(
             );
         },
         
-        onServiceSelected : function( rowmodel, records, index, eOpts ) {
+        onServiceSelected : function( rowmodel, service, index, eOpts ) {
             // Load details, rules and emails of owners
             // for selected service.
-            var record = records[0];
-            console.log( 'Selected service ' + record.get( 'name' ) );
-            var grid     = this.getServiceGrid();
-            var selected = grid.getSelectionModel().getSelection();
-            var service  = selected[0];
-            
             if (! service) {
                 this.clearDetails();
                 return;
@@ -97,11 +102,45 @@ Ext.define(
             service.set('all_owners', all_owners);
 
             // Load details form with values from selected record.
-            //var form = getServiceDetailsForm();
-            //form.loadRecord( service );
+            var form = this.getServiceDetailsForm();
+            form.loadRecord( service );
 
+            // Handle multiple owners.
+            var trigger = this.getOwnerTrigger();
+            if (all_owners.length == 1) {
+                // Hide trigger button if only one owner available.
+                trigger.hide();
+            }
+            else {
+                // Multiple owners available.
+                trigger.show();
+            }
+            trigger.ownerCt.doLayout();
+            // Show emails for first owner. Sets "owner1"-property
+            // displayed as owner, too.
+            this.onTriggerClick();
+            
         },
         
+        onTriggerClick : function() {
+            var container = this.getOwnerField();
+            var formpanel = this.getServiceDetailsForm();
+            var form      = formpanel.getForm();
+            var record    = form.getRecord();
+            var array  = record.get( 'all_owners' );
+            var text = this.getOwnerTextfield();
+            //debugger;            
+            // FOO
+            var owner1 = array.shift();
+            var name   = owner1.name;
+            var alias  = owner1.alias || name;
+            array.push(owner1);
+            container.setFieldLabel(
+                owner1.sub_owner ? 'Verwalter:' : 'Verantwortung:');
+            text.setValue( alias );
+            //Ext.getCmp('PolicyEmails').show(name, alias);
+        },
+
         clearDetails : function() {
             
         },
@@ -123,7 +162,7 @@ Ext.define(
             var relation = button.relation || '';
             var store    = this.getServiceStore();
             var proxy    = store.getProxy();
-            var grid     = this.getServiceGrid();
+            var grid     = this.getServicesGrid();
             // Don't reload store if button clicked on is the one
             // that was already selected.
             if ( relation && relation === proxy.extraParams.relation ) {

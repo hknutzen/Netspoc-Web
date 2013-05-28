@@ -9,8 +9,9 @@ Ext.define(
             },
             { name     : 'desc',
               mapping  : 'description' },
-            { name : 'owner'     },
-            { name : 'sub_owner' }
+            { name : 'owner'      },
+            { name : 'all_owners' },
+            { name : 'sub_owner'  }
         ]
     }
 );
