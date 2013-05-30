@@ -4,13 +4,15 @@ Ext.Loader.setConfig(
     {
         enabled        : true,
         paths          : {
-            'PolicyWeb' : './app'
+            'PolicyWeb' : './app',
+            'Ext.ux'    : './resources/ux'
         }
         //disableCaching : false
     }
 );
 
 Ext.require( [
+                 'Ext.ux.grid.Printer',
                  'PolicyWeb.proxy.Custom',
                  'PolicyWeb.store.Service',
                  'PolicyWeb.store.Rules',

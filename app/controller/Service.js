@@ -59,8 +59,8 @@ Ext.define(
                     'serviceview > grid button' : {
                         click  : this.onButtonClick
                     },
-                    'serviceview cardprintactive button' : {
-                        click  : this.onDetailsUserButtonClick
+                    'serviceview cardprintactive :not(printbutton)' : {
+                        click  : this.onServiceDetailsButtonClick
                     }                    
                 }
             );
@@ -205,7 +205,7 @@ Ext.define(
             this.clearDetails();
         },
 
-        onDetailsUserButtonClick : function( button, event, eOpts ) {
+        onServiceDetailsButtonClick : function( button, event, eOpts ) {
             var card  = this.getDetailsAndUserView();
             var index = button.ownerCt.items.indexOf(button);
             if ( index === 2 ) {

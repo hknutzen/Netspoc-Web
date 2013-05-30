@@ -11,34 +11,20 @@ Ext.define(
         alias     : 'widget.cardprintactive',
         layout    : 'card',
 
-        printView : function() {
+        printView : function( options ) {
             var layout      = this.getLayout();
             var activePanel = layout.activeItem;
             if ( activePanel.layout ) {
-//              console.log( activePanel.layout.type );
+              console.log( activePanel.layout.type );
                 if ( activePanel.layout.type == 'border' ) {
-                    var cp = activePanel.layout.center.panel;
-                    if ( activePanel.layout.north ) {
-                        var np = activePanel.layout.north.panel;
-                        if ( np ) {
-                            np.printView();
-                        }
-                    }
-                    if ( activePanel.layout.south ) {
-                        var sp = activePanel.layout.south.panel;
-                        //if ( sp ) {
-                        //sp.printView();
-                        //}
-                    }
-                    if ( cp ) {
-                        cp.printView();
-                    }
+                    var cp = activePanel.down( 'grid[region=center]' );
+                    Ext.ux.grid.Printer.print( cp );
                 }
                 else if ( activePanel.layout.type == 'fit' ) {
-                    activePanel.printView();
+                    Ext.ux.grid.Printer.print( activePanel );
                 }
                 else {
-                    console.log( "CardPanel.PrintActive: unhandled layout!" );
+                    console.log( "CardPrintActive: unhandled layout!" );
                 }
             }
             else {
