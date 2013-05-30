@@ -32,37 +32,12 @@ Ext.define(
                 dataIndex : 'prt'
             }
         ],
+        viewConfig : {
+            selectedRowClass : 'x-grid3-row-over'
+        },
         defaults : {
             menuDisabled : true
         }
     }
 );
 
-
-/*
- * 
-            
-
-            var grid  = new Ext.grid.GridPanel(
-                {
-                    id         : 'grdRulesId',
-                    border     : false,
-                    store      : store,
-                    cls        : 'grid-larger-font',
-                    viewConfig : {
-                        forceFit         : true,
-                        selectedRowClass : 'x-grid3-row-over'
-                    },
-                    colModel   : colModel
-                }
-            );
-
-            return new Ext.Panel(
-                { layout    :'fit',
-                  region    : 'center',
-                  items     : [ grid ],
-                  printView : function() { }
-                }
-            );
-
- */

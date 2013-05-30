@@ -49,23 +49,13 @@ Ext.define(
                             text          : 'Details zum Dienst',
                             toggleGroup   : 'polDVGrp',
                             enableToggle  : true,
-                            pressed       : true,
-                            scope         : this,
-                            handler       : function ( button ) {
-                                var cardPanel = button.findParentByType( 'panel' );
-                                cardPanel.layout.setActiveItem( 0 );
-                            }
+                            pressed       : true
                         },
                         '-',
                         {
                             text         : 'Benutzer (User) des Dienstes',
                             toggleGroup  : 'polDVGrp',
-                            enableToggle : true,
-                            scope        : this,
-                            handler      : function ( button ) {
-                                var cardPanel = button.findParentByType( 'panel' );
-                                cardPanel.layout.setActiveItem( 1 );
-                            }
+                            enableToggle : true
                         },
                         '->',
                         { xtype : 'printbutton' }
@@ -80,10 +70,36 @@ Ext.define(
         },
 
         buildServiceUserView : function() {
-            var user = {
-                html : 'USERPANEL'
+            return {
+                layout : 'border',
+                items  : [
+                    this.buildUserView(),
+                    this.buildUserEmails()
+                ]
             };
-            return user;
+        },
+
+        buildUserView : function() {
+            return Ext.create(
+                'PolicyWeb.view.panel.grid.Users',
+                {
+                    region : 'center'
+                }
+            );
+        },
+        
+        buildUserEmails : function() {
+            var store = Ext.create(
+                'PolicyWeb.store.Emails'
+            );
+            return Ext.create(
+                'PolicyWeb.view.panel.grid.Emails',
+                {
+                    region : 'south',
+                    id     : 'userEmails',
+                    store  : store
+                }
+            );
         },
 
         buildServiceDetails : function() {
@@ -105,18 +121,20 @@ Ext.define(
         },
 
         buildServiceEmails : function() {
-            var emails = {
-                region : 'south',
-                html   : 'EMAILS'
-            };
-            return emails;
+            return Ext.create(
+                'PolicyWeb.view.panel.grid.Emails',
+                {
+                    region : 'south',
+                    id     : 'ownerEmails'
+                }
+            );
         },
 
         buildServiceDetailsView : function() {
             var details = this.buildServiceDetails();
             var rules   = this.buildServiceRules();
             var emails  = this.buildServiceEmails();
-            var panel   =  {
+            return {
                 layout : 'border',
                 items  : [
                     details,
@@ -124,7 +142,6 @@ Ext.define(
                     emails
                 ]
             };
-            return panel;
         }
     }
 );

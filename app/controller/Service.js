@@ -4,7 +4,7 @@ Ext.define(
         extend : 'Ext.app.Controller',
         views  : [ 'panel.grid.Services', 'panel.form.ServiceDetails' ],
         models : [ 'Service' ],
-        stores : [ 'Service', 'Rules' ],
+        stores : [ 'Service', 'Rules', 'Users' ],
         refs   : [
             {
                 selector : 'servicelist',
@@ -25,26 +25,42 @@ Ext.define(
             {
                 selector : 'servicedetails > fieldcontainer',
                 ref      : 'ownerField'
+            },
+            {
+                selector : '#ownerEmails',
+                ref      : 'ownerEmails'
+            },
+            {
+                selector : '#userEmails',
+                ref      : 'userDetailEmails'
+            },
+            {
+                selector : 'serviceusers',
+                ref      : 'serviceUsersView'
+            },
+            {
+                selector : 'serviceview cardprintactive',
+                ref      : 'detailsAndUserView'
             }
         ],
 
-        init: function() {
+        init : function() {
             this.control(
                 {
-                    'serviceview' : {
-                        afterrender  : this.onViewportRendered
-                    },
                     'serviceview > servicelist' : {
-                        beforerender    : this.beforeRenderServices,
-                        afterrender     : this.afterRenderServices,
-                        select          : this.onServiceSelected
+                        select : this.onServiceSelected
+                    },
+                    'serviceusers' : {
+                        select : this.onUserDetailsSelected
                     },
                     'servicedetails button' : {
-                        click           : this.onTriggerClick
-                        //click : function () { alert("HERE!" ); }
+                        click  : this.onTriggerClick
                     },
                     'serviceview > grid button' : {
-                        click : this.onButtonClick
+                        click  : this.onButtonClick
+                    },
+                    'serviceview cardprintactive button' : {
+                        click  : this.onDetailsUserButtonClick
                     }                    
                 }
             );
@@ -59,11 +75,22 @@ Ext.define(
         },
 
         onLaunch : function () {
+
             var store = this.getServiceStore();
             store.on( 'load',
                       function () {
                           var g = this.getServicesGrid();;
                           var selmodel = g.getSelectionModel();
+                          selmodel.select(0);
+                      },
+                      this
+                    );
+
+            var userstore = this.getUsersStore();
+            userstore.on( 'load',
+                      function () {
+                          var u = this.getServiceUsersView();;
+                          var selmodel = u.getSelectionModel();
                           selmodel.select(0);
                       },
                       this
@@ -118,7 +145,7 @@ Ext.define(
             trigger.ownerCt.doLayout();
             // Show emails for first owner. Sets "owner1"-property
             // displayed as owner, too.
-            this.onTriggerClick();
+            this.onTriggerClick(); // manually call event handler
 
             // Load rules.
             var name  = service.get( 'name' );
@@ -127,17 +154,9 @@ Ext.define(
             store.load();
 
             // Load users.
-            
-            //debugger;            
-            // FOO
-/*            
-            var name  = selectedPolicy.get( 'name' );
-            var dvRules = Ext.StoreMgr.get('dvRulesStoreId');
-            dvRules.load({ params : { service : name } });
-            
-            var ulv = this.findById('userListId');
-            ulv.loadStoreByParams( { service : name } );
-*/
+            store = this.getUsersStore();
+            store.getProxy().extraParams.service = name;
+            store.load();
         },
         
         onTriggerClick : function() {
@@ -154,24 +173,21 @@ Ext.define(
             owner_field.setFieldLabel(
                 owner1.sub_owner ? 'Verwalter:' : 'Verantwortung:');
             owner_text.setValue( alias );
-            //Ext.getCmp('PolicyEmails').show(name, alias);
+            var emails = this.getOwnerEmails();
+            emails.show( name, alias );
         },
 
         clearDetails : function() {
-            
-        },
-
-        onViewportRendered : function( view ) {
-            //console.log('The serviceview was rendered');
-        },
-
-        beforeRenderServices : function( grid ) {
-        },
-
-        doSth : function( event ) {
-        },
-
-        afterRenderServices: function( grid ) {
+            var formpanel = this.getServiceDetailsForm();
+            var form      = formpanel.getForm();
+            var trigger   = this.getOwnerTrigger();
+            form.reset();
+            trigger.hide();
+            trigger.ownerCt.doLayout();
+            this.getRulesStore().removeAll();
+            this.getUsersStore().removeAll();
+            this.getOwnerEmails().clear();
+            this.getUserDetailEmails().clear();
         },
 
         onButtonClick : function( button, event, eOpts ) {
@@ -186,6 +202,34 @@ Ext.define(
             }
             proxy.extraParams.relation = relation;
             store.load();
+            this.clearDetails();
+        },
+
+        onDetailsUserButtonClick : function( button, event, eOpts ) {
+            var card  = this.getDetailsAndUserView();
+            var index = button.ownerCt.items.indexOf(button);
+            if ( index === 2 ) {
+                index = index - 1;
+            }
+            else {
+                this.onTriggerClick();
+            }
+            card.layout.setActiveItem( index );
+        },
+
+        onUserDetailsSelected : function( rowmodel, user_item ) {
+            var owner = '';
+            var owner_alias = '';
+            var emailPanel = this.getUserDetailEmails();
+            if ( user_item ) {
+                owner       = user_item.get('owner');
+                owner_alias = user_item.get('owner_alias');
+            }
+            // Email-Panel gets cleared on empty owner.
+            emailPanel.show( owner, owner_alias );
+        },
+
+        doSth : function( button, event, eOpts ) {
         }
     }
 );

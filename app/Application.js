@@ -14,6 +14,8 @@ Ext.require( [
                  'PolicyWeb.proxy.Custom',
                  'PolicyWeb.store.Service',
                  'PolicyWeb.store.Rules',
+                 'PolicyWeb.store.Users',
+                 'PolicyWeb.store.Emails',
                  'PolicyWeb.store.Netspoc',
                  'PolicyWeb.store.NetspocState',
                  'PolicyWeb.store.History',
@@ -25,7 +27,9 @@ Ext.require( [
                  'PolicyWeb.view.HistoryCombo',
                  'PolicyWeb.view.Service',
                  'PolicyWeb.view.panel.grid.Services',
+                 'PolicyWeb.view.panel.grid.Users',
                  'PolicyWeb.view.panel.grid.Rules',
+                 'PolicyWeb.view.panel.grid.Emails',
                  'PolicyWeb.view.panel.CardPrintActive',
                  'PolicyWeb.view.panel.form.ServiceDetails',
                  'PolicyWeb.view.button.PrintButton'
@@ -39,7 +43,8 @@ Ext.application(
 	autoCreateViewport : true,
 	models             : [ 'Netspoc', 'Service', 'Rule', 'Owner' ],
 	stores             : [ 'Netspoc', 'NetspocState', 'Service',
-                               'Rules', 'Owner', 'AllOwners', 'History',
+                               'Rules', 'Users', 'Emails', 'Owner',
+                               'AllOwners', 'History',
                                'CurrentPolicy' ],
 	controllers        : [ 'Main', 'Service' ],
 	launch             : function() {
