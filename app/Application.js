@@ -32,7 +32,7 @@ Ext.require( [
                  'PolicyWeb.view.panel.grid.Users',
                  'PolicyWeb.view.panel.grid.Rules',
                  'PolicyWeb.view.panel.grid.Emails',
-                 'PolicyWeb.view.panel.CardPrintActive',
+                 'PolicyWeb.view.panel.card.PrintActive',
                  'PolicyWeb.view.panel.form.ServiceDetails',
                  'PolicyWeb.view.button.PrintButton'
              ]

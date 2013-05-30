@@ -5,7 +5,7 @@
  **/
 
 Ext.define(
-    'PolicyWeb.view.panel.CardPrintActive',
+    'PolicyWeb.view.panel.card.PrintActive',
     {
         extend    : 'Ext.panel.Panel',
         alias     : 'widget.cardprintactive',
@@ -24,7 +24,7 @@ Ext.define(
                     Ext.ux.grid.Printer.print( activePanel );
                 }
                 else {
-                    console.log( "CardPrintActive: unhandled layout!" );
+                    console.log( "panel.card.PrintActive: unhandled layout!" );
                 }
             }
             else {

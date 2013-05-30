@@ -32,7 +32,7 @@ Ext.define(
             var details = this.buildServiceDetailsView();
             var user    = this.buildServiceUserView();
             var srv_props = Ext.create(
-                'PolicyWeb.view.panel.CardPrintActive', 
+                'PolicyWeb.view.panel.card.PrintActive', 
                 {
                     flex         : 7,
                     activeItem   : 0,
