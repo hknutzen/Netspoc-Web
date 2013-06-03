@@ -34,6 +34,7 @@ Ext.require( [
                  'PolicyWeb.view.panel.grid.Emails',
                  'PolicyWeb.view.panel.card.PrintActive',
                  'PolicyWeb.view.panel.form.ServiceDetails',
+                 'PolicyWeb.view.window.Search',
                  'PolicyWeb.view.button.PrintButton'
              ]
            );

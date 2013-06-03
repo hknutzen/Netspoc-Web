@@ -19,7 +19,6 @@ var appstate = (
             }
         };
         state.changeHistory = function (record, silent) {
-            console.log( 'CHANGE HISTORY to date:' +  record.get('date') );
             var data = { policy  : record.get('policy'),
                          date    : record.get('date'),
                          time    : record.get('time'),

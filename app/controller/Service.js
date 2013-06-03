@@ -1,3 +1,5 @@
+var search_window;
+var print_window;
 
 Ext.define(
     'PolicyWeb.controller.Service', {
@@ -41,6 +43,14 @@ Ext.define(
             {
                 selector : 'serviceview cardprintactive',
                 ref      : 'detailsAndUserView'
+            },
+            {
+                selector : 'searchwindow > form',
+                ref      : 'searchFormPanel'
+            },
+            {
+                selector : 'searchwindow > form button',
+                ref      : 'startSearchButton'
             }
         ],
 
@@ -58,6 +68,12 @@ Ext.define(
                     },
                     'serviceview > grid button' : {
                         click  : this.onButtonClick
+                    },
+                    'searchwindow > form button' : {
+                        click  : this.onStartSearchButtonClick
+                    },
+                    'searchwindow > form textfield' : { 
+                        specialkey  : this.onSearchWindowSpecialKey
                     },
                     'serviceview cardprintactive :not(printbutton)' : {
                         click  : this.onServiceDetailsButtonClick
@@ -79,9 +95,11 @@ Ext.define(
             var store = this.getServiceStore();
             store.on( 'load',
                       function () {
-                          var g = this.getServicesGrid();;
-                          var selmodel = g.getSelectionModel();
-                          selmodel.select(0);
+                          var g = this.getServicesGrid();
+                          if ( g.getStore().getCount() > 0 ) {
+                              var selmodel = g.getSelectionModel();
+                              selmodel.select(0);
+                          }
                       },
                       this
                     );
@@ -89,9 +107,11 @@ Ext.define(
             var userstore = this.getUsersStore();
             userstore.on( 'load',
                       function () {
-                          var u = this.getServiceUsersView();;
-                          var selmodel = u.getSelectionModel();
-                          selmodel.select(0);
+                          var u = this.getServiceUsersView();
+                          if ( u.getStore().getCount() > 0 ) {
+                              var selmodel = u.getSelectionModel();
+                              selmodel.select(0);
+                          }
                       },
                       this
                     );
@@ -104,6 +124,8 @@ Ext.define(
                 },
                 this
             );
+            
+            this.displaySearchWindow();
         },
         
         onServiceSelected : function( rowmodel, service, index, eOpts ) {
@@ -191,6 +213,10 @@ Ext.define(
         },
 
         onButtonClick : function( button, event, eOpts ) {
+            if ( button.text === 'Suche' ) {
+                this.displaySearchWindow();
+                return;
+            }
             var relation = button.relation || '';
             var store    = this.getServiceStore();
             var proxy    = store.getProxy();
@@ -205,6 +231,48 @@ Ext.define(
             this.clearDetails();
         },
 
+        onStartSearchButtonClick : function( button, event, eOpts ) {
+            var form = this.getSearchFormPanel().getForm();
+            if ( form.isValid() ) {
+                button.search_params = form.getValues();
+                var store      = this.getServiceStore();
+                var relation   = button.relation;
+                var params     = button.search_params;
+                var keep_front = false;
+            
+                if ( params ) {
+                    keep_front = params.keep_front;
+                }
+                if ( search_window && !keep_front ) {
+                    search_window.hide();
+                }
+                if ( print_window ) {
+                    print_window.hide();
+/*
+                    // Find services-and-rules-window and close it.
+                    var wnd = Ext.WindowMgr.get( 'srvRulesWndId' );
+                    if ( wnd ) {
+                        wnd.close();
+                    }
+*/
+                }
+                if ( relation && relation === store.baseParams.relation) {
+                    return;
+                }
+                store.load(
+                    {
+                        params   : params,
+                        relation : relation
+                    }
+                );
+                this.clearDetails();
+            } else {
+                var m = 'Bitte Eingaben in rot markierten ' +
+                    'Feldern korrigieren.';
+                Ext.MessageBox.alert( 'Fehlerhafte Eingabe!', m );
+            }
+        },
+        
         onServiceDetailsButtonClick : function( button, event, eOpts ) {
             var card  = this.getDetailsAndUserView();
             var index = button.ownerCt.items.indexOf(button);
@@ -220,13 +288,39 @@ Ext.define(
         onUserDetailsSelected : function( rowmodel, user_item ) {
             var owner = '';
             var owner_alias = '';
-            var emailPanel = this.getUserDetailEmails();
+            var email_panel = this.getUserDetailEmails();
             if ( user_item ) {
                 owner       = user_item.get('owner');
                 owner_alias = user_item.get('owner_alias');
             }
             // Email-Panel gets cleared on empty owner.
-            emailPanel.show( owner, owner_alias );
+            email_panel.show( owner, owner_alias );
+        },
+
+        onSearchWindowSpecialKey : function( field, e ){
+            // Handle ENTER key press in search textfield.
+            if ( e.getKey() == e.ENTER ) {
+                var sb = this.getStartSearchButton();
+                sb.fireEvent( 'click' );
+            }
+        },
+        
+        displaySearchWindow : function() {
+            if ( !search_window ) {
+                search_window = Ext.create(
+                    'PolicyWeb.view.window.Search'
+                );
+                search_window.on( 'show', function () {
+                                      search_window.center();
+                                      var t = search_window.query('textfield');
+                                      t[0].focus( true, 20 );
+                                  }
+                                );
+            }
+            search_window.show();
+        },
+
+        displayPrintWindow : function() {
         },
 
         doSth : function( button, event, eOpts ) {

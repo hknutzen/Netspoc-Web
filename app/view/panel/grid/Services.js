@@ -54,9 +54,7 @@ Ext.define(
             '->',
             {
                 iconCls : 'icon-eye',
-                tooltip : 'Weitere (druckbare) Ansichten öffnen',
-                scope   : this
-                //handler : this.displayPrintWindow
+                tooltip : 'Weitere (druckbare) Ansichten öffnen'
             }
         ]
     }
