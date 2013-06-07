@@ -96,7 +96,6 @@ html.x-ux-grid-printer, .x-ux-grid-printer img,.x-ux-grid-printer body {
     }
 }
 .group-header {
-    padding-top   : 20px;
     border-bottom : 2px solid black;
     font-size     : 14px;
 }

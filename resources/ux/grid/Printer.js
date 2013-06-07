@@ -58,9 +58,9 @@
  */
 Ext.define("Ext.ux.grid.Printer", {
     
-    requires : 'Ext.XTemplate',
+    requires: 'Ext.XTemplate',
 
-    statics  : {
+    statics: {
         /**
          * Prints the passed grid. Reflects on the grid's column model
          * to build a table, and fills it using the store
@@ -68,8 +68,8 @@ Ext.define("Ext.ux.grid.Printer", {
          */
         print: function(grid, featureId) {
             // We generate an XTemplate here by using 2 intermediary
-            // XTemplates - one to create the header,
-            // the other to create the body (see the escaped {} below)
+            // XTemplates - one to create the header, the other
+            // to create the body (see the escaped {} below)
             var columns = [];
             var isGrouped = grid.store.isGrouped();
             if ( isGrouped ) {
@@ -85,7 +85,6 @@ Ext.define("Ext.ux.grid.Printer", {
                 }
             });
 
-            
             //build a usable array of store data for the XTemplate
             var data = [];
             grid.store.data.each(function(item, row) {
@@ -134,7 +133,7 @@ Ext.define("Ext.ux.grid.Printer", {
 
                 data.push(convertedData);
             });
-
+            
             // remove columns that do not contain dataIndex
             // or dataIndex is empty.
             // for example: columns filter or columns button
@@ -160,7 +159,7 @@ Ext.define("Ext.ux.grid.Printer", {
                 }
             );
             columns = clearColumns;
-
+            
             //get Styles file relative location, if not supplied
             if (this.stylesheetPath === null) {
                 var scriptPath = Ext.Loader.getPath('Ext.ux.grid.Printer');
@@ -187,7 +186,9 @@ Ext.define("Ext.ux.grid.Printer", {
                     '</td></tr>'
                 ];
             }
+            
             var title = grid.title || this.defaultGridTitle;
+
             //Here because inline styles using CSS, the browser did not show the correct formatting of the data the first time that loaded
             var htmlMarkup = [
                 '<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">',
@@ -222,16 +223,12 @@ Ext.define("Ext.ux.grid.Printer", {
                 }
             ];
 
-            var html = Ext.create(
-                'Ext.XTemplate',
-                htmlMarkup
-            ).apply(data); 
+            var html = Ext.create('Ext.XTemplate', htmlMarkup).apply(data); 
 
             //open up a new printing window, write to it, print it and close
             var win = window.open('', 'printgrid');
             
             //document must be open and closed
-
             win.document.open();
             win.document.write(html);
             win.document.close();
@@ -296,12 +293,7 @@ Ext.define("Ext.ux.grid.Printer", {
                     // but it is easier to do it here.
                     fields = fields.filter( removeGroupField );
                 }
-                //debugger;
-/*
- *             var tpl = '{text} ({[values.rs.length]} ' +
-                   '{[values.rs.length > 1 ? "' + opt2caption[opt].plural +
-                   '" : "' + opt2caption[opt].singular + '" ]})';
- */
+
                 var bodyTpl = [
                     '<tpl for=".">',
                         '<tr class="group-header">',
@@ -320,13 +312,13 @@ Ext.define("Ext.ux.grid.Printer", {
                     '</tpl>',
                     {
                         // XTemplate configuration:
-                        hideGroupField    : hideGroupField,
-                        headerPrefix      : this.groupHeaderPrefix,
+                        hideGroupField        : hideGroupField,
+                        headerPrefix          : this.groupHeaderPrefix,
                         headerPostfixSingular : this.groupHeaderPostfixSingular,
                         headerPostfixPlural   : this.groupHeaderPostfixPlural,
-                        postfixWithParens : true,
-                        fields            : fields,
-                        colSpan           : fields.length - 1,
+                        postfixWithParens     : true,
+                        fields                : fields,
+                        colSpan               : fields.length - 1,
                         // XTemplate member functions:
                         childCount : function(c) {
                             return c.length;
@@ -365,14 +357,6 @@ Ext.define("Ext.ux.grid.Printer", {
         closeAutomaticallyAfterPrint: false,        
         
         /**
-         * @property defaultGridTitle
-         * @type String
-         * Title to be used if grid to be printed
-         * has no title attribute set.
-         */
-        defaultGridTitle: 'Druckansicht',
-        
-        /**
          * @property mainTitle
          * @type String
          * Title to be used on top of the table
@@ -381,11 +365,25 @@ Ext.define("Ext.ux.grid.Printer", {
         mainTitle: '',
         
         /**
+         * @property defaultGridTitle
+         * @type String
+         * Title to be used if grid to be printed
+         * has no title attribute set.
+         */
+        defaultGridTitle: 'Druckansicht',
+        
+        /**
          * Text shown on print link
          * @type String
          */
         printLinkText: 'Drucken',
 
+        /**
+         * Text shown on close link
+         * @type String
+         */
+        closeLinkText: 'Schließen',
+        
         /**
          * Text shown as prefix to group header text.
          * @type String
@@ -406,12 +404,6 @@ Ext.define("Ext.ux.grid.Printer", {
          */
         groupHeaderPostfixPlural : 'Regeln',
 
-        /**
-         * Text shown on close link
-         * @type String
-         */
-        closeLinkText: 'Schließen',
-        
         /**
          * @property headerTpl
          * @type {Object/Array} values
