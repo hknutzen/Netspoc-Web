@@ -58,17 +58,24 @@
  */
 Ext.define("Ext.ux.grid.Printer", {
     
-    requires: 'Ext.XTemplate',
+    requires : 'Ext.XTemplate',
 
-    statics: {
+    statics  : {
         /**
-         * Prints the passed grid. Reflects on the grid's column model to build a table, and fills it using the store
+         * Prints the passed grid. Reflects on the grid's column model
+         * to build a table, and fills it using the store
          * @param {Ext.grid.Panel} grid The grid to print
          */
-        print: function(grid) {
-            //We generate an XTemplate here by using 2 intermediary XTemplates - one to create the header,
-            //the other to create the body (see the escaped {} below)
+        print: function(grid, featureId) {
+            // We generate an XTemplate here by using 2 intermediary
+            // XTemplates - one to create the header,
+            // the other to create the body (see the escaped {} below)
             var columns = [];
+            var isGrouped = grid.store.isGrouped();
+            if ( isGrouped ) {
+                var feature = this.getFeature( grid, featureId );
+                var groupField = feature.getGroupField();
+            }
             //account for grouped columns
             Ext.each(grid.columns, function(c) {
                 if(c.items.length > 0) {
@@ -78,6 +85,7 @@ Ext.define("Ext.ux.grid.Printer", {
                 }
             });
 
+            
             //build a usable array of store data for the XTemplate
             var data = [];
             grid.store.data.each(function(item, row) {
@@ -126,21 +134,33 @@ Ext.define("Ext.ux.grid.Printer", {
 
                 data.push(convertedData);
             });
-            
-            //remove columns that do not contains dataIndex or dataIndex is empty. for example: columns filter or columns button
+
+            // remove columns that do not contain dataIndex
+            // or dataIndex is empty.
+            // for example: columns filter or columns button
             var clearColumns = [];
-            Ext.each(columns, function (column) {
-                if ((column) && (!Ext.isEmpty(column.dataIndex) && !column.hidden)) {
-                    clearColumns.push(column);
-                } else  if (column && column.xtype === 'rownumberer'){
-                    column.text = 'Row';
-                    clearColumns.push(column);
-                } else if (column && column.xtype === 'templatecolumn'){
-                    clearColumns.push(column);
-                }   
-            });
+            Ext.each(
+                columns,
+                function (column) {
+                    if ( column ) {
+                        if ( !Ext.isEmpty(column.dataIndex) &&
+                             !column.hidden                 &&
+                             !isGrouped )
+                        {
+                            clearColumns.push(column);
+                        } else if ( column.xtype === 'rownumberer'){
+                            column.text = 'Row';
+                            clearColumns.push(column);
+                        } else if ( column.xtype === 'templatecolumn'){
+                            clearColumns.push(column);
+                        } else if ( isGrouped && column.dataIndex !== groupField ){
+                            clearColumns.push(column);
+                        }
+                    }
+                }
+            );
             columns = clearColumns;
-            
+
             //get Styles file relative location, if not supplied
             if (this.stylesheetPath === null) {
                 var scriptPath = Ext.Loader.getPath('Ext.ux.grid.Printer');
@@ -149,8 +169,7 @@ Ext.define("Ext.ux.grid.Printer", {
 
             //use the headerTpl and bodyTpl markups to create the main XTemplate below
             var headings = Ext.create('Ext.XTemplate', this.headerTpl).apply(columns);
-            var body     = Ext.create('Ext.XTemplate', this.bodyTpl).apply(columns);
-            
+            var body     = this.generateBody( grid, columns, feature );
             var pluginsBody = '',
                 pluginsBodyMarkup = [];
             
@@ -168,7 +187,7 @@ Ext.define("Ext.ux.grid.Printer", {
                     '</td></tr>'
                 ];
             }
-            
+            var title = grid.title || this.defaultGridTitle;
             //Here because inline styles using CSS, the browser did not show the correct formatting of the data the first time that loaded
             var htmlMarkup = [
                 '<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">',
@@ -176,7 +195,7 @@ Ext.define("Ext.ux.grid.Printer", {
                   '<head>',
                     '<meta content="text/html; charset=UTF-8" http-equiv="Content-Type" />',
                     '<link href="' + this.stylesheetPath + '" rel="stylesheet" type="text/css" />',
-                    '<title>' + grid.title + '</title>',
+                    '<title>' + title + '</title>',
                   '</head>',
                   '<body class="' + Ext.baseCSSPrefix + 'ux-grid-printer-body">',
                   '<div class="' + Ext.baseCSSPrefix + 'ux-grid-printer-noprint ' + Ext.baseCSSPrefix + 'ux-grid-printer-links">',
@@ -188,23 +207,31 @@ Ext.define("Ext.ux.grid.Printer", {
                       '<tr>',
                         headings,
                       '</tr>',
-                      '<tpl for=".">',
-                        '<tr class="{[xindex % 2 === 0 ? "even" : "odd"]}">',
-                          body,
-                        '</tr>',
-                        pluginsBodyMarkup.join(''),
-                      '</tpl>',
+                        '<tpl for=".">',
+                           '<tr class="{[xindex % 2 === 0 ? "even" : "odd"]}">',
+                              body,
+                           '</tr>',
+                           pluginsBodyMarkup.join(''),
+                           '{% if (this.isGrouped && xindex > 1) break; %}',
+                        '</tpl>',
                     '</table>',
                   '</body>',
-                '</html>'           
+                '</html>',
+                {
+                    isGrouped : isGrouped
+                }
             ];
 
-            var html = Ext.create('Ext.XTemplate', htmlMarkup).apply(data); 
+            var html = Ext.create(
+                'Ext.XTemplate',
+                htmlMarkup
+            ).apply(data); 
 
             //open up a new printing window, write to it, print it and close
             var win = window.open('', 'printgrid');
             
             //document must be open and closed
+
             win.document.open();
             win.document.write(html);
             win.document.close();
@@ -221,6 +248,97 @@ Ext.define("Ext.ux.grid.Printer", {
                     win.close();
                 }                
             }
+        },
+
+        getFeature : function( grid, featureId ) {
+            var feature;
+            var view     = grid.getView();
+            if ( featureId ) {
+                feature = view.getFeature( featureId );
+            }
+            else {
+                var features = view.features;
+                if ( features.length > 1 ) {
+                    alert( "More than one feature requires to pass " +
+                           "featureId as parameter to 'print'." );
+                    return;
+                }
+                else {
+                    feature = features[0];
+                }
+            }
+            return feature;
+        },
+
+        generateBody : function( grid, columns, feature ) {
+
+            var groups   = grid.store.getGroups();
+            var groupers = grid.store.groupers;
+            var fields   = grid.store.getProxy().getModel().getFields();
+            var hideGroupField = true;
+            var groupField;
+            var body;
+
+            if ( grid.store.isGrouped() ) {
+                hideGroupField = feature.hideGroupedHeader;  // bool
+                groupField = feature.getGroupField();
+
+                if ( !feature || !fields || !groupField ) {
+                    return;
+                }
+                
+                if ( hideGroupField ) {
+                    var removeGroupField = function( item ) {
+                        return ( item.name != groupField );
+                    };
+                    // Remove group field from fields array.
+                    // This could be done later in the template,
+                    // but it is easier to do it here.
+                    fields = fields.filter( removeGroupField );
+                }
+                //debugger;
+/*
+ *             var tpl = '{text} ({[values.rs.length]} ' +
+                   '{[values.rs.length > 1 ? "' + opt2caption[opt].plural +
+                   '" : "' + opt2caption[opt].singular + '" ]})';
+ */
+                var bodyTpl = [
+                    '<tpl for=".">',
+                        '<tr class="group-header">',
+                            '<td colspan="{[this.colSpan]}"> {[this.headerPrefix]}{name} &nbsp; {[this.postfixWithParens ? "(" : ""]} {[this.childCount(values.children)]}  {[this.childCount(values.children) > 1 ? this.headerPostfixPlural : this.headerPostfixSingular ]}  {[this.postfixWithParens ? ")" : ""]} </td>',
+                        ' </tr>', 
+                        '<tpl for="children">',
+                            '<tr>',
+                                '<tpl for="this.fields">',
+                                    '{% if (values.name==="id") continue; %}',
+                                    '<td>',
+                                      '{[ parent.get(values.name) ]}',
+                                    '</td>',
+                                '</tpl>',
+                            '</tr>',
+                        '</tpl>',
+                    '</tpl>',
+                    {
+                        // XTemplate configuration:
+                        hideGroupField    : hideGroupField,
+                        headerPrefix      : this.groupHeaderPrefix,
+                        headerPostfixSingular : this.groupHeaderPostfixSingular,
+                        headerPostfixPlural   : this.groupHeaderPostfixPlural,
+                        postfixWithParens : true,
+                        fields            : fields,
+                        colSpan           : fields.length - 1,
+                        // XTemplate member functions:
+                        childCount : function(c) {
+                            return c.length;
+                        }
+                    }
+                ];
+                body = Ext.create('Ext.XTemplate', bodyTpl).apply(groups);
+            }
+            else {
+                body = Ext.create('Ext.XTemplate', this.bodyTpl).apply(columns);
+            }
+            return body;
         },
 
         /**
@@ -247,6 +365,14 @@ Ext.define("Ext.ux.grid.Printer", {
         closeAutomaticallyAfterPrint: false,        
         
         /**
+         * @property defaultGridTitle
+         * @type String
+         * Title to be used if grid to be printed
+         * has no title attribute set.
+         */
+        defaultGridTitle: 'Druckansicht',
+        
+        /**
          * @property mainTitle
          * @type String
          * Title to be used on top of the table
@@ -255,16 +381,36 @@ Ext.define("Ext.ux.grid.Printer", {
         mainTitle: '',
         
         /**
-         * Text show on print link
+         * Text shown on print link
          * @type String
          */
-        printLinkText: 'Print',
-        
+        printLinkText: 'Drucken',
+
         /**
-         * Text show on close link
+         * Text shown as prefix to group header text.
          * @type String
          */
-        closeLinkText: 'Close',
+        groupHeaderPrefix : 'Dienst: ',
+
+        /**
+         * Text shown as postfix to group header text,
+         * if there is only one child element for this group.
+         * @type String
+         */
+        groupHeaderPostfixSingular : 'Regel',
+
+        /**
+         * Text shown as postfix to group header text,
+         * if there are multiple child elements for this group.
+         * @type String
+         */
+        groupHeaderPostfixPlural : 'Regeln',
+
+        /**
+         * Text shown on close link
+         * @type String
+         */
+        closeLinkText: 'Schließen',
         
         /**
          * @property headerTpl

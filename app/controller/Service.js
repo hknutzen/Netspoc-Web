@@ -66,8 +66,11 @@ Ext.define(
                     'servicedetails button' : {
                         click  : this.onTriggerClick
                     },
-                    'serviceview > grid button' : {
+                    'serviceview > grid :not(print-all-button)' : {
                         click  : this.onButtonClick
+                    },
+                    'print-all-button' : {
+                        click  : this.onPrintAllButtonClick
                     },
                     'searchwindow > form button' : {
                         click  : this.onStartSearchButtonClick
@@ -124,8 +127,7 @@ Ext.define(
                 },
                 this
             );
-            
-            this.displaySearchWindow();
+
         },
         
         onServiceSelected : function( rowmodel, service, index, eOpts ) {
@@ -212,6 +214,176 @@ Ext.define(
             this.getUserDetailEmails().clear();
         },
 
+        onPrintAllButtonClick : function( button, event, eOpts ) {
+
+            var grid = Ext.create(
+                'PolicyWeb.view.panel.grid.AllServices'
+            );
+
+            var services  = '';
+            var srv_store = this.getServiceStore();
+            var concat_services = function ( rec ) {
+                var srv_name = rec.get( 'name' );
+                if ( srv_name ) {
+                    services = services + srv_name + ',';
+                }
+                else {
+                    return;
+                }
+            };
+            var records = srv_store.each( concat_services );
+            // Get rid of trailing comma
+            services = services.slice(0, -1);
+            
+            // Without services it does not make 
+            // sense to continue ...
+            if ( services === '' ) {
+                return;
+            }
+            var expand_users = 0;
+            var disp_prop    = 'ip';
+
+            grid.getStore().on(
+                'load',
+                function() {
+                    //this.printGroupedGrid(grid);
+                    grid.printview();
+                },
+                this
+            );
+
+            grid.getStore().load(
+                {
+                    params : {
+                        'expand_users'     : expand_users,
+                        'display_property' : disp_prop,
+                        'services'         : services
+                    }
+                }
+            );
+            var foo = Ext.create(
+                'Ext.window.Window',
+                {
+                    height : 400,
+                    width  : 800,
+                    items  : grid
+                }
+            );
+            //foo.show();
+        },
+        
+        printGroupedGrid : function( grid ) {
+            //get Styles file relative location, if not supplied
+            if (this.stylesheetPath === null) {
+                var scriptPath = Ext.Loader.getPath('Ext.ux.grid.Printer');
+                this.stylesheetPath = scriptPath.substring(0, scriptPath.indexOf('Printer.js')) + 'gridPrinterCss/print.css';
+            }
+
+            var groups = grid.store.getGroups();
+            var fields = grid.store.getProxy().getModel().getFields();
+            var view   = grid.getView();
+            var feature;
+            var featureId;
+            var hideGroupField;
+            var showGroupField;
+            if ( featureId ) {
+                feature = view.getFeature( featureId );
+                if ( !feature ) {
+                    return;
+                }
+            }
+            else {
+                var features = view.features;
+                if ( features.length > 1 ) {
+                    alert( "More than one feature requires to pass " +
+                                 "featureId as parameter to 'print'." );
+                    return;
+                }
+                else {
+                    feature = features[0];
+                }
+            }
+            hideGroupField = feature.hideGroupedHeader;  // bool
+            var groupField = feature.getGroupField();
+
+            if ( hideGroupField ) {
+                var removeGroupField = function( item ) {
+                    return ( item.name != groupField );
+                };
+                // Remove group field from fields array.
+                // This could be done later in the template,
+                // but it is easier to do it here.
+                fields = fields.filter( removeGroupField );
+            }
+
+            //debugger;
+            var bodyTpl = [
+                '<table>',
+                '<tpl for=".">',
+                '<tr> <td class="group-header"> {name} </td> </tr>', 
+                    '<tpl for="children">',
+                    '<tr>',
+                        '<tpl for="this.fields">',
+                              '{% if (values.name==="id") continue; %}',
+                              '<td>',
+                                '{[ parent.get(values.name) ]}',
+                              '</td>',
+                        '</tpl>',
+                    '</tr>',
+                    '</tpl>',
+                '</tpl>',
+                '</table>',
+                {
+                    // XTemplate configuration:
+                    hideGroupField : hideGroupField,
+                    groupField     : groupField,
+                    fields         : fields
+                }
+            ];
+        
+            var body = Ext.create('Ext.XTemplate', bodyTpl).apply(groups);
+            //debugger;
+            var title = grid.title || 'defaultGridTitle';
+            //Here because inline styles using CSS, the browser did not show the correct formatting of the data the first time that loaded
+            var htmlMarkup = [
+                '<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">',
+                '<html class="' + Ext.baseCSSPrefix + 'ux-grid-printer">',
+                  '<head>',
+                    '<meta content="text/html; charset=UTF-8" http-equiv="Content-Type" />',
+                    '<link href="./resources/ux/grid/gridPrinterCss/print.css" rel="stylesheet" type="text/css" />',
+                    '<title>' + title + '</title>',
+                  '</head>',
+                  '<body class="' + Ext.baseCSSPrefix + 'ux-grid-printer-body">',
+                  '</div>',
+                  '<h1>' + 'Main Title' + '</h1>',
+                    '<table>',
+                      '<tpl for=".">',
+                        '<tr class="{[xindex % 2 === 0 ? "even" : "odd"]}">',
+                          body,
+                        '</tr>',
+                      '</tpl>',
+                    '</table>',
+                  '</body>',
+                '</html>'           
+            ];
+            var html = Ext.create('Ext.XTemplate', htmlMarkup);
+            //debugger;
+            var p = {
+                html : html
+            };
+
+            var win = Ext.create(
+                'Ext.window.Window',
+                {
+                    height : 400,
+                    width  : 1200,
+                    autoScroll : true,
+                    items  : p
+                }
+            );
+            win.show();
+        },
+        
         onButtonClick : function( button, event, eOpts ) {
             if ( button.text === 'Suche' ) {
                 this.displaySearchWindow();
@@ -228,7 +400,6 @@ Ext.define(
             }
             proxy.extraParams.relation = relation;
             store.load();
-            this.clearDetails();
         },
 
         onStartSearchButtonClick : function( button, event, eOpts ) {
@@ -318,9 +489,6 @@ Ext.define(
                                 );
             }
             search_window.show();
-        },
-
-        displayPrintWindow : function() {
         },
 
         doSth : function( button, event, eOpts ) {

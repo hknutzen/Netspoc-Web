@@ -11,11 +11,10 @@ Ext.define(
         alias     : 'widget.cardprintactive',
         layout    : 'card',
 
-        printView : function( options ) {
+        printview : function( options ) {
             var layout      = this.getLayout();
             var activePanel = layout.activeItem;
             if ( activePanel.layout ) {
-              console.log( activePanel.layout.type );
                 if ( activePanel.layout.type == 'border' ) {
                     var cp = activePanel.down( 'grid[region=center]' );
                     Ext.ux.grid.Printer.print( cp );

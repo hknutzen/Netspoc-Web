@@ -245,9 +245,17 @@ sub get_services_and_rules {
     my $lists    = load_json("owner/$owner/service_lists");
     my $assets   = load_json("owner/$owner/assets");
     my $data = [];
-    my $param_services = [ split ",", $srv_list ];
+    my $param_services = '';
     $disp_prop ||= 'ip';
     
+    # Return empty list if no services were passes as param.
+    if ( $srv_list ) {
+        $param_services = [ split ",", $srv_list ];
+    }
+    else {
+        return [];
+    }
+
     # Untaint display property.
     my %allowed = (
 	name => 1,

@@ -23,19 +23,22 @@ Ext.require( [
                  'PolicyWeb.store.History',
                  'PolicyWeb.store.Owner',
                  'PolicyWeb.store.AllOwners',
+                 'PolicyWeb.store.AllServices',
                  'PolicyWeb.store.CurrentPolicy',
                  'PolicyWeb.view.Viewport',
                  'PolicyWeb.view.OwnerCombo',
                  'PolicyWeb.view.HistoryCombo',
                  'PolicyWeb.view.Service',
                  'PolicyWeb.view.panel.grid.Services',
+                 'PolicyWeb.view.panel.grid.AllServices',
                  'PolicyWeb.view.panel.grid.Users',
                  'PolicyWeb.view.panel.grid.Rules',
                  'PolicyWeb.view.panel.grid.Emails',
                  'PolicyWeb.view.panel.card.PrintActive',
                  'PolicyWeb.view.panel.form.ServiceDetails',
                  'PolicyWeb.view.window.Search',
-                 'PolicyWeb.view.button.PrintButton'
+                 'PolicyWeb.view.button.PrintButton',
+                 'PolicyWeb.view.button.PrintAllButton'
              ]
            );
 
@@ -47,7 +50,7 @@ Ext.application(
 	models             : [ 'Netspoc', 'Service', 'Rule', 'Owner' ],
 	stores             : [ 'Netspoc', 'NetspocState', 'Service',
                                'Rules', 'Users', 'Emails', 'Owner',
-                               'AllOwners', 'History',
+                               'AllOwners', 'AllServices', 'History',
                                'CurrentPolicy' ],
 	controllers        : [ 'Main', 'Service' ],
 	launch             : function() {

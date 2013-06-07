@@ -2,7 +2,7 @@
 Ext.define(
     'PolicyWeb.view.panel.grid.Services',
     {
-        extend      : 'Ext.grid.Panel',
+        extend      : 'PolicyWeb.view.panel.grid.Abstract',
         alias       : 'widget.servicelist',
         controllers : [ 'Service' ],
         store       : 'Service',
@@ -53,8 +53,10 @@ Ext.define(
             },
             '->',
             {
-                iconCls : 'icon-eye',
-                tooltip : 'Weitere (druckbare) Ansichten öffnen'
+                xtype : 'print-all-button'
+            },
+            {
+                xtype : 'printbutton'
             }
         ]
     }
