@@ -66,7 +66,7 @@ Ext.define(
                     'servicedetails button' : {
                         click  : this.onTriggerClick
                     },
-                    'serviceview > grid :not(print-all-button)' : {
+                    'serviceview > grid chooseservice' : {
                         click  : this.onButtonClick
                     },
                     'print-all-button' : {

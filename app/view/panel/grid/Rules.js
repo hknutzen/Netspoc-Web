@@ -2,7 +2,7 @@
 Ext.define(
     'PolicyWeb.view.panel.grid.Rules',
     {
-        extend      : 'Ext.grid.Panel',
+        extend      : 'PolicyWeb.view.panel.grid.Abstract',
         alias       : 'widget.servicerules',
         controllers : [ 'Service' ],
         store       : 'Rules',

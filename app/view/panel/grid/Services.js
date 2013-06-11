@@ -20,12 +20,14 @@ Ext.define(
         },
         tbar        : [
             {
+                xtype        : 'chooseservice',
                 text         : 'Eigene',
                 toggleGroup  : 'polNavBtnGrp',
                 enableToggle : true,
                 relation     : 'owner'
             },
             {
+                xtype        : 'chooseservice',
                 text         : 'Genutzte',
                 toggleGroup  : 'polNavBtnGrp',
                 pressed      : true,
@@ -33,12 +35,14 @@ Ext.define(
                 relation     : 'user'
             },
             {
+                xtype        : 'chooseservice',
                 text         : 'Nutzbare',
                 toggleGroup  : 'polNavBtnGrp',
                 enableToggle : true,
                 relation     : 'visible'
             },
             {
+                xtype        : 'chooseservice',
                 text         : 'Alle',
                 toggleGroup  : 'polNavBtnGrp',
                 enableToggle : true,

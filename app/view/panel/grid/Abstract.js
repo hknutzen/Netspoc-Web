@@ -13,7 +13,8 @@ Ext.define(
         initComponent : function() {
             Ext.apply(
                 this, {
-                    selModel    : this.buildSelModel()
+                    selModel    : this.buildSelModel(),
+                    viewConfig  : this.buildViewConfig()
                 }
             );
             this.callParent(arguments);
@@ -23,6 +24,12 @@ Ext.define(
             return {
                 type : 'rowmodel',
                 mode : 'SIMPLE'
+            };
+        },
+
+        buildViewConfig : function() {
+            return {
+                loadMask : false
             };
         },
 

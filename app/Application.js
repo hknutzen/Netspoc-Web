@@ -37,6 +37,7 @@ Ext.require( [
                  'PolicyWeb.view.panel.card.PrintActive',
                  'PolicyWeb.view.panel.form.ServiceDetails',
                  'PolicyWeb.view.window.Search',
+                 'PolicyWeb.view.button.ChooseService',
                  'PolicyWeb.view.button.PrintButton',
                  'PolicyWeb.view.button.PrintAllButton'
              ]

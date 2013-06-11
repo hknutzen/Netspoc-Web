@@ -9,7 +9,7 @@ Ext.define(
         extend  : 'Ext.button.Button',
         alias   : 'widget.printbutton',
         iconCls : 'icon-printer',
-        tooltip : 'Druckansicht (ermöglicht auch das Kopieren von Text)',
+        tooltip : 'Druckansicht für aktuell angezeigte Liste von Diensten (ermöglicht auch das Kopieren von Text)',
         scope   : this,
         handler : function( button ) {
             button.findParentByType('panel').printview();
