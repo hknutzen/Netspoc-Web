@@ -2,7 +2,7 @@
 Ext.define(
     'PolicyWeb.view.panel.grid.Emails',
     {
-        extend      : 'Ext.grid.Panel',
+        extend      : 'PolicyWeb.view.panel.grid.Abstract',
         alias       : 'widget.emaillist',
         controllers : [ 'Service' ],
         store       : 'Emails',
