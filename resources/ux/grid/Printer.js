@@ -249,7 +249,7 @@ Ext.define("Ext.ux.grid.Printer", {
 
         getFeature : function( grid, featureId ) {
             var feature;
-            var view     = grid.getView();
+            var view = grid.getView();
             if ( featureId ) {
                 feature = view.getFeature( featureId );
             }
@@ -270,7 +270,6 @@ Ext.define("Ext.ux.grid.Printer", {
         generateBody : function( grid, columns, feature ) {
 
             var groups   = grid.store.getGroups();
-            var groupers = grid.store.groupers;
             var fields   = grid.store.getProxy().getModel().getFields();
             var hideGroupField = true;
             var groupField;
@@ -312,7 +311,6 @@ Ext.define("Ext.ux.grid.Printer", {
                     '</tpl>',
                     {
                         // XTemplate configuration:
-                        hideGroupField        : hideGroupField,
                         headerPrefix          : this.groupHeaderPrefix,
                         headerPostfixSingular : this.groupHeaderPostfixSingular,
                         headerPostfixPlural   : this.groupHeaderPostfixPlural,

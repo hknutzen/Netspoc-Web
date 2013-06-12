@@ -32,9 +32,6 @@ Ext.define(
                 dataIndex : 'prt'
             }
         ],
-        viewConfig : {
-            selectedRowClass : 'x-grid3-row-over'
-        },
         defaults : {
             menuDisabled : true
         }

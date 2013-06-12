@@ -1,6 +1,7 @@
 
 /**
- * A class that configures a print-button used in several places.
+ * A class that configures a print-button that prints all
+ * services and rules upon click.
  **/
 
 Ext.define(

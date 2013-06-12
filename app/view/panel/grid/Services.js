@@ -14,7 +14,7 @@ Ext.define(
                 { text : 'Dienstname',  dataIndex : 'name' }
             ],
             defaults : {
-                flex : 1,
+                flex         : 1,
                 menuDisabled : true
             }
         },

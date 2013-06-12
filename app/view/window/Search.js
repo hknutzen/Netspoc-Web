@@ -1,8 +1,4 @@
 
-var search_window;
-var print_window;
-
-
 Ext.define(
     'PolicyWeb.view.window.Search',
     {

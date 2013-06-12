@@ -2,7 +2,7 @@
 Ext.define(
     'PolicyWeb.view.panel.grid.Users',
     {
-        extend      : 'Ext.grid.Panel',
+        extend      : 'PolicyWeb.view.panel.grid.Abstract',
         alias       : 'widget.serviceusers',
         controllers : [ 'Service' ],
         store       : 'Users',
@@ -27,9 +27,6 @@ Ext.define(
                 dataIndex : 'owner'
             }
         ],
-        viewConfig : {
-            selectedRowClass : 'x-grid3-row-over'
-        },
         defaults : {
             menuDisabled : true
         }

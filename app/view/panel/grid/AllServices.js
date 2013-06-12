@@ -29,7 +29,8 @@ Ext.define(
                 flex         : 2,
                 menuDisabled : true
             }
-        }
+        },
+        tbar : [ { xtype : 'printbutton' } ]
     }
 );
 

@@ -29,7 +29,8 @@ Ext.define(
 
         buildViewConfig : function() {
             return {
-                loadMask : false
+                selectedRowClass : 'x-grid3-row-over',
+                loadMask         : false
             };
         },
 

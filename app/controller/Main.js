@@ -45,19 +45,6 @@ Ext.define(
                 }
             );
 
-/*
-                        // Delete the previous query in the beforequery event.
-                        // This will reload the store the next time it expands.
-                        beforequery: function(qe){
-                            var combo = qe.combo;
-                            delete combo.lastQuery;
-                            combo.getStore().needLoad = false;
-                        },
-                        select : function (combo, record, index) {
-                            appstate.changeHistory(record);
-                            combo.setValue(appstate.showHistory());
-                        }
-*/
             // Handle application wide events.
             this.application.on(
 /*

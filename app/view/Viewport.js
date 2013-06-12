@@ -37,10 +37,6 @@ Ext.define(
 
         buildViewport : function () {
 
-            var sv = Ext.create(
-                'PolicyWeb.view.Service'
-            );
-            //debugger;
             var cardPanel = {
                 xtype          : 'panel',
                 layout         : 'card',
@@ -48,18 +44,15 @@ Ext.define(
                 layoutConfig   : { deferredRender : true },
                 border         : false,
                 items          :  [
-                    sv
-/*,
-                    {
-                        xtype : 'serviceview'
-                    }
+                    { xtype : 'serviceview' }
+
                     // Index of items must be the same as
                     // index of buttons in toolbar below.
                     //{ xtype : 'policymanager'  },
                     //{ xtype : 'networkmanager' },
                     //{ xtype : 'diffmanager'    },
                     //{ xtype : 'accountmanager' }
-*/                ],
+                ],
                 tbar   : [
                     {
                         text         : 'Dienste, Freischaltungen',

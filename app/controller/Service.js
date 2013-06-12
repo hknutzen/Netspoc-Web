@@ -72,6 +72,9 @@ Ext.define(
                     'print-all-button' : {
                         click  : this.onPrintAllButtonClick
                     },
+                    'expandedservices' : {
+                        beforeshow : this.onShowAllServices
+                    },
                     'searchwindow > form button' : {
                         click  : this.onStartSearchButtonClick
                     },
@@ -136,6 +139,10 @@ Ext.define(
             if (! service) {
                 this.clearDetails();
                 return;
+            }
+
+            if ( Ext.isObject( print_window )) {
+                print_window.hide();
             }
 
             // Merge delegated owner and (multiple) std. owners.
@@ -215,11 +222,15 @@ Ext.define(
         },
 
         onPrintAllButtonClick : function( button, event, eOpts ) {
-
-            var grid = Ext.create(
-                'PolicyWeb.view.panel.grid.AllServices'
-            );
-
+            if ( !Ext.isObject(print_window) ) {
+                print_window = Ext.create(
+                    'PolicyWeb.view.window.ExpandedServices'
+                );
+            }
+            print_window.show();
+        },
+        
+        onShowAllServices : function( win ) {
             var services  = '';
             var srv_store = this.getServiceStore();
             var concat_services = function ( rec ) {
@@ -242,15 +253,8 @@ Ext.define(
             }
             var expand_users = 0;
             var disp_prop    = 'ip';
-
-            grid.getStore().on(
-                'load',
-                function() {
-                    grid.printview();
-                },
-                this
-            );
-
+            
+            var grid = win.down( 'grid' );
             grid.getStore().load(
                 {
                     params : {
@@ -260,17 +264,8 @@ Ext.define(
                     }
                 }
             );
-            var foo = Ext.create(
-                'Ext.window.Window',
-                {
-                    height : 400,
-                    width  : 800,
-                    items  : grid
-                }
-            );
-            //foo.show();
         },
-        
+
         onButtonClick : function( button, event, eOpts ) {
             if ( button.text === 'Suche' ) {
                 this.displaySearchWindow();
@@ -303,16 +298,6 @@ Ext.define(
                 }
                 if ( search_window && !keep_front ) {
                     search_window.hide();
-                }
-                if ( print_window ) {
-                    print_window.hide();
-/*
-                    // Find services-and-rules-window and close it.
-                    var wnd = Ext.WindowMgr.get( 'srvRulesWndId' );
-                    if ( wnd ) {
-                        wnd.close();
-                    }
-*/
                 }
                 if ( relation && relation === store.baseParams.relation) {
                     return;
