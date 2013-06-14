@@ -98,7 +98,7 @@ Ext.define(
                     'searchwindow > form textfield' : { 
                         specialkey  : this.onSearchWindowSpecialKey
                     },
-                    'serviceview cardprintactive :not(printbutton)' : {
+                    'serviceview cardprintactive button[toggleGroup=polDVGrp]' : {
                         click  : this.onServiceDetailsButtonClick
                     }                    
                 }
@@ -368,23 +368,25 @@ Ext.define(
             var view       = this.getServiceView();
             var checkboxes = view.query('checkbox');
 
-            Ext.each( checkboxes, function(cb) {
-                          var name = cb.getName();
-                          var value;
-                          if ( !checkbox ) {
-                              value = cb.getValue();
-                          }
-                          else {
-                              if ( name === checkbox.getName() ) {
-                                  value = newVal;
-                              }
-                              else {
-                                  value = cb.getValue();
-                              }
-                          }
-                          params[name] = cb_params_key2val[name][value];
-                      }
-                    );
+            Ext.each(
+                checkboxes, 
+                function(cb) {
+                    var name = cb.getName();
+                    var value;
+                    if ( !checkbox ) {
+                        value = cb.getValue();
+                    }
+                    else {
+                        if ( name === checkbox.getName() ) {
+                            value = newVal;
+                        }
+                        else {
+                            value = cb.getValue();
+                        }
+                    }
+                    params[name] = cb_params_key2val[name][value];
+                }
+            );
             return params;
         },
 
@@ -395,12 +397,6 @@ Ext.define(
             if ( Ext.isObject( print_window ) ) {
                 this.onShowAllServices( print_window );
             }
-/*
-            if ( Ext.isObject( print_window ) ) {
-                var store = this.getAllServicesStore();
-                store.load( { params : params } );
-            }
-*/
         },
         
         displaySearchWindow : function() {

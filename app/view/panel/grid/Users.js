@@ -26,10 +26,7 @@ Ext.define(
                 flex      : 2,
                 dataIndex : 'owner'
             }
-        ],
-        defaults : {
-            menuDisabled : true
-        }
+        ]
     }
 );
 

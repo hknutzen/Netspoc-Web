@@ -14,7 +14,8 @@ Ext.define(
             Ext.apply(
                 this, {
                     selModel    : this.buildSelModel(),
-                    viewConfig  : this.buildViewConfig()
+                    viewConfig  : this.buildViewConfig(),
+                    defaults    : this.buildDefaults()
                 }
             );
             this.callParent(arguments);
@@ -23,7 +24,13 @@ Ext.define(
         buildSelModel : function() {
             return {
                 type : 'rowmodel',
-                mode : 'SIMPLE'
+                mode : 'SINGLE'
+            };
+        },
+
+        buildDefaults : function() {
+            return {
+                menuDisabled : true
             };
         },
 
