@@ -1,12 +1,22 @@
 var search_window;
 var print_window;
+var cb_params_key2val = {
+    display_property : {
+        true  : 'name',
+        false : 'ip'
+    },
+    expand_users : {
+        true  : 1,
+        false : 0
+    }
+};
 
 Ext.define(
     'PolicyWeb.controller.Service', {
         extend : 'Ext.app.Controller',
-        views  : [ 'panel.grid.Services', 'panel.form.ServiceDetails' ],
+        views  : [ 'panel.form.ServiceDetails' ],
         models : [ 'Service' ],
-        stores : [ 'Service', 'Rules', 'Users' ],
+        stores : [ 'Service', 'AllServices', 'Rules', 'Users' ],
         refs   : [
             {
                 selector : 'servicelist',
@@ -41,6 +51,10 @@ Ext.define(
                 ref      : 'serviceUsersView'
             },
             {
+                selector : 'serviceview',
+                ref      : 'serviceView'
+            },
+            {
                 selector : 'serviceview cardprintactive',
                 ref      : 'detailsAndUserView'
             },
@@ -65,6 +79,9 @@ Ext.define(
                     },
                     'servicedetails button' : {
                         click  : this.onTriggerClick
+                    },
+                    'serviceview checkbox' : {
+                        change  : this.onCheckboxChange
                     },
                     'serviceview > grid chooseservice' : {
                         click  : this.onButtonClick
@@ -182,7 +199,9 @@ Ext.define(
             var name  = service.get( 'name' );
             var store = this.getRulesStore();
             store.getProxy().extraParams.service = name;
-            store.load();
+            var params = this.getCheckboxParams();
+            //debugger;
+            store.load( { params : params } );
 
             // Load users.
             store = this.getUsersStore();
@@ -251,17 +270,13 @@ Ext.define(
             if ( services === '' ) {
                 return;
             }
-            var expand_users = 0;
-            var disp_prop    = 'ip';
             
             var grid = win.down( 'grid' );
+            var params = this.getCheckboxParams();
+            params.services = services;
             grid.getStore().load(
                 {
-                    params : {
-                        'expand_users'     : expand_users,
-                        'display_property' : disp_prop,
-                        'services'         : services
-                    }
+                    params : params
                 }
             );
         },
@@ -340,12 +355,52 @@ Ext.define(
             email_panel.show( owner, owner_alias );
         },
 
-        onSearchWindowSpecialKey : function( field, e ){
+        onSearchWindowSpecialKey : function( field, e ) {
             // Handle ENTER key press in search textfield.
             if ( e.getKey() == e.ENTER ) {
                 var sb = this.getStartSearchButton();
                 sb.fireEvent( 'click' );
             }
+        },
+        
+        getCheckboxParams : function( checkbox, newVal ) {
+            var params     = {};
+            var view       = this.getServiceView();
+            var checkboxes = view.query('checkbox');
+
+            Ext.each( checkboxes, function(cb) {
+                          var name = cb.getName();
+                          var value;
+                          if ( !checkbox ) {
+                              value = cb.getValue();
+                          }
+                          else {
+                              if ( name === checkbox.getName() ) {
+                                  value = newVal;
+                              }
+                              else {
+                                  value = cb.getValue();
+                              }
+                          }
+                          params[name] = cb_params_key2val[name][value];
+                      }
+                    );
+            return params;
+        },
+
+        onCheckboxChange : function( checkbox, newVal, oldVal, eOpts ) {
+            var params = this.getCheckboxParams( checkbox, newVal );
+            var rules  = this.getRulesStore();
+            rules.load( { params : params } );
+            if ( Ext.isObject( print_window ) ) {
+                this.onShowAllServices( print_window );
+            }
+/*
+            if ( Ext.isObject( print_window ) ) {
+                var store = this.getAllServicesStore();
+                store.load( { params : params } );
+            }
+*/
         },
         
         displaySearchWindow : function() {

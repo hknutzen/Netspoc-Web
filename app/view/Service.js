@@ -57,6 +57,17 @@ Ext.define(
                             toggleGroup  : 'polDVGrp',
                             enableToggle : true
                         },
+                        '-',
+                        {
+                            xtype    : 'checkbox',
+                            name     : 'expand_users',
+                            boxLabel : 'User expandieren'
+                        },
+                        {
+                            xtype    : 'checkbox',
+                            name     : 'display_property',
+                            boxLabel : 'Namen statt IPs'
+                        },
                         '->',
                         { xtype : 'printbutton' }
                     ],

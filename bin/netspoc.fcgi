@@ -284,13 +284,13 @@ sub get_services_and_rules {
 	}
 
 	for my $rule ( @$rules ) {
+            my $is_user = ( $rule->{has_user} && $rule->{has_user} eq 'src' ) ?
+                'src' : 'dst';
 	    push @$data, {
 		service => $sname,
 		action  => $rule->{action},
-		src     => $rule->{has_user} eq 'src' ?
-		    $user_props : $rule->{src},
-		dst     => $rule->{has_user} eq 'dst' ?
-		    $user_props : $rule->{dst},
+		src     => $is_user eq 'src' ? $user_props : $rule->{src},
+		dst     => $is_user eq 'dst' ? $user_props : $rule->{dst},
 		proto   => $rule->{prt},
 	    };
 	}
@@ -595,9 +595,10 @@ my %src_or_dst =  (
     );
 sub get_rules_for_owner_and_service {
     my ( $cgi, $owner, $sname ) = @_;
-    my $chosen = $cgi->param('chosen_networks');
-    my $prop   = $cgi->param('display_property');
-    my $lists  = load_json("owner/$owner/service_lists");
+    my $expand_users = $cgi->param('expand_users');
+    my $chosen       = $cgi->param('chosen_networks');
+    my $prop         = $cgi->param('display_property');
+    my $lists        = load_json("owner/$owner/service_lists");
     $prop ||= 'ip';  # 'ip' as default property to display
     my $relevant_objects;
 
@@ -629,6 +630,10 @@ sub get_rules_for_owner_and_service {
     # - names substituted by objects
     # - IP addresses in object with NAT applied.
     my $crules;
+    my $user;
+    if ( $expand_users ) {
+        $user = get_users_for_owner_and_service( $cgi, $owner, $sname );
+    }
     for my $rule (@$rules) {
 	my $crule = { %$rule };
 	for my $what (qw(src dst)) {
@@ -636,6 +641,10 @@ sub get_rules_for_owner_and_service {
 		[ map((get_nat_obj($_, $no_nat_set))->{$prop},
 		      @{ $rule->{$what} }) ];
 	}
+        if ( $expand_users ) {
+            $crule->{$rule->{has_user}} = [ map { $_->{$prop} } @$user ];
+            undef $crule->{has_user};
+        }
 	push @$crules, $crule;
     }
     return $crules;
