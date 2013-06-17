@@ -43,6 +43,13 @@ Ext.define(
 
         printview : function() {
             Ext.ux.grid.Printer.print( this );
+        },
+
+        select0 : function() {
+            if ( this.getStore().getCount() > 0 ) {
+                var selmodel = this.getSelectionModel();
+                selmodel.select(0);
+            }
         }
     }
 );

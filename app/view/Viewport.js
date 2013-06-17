@@ -5,34 +5,11 @@ Ext.define(
     {
 	extend   : 'Ext.container.Viewport',
         alias    : 'widget.mainview',
-	requires : [
-            'PolicyWeb.view.Service',
-            'PolicyWeb.view.panel.grid.Services',
-            'PolicyWeb.view.OwnerCombo',
-            'PolicyWeb.view.HistoryCombo'
-	],
 	layout   : 'fit',
         
 	initComponent : function() {
             this.items = this.buildViewport();
             this.callParent(arguments);
-        },
-
-
-        buildOwnersStore : function(options) {
-            var store = Ext.create(
-                'PolicyWeb.store.Owner',
-                {
-                    autoLoad    : true,
-                    proxyurl    : 'get_owners',
-                    autoDestroy : true,
-                    sortInfo    : { field: 'alias', direction: 'ASC' }
-                }
-            );
-            if (options) {
-                store = Ext.apply( store, options );
-            }
-            return store;
         },
 
         buildViewport : function () {
@@ -44,12 +21,11 @@ Ext.define(
                 layoutConfig   : { deferredRender : true },
                 border         : false,
                 items          :  [
-                    { xtype : 'serviceview' }
+                    { xtype : 'serviceview' },
+                    { xtype : 'networkview' }
 
                     // Index of items must be the same as
                     // index of buttons in toolbar below.
-                    //{ xtype : 'policymanager'  },
-                    //{ xtype : 'networkmanager' },
                     //{ xtype : 'diffmanager'    },
                     //{ xtype : 'accountmanager' }
                 ],
@@ -59,41 +35,31 @@ Ext.define(
                         iconCls      : 'icon-chart_curve',
                         toggleGroup  : 'navGrp',
                         enableToggle : true,
-                        pressed      : true,
-                        scope        : this,
-                        handler      : this.switchToCard
+                        pressed      : true
                     },
                     {
                         text         : 'Eigene Netze',
                         iconCls      : 'icon-computer_connect',
                         toggleGroup  : 'navGrp',
-                        enableToggle : true,
-                        scope        : this,
-                        handler      : this.switchToCard
+                        enableToggle : true
                     },
                     {
                         text         : 'Diff',
                         iconCls      : 'icon-chart_curve_edit',
                         toggleGroup  : 'navGrp',
-                        enableToggle : true,
-                        scope        : this,
-                        handler      : this.switchToCard
+                        enableToggle : true
                     },
                     {
                         text         : 'Berechtigungen',
                         iconCls      : 'icon-group',
                         toggleGroup  : 'navGrp',
-                        enableToggle : true,
-                        scope        : this,
-                        handler      : this.switchToCard
+                        enableToggle : true
                     },
                     '->',
                     'Stand',
-                    //this.buildHistoryCombo(historyStore),
                     { xtype : 'historycombo' },
                     ' ',
                     'Verantwortungsbereich',
-                    //this.buildOwnerCombo(this.buildOwnersStore()),
                     { xtype : 'ownercombo' },
                     ' ',
                     'Abmelden',
@@ -109,46 +75,6 @@ Ext.define(
         
         fireLogoutEvent : function() {
             this.fireEvent( 'logout' );
-        },
-
-        switchToCard : function( button ) {
-            var index     = button.ownerCt.items.indexOf(button);
-            var cardPanel = button.findParentByType('panel');
-            cardPanel.layout.setActiveItem( index );
-        },
-
-        buildHistoryCombo : function (store) {
-            var combo = Ext.create(
-                'PolicyWeb.view.HistoryCombo', {
-                    xtype     : 'historycombo',
-                    store     : 'History',
-                    // Show initially selected history (i.e curent version).
-                    value     : appstate.showHistory(),
-                    listeners : {
-                        scope  : this,
-                        // Delete the previous query in the beforequery event.
-                        // This will reload the store the next time it expands.
-                        beforequery : function(qe){
-                            var combo = qe.combo;
-                            delete combo.lastQuery;
-                            combo.getStore().needLoad = false;
-                        },
-                        select : function (combo, record, index) {
-                            appstate.changeHistory(record);
-                            combo.setValue(appstate.showHistory());
-                        }
-                    }
-                }
-            );
-            appstate.addListener(
-                'ownerChanged', 
-                function () {
-                    var store = this.getStore();
-                    this.setValue(appstate.showHistory()); 
-                    store.needLoad = true; 
-                }, 
-                combo);
-            return combo;
         }
     }
 );

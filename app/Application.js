@@ -15,6 +15,8 @@ Ext.require( [
                  'Ext.ux.grid.Printer',
                  'PolicyWeb.proxy.Custom',
                  'PolicyWeb.store.Service',
+                 'PolicyWeb.store.Networks',
+                 'PolicyWeb.store.NetworkResources',
                  'PolicyWeb.store.Rules',
                  'PolicyWeb.store.Users',
                  'PolicyWeb.store.Emails',
@@ -29,8 +31,11 @@ Ext.require( [
                  'PolicyWeb.view.OwnerCombo',
                  'PolicyWeb.view.HistoryCombo',
                  'PolicyWeb.view.Service',
+                 'PolicyWeb.view.Network',
                  'PolicyWeb.view.panel.grid.Services',
+                 'PolicyWeb.view.panel.grid.Networks',
                  'PolicyWeb.view.panel.grid.AllServices',
+                 'PolicyWeb.view.panel.grid.NetworkResources',
                  'PolicyWeb.view.panel.grid.Users',
                  'PolicyWeb.view.panel.grid.Rules',
                  'PolicyWeb.view.panel.grid.Emails',
@@ -52,8 +57,9 @@ Ext.application(
 	stores             : [ 'Netspoc', 'NetspocState', 'Service',
                                'Rules', 'Users', 'Emails', 'Owner',
                                'AllOwners', 'AllServices', 'History',
-                               'CurrentPolicy' ],
-	controllers        : [ 'Main', 'Service' ],
+                               'CurrentPolicy', 'Networks', 'NetworkResources'
+                             ],
+	controllers        : [ 'Main', 'Service', 'Network' ],
 	launch             : function() {
         }
     }

@@ -118,27 +118,10 @@ Ext.define(
             var store = this.getServiceStore();
             store.on( 'load',
                       function () {
-                          var g = this.getServicesGrid();
-                          if ( g.getStore().getCount() > 0 ) {
-                              var selmodel = g.getSelectionModel();
-                              selmodel.select(0);
-                          }
+                          this.getServicesGrid().select0();
                       },
                       this
                     );
-
-            var userstore = this.getUsersStore();
-            userstore.on( 'load',
-                      function () {
-                          var u = this.getServiceUsersView();
-                          if ( u.getStore().getCount() > 0 ) {
-                              var selmodel = u.getSelectionModel();
-                              selmodel.select(0);
-                          }
-                      },
-                      this
-                    );
-
             appstate.addListener(
                 'changed', 
                 function () {
@@ -147,6 +130,14 @@ Ext.define(
                 },
                 this
             );
+
+            var userstore = this.getUsersStore();
+            userstore.on( 'load',
+                      function () {
+                          this.getServiceUsersView().select0();
+                      },
+                      this
+                    );
 
         },
         
@@ -200,7 +191,6 @@ Ext.define(
             var store = this.getRulesStore();
             store.getProxy().extraParams.service = name;
             var params = this.getCheckboxParams();
-            //debugger;
             store.load( { params : params } );
 
             // Load users.

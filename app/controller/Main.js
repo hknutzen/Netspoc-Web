@@ -2,7 +2,7 @@
 Ext.define(
     'PolicyWeb.controller.Main', {
         extend : 'Ext.app.Controller',
-        views  : [ 'Viewport', 'Service' ],
+        views  : [ 'Viewport', 'Service', 'Network' ],
         stores : [ 'Owner', 'AllOwners', 'History', 'CurrentPolicy' ],
         refs   : [
             {
@@ -30,6 +30,9 @@ Ext.define(
                     'mainview': {
                         beforerender : this.beforeViewportRendered,
                         logout       : this.onLogout
+                    },
+                    'mainview panel button[toggleGroup="navGrp"]': {
+                        click : this.onNavButtonClick
                     },
                     'ownercombo' : {
                         select       : this.onOwnerSelected
@@ -225,6 +228,12 @@ Ext.define(
             // Jump to login page,
             // which is assumed to be the default page in current directory.
             window.location.href = '.';
+        },
+
+        onNavButtonClick : function( button, event, eOpts ) {
+            var card  = this.getMainCardPanel();
+            var index = button.ownerCt.items.indexOf(button);
+            card.layout.setActiveItem( index );
         },
 
         beforeViewportRendered: function( view ) {
