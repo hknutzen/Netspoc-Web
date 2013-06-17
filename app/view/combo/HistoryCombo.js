@@ -1,7 +1,7 @@
 
 
 Ext.define(
-    'PolicyWeb.view.HistoryCombo', {
+    'PolicyWeb.view.combo.HistoryCombo', {
         extend         : 'Ext.form.field.ComboBox',
         alias          : 'widget.historycombo',
         store          : 'History',

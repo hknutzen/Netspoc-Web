@@ -1,7 +1,7 @@
 
 
 Ext.define(
-    'PolicyWeb.view.OwnerCombo', {
+    'PolicyWeb.view.combo.OwnerCombo', {
         extend         : 'Ext.form.field.ComboBox',
         alias          : 'widget.ownercombo',
         store          : 'AllOwners',

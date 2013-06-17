@@ -103,7 +103,7 @@ Ext.define(
             // Ask user to select one owner.
             else {
                 var combo = Ext.create(
-                    'PolicyWeb.view.OwnerCombo'
+                    'PolicyWeb.view.combo.OwnerCombo'
                 );
                 var win = Ext.create(
                     'Ext.window.Window',
