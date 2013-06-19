@@ -86,6 +86,9 @@ Ext.define(
                     'serviceview > grid chooseservice' : {
                         click  : this.onButtonClick
                     },
+                    'serviceview > grid button[text="Suche"]' : {
+                        click  : this.displaySearchWindow
+                    },
                     'print-all-button' : {
                         click  : this.onPrintAllButtonClick
                     },
@@ -125,7 +128,6 @@ Ext.define(
             appstate.addListener(
                 'changed', 
                 function () {
-                    store.getProxy().extraParams.relation = 'user';
                     store.load();
                 },
                 this
@@ -272,17 +274,14 @@ Ext.define(
         },
 
         onButtonClick : function( button, event, eOpts ) {
-            if ( button.text === 'Suche' ) {
-                this.displaySearchWindow();
-                return;
-            }
             var relation = button.relation || '';
             var store    = this.getServiceStore();
             var proxy    = store.getProxy();
             var grid     = this.getServicesGrid();
             // Don't reload store if button clicked on is the one
             // that was already selected.
-            if ( relation && relation === proxy.extraParams.relation ) {
+            if ( button.pressed && relation &&
+                 relation === proxy.extraParams.relation ) {
                 return;
             }
             proxy.extraParams.relation = relation;

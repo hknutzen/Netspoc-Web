@@ -82,18 +82,12 @@ Ext.define(
 
 	onNetworkRouterButtonClick : function( button ) {
             var card_panel = button.findParentByType( 'panel' );
-            var active;
-            var store;
-              if ( button.getText() === 'Netze'  ) {
-                active = card_panel.layout.setActiveItem( 0 );
-                if ( active ) {
-                    active.getStore().load();
-                }
+            if ( button.getText() === 'Netze'  ) {
+                card_panel.layout.setActiveItem( 0 );
+                this.getNetworksStore().load();
             }
             else {
-                active = card_panel.layout.setActiveItem( 1 );
-                store = this.getNetworkResourcesStore();
-                store.removeAll();
+                this.getNetworkResourcesStore().removeAll();
             }
         },
 
