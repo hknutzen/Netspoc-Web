@@ -34,31 +34,17 @@ Ext.define(
                         text         : 'Netze',
                         toggleGroup  : 'netRouterGrp',
                         enableToggle : true,
-                        pressed      : true,
-                        scope        : this,
-                        handler      : function ( button ) {
-                            var cardPanel = button.findParentByType( 'panel' );
-                            cardPanel.layout.setActiveItem( 0 );
-                            var active = cardPanel.layout.activeItem;
-                            active.loadStoreByParams( {} );
-                        }
+                        pressed      : true
                     },
                     {
                         text         : 'Router',
                         toggleGroup  : 'netRouterGrp',
-                        enableToggle : true,
-                        scope        : this,
-                        handler      : function ( button ) {
-                            var cardPanel = button.findParentByType( 'panel' );
-                            cardPanel.layout.setActiveItem( 1 );
-                        }
+                        enableToggle : true
                     },
                     {
                         text         : 'Netzauswahl',
                         toggleGroup  : 'netRouterGrp',
-                        enableToggle : true,
-                        scope        : this,
-                        handler      : this.createAndShowNetworkChooser
+                        enableToggle : true
                     },
                     '->',
                     {
