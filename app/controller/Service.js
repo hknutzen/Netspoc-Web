@@ -63,6 +63,10 @@ Ext.define(
                 ref      : 'searchFormPanel'
             },
             {
+                selector : 'chooseservice[relation="user"]',
+                ref      : 'userServiceButton'
+            },
+            {
                 selector : 'searchwindow > form button',
                 ref      : 'startSearchButton'
             }
@@ -128,6 +132,9 @@ Ext.define(
             appstate.addListener(
                 'changed', 
                 function () {
+                    var button = this.getUserServiceButton();
+                    button.toggle( true );
+                    store.getProxy().extraParams.relation = button.relation;
                     store.load();
                 },
                 this
