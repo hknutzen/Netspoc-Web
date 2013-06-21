@@ -69,7 +69,6 @@ var appstate = (
             
             // month for 'new Date' is counted from 0.
             var pdate = new Date(ymd[0], ymd[1]-1, ymd[2]);
-            //var when = (now.getDayOfYear() === pdate.getDayOfYear()) ?
             var when = (Ext.Date.getDayOfYear(now) === Ext.Date.getDayOfYear(pdate)) ?
                 history.time : history.date;
             var version = history.current ? 'aktuell' : history.policy;
@@ -78,18 +77,3 @@ var appstate = (
         return state;
     }()
 );
-
-/*
-console.log( 'DEF GLOBALS' );
-var app = PolicyWeb.getApplication();
-var mystate = app.appstate;
-console.dir( mystate );
-
-Ext.define(
-    'PolicyWeb.global', {
-        singleton : true,
-        appstate  : appstate
-    }
-);
-
-*/

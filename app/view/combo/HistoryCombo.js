@@ -1,12 +1,11 @@
 
-
 Ext.define(
     'PolicyWeb.view.combo.HistoryCombo', {
         extend         : 'Ext.form.field.ComboBox',
         alias          : 'widget.historycombo',
         store          : 'History',
-        forceSelection : true, 
-        autoselect     : true,
+        forceSelection : false,
+        autoSelect     : true,
         editable       : false,
         allowblank     : false,
         displayField   : undefined,
@@ -14,10 +13,10 @@ Ext.define(
         loadingText    : 'Abfrage l&auml;uft ...',
         mode           : 'remote',
         triggerAction  : 'all',
-        width          : 100,
+        width          : 140,
         listConfig     : {
             minWidth : 200,
-            itemTpl  : '{date} {time} ({policy})'
+            itemTpl  : '{date} {time} ({[ values.current === 1 ? "aktuell" : values.policy ]})'
         }
     }
 );

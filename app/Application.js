@@ -27,9 +27,14 @@ Ext.require( [
                  'PolicyWeb.store.AllOwners',
                  'PolicyWeb.store.AllServices',
                  'PolicyWeb.store.CurrentPolicy',
+                 'PolicyWeb.store.DiffSetMail',
+                 'PolicyWeb.store.DiffGetMail',
                  'PolicyWeb.view.Viewport',
                  'PolicyWeb.view.Service',
                  'PolicyWeb.view.Network',
+                 'PolicyWeb.view.button.ChooseService',
+                 'PolicyWeb.view.button.PrintButton',
+                 'PolicyWeb.view.button.PrintAllButton',
                  'PolicyWeb.view.combo.OwnerCombo',
                  'PolicyWeb.view.combo.HistoryCombo',
                  'PolicyWeb.view.panel.grid.Services',
@@ -41,10 +46,8 @@ Ext.require( [
                  'PolicyWeb.view.panel.grid.Emails',
                  'PolicyWeb.view.panel.card.PrintActive',
                  'PolicyWeb.view.panel.form.ServiceDetails',
-                 'PolicyWeb.view.window.Search',
-                 'PolicyWeb.view.button.ChooseService',
-                 'PolicyWeb.view.button.PrintButton',
-                 'PolicyWeb.view.button.PrintAllButton'
+                 'PolicyWeb.view.tree.Diff',
+                 'PolicyWeb.view.window.Search'
              ]
            );
 
@@ -57,9 +60,10 @@ Ext.application(
 	stores             : [ 'Netspoc', 'NetspocState', 'Service',
                                'Rules', 'Users', 'Emails', 'Owner',
                                'AllOwners', 'AllServices', 'History',
-                               'CurrentPolicy', 'Networks', 'NetworkResources'
+                               'CurrentPolicy', 'Networks', 'NetworkResources',
+                               'DiffGetMail', 'DiffSetMail'
                              ],
-	controllers        : [ 'Main', 'Service', 'Network' ],
+	controllers        : [ 'Main', 'Service', 'Network', 'Diff' ],
 	launch             : function() {
         }
     }

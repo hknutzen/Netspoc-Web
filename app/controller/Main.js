@@ -14,8 +14,12 @@ Ext.define(
                 ref      : 'mainCardPanel'   
             },
             {
-                selector : 'historycombo',
-                ref      : 'historyCombo'   
+                selector : 'mainview historycombo',
+                ref      : 'mainHistoryCombo'   
+            },
+            {
+                selector : 'diffview historycombo',
+                ref      : 'diffHistoryCombo'   
             },
             {
                 selector : 'ownercombo',
@@ -88,6 +92,17 @@ Ext.define(
                     }
                 }
             );
+            store = this.getHistoryStore();
+            store.on( 'load',
+                      function () {
+                          var combo = this.getMainHistoryCombo();
+                          var h = appstate.showHistory();
+                          combo.setValue( h );
+                          combo = this.getDiffHistoryCombo();
+                          combo.setValue( h );
+                      },
+                      this
+                    );
         },
 
         onOwnerLoaded : function(records, options, success) {
@@ -170,7 +185,7 @@ Ext.define(
         },
         
         onPolicySelected : function(  combo, records, eOpts ) {
-            appstate.changeHistory(record);
+            appstate.changeHistory(records[0]);
             combo.setValue(appstate.showHistory());
         },
 
@@ -202,8 +217,7 @@ Ext.define(
             var ownercombo = this.getOwnerCombo();
             ownercombo.setValue( appstate.getOwnerAlias() );
 
-            var historycombo = this.getHistoryCombo();
-            historycombo.setValue( appstate.showHistory() );
+            this.getHistoryStore().load();
         },
             
         onLogout : function() {

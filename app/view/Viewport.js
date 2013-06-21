@@ -22,11 +22,11 @@ Ext.define(
                 border         : false,
                 items          :  [
                     { xtype : 'serviceview' },
-                    { xtype : 'networkview' }
+                    { xtype : 'networkview' },
+                    { xtype : 'diffview'    }
 
                     // Index of items must be the same as
                     // index of buttons in toolbar below.
-                    //{ xtype : 'diffmanager'    },
                     //{ xtype : 'accountmanager' }
                 ],
                 tbar   : [
