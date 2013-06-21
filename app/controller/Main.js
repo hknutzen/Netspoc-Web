@@ -3,7 +3,8 @@ Ext.define(
     'PolicyWeb.controller.Main', {
         extend : 'Ext.app.Controller',
         views  : [ 'Viewport', 'Service', 'Network' ],
-        stores : [ 'Owner', 'AllOwners', 'History', 'CurrentPolicy' ],
+        stores : [ 'Owner', 'AllOwners', 'History',
+                   'CurrentPolicy', 'DiffGetMail' ],
         refs   : [
             {
                 selector : 'mainview',
@@ -217,7 +218,9 @@ Ext.define(
             var ownercombo = this.getOwnerCombo();
             ownercombo.setValue( appstate.getOwnerAlias() );
 
+            // Load stores that need history to be set.
             this.getHistoryStore().load();
+            this.getDiffGetMailStore().load();
         },
             
         onLogout : function() {

@@ -33,8 +33,8 @@ Ext.define(
         },
         
         root : {
-            text: 'Bitte Stand auswählen in "Vergleiche mit".',
-            id: 'none'
+            text : 'Bitte Stand auswählen in "Vergleiche mit".',
+            id   : 'none'
         },
 
         initComponent : function() {

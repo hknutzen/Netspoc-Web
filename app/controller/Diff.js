@@ -19,7 +19,7 @@ Ext.define(
             this.control(
                 {
                     'diffview checkbox': {
-                        check : this.onDiffMailCheck
+                        change : this.onDiffMailCheck
                     }
                 }
             );
@@ -28,32 +28,21 @@ Ext.define(
 	onLaunch : function() {
             var diff_get_store = this.getDiffGetMailStore();
             var diff_set_store = this.getDiffSetMailStore();
-            //FOO
             diff_get_store.on( 'load',
-                      function ( foo, bar, baz ) {
-                          debugger;
-/*
+                      function ( store, records ) {
                           var result = records[0].get('send');
+                          var checkbox = this.getDiffMailCheckbox();
                           checkbox.setValue(result);
-                          checkbox.send_event = true;
-*/
                       },
                       this
                     );
-            //diff_get_store.load();
-            console.dir( diff_get_store.getProxy().extraParams );
         },
 
-        onDiffMailCheck : function( a, b, c) {
-            var checkbox = this.getDiffMailCheckbox();
-            // Don't handle initial event from setValue above.
-            if (! checkbox.send_event ) {
-                return;
-            }
+        onDiffMailCheck : function( checkbox, new_val, old_val ) {
             var store = Ext.create(
                 'PolicyWeb.store.DiffSetMail'
             );
-            store.load({ params : { send : checked } });
+            store.load({ params : { send : new_val } });
         }
     }
 );
