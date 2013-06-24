@@ -29,6 +29,7 @@ Ext.require( [
                  'PolicyWeb.store.CurrentPolicy',
                  'PolicyWeb.store.DiffSetMail',
                  'PolicyWeb.store.DiffGetMail',
+                 'PolicyWeb.store.DiffTree',
                  'PolicyWeb.view.Viewport',
                  'PolicyWeb.view.Service',
                  'PolicyWeb.view.Network',
@@ -61,7 +62,7 @@ Ext.application(
                                'Rules', 'Users', 'Emails', 'Owner',
                                'AllOwners', 'AllServices', 'History',
                                'CurrentPolicy', 'Networks', 'NetworkResources',
-                               'DiffGetMail', 'DiffSetMail'
+                               'DiffGetMail', 'DiffSetMail', 'DiffTree'
                              ],
 	controllers        : [ 'Main', 'Service', 'Network', 'Diff' ],
 	launch             : function() {

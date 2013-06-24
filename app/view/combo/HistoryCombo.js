@@ -16,7 +16,7 @@ Ext.define(
         width          : 140,
         listConfig     : {
             minWidth : 200,
-            itemTpl  : '{date} {time} ({[ values.current === 1 ? "aktuell" : values.policy ]})'
+            itemTpl  : '{date} {time} ({policy})'
         }
     }
 );

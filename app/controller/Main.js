@@ -19,10 +19,6 @@ Ext.define(
                 ref      : 'mainHistoryCombo'   
             },
             {
-                selector : 'diffview historycombo',
-                ref      : 'diffHistoryCombo'   
-            },
-            {
                 selector : 'ownercombo',
                 ref      : 'ownerCombo'   
             }
@@ -42,7 +38,7 @@ Ext.define(
                     'ownercombo' : {
                         select       : this.onOwnerSelected
                     },
-                    'historycombo' : {
+                    'mainview > panel > toolbar > historycombo' : {
                         select       : this.onPolicySelected,
                         beforequery  : function(qe){
                             var combo = qe.combo;
@@ -98,8 +94,6 @@ Ext.define(
                       function () {
                           var combo = this.getMainHistoryCombo();
                           var h = appstate.showHistory();
-                          combo.setValue( h );
-                          combo = this.getDiffHistoryCombo();
                           combo.setValue( h );
                       },
                       this
@@ -221,6 +215,10 @@ Ext.define(
             // Load stores that need history to be set.
             this.getHistoryStore().load();
             this.getDiffGetMailStore().load();
+
+            // FOO -> TEMPORARY
+            var card = this.getMainCardPanel();
+            //card.getLayout().setActiveItem( 3 );
         },
             
         onLogout : function() {
