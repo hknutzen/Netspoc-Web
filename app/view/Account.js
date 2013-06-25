@@ -31,7 +31,6 @@ Ext.define(
                     id          : 'adminEmails',
                     title       : 'Verantwortliche',
                     store       : store,
-                    collapsible : false,
                     border      : true
                 }
             );
@@ -59,7 +58,6 @@ Ext.define(
                     id          : 'supervisorEmails',
                     store       : store,
                     title       : 'Verantwortliche für',
-                    collapsible : false,
                     border      : true,
                     flex        : 1
                 }

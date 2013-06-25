@@ -23,6 +23,9 @@ Ext.define(
                 'PolicyWeb.view.panel.grid.Networks'
             );
             var routerpanel = {
+                padding : 20,
+                border  : false,
+                html    : '<h2> Diese Ansicht wird noch implementiert ... </h2>'
             };
             return {
                 xtype          : 'cardprintactive',

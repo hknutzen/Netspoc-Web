@@ -10,7 +10,6 @@ Ext.define(
         border      : false,
         hideHeaders : true,
         title       : 'Verantwortliche',
-        collapsible : true,
         split       : true,
         height      : 68,
         columns     : [

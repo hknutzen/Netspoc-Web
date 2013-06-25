@@ -87,6 +87,7 @@ Ext.define(
                 this.getNetworksStore().load();
             }
             else {
+                card_panel.layout.setActiveItem( 1 );
                 this.getNetworkResourcesStore().removeAll();
             }
         },

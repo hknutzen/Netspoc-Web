@@ -53,6 +53,7 @@ Ext.require( [
                  'PolicyWeb.view.panel.card.PrintActive',
                  'PolicyWeb.view.panel.form.ServiceDetails',
                  'PolicyWeb.view.tree.Diff',
+                 'PolicyWeb.view.window.ExpandedServices',
                  'PolicyWeb.view.window.Search'
              ]
            );
