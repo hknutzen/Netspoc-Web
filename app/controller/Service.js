@@ -69,6 +69,10 @@ Ext.define(
             {
                 selector : 'searchwindow > form button',
                 ref      : 'startSearchButton'
+            },
+            {
+                selector : 'searchwindow > form checkboxgroup',
+                ref      : 'searchCheckboxGroup'
             }
         ],
 
@@ -105,19 +109,17 @@ Ext.define(
                     'searchwindow > form textfield' : { 
                         specialkey  : this.onSearchWindowSpecialKey
                     },
+                    'searchwindow > form checkbox[name="search_in_all_details"]' : { 
+                        change : this.onSearchDetailsChange
+                    },
+                    'searchwindow > form checkbox[name="search_in_all_services"]' : { 
+                        change : this.onSearchServicesChange
+                    },
                     'serviceview cardprintactive button[toggleGroup=polDVGrp]' : {
                         click  : this.onServiceDetailsButtonClick
                     }                    
                 }
             );
-            // Listen for application-wide events.
-            this.application.on(
-                {
-                    some_event : this.doSth,
-                    scope      : this
-                }
-            );
-
         },
 
         onLaunch : function () {
@@ -410,7 +412,70 @@ Ext.define(
             search_window.show();
         },
 
-        doSth : function( button, event, eOpts ) {
+        onSearchDetailsChange : function( cb, newValue, oldValue, eOpts ) {
+            var cbg = this.getSearchCheckboxGroup();
+            var cb_value = cbg.getValue();
+            if ( newValue === true ) {
+                cbg.setValue(
+                    {
+                        search_own             : cb_value['search_own'],
+                        search_used            : cb_value['search_used'],
+                        search_visible         : cb_value['search_visible'],
+                        search_in_all_services : cb_value['search_in_all_services'],
+                        search_in_rules        : true,
+                        search_in_user         : true,
+                        search_in_desc         : true,
+                        search_in_all_details  : true
+                    }
+                );
+            }
+            else {
+                cbg.setValue(
+                    {
+                        search_own             : cb_value['search_own'],
+                        search_used            : cb_value['search_used'],
+                        search_visible         : cb_value['search_visible'],
+                        search_in_all_services : cb_value['search_in_all_services'],
+                        search_in_rules       : false,
+                        search_in_user        : false,
+                        search_in_desc        : false,
+                        search_in_all_details : false
+                    }
+                );
+            }
+        },
+
+        onSearchServicesChange : function( cb, newValue, oldValue, eOpts ) {
+            var cbg = this.getSearchCheckboxGroup();
+            var cb_value = cbg.getValue();
+            if ( newValue === true ) {
+                cbg.setValue(
+                    {
+                        search_own             : true,
+                        search_used            : true,
+                        search_visible         : true,
+                        search_in_all_services : true,
+                        search_in_rules        : cb_value['search_in_rules'],
+                        search_in_user         : cb_value['search_in_user'],
+                        search_in_desc         : cb_value['search_in_desc'],
+                        search_in_all_details  : cb_value['search_in_all_details']
+                    }
+                );
+            }
+            else {
+                cbg.setValue(
+                    {
+                        search_own             : false,
+                        search_used            : false,
+                        search_visible         : false,
+                        search_in_all_services : false,
+                        search_in_rules        : cb_value['search_in_rules'],
+                        search_in_user         : cb_value['search_in_user'],
+                        search_in_desc         : cb_value['search_in_desc'],
+                        search_in_all_details  : cb_value['search_in_all_details']
+                    }
+                );
+            }
         }
     }
 );

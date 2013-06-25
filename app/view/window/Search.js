@@ -38,7 +38,7 @@ Ext.define(
                 // Fieldset with checkboxgroup to select
                 // in which services should be searched.
                 xtype       : 'fieldset',
-                title       : 'In welchen Diensten suchen?',
+                title       : 'In welchen Diensten und in welchen Dienste-Details suchen?',
                 defaultType : 'textfield',
                 defaults    : { anchor: '100%' },
                 items       : [
@@ -108,7 +108,7 @@ Ext.define(
                         name       : 'search_visible'
                     },
                     {
-                        boxLabel   : 'Alle',
+                        boxLabel   : 'Alle (de-)selektieren',
                         name       : 'search_in_all_services'
                     },
                     {
