@@ -2,7 +2,6 @@
 Ext.define(
     'PolicyWeb.store.DiffTree', {
         extend      : 'Ext.data.TreeStore',
-        //model     : 'PolicyWeb.model.Netspoc',
         alias       : 'store.difftreestore',
         autoLoad    : false,
         // Send  value of 'id' of root node as parameter 'version'.
@@ -15,10 +14,10 @@ Ext.define(
             'users'               : 'Liste der Benutzer (User)'
         },
         rename : function (child) {
-            var txt = child.text;
+            var txt = child.raw.text;
             var out = this.translation[txt];
-            if (out) {
-                child.setText(out);
+            if ( out ) {
+                child.set( 'text', out );
             }
         },
         root            : {

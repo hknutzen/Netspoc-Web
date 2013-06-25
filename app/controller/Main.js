@@ -215,10 +215,6 @@ Ext.define(
             // Load stores that need history to be set.
             this.getHistoryStore().load();
             this.getDiffGetMailStore().load();
-
-            // FOO -> TEMPORARY
-            var card = this.getMainCardPanel();
-            //card.getLayout().setActiveItem( 2 );
         },
             
         onLogout : function() {

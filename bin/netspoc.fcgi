@@ -676,6 +676,7 @@ sub get_diff {
     my $owner = $cgi->param('active_owner');
     my $version = $cgi->param('version') or 
         abort "Missing parameter 'version'";
+    return [] if $version eq 'none';
     my $changed = 
         Policy_Diff::compare($cache, $version, $selected_history, $owner);
     return undef if not $changed;
@@ -699,7 +700,7 @@ sub get_diff {
             $result->{children} = $childs;
         }
         else {
-            $result ->{leaf} = JSON::true;
+            $result->{leaf} = JSON::true;
         }
         return $result;
     };
