@@ -21,13 +21,12 @@ Ext.define(
                 layoutConfig   : { deferredRender : true },
                 border         : false,
                 items          :  [
-                    { xtype : 'serviceview' },
-                    { xtype : 'networkview' },
-                    { xtype : 'diffview'    }
-
                     // Index of items must be the same as
                     // index of buttons in toolbar below.
-                    //{ xtype : 'accountmanager' }
+                    { xtype : 'serviceview' },
+                    { xtype : 'networkview' },
+                    { xtype : 'diffview'    },
+                    { xtype : 'accountview' }
                 ],
                 tbar   : [
                     {

@@ -26,9 +26,9 @@ Ext.define(
             id   : 'none'
         },
         proxy  : {
-            type : 'ajax',
-            noCache: false,
-            url  : 'backend/get_diff'
+            type    : 'ajax',
+            noCache : false,
+            url     : 'backend/get_diff'
         }
     }
 );

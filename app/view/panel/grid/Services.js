@@ -6,7 +6,6 @@ Ext.define(
         alias       : 'widget.servicelist',
         controllers : [ 'Service' ],
         store       : 'Service',
-        forceFit    : true,
         flex        : 2,
         border      : false,
         columns     : {

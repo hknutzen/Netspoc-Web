@@ -218,7 +218,7 @@ Ext.define(
 
             // FOO -> TEMPORARY
             var card = this.getMainCardPanel();
-            //card.getLayout().setActiveItem( 3 );
+            //card.getLayout().setActiveItem( 2 );
         },
             
         onLogout : function() {

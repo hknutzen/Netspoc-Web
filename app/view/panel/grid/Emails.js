@@ -4,9 +4,8 @@ Ext.define(
     {
         extend      : 'PolicyWeb.view.panel.grid.Abstract',
         alias       : 'widget.emaillist',
-        controllers : [ 'Service' ],
+        controllers : [ 'Service', 'Account' ],
         store       : 'Emails',
-        forceFit    : true,
         flex        : 1,
         border      : false,
         hideHeaders : true,
@@ -14,16 +13,13 @@ Ext.define(
         collapsible : true,
         split       : true,
         height      : 68,
-         columns     : [
+        columns     : [
             {
                 dataIndex : 'email'
             }
         ],
         viewConfig : {
             selectedRowClass : 'x-grid3-row-over'
-        },
-        defaults : {
-            menuDisabled : true
         },
         show : function(owner, alias) {
             if (! owner) {

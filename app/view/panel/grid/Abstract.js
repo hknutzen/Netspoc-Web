@@ -13,6 +13,7 @@ Ext.define(
         initComponent : function() {
             Ext.apply(
                 this, {
+                    forceFit    : true,
                     selModel    : this.buildSelModel(),
                     viewConfig  : this.buildViewConfig(),
                     defaults    : this.buildDefaults()
