@@ -112,17 +112,14 @@ Ext.define(
                         name       : 'search_in_all_services'
                     },
                     {
-                        id         : 'cb-rule-id',
                         boxLabel   : 'Regeln der Dienste',
                         name       : 'search_in_rules'
                     },
                     {
-                        id         : 'cb-user-id',
                         boxLabel   : 'Nutzer der Dienste (User)',
                         name       : 'search_in_user'
                     },
                     {
-                        id         : 'cb-desc-id',
                         boxLabel   : 'Dienstbeschreibungen',
                         name       : 'search_in_desc'
                     },
