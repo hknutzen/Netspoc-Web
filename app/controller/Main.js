@@ -29,7 +29,6 @@ Ext.define(
             this.control(
                 {
                     'mainview': {
-                        beforerender : this.beforeViewportRendered,
                         logout       : this.onLogout
                     },
                     'mainview panel button[toggleGroup="navGrp"]': {
@@ -242,13 +241,27 @@ Ext.define(
         },
 
         onNavButtonClick : function( button, event, eOpts ) {
+            this.closeOpenWindows();
             var card  = this.getMainCardPanel();
             var index = button.ownerCt.items.indexOf(button);
             card.layout.setActiveItem( index );
         },
 
-        beforeViewportRendered: function( view ) {
-            //console.log('BEFORE The viewport is rendered');
+        closeOpenWindows : function() {
+            this.closeSearchWindow();
+            this.closePrintWindow();
+        },
+
+        closeSearchWindow : function() {
+            if ( Ext.isObject( search_window ) ) {
+                search_window.close();
+            }
+        },
+
+        closePrintWindow : function() {
+            if ( Ext.isObject( print_window ) ) {
+                print_window.close();
+            }
         }
     }
 );
