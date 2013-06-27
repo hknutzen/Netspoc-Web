@@ -45,9 +45,9 @@ Ext.define(
                         enableToggle : true
                     },
                     {
-                        text         : 'Netzauswahl',
-                        toggleGroup  : 'netRouterGrp',
-                        enableToggle : true
+                        text         : 'Netzauswahl bestätigen',
+                        iconCls      : 'icon-accept',
+                        enableToggle : false
                     },
                     '->',
                     {

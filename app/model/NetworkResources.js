@@ -4,7 +4,8 @@ Ext.define(
     {
         extend : 'PolicyWeb.model.Netspoc',
         fields : [
-            { name     : 'ip',
+            { name     : 'name' },
+            { name     : 'child_ip',
               header   : 'IP-Adresse',
               width    : 0.25,
               sortType : function ( value ) {
@@ -18,9 +19,9 @@ Ext.define(
                   }
               }
             },
-            { name    : 'name',
+            { name    : 'child_name',
               header  : 'Name' },
-            { name    : 'owner', 
+            { name    : 'child_owner', 
               header  : 'Verantwortungsbereich',
               width   : 0.25,
               mapping :  function (node) {

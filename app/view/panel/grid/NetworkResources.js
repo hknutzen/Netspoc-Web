@@ -9,11 +9,19 @@ Ext.define(
         forceFit    : true,
         flex        : 2,
         border      : false,
+        features    : [
+            {
+                groupHeaderTpl    : '{name}',
+                ftype             : 'grouping',
+                hideGroupedHeader : true
+            }
+        ],
         columns     : {
             items : [
-                { text : 'IP-Adresse',            dataIndex : 'ip'    },
-                { text : 'Name',                  dataIndex : 'name'  },
-                { text : 'Verantwortungsbereich', dataIndex : 'owner' }
+                { dataIndex : 'name' },
+                { text : 'IP-Adresse',            dataIndex : 'child_ip'    },
+                { text : 'Name',                  dataIndex : 'child_name'  },
+                { text : 'Verantwortungsbereich', dataIndex : 'child_owner' }
             ]
         }
     }

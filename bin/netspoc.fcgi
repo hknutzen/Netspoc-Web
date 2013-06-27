@@ -227,6 +227,37 @@ sub get_networks {
     return get_nat_obj_list( $network_names, $owner );
 }
 
+sub get_network_resources {
+    my ($cgi, $session) = @_;
+    my $owner    = $cgi->param('active_owner');
+    my $selected = $cgi->param('selected_networks');
+    my $assets   = load_json("owner/$owner/assets");
+    my $data     = [];
+
+    if ( $selected ) {
+	# Untaint: Intersect chosen networks with all networks
+	# within area of ownership.
+	my $network_names = untaint_networks( $selected, $assets );
+
+      SERVICE:
+        for my $net_name ( @{$network_names} ) {
+            my $child_names = $assets->{net2childs}->{$net_name};
+            for my $child ( @{ get_nat_obj_list($child_names, $owner) } ) {
+                
+                push @$data, {
+                    name        => $net_name,
+                    child_ip    => $child->{ip},
+                    child_name  => $child->{name},
+                    child_owner => $child->{owner}
+                };
+            }
+        }
+    }
+    use Data::Dumper;
+    errsay Dumper( $data );
+    return $data;
+}
+
 sub get_hosts {
     my ($cgi, $session) = @_;
     my $net_name = $cgi->param('network') or abort "Missing param 'network'";
@@ -1133,6 +1164,8 @@ my %path2sub =
      get_hosts     => [ \&get_hosts,     { owner => 1, add_success => 1, } ],
      get_services_and_rules => [
 	 \&get_services_and_rules,       { owner => 1, add_success => 1, } ],
+     get_network_resources => [
+	 \&get_network_resources,       { owner => 1, add_success => 1, } ],
      get_services_owners_and_admins => [
 	 \&get_services_owners_and_admins,{ owner => 1, add_success => 1, } ],
      get_diff      => [ \&get_diff,      { owner => 1, } ],

@@ -13,6 +13,10 @@ Ext.define(
                 ref      : 'networksGrid'
             },
             {
+                selector : 'networkview button[iconCls="icon-accept"]',
+                ref      : 'networkConfirmButton'
+            },
+            {
                 selector : 'networkresources',
                 ref      : 'networkResourcesGrid'
             }
@@ -22,11 +26,14 @@ Ext.define(
             
             this.control(
                 {
-                    'networklist': {
-                        select : this.onNetworkSelected
-                    },
                     'networkview button[toggleGroup="netRouterGrp"]': {
-                        click : this.onNetworkRouterButtonClick
+                        click  : this.onNetworkRouterButtonClick
+                    },
+                    'networkview button[iconCls="icon-accept"]': {
+                        click  : this.onConfirmNetworkSelection
+                    },
+                    'networklist': {
+                        selectionchange : this.onSelectionChange
                     }
                 }
             );
@@ -69,15 +76,6 @@ Ext.define(
         },
 
 	onNetworkSelected : function( rowmodel, network, index, eOpts ) {
-            var store = this.getNetworkResourcesStore();
-            if ( network ) {
-                var name = network.get( 'name' );
-                store.getProxy().extraParams.network = name;
-                store.load();
-            }
-            else {
-                store.removeAll();
-            }
         },
 
 	onNetworkRouterButtonClick : function( button ) {
@@ -90,6 +88,79 @@ Ext.define(
                 card_panel.layout.setActiveItem( 1 );
                 this.getNetworkResourcesStore().removeAll();
             }
+        },
+
+        onSelectionChange : function( sm, selected, opts ) {
+            var button = this.getNetworkConfirmButton();
+            if ( button.disabled ) {
+                button.enable();
+            }
+            var store = this.getNetworkResourcesStore();
+            if ( selected ) {
+                var as_csv = function( records ) {
+                    var data = [];
+                    Ext.each( records, function (item) {
+                                  data.push( item.data.name );
+                              }
+                            );
+                    return data.join( ',');
+                };
+                store.getProxy().extraParams.selected_networks = as_csv( selected );
+                store.load();
+            }
+            else {
+                store.removeAll();
+            }
+        },
+
+        onConfirmNetworkSelection : function ( button, event ) {
+            button.disable();
+/*
+            var networks = '';
+            var wnd  = button.findParentByType( 'window' );
+            var grid = wnd.items.items[0];
+            var sm   = grid.getSelectionModel();
+            var sel  = sm.getSelections();
+
+            // Find cardpanel, activate network-list-panel
+            // and make "Netze"-button look pressed.
+            var card = Ext.getCmp("netlistPanelId");
+            var top_card = card.findParentByType( 'panel' );
+            var card_buttons = card.getTopToolbar().findByType( 'button' );
+            var store_count = grid.getStore().getTotalCount();
+            var selection_count = sm.getCount();
+            var nm = card.findParentByType( 'networkmanager' );
+
+            // Selecting all records is to be treated as
+            // if none were selected.
+            if ( selection_count === store_count || selection_count === 0 ) {
+                // Reset button to "Eigene Netze".
+                nm.setOwnNetworksButton( top_card, 'default' );
+            }
+            else if ( selection_count > 0 ) {
+                // Give visual feedback to user to indicate
+                // restricted view within area of ownership.
+                nm.setOwnNetworksButton( top_card );
+                networks = record_names_as_csv( sel );
+            }
+            NetspocManager.appstate.changeNetworks( networks );
+            card.layout.setActiveItem(0);
+            card_buttons[0].toggle( true );
+            wnd.hide();
+*/
+        },
+
+        activateNetworkList : function () {
+            // Find cardpanel, activate network-list-panel
+            // and make "Netze"-button look pressed.
+            var card = Ext.getCmp("netlistPanelId");
+            if(!card.rendered) {
+                return;
+            }
+            card.layout.setActiveItem(0);
+            card.doLayout();
+            var card_buttons = card.getTopToolbar().findByType( 'button' );
+            card_buttons[0].toggle( true );
         },
 
         setOwnNetworksButton : function ( status ) {
