@@ -253,8 +253,6 @@ sub get_network_resources {
             }
         }
     }
-    use Data::Dumper;
-    errsay Dumper( $data );
     return $data;
 }
 
