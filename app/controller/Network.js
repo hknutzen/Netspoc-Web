@@ -33,7 +33,8 @@ Ext.define(
                         click  : this.onConfirmNetworkSelection
                     },
                     'networklist': {
-                        selectionchange : this.onSelectionChange
+                        selectionchange : this.onSelectionChange,
+                        select          : this.onSelect
                     }
                 }
             );
@@ -47,13 +48,6 @@ Ext.define(
                       },
                       this
                     );
-            store = this.getNetworkResourcesStore();
-            store.on( 'load',
-                      function () {
-                          this.getNetworkResourcesGrid().select0();
-                      },
-                      this
-                    );
             appstate.addListener(
                 'ownerChanged', 
                 function () {
@@ -64,18 +58,18 @@ Ext.define(
                     this.setOwnNetworksButton( 'default' );
 
                     // Reload network store.
-                    this.getNetworksStore().load();
+                    store.load();
                 },
                 this
             );
         },
 
 	onBeforeActivate : function() {
-            var store = this.getNetworksStore();
-            store.load();
+            this.getNetworksStore().load();
         },
 
-	onNetworkSelected : function( rowmodel, network, index, eOpts ) {
+	onSelect : function( sm, network ) {
+            this.onSelectionChange( sm, sm.getSelection() );
         },
 
 	onNetworkRouterButtonClick : function( button ) {
