@@ -10,7 +10,7 @@ Ext.define(
         border      : false,
         features    : [
             {
-                groupHeaderTpl    : '{name}',
+                groupHeaderTpl    : 'Dienst: {name} ({[values.children.length]} Regel{[(values.children.length) > 1 ? "n" : ""]})',
                 ftype             : 'grouping',
                 hideGroupedHeader : true
             }

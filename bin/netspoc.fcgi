@@ -250,8 +250,8 @@ sub get_network_resources {
                     child_ip    => $child->{ip},
                     child_name  => $child->{name},
                     child_owner => {
-                        owner => $child->{owner},
-                        alias => $owner2alias->{$child->{owner}}
+                        owner       => $child->{owner},
+                        owner_alias => $owner2alias->{$child->{owner}}
                     }
                 };
             }

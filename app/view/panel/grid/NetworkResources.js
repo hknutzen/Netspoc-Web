@@ -11,19 +11,17 @@ Ext.define(
         border      : false,
         features    : [
             {
-                groupHeaderTpl    : '{name}',
+                groupHeaderTpl    : '{name} ({[values.children.length]} Element{[(values.children.length) > 1 ? "e" : ""]})',
                 ftype             : 'grouping',
                 hideGroupedHeader : true
             }
         ],
-        columns     : {
-            items : [
-                { dataIndex : 'name' },
-                { text : 'IP-Adresse',            dataIndex : 'child_ip'    },
-                { text : 'Name',                  dataIndex : 'child_name'  },
-                { text : 'Verantwortungsbereich', dataIndex : 'child_owner' }
-            ]
-        }
+        columns     : [
+            { dataIndex : 'name' },
+            { text : 'IP-Adresse',            dataIndex : 'child_ip'    },
+            { text : 'Name',                  dataIndex : 'child_name'  },
+            { text : 'Verantwortungsbereich', dataIndex : 'child_owner' }
+        ]
     }
 );
 
