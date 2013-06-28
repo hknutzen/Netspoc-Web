@@ -229,10 +229,11 @@ sub get_networks {
 
 sub get_network_resources {
     my ($cgi, $session) = @_;
-    my $owner    = $cgi->param('active_owner');
-    my $selected = $cgi->param('selected_networks');
-    my $assets   = load_json("owner/$owner/assets");
-    my $data     = [];
+    my $owner       = $cgi->param('active_owner');
+    my $selected    = $cgi->param('selected_networks');
+    my $assets      = load_json("owner/$owner/assets");
+    my $owner2alias = load_json('owner2alias');
+    my $data        = [];
 
     if ( $selected ) {
 	# Untaint: Intersect chosen networks with all networks
@@ -248,7 +249,10 @@ sub get_network_resources {
                     name        => $net_name,
                     child_ip    => $child->{ip},
                     child_name  => $child->{name},
-                    child_owner => $child->{owner}
+                    child_owner => {
+                        owner => $child->{owner},
+                        alias => $owner2alias->{$child->{owner}}
+                    }
                 };
             }
         }
