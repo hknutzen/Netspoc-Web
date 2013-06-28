@@ -214,9 +214,6 @@ Ext.define(
             // Load stores that need history to be set.
             this.getHistoryStore().load();
             this.getDiffGetMailStore().load();
-
-            //FOO
-            this.getMainCardPanel().getLayout().setActiveItem( 1 );
         },
             
         onLogout : function() {
