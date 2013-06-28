@@ -12,18 +12,16 @@ Ext.define(
         selModel    : {
             selType     : 'checkboxmodel',
             mode        : 'MULTI',
-            headerWidth : 16
+            headerWidth : 12
         },
         viewConfig  : {
             loadMask : false
         },
-        columns     : {
-            items : [
-                { text : 'IP-Adresse',            dataIndex : 'ip'    },
-                { text : 'Name',                  dataIndex : 'name'  },
-                { text : 'Verantwortungsbereich', dataIndex : 'owner' }
-            ]
-        },
+        columns     : [
+            { text : 'IP-Adresse',            dataIndex : 'ip'    },
+            { text : 'Name',                  dataIndex : 'name'  },
+            { text : 'Verantwortungsbereich', dataIndex : 'owner' }
+        ],
         printview : function() {
             Ext.ux.grid.Printer.print( this );
         },
