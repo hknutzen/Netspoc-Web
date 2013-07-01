@@ -1203,7 +1203,7 @@ sub handle_request {
             my $result = { success => JSON::false, msg => $msg };
             $res->status(500);
             $res->content_type('text/x-json');
-	    $res->body(encode_json($result), "\n");
+	    $res->body(encode_json($result) . "\n");
 	}
     }
     return $res->finalize;
