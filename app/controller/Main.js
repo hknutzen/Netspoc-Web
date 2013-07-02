@@ -32,7 +32,7 @@ Ext.define(
                         logout       : this.onLogout
                     },
                     'mainview panel button[toggleGroup="navGrp"]': {
-                        click : this.onNavButtonClick
+                        click        : this.onNavButtonClick
                     },
                     'ownercombo' : {
                         select       : this.onOwnerSelected
@@ -60,73 +60,65 @@ Ext.define(
         },
 
 	onLaunch : function() {
-            var store = this.getOwnerStore();
-            store.load(
-                {
-                    scope    : this,
-                    store    : store,
-                    callback : function(records, options, success) {
-                        // Keep already selected owner.
-                        if (success && records.length) {
-                            var owner = records[0].get('name');
-                            var alias = records[0].get('alias');
-                            this.setOwnerState({ name  : owner, 
-                                                 alias : alias });
-                        }
-                        // Owner was never selected, 
-                        // check number of available owners.
-                        else {
-                            var store = this.getAllOwnersStore();
-                            store.load(
-                                { callback : this.onOwnerLoaded,
-                                  autoLoad : true,
-                                  scope    : this,
-                                  store    : store
-                                }
-                            );
-                        }
-                    }
-                }
-            );
-            store = this.getHistoryStore();
-            store.on( 'load',
+            // Determine owner.
+            var store     = this.getOwnerStore();
+            store.on( 'load', this.onOwnerLoaded, this );
+            store.load();
+
+            // History gets loaded later, after owner is set ...
+            var hist_store = this.getHistoryStore();
+            hist_store.on( 'load',
                       function () {
                           var combo = this.getMainHistoryCombo();
-                          var h = appstate.showHistory();
-                          combo.setValue( h );
+                          combo.setValue( appstate.showHistory() );
                       },
                       this
                     );
         },
 
-        onOwnerLoaded : function(records, options, success) {
-            if (! success) {
-                return;
-            }
-            // Automatically select owner if only one is available.
-            if (records.length === 1) {
+        onOwnerLoaded : function(store, records, success) {
+            //debugger;
+            // Keep already selected owner.
+            if (success && records.length) {
                 var owner = records[0].get('name');
                 var alias = records[0].get('alias');
-                this.setOwner(owner, alias);
+                this.setOwnerState({ name  : owner, 
+                                     alias : alias });
             }
-            // Ask user to select one owner.
+            // Owner was never selected, 
+            // check number of available owners.
             else {
-                var combo = Ext.create(
-                    'PolicyWeb.view.combo.OwnerCombo'
-                );
-                var win = Ext.create(
-                    'Ext.window.Window',
-                    {
-                        id          : 'ownerWindow',
-                        title       : 'Verantwortungsbereich ausw&auml;hlen',
-                        width       : 400, 
-                        height      : 80,
-                        layout      : 'fit',
-                        bodyPadding : 10,
-                        items       : [ combo ]
-                    }
-                ).show();
+                var all_owners_store = this.getAllOwnersStore();
+                var all_owners = all_owners_store.getRange();
+                // Automatically select owner if only one is available.
+                if ( all_owners.length === 1 ) {
+                    var owner = all_owners[0].get('name');
+                    var alias = all_owners[0].get('alias');
+                    this.setOwner( owner, alias );
+                }
+                // Ask user to select one owner.
+                else {
+                    this.showSelectOwnerWindow();
+                }
             }
+        },
+
+        showSelectOwnerWindow : function() {
+            var combo = Ext.create(
+                'PolicyWeb.view.combo.OwnerCombo'
+            );
+            var win = Ext.create(
+                'Ext.window.Window',
+                {
+                    id          : 'ownerWindow',
+                    title       : 'Verantwortungsbereich ausw&auml;hlen',
+                    width       : 400, 
+                    height      : 80,
+                    layout      : 'fit',
+                    bodyPadding : 10,
+                    items       : [ combo ]
+                }
+            ).show();
         },
 
         setOwner : function(owner, alias) {
