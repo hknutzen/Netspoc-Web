@@ -6,8 +6,8 @@ Ext.define(
         alias       : 'widget.servicelist',
         controllers : [ 'Service' ],
         store       : 'Service',
-        flex        : 2,
         border      : false,
+        width       : 310,
         columns     : {
             items : [
                 { text : 'Dienstname',  dataIndex : 'name' }
