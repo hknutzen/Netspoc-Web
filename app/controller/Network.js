@@ -65,7 +65,13 @@ Ext.define(
         },
 
 	onBeforeActivate : function() {
-            this.getNetworksStore().load();
+            this.getNetworksStore().load(
+                {
+                    params : {
+                        chosen_networks : ''
+                    }
+                }
+            );
         },
 
 	onSelect : function( sm, network ) {
@@ -76,7 +82,13 @@ Ext.define(
             var card_panel = button.findParentByType( 'panel' );
             if ( button.getText() === 'Netze'  ) {
                 card_panel.layout.setActiveItem( 0 );
-                this.getNetworksStore().load();
+                this.getNetworksStore().load(
+                    {
+                        params : {
+                            chosen_networks : ''
+                        }
+                    }
+                );
             }
             else {
                 card_panel.layout.setActiveItem( 1 );

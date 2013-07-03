@@ -61,7 +61,7 @@ Ext.define(
 
 	onLaunch : function() {
             // Determine owner.
-            var store     = this.getOwnerStore();
+            var store = this.getOwnerStore();
             store.on( 'load', this.onOwnerLoaded, this );
             store.load();
 
@@ -77,7 +77,6 @@ Ext.define(
         },
 
         onOwnerLoaded : function(store, records, success) {
-            //debugger;
             // Keep already selected owner.
             if (success && records.length) {
                 var owner = records[0].get('name');
@@ -153,19 +152,15 @@ Ext.define(
             }
             this.setOwnerState(owner_obj);
         },
-        setOwnerState : function(owner_obj) {
-            // Call appstate.changeOwner later, after history has been set.
-            this.getCurrentPolicy(owner_obj);            
-        },
 
-        getCurrentPolicy : function(owner_obj) {
+        setOwnerState : function(owner_obj) {
             var store = this.getCurrentPolicyStore();
             store.load(
-                { scope    : this,
-                  // Make store and owner available for callback.
-                  store    : store, 
-                  owner    : owner_obj,
-                  callback : this.onPolicyLoaded
+                {
+                    scope    : this,
+                    owner    : owner_obj,
+                    store    : store,
+                    callback : this.onPolicyLoaded
                 }
             );
         },
@@ -189,16 +184,14 @@ Ext.define(
             this.setOwner(owner, alias);
         },
         
-        onPolicyLoaded : function(records, options, success) {
-            var owner_ob = options.owner;
-            var record;
+        onPolicyLoaded : function( records, operation, success ) {
+            var owner_ob = operation.owner;
             if (success && records.length) {
-                record = records[0];
                 // Don't fire change event.
-                appstate.changeHistory(record, true);
+                appstate.changeHistory(records[0], true);
             }
             appstate.changeOwner(owner_ob.name, owner_ob.alias);
-            options.store.destroy();
+            operation.store.destroy();
 
             var ownercombo = this.getOwnerCombo();
             ownercombo.setValue( appstate.getOwnerAlias() );
