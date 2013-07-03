@@ -42,12 +42,8 @@ Ext.define(
 
 	onLaunch : function() {
             var store = this.getNetworksStore();
-            store.on( 'load',
-                      function () {
-                          this.getNetworksGrid().select0();
-                      },
-                      this
-                    );
+            store.on( 'load', this.preSelect, this );
+
             appstate.addListener(
                 'ownerChanged', 
                 function () {
@@ -72,6 +68,30 @@ Ext.define(
                     }
                 }
             );
+            
+        },
+
+        preSelect : function () {
+            var grid = this.getNetworksGrid();
+            var networks_csv = appstate.getNetworks();
+            var net_hash = {};
+            if ( networks_csv === '' ) {
+                grid.select0();
+            }
+            else {
+                Ext.each(
+                    networks_csv.split(','),
+                    function( key ) {
+                        net_hash[key] = 1;
+                    }
+                );
+                var net_filter = function(item) {
+                    return net_hash[item.get('name')] === 1;
+                };
+                var all_records = grid.getStore().getRange();
+                var records = all_records.filter( net_filter );
+                grid.getSelectionModel().select( records );
+            }
         },
 
 	onSelect : function( sm, network ) {
