@@ -45,17 +45,13 @@ Ext.define(
             store.on( 'load', this.preSelect, this );
 
             appstate.addListener(
-                'changed', 
-                function () {
-                    // Reset possibly previously chosen networks.
-                    appstate.changeNetworks( '' );
-
-                    // Reset "Eigene Netze"-button to default.
-                    this.setOwnNetworksButton( 'default' );
-
-                    // Reload network store.
-                    store.load();
-                },
+                'ownerChanged', 
+                this.resetNetworks,
+                this
+            );
+            appstate.addListener(
+                'historyChanged', 
+                this.resetNetworks,
                 this
             );
         },
@@ -69,6 +65,17 @@ Ext.define(
                 }
             );
             
+        },
+
+        resetNetworks : function () {
+            // Reset possibly previously chosen networks.
+            appstate.changeNetworks( '' );
+            
+            // Reset "Eigene Netze"-button to default.
+            this.setOwnNetworksButton( 'default' );
+            
+            // Reload network store.
+            this.getNetworksStore().load();
         },
 
         preSelect : function () {

@@ -7,7 +7,7 @@ var appstate = (
         var networks    = '';
         var state = Ext.create( 'Ext.util.Observable' );
         state.addEvents('changed', 'ownerChanged',
-                        'networksChanged');
+                        'historyChanged', 'networksChanged');
         state.changeOwner = function (name, alias, silent) {
             owner_alias = alias;
             if (name !== owner) {
@@ -29,6 +29,7 @@ var appstate = (
                 history = data;
                 if (! silent) {
                     state.fireEvent('changed');
+                    state.fireEvent('historyChanged');
                 }
             }
         };
