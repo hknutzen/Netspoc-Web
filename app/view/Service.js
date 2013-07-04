@@ -69,7 +69,10 @@ Ext.define(
                             boxLabel : 'Namen statt IPs'
                         },
                         '->',
-                        { xtype : 'printbutton' }
+                        {
+                            xtype   : 'printbutton',
+                            tooltip : 'Druckansicht für Regeln oder User des aktuell ausgewählten Dienstes'
+                        }
                     ],
                     items : [
                         details,

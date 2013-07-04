@@ -51,7 +51,8 @@ Ext.define(
                     },
                     '->',
                     {
-                        xtype : 'printbutton'
+                        xtype   : 'printbutton',
+                        tooltip : 'Druckansicht für die Liste der eigenen Netze'
                     }
                 ],
                 items     : [
@@ -79,7 +80,8 @@ Ext.define(
                     },
                     '->',
                     {
-                        xtype : 'printbutton'
+                        xtype   : 'printbutton',
+                        tooltip : 'Druckansicht für die Ressourcen der aktuell selektierten Netze'
                     }
                 ],
                 items : [

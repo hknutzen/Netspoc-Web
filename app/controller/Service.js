@@ -360,7 +360,6 @@ Ext.define(
             Ext.each(
                 checkboxes, 
                 function(cb) {
-                    //FOO
                     cb.isDisabled() ? cb.enable() : cb.disable();
                 }
             );
