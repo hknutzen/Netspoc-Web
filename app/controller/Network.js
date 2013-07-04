@@ -45,7 +45,7 @@ Ext.define(
             store.on( 'load', this.preSelect, this );
 
             appstate.addListener(
-                'ownerChanged', 
+                'changed', 
                 function () {
                     // Reset possibly previously chosen networks.
                     appstate.changeNetworks( '' );
