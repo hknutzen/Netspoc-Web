@@ -82,11 +82,11 @@ Ext.define(
                 Ext.each(
                     networks_csv.split(','),
                     function( key ) {
-                        net_hash[key] = 1;
+                        net_hash[key] = true;
                     }
                 );
                 var net_filter = function(item) {
-                    return net_hash[item.get('name')] === 1;
+                    return net_hash[item.get('name')];
                 };
                 var all_records = grid.getStore().getRange();
                 var records = all_records.filter( net_filter );
