@@ -330,15 +330,40 @@ Ext.define(
         },
         
         onServiceDetailsButtonClick : function( button, event, eOpts ) {
+            // We have two buttons: "Details zum Dienst"
+            // and "Benutzer (User) des Dienstes".
+            // index: 0 = service details
+            //        1 = vertical separator
+            //        2 = service User
             var card  = this.getDetailsAndUserView();
             var index = button.ownerCt.items.indexOf(button);
+            var active_idx = card.items.indexOf( card.layout.activeItem );
             if ( index === 2 ) {
+                // This is necessary because the vertical separator
+                // between the two buttons has an index, too.
                 index = index - 1;
             }
             else {
                 this.onTriggerClick();
             }
+            if ( index === active_idx ) {
+                button.toggle();
+                return;
+            }
+            this.toggleCheckboxEnabled();
             card.layout.setActiveItem( index );
+        },
+
+        toggleCheckboxEnabled : function() {
+            var view       = this.getServiceView();
+            var checkboxes = view.query('checkbox');
+            Ext.each(
+                checkboxes, 
+                function(cb) {
+                    //FOO
+                    cb.isDisabled() ? cb.enable() : cb.disable();
+                }
+            );
         },
 
         onUserDetailsSelected : function( rowmodel, user_item ) {
