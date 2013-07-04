@@ -134,9 +134,6 @@ Ext.define(
             appstate.addListener(
                 'changed', 
                 function () {
-                    var button = this.getUserServiceButton();
-                    button.toggle( true );
-                    store.getProxy().extraParams.relation = button.relation;
                     store.load();
                 },
                 this

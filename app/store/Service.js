@@ -12,7 +12,7 @@ Ext.define(
                 direction : 'ASC'
             }
         ],
-        proxy       : {
+        proxy    : {
             type     : 'policyweb',
             proxyurl : 'service_list'
         }
