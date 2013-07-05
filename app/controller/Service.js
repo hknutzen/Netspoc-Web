@@ -127,7 +127,12 @@ Ext.define(
             var store = this.getServiceStore();
             store.on( 'load',
                       function () {
-                          this.getServicesGrid().select0();
+                          if ( store.getCount() === 0 ) {
+                              this.clearDetails();
+                          }
+                          else {
+                              this.getServicesGrid().select0();
+                          }
                       },
                       this
                     );
