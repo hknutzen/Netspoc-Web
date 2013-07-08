@@ -698,8 +698,9 @@ sub get_diff {
 
 sub get_diff_mail {
     my ($req, $session) = @_;
-    my $owner = $req->param('active_owner');
     my $email = $session->param('email');
+    return([{ send => JSON::false }]) if $email eq 'guest';
+    my $owner = $req->param('active_owner');
     my $store = User_Store::new($config, $email);
     my $aref  = $store->param('send_diff') || [];
     return([{ send => 
@@ -710,10 +711,11 @@ sub get_diff_mail {
 
 sub set_diff_mail {
     my ($req, $session) = @_;
+    my $email = $session->param('email');
+    abort("Can't send diff for user 'guest'") if $email eq 'guest';
     validate_owner($req, $session, 1);
     my $owner = $req->param('active_owner');
     my $send  = $req->param('send');
-    my $email = $session->param('email');
     my $store = User_Store::new($config, $email);
     my $aref = $store->param('send_diff') || [];
     my $changed;
@@ -914,6 +916,7 @@ sub check_password  {
 sub register {
     my ($req, $session) = @_;
     my $email = $req->param('email') or abort "Missing param 'email'";
+    abort("Can't set password for 'guest'") if $email eq 'guest';
     $email = lc $email;
     my $email2owners = load_json("email");
     $email2owners->{$email} or abort "Email address is not authorized";
@@ -1007,14 +1010,18 @@ sub login {
     $email = lc $email;
     my $email2owners = load_json("email");
     $email2owners->{$email} or abort "Email address is not authorized";
-    my $pass = $req->param('pass') or abort "Missing param 'pass'";
     my $app_url = $req->param('app') or abort "Missing param 'app'";
-    check_attack($email);
-    if (not check_password($email, $pass)) {
-	set_attack($email);
-	abort "Login failed";
+
+    # User 'guest' needs no password.
+    if ($email ne 'guest') {
+        my $pass = $req->param('pass') or abort "Missing param 'pass'";
+        check_attack($email);
+        if (not check_password($email, $pass)) {
+            set_attack($email);
+            abort "Login failed";
+        }
+        clear_attack($email);
     }
-    clear_attack($email);
     $session->param('email', $email);
     $session->clear('user');		# Remove old, now unused param.
     $session->expire('logged_in', '60m');
