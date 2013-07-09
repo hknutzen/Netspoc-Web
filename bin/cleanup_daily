@@ -60,7 +60,7 @@ for f in p* ; do
     esac
 done
 
-if [ -n $prev_date ] ; then
+if [ -n "$prev_date" ] ; then
     curr_date=$(rlog -zLT RCS/POLICY,v |grep date:|head -1|cut -d ' ' -f 2)
 
     # Send diff per mail
