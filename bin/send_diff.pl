@@ -14,16 +14,14 @@ use Policy_Diff;
 
 # Argument processing
 sub usage {
-    die "Usage: $0 CONFIG yyyy-mm-dd yyyy-mm-dd|pxxx\n";
+    die "Usage: $0 yyyy-mm-dd yyyy-mm-dd|pxxx\n";
 }
 
-# Configuration data.
-my $conf_file = shift @ARGV or usage();
 my $old_ver = shift @ARGV or usage();
 my $new_ver = shift @ARGV or usage();
 @ARGV and usage();
 
-my $config = Load_Config::load($conf_file);
+my $config = Load_Config::load();
 my $path = $config->{netspoc_data};
 
 # Cache holding JSON data.

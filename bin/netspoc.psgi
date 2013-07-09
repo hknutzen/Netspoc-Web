@@ -25,8 +25,6 @@ use JSON_Cache;
 use Policy_Diff;
 
 
-my $conf_file = glob('~/policyweb.conf');
-
 sub abort {
     my ($msg) = @_;
     die "$msg\n";
@@ -1216,7 +1214,7 @@ sub handle_request {
 # Start server
 ####################################################################
 
-$config = Load_Config::load($conf_file);
+$config = Load_Config::load();
 $cache = JSON_Cache->new(netspoc_data => $config->{netspoc_data},
 			 max_versions => 8);
 
