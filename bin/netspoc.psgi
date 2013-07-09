@@ -25,10 +25,6 @@ use JSON_Cache;
 use Policy_Diff;
 
 
-sub usage {
-    die "Usage: $0 CONFIG [:PORT | 0 [#PROC]]\n";
-}
-
 my $conf_file = glob('~/policyweb.conf');
 
 sub abort {
