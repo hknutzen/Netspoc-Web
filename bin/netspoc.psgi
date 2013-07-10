@@ -1105,11 +1105,11 @@ my %path2sub =
      set_diff_mail => [ \&set_diff_mail, { owner => 1, add_success => 1, } ],
       ); 
 
-# Change 'param' method of Plack::Response.
+# Change 'param' method of Plack::Request.
 # Convert UTF-8 bytes to Perl characters in values.
 {
-    package UTF8::Plack::Response;
-    use base "Plack::Response";
+    package UTF8::Plack::Request;
+    use base "Plack::Request";
 
     sub param {
         my ($self, @arg) = @_;
@@ -1120,9 +1120,9 @@ my %path2sub =
 
 sub handle_request {
     my ($env) = @_;
-    my $req = Plack::Request->new($env);
+    my $req = UTF8::Plack::Request->new($env);
     my $flags = { html => 1};
-    my $res = UTF8::Plack::Response->new(200);
+    my $res = Plack::Response->new(200);
     $res->header('Charset' => 'utf-8');
 
     # Catch errors.
