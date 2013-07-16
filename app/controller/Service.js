@@ -1,13 +1,13 @@
 var search_window;
 var print_window;
 var cb_params_key2val = {
-    display_property : {
-        true  : 'name',
-        false : 'ip'
+    'display_property' : {
+        'true'  : 'name',
+        'false' : 'ip'
     },
-    expand_users : {
-        true  : 1,
-        false : 0
+    'expand_users' : {
+        'true'  : 1,
+        'false' : 0
     }
 };
 
