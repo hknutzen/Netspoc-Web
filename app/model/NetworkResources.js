@@ -25,7 +25,7 @@ Ext.define(
               header  : 'Verantwortungsbereich',
               width   : 0.25,
               mapping :  function (node) {
-                  return node.owner_alias || node.owner;
+                  return node.child_owner.owner_alias || node.child_owner.owner;
               }
             }
         ]
