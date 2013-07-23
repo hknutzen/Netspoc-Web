@@ -73,7 +73,43 @@ Ext.application(
                              ],
 	controllers        : [ 'Main', 'Service', 'Network',
                                'Diff', 'Account' ],
-	launch             : function() {
+
+	launch : function() {
+            Ext.Ajax.on( 'requestexception', this.onJsonException );
+        },
+        
+        onJsonException : function(connection, response, options, eOpts) {
+            Ext.getBody().unmask();
+            var msg, jsonData;
+            try {
+                jsonData = Ext.decode( response.responseText );
+                msg = jsonData.msg;
+                if ( !msg ) {
+                    if ( options ) {
+                        console.dir( options );
+                    }
+                }
+            }
+            catch (e) {
+                msg = response.statusText;
+            }
+            msg = msg || 'Unbekannter Fehler (keine Meldung)';
+            if (msg == 'Login required') {
+                Ext.MessageBox.show(
+                    { title   : 'Sitzung abgelaufen', 
+                      msg     : 'Neu anmelden',
+                      buttons : Ext.MessageBox.OKCANCEL,
+                      icon    : Ext.MessageBox.WARNING
+                    });
+            }
+            else {
+                Ext.MessageBox.show(
+                    { title   : 'Fehler', 
+                      msg     : msg,
+                      buttons : Ext.MessageBox.OK,
+                      icon    : Ext.MessageBox.ERROR
+                    });
+            }
         }
     }
 );

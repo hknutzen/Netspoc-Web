@@ -31,6 +31,9 @@ Ext.define(
                     'mainview': {
                         logout       : this.onLogout
                     },
+                    'messagebox[title="Sitzung abgelaufen"] button': {
+                        click        : this.onSessionTimeout
+                    },
                     'mainview panel button[toggleGroup="navGrp"]': {
                         click        : this.onNavButtonClick
                     },
@@ -57,6 +60,12 @@ Ext.define(
                 }
 */
             );
+        },
+
+	onSessionTimeout : function( button, event ) {
+            if ( button.getText() === 'OK' ) {
+                this.onLogout();
+            }
         },
 
 	onLaunch : function() {
