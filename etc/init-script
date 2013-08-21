@@ -1,15 +1,20 @@
 #!/bin/sh
-CONFIG=/home/heinz/netspoc-web/config
-BASE=/home/heinz/NetspocWeb/bin
-PORT=8080
-WORKER=2
-USER=
-PIDFILE=/var/run/netspocweb/fcgi.pid
-CMD="$BASE/start_fcgi --pid $PIDFILE :$PORT $BASE/netspoc.fcgi $CONFIG 0 $WORKER"
+BASE=/home/netspocweb/NetspocWeb/bin
+IP=127.0.0.1
+PORT=5000
+WORKER=5
+USER=netspocweb
+PIDFILE=/var/run/netspocweb/netspoc.pid
 
 case $1 in
   start)
-	if [ $USER ] ; then su - $USER -c "$CMD"; else $CMD; fi
+        starman \
+            -l $IP:$PORT \
+            -D \
+            --pid $PIDFILE \
+            --workers $WORKER \
+            --user $USER \
+            $BASE/netspoc.psgi
 	;;
   reload)
 	kill -HUP $(cat $PIDFILE)
