@@ -46,6 +46,7 @@ Ext.define(
             appstate.addListener(
                 'changed', 
                 function () {
+                    if ( appstate.getInitPhase() ) { return; };
                     this.onBeforeActivate();
                 },
                 this

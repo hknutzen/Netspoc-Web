@@ -68,7 +68,8 @@ Ext.define(
             }
         },
 
-	onLaunch : function() {
+	onLaunch : function() {   
+             appstate.setInitPhase( true );
             // Determine owner.
             var store = this.getOwnerStore();
             store.on( 'load', this.onOwnerLoaded, this );
@@ -201,13 +202,15 @@ Ext.define(
             }
             appstate.changeOwner(owner_ob.name, owner_ob.alias);
             operation.store.destroy();
+            
+            appstate.setInitPhase( false );
 
             var ownercombo = this.getOwnerCombo();
             ownercombo.setValue( appstate.getOwnerAlias() );
 
             // Load stores that need history to be set.
             this.getHistoryStore().load();
-            this.getDiffGetMailStore().load();
+            //this.getDiffGetMailStore().load();
         },
             
         onLogout : function() {

@@ -29,6 +29,9 @@ Ext.define(
                     'diffview checkbox': {
                         change : this.onDiffMailChange
                     },
+                    'diffview' : {
+                        beforeactivate : this.onBeforeActivate
+                    },
                     'diffview historycombo': {
                         beforequery : this.onBeforeQuery,
                         select      : this.onSelectDiffPolicy
@@ -73,6 +76,7 @@ Ext.define(
             appstate.addListener(
                 'changed', 
                 function () {
+                    if ( appstate.getInitPhase() ) { return; };
                     var tree  = this.getDiffView();
                     var combo = this.getDiffHistoryCombo();
                     var node;
@@ -89,6 +93,10 @@ Ext.define(
                 },
                 this
             );
+        },
+
+	onBeforeActivate : function() {
+            this.getDiffGetMailStore().load();
         },
 
         onSelectDiffPolicy : function( combo, records ) {

@@ -32,6 +32,9 @@ Ext.define(
                     'networkview button[iconCls="icon-accept"]': {
                         click  : this.onConfirmNetworkSelection
                     },
+                    'networkview' : {
+                        beforeactivate : this.onBeforeActivate
+                    },
                     'networklist': {
                         selectionchange : this.onSelectionChange,
                         select          : this.onSelect
@@ -68,6 +71,8 @@ Ext.define(
         },
 
         resetNetworks : function () {
+            if ( appstate.getInitPhase() ) { return; };
+
             // Reset possibly previously chosen networks.
             appstate.changeNetworks( '' );
             

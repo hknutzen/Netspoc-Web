@@ -5,9 +5,16 @@ var appstate = (
         var owner_alias = '';
         var history     = '';
         var networks    = '';
+        var init_phase  = true;
         var state = Ext.create( 'Ext.util.Observable' );
         state.addEvents('changed', 'ownerChanged',
                         'historyChanged', 'networksChanged');
+        state.setInitPhase = function ( bool ) {
+            init_phase = bool;
+        };
+        state.getInitPhase = function () {
+            return init_phase;
+        };
         state.changeOwner = function (name, alias, silent) {
             owner_alias = alias;
             if (name !== owner) {
