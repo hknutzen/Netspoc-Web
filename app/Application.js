@@ -95,6 +95,10 @@ Ext.application(
             }
             msg = msg || 'Unbekannter Fehler (keine Meldung)';
             if (msg == 'Login required') {
+                var window = Ext.getCmp( 'ownerWindow' );
+                if (window) {
+                    window.close();
+                }
                 Ext.MessageBox.show(
                     { title   : 'Sitzung abgelaufen', 
                       msg     : 'Neu anmelden',
