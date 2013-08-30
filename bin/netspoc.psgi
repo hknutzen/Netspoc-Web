@@ -359,8 +359,8 @@ sub service_list {
         $relevant_objects =
             relevant_objects_for_networks( $network_names, $assets );
 
-      SERVICE:
-	for my $pname (sort map { @$_ } @{$lists}{qw(owner user)}) {
+      USER_SERVICE:
+	for my $pname ( sort @{$lists->{user}} ) {
 
             # Check if network or any of its contained resources
             # is user of current service.
@@ -370,10 +370,13 @@ sub service_list {
                 for my $user ( @$users ) {
                     if ($relevant_objects->{$user->{name}}) {
                         push @{$copy->{user}}, $pname;
-                        next SERVICE;
+                        next USER_SERVICE;
                     }
                 }
             }
+        }
+      OWNER_SERVICE:
+	for my $pname ( sort @{$lists->{owner}} ) {
 
             # Check src and dst for own services.
             if ($search_own || !$relation || $relation eq 'owner') {
@@ -382,7 +385,7 @@ sub service_list {
 			for my $obj (@{ $rule->{$what} }) {
 			    if ($relevant_objects->{$obj}) {
 				push @{$copy->{owner}}, $pname;
-				next SERVICE;
+				next OWNER_SERVICE;
 			    }
 			} 
 		    }
