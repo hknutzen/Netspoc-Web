@@ -83,6 +83,9 @@ Ext.define(
         init : function() {
             this.control(
                 {
+                    'serviceview' : {
+                        beforeactivate : this.onBeforeActivate
+                    },
                     'serviceview > servicelist' : {
                         select : this.onServiceSelected
                     },
@@ -163,6 +166,7 @@ Ext.define(
         },
         
 	onBeforeActivate : function() {
+            if ( appstate.getInitPhase() ) { return; };
             this.getServiceStore().load();
         },
 

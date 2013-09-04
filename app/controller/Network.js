@@ -66,7 +66,6 @@ Ext.define(
                     }
                 }
             );
-            
         },
 
         resetNetworks : function () {
