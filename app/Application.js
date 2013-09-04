@@ -76,6 +76,16 @@ Ext.application(
 
 	launch : function() {
             Ext.Ajax.on( 'requestexception', this.onJsonException );
+
+            Ext.override(
+                Ext.layout.CardLayout,
+                {
+                    getActiveItemIndex: function() {
+                        return this.owner.items.indexOf(
+                            this.getActiveItem() );
+                    }
+                }
+            );
         },
         
         onJsonException : function(connection, response, options, eOpts) {

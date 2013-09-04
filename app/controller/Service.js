@@ -19,6 +19,10 @@ Ext.define(
         stores : [ 'Service', 'AllServices', 'Rules', 'Users' ],
         refs   : [
             {
+                selector : 'mainview > panel',
+                ref      : 'mainCardPanel'
+            },
+            {
                 selector : 'servicelist',
                 ref      : 'servicesGrid'
             },
@@ -139,7 +143,11 @@ Ext.define(
             appstate.addListener(
                 'changed', 
                 function () {
-                    store.load();
+                    var cardpanel = this.getMainCardPanel();
+                    var index = cardpanel.getLayout().getActiveItemIndex();
+                    if ( index === 0 ) {
+                        this.onBeforeActivate();
+                    }
                 },
                 this
             );
@@ -154,6 +162,10 @@ Ext.define(
 
         },
         
+	onBeforeActivate : function() {
+            this.getServiceStore().load();
+        },
+
         onServiceSelected : function( rowmodel, service, index, eOpts ) {
             // Load details, rules and emails of owners
             // for selected service.

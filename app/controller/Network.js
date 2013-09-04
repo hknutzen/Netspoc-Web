@@ -79,8 +79,13 @@ Ext.define(
             // Reset "Eigene Netze"-button to default.
             this.setOwnNetworksButton( 'default' );
             
-            // Reload network store.
-            this.getNetworksStore().load();
+            // Reload network store, but only if network
+            // tab is currently active.
+            var cardpanel = this.getMainCardPanel();
+            var index = cardpanel.getLayout().getActiveItemIndex();
+            if ( index === 1 ) {
+                this.getNetworksStore().load();
+            }
         },
 
         preSelect : function () {

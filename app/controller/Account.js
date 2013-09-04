@@ -5,6 +5,10 @@ Ext.define(
         stores : [ 'Watchers', 'Emails', 'Supervisors' ],
         refs   : [
             {
+                selector : 'mainview > panel',
+                ref      : 'mainCardPanel'
+            },
+            {
                 selector : 'watcherlist',
                 ref      : 'watchersGrid'
             },
@@ -47,7 +51,11 @@ Ext.define(
                 'changed', 
                 function () {
                     if ( appstate.getInitPhase() ) { return; };
-                    this.onBeforeActivate();
+                    var cardpanel = this.getMainCardPanel();
+                    var index = cardpanel.getLayout().getActiveItemIndex();
+                    if ( index === 3 ) {
+                        this.onBeforeActivate();
+                    }
                 },
                 this
             );

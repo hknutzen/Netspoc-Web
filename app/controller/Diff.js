@@ -5,6 +5,10 @@ Ext.define(
         stores : [ 'DiffGetMail', 'DiffTree' ],
         refs   : [
             {
+                selector : 'mainview > panel',
+                ref      : 'mainCardPanel'
+            },
+            {
                 selector : 'diffview',
                 ref      : 'diffView'
             },
@@ -77,25 +81,29 @@ Ext.define(
                 'changed', 
                 function () {
                     if ( appstate.getInitPhase() ) { return; };
-                    var tree  = this.getDiffView();
-                    var combo = this.getDiffHistoryCombo();
-                    var node;
-                    if (! tree.rendered) {
-                        return;
+                    var cardpanel = this.getMainCardPanel();
+                    var index = cardpanel.getLayout().getActiveItemIndex();
+                    if ( index === 2 ) {
+                        this.onBeforeActivate();
                     }
-                    node = tree.getRootNode();
-                    // Only direct childs, no animation.
-                    node.collapse(false, false);
-                    node.set( 'text', 'Bitte Stand auswählen in "Vergleiche mit".' );
-                    node.setId('none');
-                    combo.setValue('');
-                    this.getDiffGetMailStore().load();
                 },
                 this
             );
         },
 
 	onBeforeActivate : function() {
+            var tree  = this.getDiffView();
+            var combo = this.getDiffHistoryCombo();
+            var node;
+            if (! tree.rendered) {
+                return;
+            }
+            node = tree.getRootNode();
+            // Only direct childs, no animation.
+            node.collapse(false, false);
+            node.set( 'text', 'Bitte Stand auswählen in "Vergleiche mit".' );
+            node.setId('none');
+            combo.setValue('');
             this.getDiffGetMailStore().load();
         },
 
