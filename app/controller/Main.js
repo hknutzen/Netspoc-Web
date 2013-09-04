@@ -4,7 +4,9 @@ Ext.define(
         extend : 'Ext.app.Controller',
         views  : [ 'Viewport', 'Service', 'Network' ],
         stores : [ 'Owner', 'AllOwners', 'History',
-                   'CurrentPolicy', 'DiffGetMail' ],
+                   'CurrentPolicy', 'DiffGetMail',
+                   'Service'
+                 ],
         refs   : [
             {
                 selector : 'mainview',
@@ -210,7 +212,7 @@ Ext.define(
 
             // Load stores that need history to be set.
             this.getHistoryStore().load();
-            //this.getDiffGetMailStore().load();
+            this.getServiceStore().load();
         },
             
         onLogout : function() {

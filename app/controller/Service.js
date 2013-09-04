@@ -166,7 +166,10 @@ Ext.define(
         },
         
 	onBeforeActivate : function() {
-            if ( appstate.getInitPhase() ) { return; };
+            if ( appstate.getInitPhase() ) {
+                // Prevent double loading on startup.
+                return;
+            };
             this.getServiceStore().load();
         },
 
