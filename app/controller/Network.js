@@ -36,7 +36,6 @@ Ext.define(
                         beforeactivate : this.onBeforeActivate
                     },
                     'networklist': {
-                        selectionchange : this.onSelectionChange,
                         select          : this.onSelect
                     }
                 }
