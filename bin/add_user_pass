@@ -32,4 +32,8 @@ my $store = CGI::Session->new ('driver:file;id:static', $email,
     or die "Can't open/create user store\n";
 $store->param('hash', $hash);
 $store->clear('old_hash');
+
+# Reset wait time.
+$store->clear('login_wait');
+
 $store->flush();
