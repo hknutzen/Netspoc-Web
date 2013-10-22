@@ -1,18 +1,23 @@
 #!/bin/sh
-BASE=/home/netspocweb/NetspocWeb/bin
+USER=netspocweb
+BASE=/home/$USER/NetspocWeb/bin
 IP=127.0.0.1
 PORT=5000
 WORKER=5
-USER=netspocweb
+# Change to 0, if mod_proxy is used.
+KEEPALIVE=1
 PIDFILE=/var/run/netspocweb/netspoc.pid
 
 case $1 in
   start)
+        # Needed to find ~/policyweb.conf
+        HOME=/home/$USER
         starman \
             -l $IP:$PORT \
             -D \
             --pid $PIDFILE \
             --workers $WORKER \
+            --keepalive $KEEPALIVE \
             --user $USER \
             $BASE/netspoc.psgi
 	;;
