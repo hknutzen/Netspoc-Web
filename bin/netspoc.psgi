@@ -1126,7 +1126,6 @@ sub handle_request {
     my $req = UTF8::Plack::Request->new($env);
     my $flags = { html => 1};
     my $res = Plack::Response->new(200);
-    $res->header('Charset' => 'utf-8');
 
     # Catch errors.
     eval {
@@ -1164,7 +1163,7 @@ sub handle_request {
 	my $data = $sub->($req, $session);
 
 	if ($flags->{html}) {
-            $res->content_type('text/html');
+            $res->content_type('text/html; charset=utf-8');
             $res->body(Encode::encode('UTF-8', $data));
 	}
 	elsif ($flags->{redir}) {
@@ -1199,7 +1198,7 @@ sub handle_request {
 	    # doesn't show error page.
 	    my $status = $flags->{err_status} || 200;
             $res->status($status);
-            $res->content_type('text/html');
+            $res->content_type('text/html; charset=utf-8');
 	    $res->body(Template::get($config->{error_page}, {msg => $msg}));
 	}
 	else
