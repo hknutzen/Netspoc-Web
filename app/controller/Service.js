@@ -67,8 +67,8 @@ Ext.define(
                 ref      : 'searchFormPanel'
             },
             {
-                selector : 'chooseservice[relation="user"]',
-                ref      : 'userServiceButton'
+                selector : 'chooseservice[pressed="true"]',
+                ref      : 'chooseServiceButton'
             },
             {
                 selector : 'searchwindow > form button',
@@ -272,30 +272,21 @@ Ext.define(
         },
         
         onShowAllServices : function( win ) {
-            var services  = '';
-            var srv_store = this.getServiceStore();
-            var concat_services = function ( rec ) {
-                var srv_name = rec.get( 'name' );
-                if ( srv_name ) {
-                    services = services + srv_name + ',';
+            var srv_store    = this.getServiceStore();
+            var grid         = win.down( 'grid' );
+            var extra_params = srv_store.getProxy().extraParams;
+            var cb_params    = this.getCheckboxParams();
+            var params       = Ext.merge( cb_params, extra_params );
+            params.relation  = this.getCurrentRelation();
+            if ( Ext.isObject(search_window) ) {
+                var form = this.getSearchFormPanel().getForm();
+                if ( form.isValid() ) {
+                    var search_params = form.getValues();
+                    if ( search_params ) {
+                        params = Ext.merge( params, search_params );
+                    }
                 }
-                else {
-                    return;
-                }
-            };
-            var records = srv_store.each( concat_services );
-            // Get rid of trailing comma
-            services = services.slice(0, -1);
-            
-            // Without services it does not make 
-            // sense to continue ...
-            if ( services === '' ) {
-                return;
             }
-            
-            var grid = win.down( 'grid' );
-            var params = this.getCheckboxParams();
-            params.services = services;
             grid.getStore().load(
                 {
                     params : params
@@ -303,16 +294,23 @@ Ext.define(
             );
         },
 
+        getCurrentRelation : function() {
+            var sg = this.getServicesGrid();
+            var tb = sg.getDockedItems('toolbar[dock="top"]');
+            var b  = tb[0].query( 'button[pressed=true]' );
+            return b[0].relation;
+        },
+
         onButtonClick : function( button, event, eOpts ) {
             var relation = button.relation || '';
             var store    = this.getServiceStore();
             var proxy    = store.getProxy();
-            var grid     = this.getServicesGrid();
             // Don't reload store if button clicked on is the one
             // that was already selected.
-            if ( button.pressed && relation &&
+            if ( !button.pressed && relation &&
                  relation === proxy.extraParams.relation ) {
-                return;
+                     button.toggle( true );
+                     return;
             }
             proxy.extraParams.relation = relation;
             store.load();

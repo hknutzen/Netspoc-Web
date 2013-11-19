@@ -272,22 +272,18 @@ sub get_hosts {
 sub get_services_and_rules {
     my ($cgi, $session) = @_;
     my $owner        = $cgi->param('active_owner');
-    my $srv_list     = $cgi->param('services');
     my $disp_prop    = $cgi->param('display_property');
     my $expand_users = $cgi->param('expand_users');
-    my $lists    = load_json("owner/$owner/service_lists");
-    my $assets   = load_json("owner/$owner/assets");
-    my $data = [];
-    my $param_services = '';
+    my $lists        = load_json("owner/$owner/service_lists");
+    my $assets       = load_json("owner/$owner/assets");
+    my $services     = service_list( $cgi, $session );
     $disp_prop ||= 'ip';
-    
-    # Return empty list if no services were passes as param.
-    if ( $srv_list ) {
-        $param_services = [ split ",", $srv_list ];
-    }
-    else {
-        return [];
-    }
+    my $data = [];
+
+    use Data::Dumper;
+    # Don't continue if there are no services.
+    my @service_names = map { $_->{name} } @$services;
+    return [] unless scalar @service_names;
 
     # Untaint display property.
     my %allowed = (
@@ -297,13 +293,8 @@ sub get_services_and_rules {
     abort "Unknown display property $disp_prop"
 	unless $allowed{$disp_prop};
 
-    # Untaint services passed as params by intersecting
-    # with known service-names from json-data.
-    my $service_names = intersect( [ map(@$_, @{$lists}{qw(owner user visible)}) ],
-				   $param_services );
-
   SERVICE:
-    for my $sname ( @{$service_names} ) {
+    for my $sname ( @service_names ) {
 	my $rules =
             get_rules_for_owner_and_service( $cgi, $owner, $sname );
 	my $users =
@@ -317,18 +308,30 @@ sub get_services_and_rules {
 	}
 
 	for my $rule ( @$rules ) {
-            my $is_user = ( $rule->{has_user} && $rule->{has_user} eq 'src' ) ?
-                'src' : 'dst';
 	    push @$data, {
 		service => $sname,
 		action  => $rule->{action},
-		src     => $is_user eq 'src' ? $user_props : $rule->{src},
-		dst     => $is_user eq 'dst' ? $user_props : $rule->{dst},
+		src     => has_src_user($rule) ? $user_props : $rule->{src},
+		dst     => has_dst_user($rule) ? $user_props : $rule->{dst},
 		proto   => $rule->{prt},
 	    };
 	}
     }
     return $data;
+}
+
+sub has_user {
+    my ( $rule, $what ) = @_;
+    return $rule->{has_user} &&
+        ( $rule->{has_user} eq $what  || $rule->{has_user} eq 'both' );
+}
+sub has_src_user {
+    my ( $rule ) = @_;
+    return has_user( $rule, 'src' );
+}
+sub has_dst_user {
+    my ( $rule ) = @_;
+    return has_user( $rule, 'dst' );
 }
 
 sub get_services_owners_and_admins {
