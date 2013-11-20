@@ -280,7 +280,6 @@ sub get_services_and_rules {
     $disp_prop ||= 'ip';
     my $data = [];
 
-    use Data::Dumper;
     # Don't continue if there are no services.
     my @service_names = map { $_->{name} } @$services;
     return [] unless scalar @service_names;
@@ -402,6 +401,7 @@ sub service_list {
     my $relevant_objects;
     my $network_names;
     my $plist;
+    $relation ||= 'user';   # take 'user' as default
 
     # Make a real copy not a reference.
     my $copy = { %$lists };
@@ -459,12 +459,7 @@ sub service_list {
 
     # $plist is filled here but is overridden in code
     # handling search, IF we are in search mode.
-    if ( not $relation ) {
-	$plist = [ sort map(@$_, @{$copy}{qw(owner user visible)}) ]
-    }
-    else {
-	$plist = $copy->{$relation};
-    }
+    $plist = $copy->{$relation};
 
     # Searching services?
     if ( $search ) {

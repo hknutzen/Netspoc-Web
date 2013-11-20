@@ -41,14 +41,6 @@ Ext.define(
                 relation     : 'visible'
             },
             {
-                xtype        : 'chooseservice',
-                text         : 'Alle',
-                toggleGroup  : 'polNavBtnGrp',
-                enableToggle : true,
-                relation     : undefined,
-                storeParams  : {}
-            },
-            {
                 text         : 'Suche',
                 toggleGroup  : 'polNavBtnGrp',
                 enableToggle : true,
