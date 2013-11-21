@@ -105,6 +105,16 @@ Ext.application(
             }
             msg = msg || 'Unbekannter Fehler (keine Meldung)';
             if (msg == 'Login required') {
+                // The owner window is always rendered after the
+                // message box is shown, so delay for 1s before
+                // checking for the owner window to be present.
+                // TODO: avoid showing both windows at the same
+                // time at the first place, instead of closing
+                // choose-owner-window if present.
+                var task = new Ext.util.DelayedTask(
+                    function(){}
+                );
+                task.delay(100);
                 var window = Ext.getCmp( 'ownerWindow' );
                 if (window) {
                     window.close();
