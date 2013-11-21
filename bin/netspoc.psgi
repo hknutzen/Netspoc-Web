@@ -2,10 +2,12 @@
 
 use strict;
 use warnings;
-use FCGI;
-use FCGI::ProcManager;
 use JSON;
-use CGI::Simple;
+use Plack::Util;
+use Plack::Request;
+use Plack::Response;
+use Plack::Builder;
+use Plack::Middleware::XForwardedFor;
 use CGI::Session;
 use CGI::Session::Driver::file;
 use Digest::MD5 qw/md5_hex/;
@@ -23,18 +25,6 @@ use JSON_Cache;
 use Policy_Diff;
 
 
-sub usage {
-    die "Usage: $0 CONFIG [:PORT | 0 [#PROC]]\n";
-}
-
-# Configuration data.
-my $conf_file = shift @ARGV or usage();
-my $listen = shift @ARGV;
-my $nproc  = shift @ARGV;
-
-$listen and ($listen =~ /^(?:[:]\d+|0)$/ or usage());
-$nproc and ($nproc =~/^\d+$/ or usage());
-
 sub abort {
     my ($msg) = @_;
     die "$msg\n";
@@ -43,11 +33,6 @@ sub abort {
 sub internal_err {
     my ($msg) = @_;
     abort "internal: $msg";
-}
-
-sub errsay {
-    my $msg = shift;
-    print STDERR "$msg\n";
 }
 
 sub intersect {
@@ -70,7 +55,7 @@ sub intersect {
   
 # Delete an element from an array reference.
 # Return 1 if found, 0 otherwise.
-sub aref_delete( $$ ) {
+sub aref_delete {
     my ($aref, $elt) = @_;
     for (my $i = 0 ; $i < @$aref ; $i++) {
         if ($aref->[$i] eq $elt) {
@@ -100,8 +85,8 @@ sub get_policy {
 }
 
 sub get_history {
-    my ($cgi, $session) = @_;
-    my $owner = $cgi->param('active_owner');
+    my ($req, $session) = @_;
+    my $owner = $req->param('active_owner');
     my $current = get_policy()->[0];
     my $current_policy = $current->{policy};
     my @result = ($current);
@@ -139,15 +124,15 @@ sub get_history {
 }
 
 sub current_policy {
-    get_policy()->[0]->{policy};
+    return get_policy()->[0]->{policy};
 }
 
 my $selected_history;
 sub select_history {
-    my ($cgi, $history_needed) = @_;
+    my ($req, $history_needed) = @_;
 
     # Read requested version date from cgi paramter.
-    if ($selected_history = $cgi->param('history')) {
+    if ($selected_history = $req->param('history')) {
 	$history_needed or abort "Must not send parameter 'history'";
     }
 
@@ -156,19 +141,14 @@ sub select_history {
 	$history_needed and abort "Missing parameter 'history'";
 	$selected_history = current_policy();
     }
+    return;
 }
 
 my $cache;
 
 sub load_json {
     my ($path) = @_;
-    $cache->load_json_version($selected_history, $path);
-}
-
-sub load_current_json {
-    my ($path) = @_;
-    my $current_policy = current_policy();
-    $cache->load_json_version($current_policy, $path);
+    return $cache->load_json_version($selected_history, $path);
 }
 
 sub get_objects {
@@ -204,21 +184,21 @@ sub get_nat_obj {
 sub get_nat_obj_list {
     my ($obj_names, $owner) = @_;
     my $no_nat_set = get_no_nat_set($owner);
-    return [ map(get_nat_obj($_, $no_nat_set), @$obj_names) ];
+    return [ map { get_nat_obj($_, $no_nat_set) } @$obj_names ];
 }
 
 sub get_any {
-    my ($cgi, $session) = @_;
-    my $owner = $cgi->param('active_owner');
+    my ($req, $session) = @_;
+    my $owner = $req->param('active_owner');
     my $assets = load_json("owner/$owner/assets");
     my $any_names = $assets->{any_list};
     return get_nat_obj_list($any_names, $owner);
 }
 
 sub get_networks {
-    my ($cgi, $session) = @_;
-    my $owner  = $cgi->param('active_owner');
-    my $chosen = $cgi->param('chosen_networks');
+    my ($req, $session) = @_;
+    my $owner  = $req->param('active_owner');
+    my $chosen = $req->param('chosen_networks');
     my $assets = load_json("owner/$owner/assets");
     my $network_names = $assets->{network_list};
     if ( $chosen ) {
@@ -228,9 +208,9 @@ sub get_networks {
 }
 
 sub get_network_resources {
-    my ($cgi, $session) = @_;
-    my $owner       = $cgi->param('active_owner');
-    my $selected    = $cgi->param('selected_networks');
+    my ($req, $session) = @_;
+    my $owner       = $req->param('active_owner');
+    my $selected    = $req->param('selected_networks');
     my $assets      = load_json("owner/$owner/assets");
     my $owner2alias = load_json('owner2alias');
     my $data        = [];
@@ -261,22 +241,22 @@ sub get_network_resources {
 }
 
 sub get_hosts {
-    my ($cgi, $session) = @_;
-    my $net_name = $cgi->param('network') or abort "Missing param 'network'";
-    my $owner = $cgi->param('active_owner');
+    my ($req, $session) = @_;
+    my $net_name = $req->param('network') or abort "Missing param 'network'";
+    my $owner = $req->param('active_owner');
     my $assets = load_json("owner/$owner/assets");
     my $child_names = $assets->{net2childs}->{$net_name};
     return get_nat_obj_list($child_names, $owner);
 }
 
 sub get_services_and_rules {
-    my ($cgi, $session) = @_;
-    my $owner        = $cgi->param('active_owner');
-    my $disp_prop    = $cgi->param('display_property');
-    my $expand_users = $cgi->param('expand_users');
+    my ($req, $session) = @_;
+    my $owner        = $req->param('active_owner');
+    my $disp_prop    = $req->param('display_property');
+    my $expand_users = $req->param('expand_users');
     my $lists        = load_json("owner/$owner/service_lists");
     my $assets       = load_json("owner/$owner/assets");
-    my $services     = service_list( $cgi, $session );
+    my $services     = service_list( $req, $session );
     $disp_prop ||= 'ip';
     my $data = [];
 
@@ -295,9 +275,9 @@ sub get_services_and_rules {
   SERVICE:
     for my $sname ( @service_names ) {
 	my $rules =
-            get_rules_for_owner_and_service( $cgi, $owner, $sname );
+            get_rules_for_owner_and_service( $req, $owner, $sname );
 	my $users =
-            get_users_for_owner_and_service( $cgi, $owner, $sname );
+            get_users_for_owner_and_service( $req, $owner, $sname );
 	my $user_props = [];
 	if ( $expand_users ) {
 	    map { push @$user_props, $_->{$disp_prop} } @$users;
@@ -334,9 +314,9 @@ sub has_dst_user {
 }
 
 sub get_services_owners_and_admins {
-    my ($cgi, $session) = @_;
-    my $owner     = $cgi->param('active_owner');
-    my $srv_list  = $cgi->param('services');
+    my ($req, $session) = @_;
+    my $owner     = $req->param('active_owner');
+    my $srv_list  = $req->param('services');
     my $lists     = load_json("owner/$owner/service_lists");
     my $assets    = load_json("owner/$owner/assets");
     my $services  = load_json('services');
@@ -377,7 +357,7 @@ sub relevant_objects_for_networks {
 
     my %relevant_objects = 
         map({ $_ => 1 } (@$network_names, 
-                         map(@{ $assets->{net2childs}->{$_} },
+                         map({ @{ $assets->{net2childs}->{$_} } }
                              @$network_names)));
     return \%relevant_objects;
 }
@@ -388,13 +368,13 @@ sub relevant_objects_for_networks {
 ####################################################################
 
 sub service_list {
-    my ($cgi, $session) = @_;
-    my $owner       = $cgi->param('active_owner');
-    my $relation    = $cgi->param('relation');
-    my $search      = $cgi->param('search_string');
-    my $chosen      = $cgi->param('chosen_networks');
-    my $search_own  = $cgi->param( 'search_own' );
-    my $search_used = $cgi->param( 'search_used' );
+    my ($req, $session) = @_;
+    my $owner       = $req->param('active_owner');
+    my $relation    = $req->param('relation');
+    my $search      = $req->param('search_string');
+    my $chosen      = $req->param('chosen_networks');
+    my $search_own  = $req->param('search_own');
+    my $search_used = $req->param('search_used');
     my $lists    = load_json("owner/$owner/service_lists");
     my $assets   = load_json("owner/$owner/assets");
     my $services = load_json('services');
@@ -428,7 +408,7 @@ sub service_list {
             # Check if network or any of its contained resources
             # is user of current service.
             if ($search_used || !$relation || $relation eq 'user') {
-                my $users = get_users_for_owner_and_service($cgi, $owner, $pname,
+                my $users = get_users_for_owner_and_service($req, $owner, $pname,
                     $network_names, $relevant_objects);
                 for my $user ( @$users ) {
                     if ($relevant_objects->{$user->{name}}) {
@@ -469,12 +449,12 @@ sub service_list {
 	$search =~ s/\s+$//;
 
 	# Search case-sensitive?
-	if ( !$cgi->param('search_case_sensitive') ) {
+	if ( !$req->param('search_case_sensitive') ) {
 	    $search = "(?i)$search";
 	}
 
 	# Exact matches only?
-	if ( $cgi->param('search_exact') ) {
+	if ( $req->param('search_exact') ) {
 	    $search = '^' . $search . '$';
 	}
 
@@ -487,10 +467,10 @@ sub service_list {
 	if ( $search_used ) {
 	    push @search_in, 'user';
 	}
-	if ( $cgi->param( 'search_visible' ) ) {
+	if ( $req->param('search_visible') ) {
 	    push @search_in, 'visible';
 	}
-	my $search_plist = [ sort map(@$_, @{$copy}{ @search_in } ) ];
+	my $search_plist = [ sort map { @$_ } @{$copy}{ @search_in } ];
 
       SERVICE:
 	for my $sname ( @$search_plist ) {
@@ -501,7 +481,7 @@ sub service_list {
 		next SERVICE;
 	    }
 
-	    if ( $cgi->param( 'search_in_rules' ) ) {
+	    if ( $req->param('search_in_rules') ) {
 		my %lookup = (
 			      'src'  => 'dst',
 			      'dst'  => 'src',
@@ -509,7 +489,7 @@ sub service_list {
 			      );
 		# Get rules for current owner and service.
 		my $rules =
-                    get_rules_for_owner_and_service( $cgi, $owner, $sname );
+                    get_rules_for_owner_and_service( $req, $owner, $sname );
 		if ( $rules ) {
 		    for my $r ( @$rules ) {
 			# Search in src or dst.
@@ -529,8 +509,8 @@ sub service_list {
 		    }
 		}
 	    }
-	    if ( $cgi->param( 'search_in_user' ) ) {
-		my $users = get_users_for_owner_and_service( $cgi, $owner, $sname,
+	    if ( $req->param('search_in_user') ) {
+		my $users = get_users_for_owner_and_service( $req, $owner, $sname,
                     $network_names, $relevant_objects );
 		if ( $users ) {
 		    for my $u ( @$users ) {
@@ -549,7 +529,7 @@ sub service_list {
 		    }
 		}
 	    }
-	    if ( $cgi->param( 'search_in_desc' ) ) {
+	    if ( $req->param('search_in_desc') ) {
 		if ( my $desc = $services->{$sname}->{details}->{description} ) {
 		    if ( $desc =~ /$search/ ) {
 			push @$plist, $sname;
@@ -575,7 +555,7 @@ sub service_list {
 	# Add alias name to 
         # 1. list of owners, 
         # 2. optional single sub_owner (= service owner)
-	$hash->{owner} = [ map($add_alias->($_), @{ $hash->{owner} }) ];
+	$hash->{owner} = [ map { $add_alias->($_) } @{ $hash->{owner} } ];
 	$hash->{sub_owner} and 
             $hash->{sub_owner} = $add_alias->($hash->{sub_owner});
 	$hash;
@@ -593,8 +573,8 @@ sub untaint_networks {
 }
 
 sub get_users_for_owner_and_service {
-    my ( $cgi, $owner, $sname, $networks, $relevant_objects ) = @_;
-    my $chosen = $cgi->param('chosen_networks');
+    my ( $req, $owner, $sname, $networks, $relevant_objects ) = @_;
+    my $chosen = $req->param('chosen_networks');
     my $lists  = load_json("owner/$owner/service_lists");
 
     # Get user for current owner and service.
@@ -625,10 +605,10 @@ my %src_or_dst =  (
     both => 1
     );
 sub get_rules_for_owner_and_service {
-    my ( $cgi, $owner, $sname ) = @_;
-    my $expand_users = $cgi->param('expand_users');
-    my $chosen       = $cgi->param('chosen_networks');
-    my $prop         = $cgi->param('display_property');
+    my ( $req, $owner, $sname ) = @_;
+    my $expand_users = $req->param('expand_users');
+    my $chosen       = $req->param('chosen_networks');
+    my $prop         = $req->param('display_property');
     my $lists        = load_json("owner/$owner/service_lists");
     $prop ||= 'ip';  # 'ip' as default property to display
     my $relevant_objects;
@@ -652,7 +632,8 @@ sub get_rules_for_owner_and_service {
             relevant_objects_for_networks( $network_names, $assets );
         $rules = [ grep {
             $_->{has_user} ne 'both' &&
-                grep($relevant_objects->{$_}, @{$_->{$src_or_dst{$_->{has_user}}}});
+                grep({ $relevant_objects->{$_} } 
+                     @{$_->{$src_or_dst{$_->{has_user}}}});
         } @$rules ];
     }
 
@@ -663,13 +644,13 @@ sub get_rules_for_owner_and_service {
     my $crules;
     my $user;
     if ( $expand_users ) {
-        $user = get_users_for_owner_and_service( $cgi, $owner, $sname );
+        $user = get_users_for_owner_and_service( $req, $owner, $sname );
     }
     for my $rule (@$rules) {
 	my $crule = { %$rule };
 	for my $what (qw(src dst)) {
 	    $crule->{$what} = 
-		[ map((get_nat_obj($_, $no_nat_set))->{$prop},
+		[ map( { (get_nat_obj($_, $no_nat_set))->{$prop} }
 		      @{ $rule->{$what} }) ];
 	}
         if ( $expand_users ) {
@@ -682,17 +663,17 @@ sub get_rules_for_owner_and_service {
 }
 
 sub get_rules {
-    my ($cgi, $session) = @_;
-    my $owner = $cgi->param('active_owner');
-    my $sname = $cgi->param('service') or abort "Missing parameter 'service'";
-    return get_rules_for_owner_and_service( $cgi, $owner, $sname );
+    my ($req, $session) = @_;
+    my $owner = $req->param('active_owner');
+    my $sname = $req->param('service') or abort "Missing parameter 'service'";
+    return get_rules_for_owner_and_service( $req, $owner, $sname );
 }
 
 sub get_users {
-    my ($cgi, $session) = @_;
-    my $owner = $cgi->param('active_owner');
-    my $sname = $cgi->param('service') or abort "Missing parameter 'service'";
-    return get_users_for_owner_and_service( $cgi, $owner, $sname );
+    my ($req, $session) = @_;
+    my $owner = $req->param('active_owner');
+    my $sname = $req->param('service') or abort "Missing parameter 'service'";
+    return get_users_for_owner_and_service( $req, $owner, $sname );
 }
 
 my %text2css = ( '+' => 'icon-add',
@@ -703,14 +684,14 @@ my %text2css = ( '+' => 'icon-add',
 my %toplevel_sort = (objects => 1, services => 2, );
 
 sub get_diff {
-    my ($cgi, $session) = @_;
-    my $owner = $cgi->param('active_owner');
-    my $version = $cgi->param('version') or 
+    my ($req, $session) = @_;
+    my $owner = $req->param('active_owner');
+    my $version = $req->param('version') or 
         abort "Missing parameter 'version'";
     return [] if $version eq 'none';
     my $changed = 
         Policy_Diff::compare($cache, $version, $selected_history, $owner);
-    return undef if not $changed;
+    return if not $changed;
 
     # Convert to ExtJS tree.
     # Node: Hash with attributes "text" and 
@@ -761,9 +742,10 @@ sub get_diff {
 }
 
 sub get_diff_mail {
-    my ($cgi, $session) = @_;
-    my $owner = $cgi->param('active_owner');
+    my ($req, $session) = @_;
     my $email = $session->param('email');
+    return([{ send => JSON::false }]) if $email eq 'guest';
+    my $owner = $req->param('active_owner');
     my $store = User_Store::new($config, $email);
     my $aref  = $store->param('send_diff') || [];
     return([{ send => 
@@ -773,11 +755,12 @@ sub get_diff_mail {
 }
 
 sub set_diff_mail {
-    my ($cgi, $session) = @_;
-    validate_owner($cgi, $session, 1);
-    my $owner = $cgi->param('active_owner');
-    my $send  = $cgi->param('send');
+    my ($req, $session) = @_;
     my $email = $session->param('email');
+    abort("Can't send diff for user 'guest'") if $email eq 'guest';
+    validate_owner($req, $session, 1);
+    my $owner = $req->param('active_owner');
+    my $send  = $req->param('send');
     my $store = User_Store::new($config, $email);
     my $aref = $store->param('send_diff') || [];
     my $changed;
@@ -804,10 +787,10 @@ sub set_diff_mail {
 my %saveparam = ( owner => 1 );
 
 sub set_session_data {
-    my ($cgi, $session) = @_;
-    for my $param ($cgi->param()) {
+    my ($req, $session) = @_;
+    for my $param ($req->param) {
 	$saveparam{$param} or abort "Invalid param '$param'";
-	my $val = $cgi->param($param);
+	my $val = $req->param($param);
 	$session->param($param, $val);
     }
     $session->flush();
@@ -820,7 +803,7 @@ sub set_session_data {
 
 # Get currently selected owner.
 sub get_owner {
-    my ($cgi, $session) = @_;
+    my ($req, $session) = @_;
     my $owner2alias = load_json('owner2alias');
     if (my $active_owner = $session->param('owner')) {
         my $v = { name => $active_owner };
@@ -837,7 +820,7 @@ sub get_owner {
 # Get list of all owners available for current email.
 # Return array of hashes { name => $name, [ alias => $alias ] }
 sub get_owners {
-    my ($cgi, $session) = @_;
+    my ($req, $session) = @_;
     my $email = $session->param('email');
     my $email2owners = load_json('email');
     my $owner2alias = load_json('owner2alias');
@@ -852,8 +835,8 @@ sub get_owners {
 # Get list of all emails for given owner.
 # If parameter 'owner' is missing, take 'active_owner'.
 sub get_emails {
-    my ($cgi, $session) = @_;
-    my $owner = $cgi->param('owner') || $cgi->param('active_owner') 
+    my ($req, $session) = @_;
+    my $owner = $req->param('owner') || $req->param('active_owner') 
         or abort "Missing param 'owner'";
     if ($owner eq ':unknown') {
 	return [];
@@ -863,16 +846,16 @@ sub get_emails {
 
 # Get list of watcher emails for active owner.
 sub get_watchers {
-    my ($cgi, $session) = @_;
-    my $owner = $cgi->param('active_owner') 
+    my ($req, $session) = @_;
+    my $owner = $req->param('active_owner') 
         or abort "Missing param 'active_owner'";
     return load_json("owner/$owner/watchers");
 }
 
 # Get list of supervisor owners for active owner.
 sub get_supervisors {
-    my ($cgi, $session) = @_;
-    my $owner = $cgi->param('active_owner') 
+    my ($req, $session) = @_;
+    my $owner = $req->param('active_owner') 
         or abort "Missing param 'active_owner'";
     my $supervisors = load_json("owner/$owner/extended_by");
     my $owner2alias = load_json('owner2alias');
@@ -891,11 +874,11 @@ sub get_supervisors {
 
 sub read_template {
     my ($file) = @_;
-    open(my $fh, $file) or internal_err "Can't open $file: $!";
+    open(my $fh, '<', $file) or internal_err "Can't open $file: $!";
     local $/ = undef;
     my $text = <$fh>;
     close $fh;
-    $text;
+    return $text;
 }
 
 # Do simple variable substitution.
@@ -905,14 +888,14 @@ sub process_template {
     while (my ($key, $value) = each %$vars) {
 	$text =~ s/\[% $key %\]/$value/g;
     }
-    $text;
+    return $text;
 }
 
 sub get_substituted_html {
     my ($file, $vars ) = @_;
     my $text = read_template($file);
     $text = process_template($text, $vars);
-    $text;
+    return $text;
 }					 
    
 
@@ -931,10 +914,11 @@ sub send_verification_mail {
     # -t: read recipient address from mail text
     # -f: set sender address
     # -F: don't use sender full name
-    open(my $mail, "|$sendmail -t -F '' -f $config->{noreply_address}") or 
+    open(my $mail, '|-', "$sendmail -t -F '' -f $config->{noreply_address}") or 
 	internal_err "Can't open $sendmail: $!";
     print $mail Encode::encode('UTF-8', $text);
     close $mail or warn "Can't close $sendmail: $!\n";
+    return;
 }
 
 # Get / set password for user.
@@ -945,6 +929,7 @@ sub store_password {
     $store->param('hash', $hash);
     $store->clear('old_hash');
     $store->flush();
+    return;
 }
 
 sub check_password  {
@@ -969,17 +954,18 @@ sub check_password  {
 
     # No password known.
     else {
-        return undef;
+        return;
     }
 }
 
 sub register {
-    my ($cgi, $session) = @_;
-    my $email = $cgi->param('email') or abort "Missing param 'email'";
+    my ($req, $session) = @_;
+    my $email = $req->param('email') or abort "Missing param 'email'";
+    abort("Can't set password for 'guest'") if $email eq 'guest';
     $email = lc $email;
     my $email2owners = load_json("email");
     $email2owners->{$email} or abort "Email address is not authorized";
-    my $base_url = $cgi->param( 'base_url' ) 
+    my $base_url = $req->param('base_url') 
 	or abort "Missing param 'base_url' (Activate JavaScript)";
     check_attack($email);
     my $token = md5_hex(localtime, $email);
@@ -998,17 +984,17 @@ sub register {
     my $url = "$base_url/verify?email=$email&token=$token";
 
     # Send remote address to the recipient to allow tracking of abuse.
-    my $ip = $cgi->remote_addr();
+    my $ip = $req->address;
     set_attack($email);
     send_verification_mail ($email, $url, $ip);
     return Template::get($config->{show_passwd_template},
-				{ pass => $cgi->escapeHTML($pass) });
+				{ pass => Plack::Util::encode_html($pass) });
 }
 
 sub verify {
-    my ($cgi, $session) = @_;
-    my $email = $cgi->param('email') or abort "Missing param 'email'";
-    my $token = $cgi->param('token') or abort "Missing param 'token'";
+    my ($req, $session) = @_;
+    my $email = $req->param('email') or abort "Missing param 'email'";
+    my $token = $req->param('token') or abort "Missing param 'token'";
     my $reg_data =  $session->param('register');
     if ($reg_data and
 	$reg_data->{user} eq $email and
@@ -1039,7 +1025,7 @@ sub set_attack {
     $store->param('login_wait', $wait);
     $store->param('failed_time', time());
     $store->flush();
-    $wait;
+    return $wait;
 }
 
 sub check_attack {
@@ -1051,6 +1037,7 @@ sub check_attack {
     if ($remain > 0) {
 	abort("Wait for $remain seconds after wrong password" );
     }
+    return;
 }
 
 sub clear_attack {
@@ -1058,23 +1045,28 @@ sub clear_attack {
     my $store = User_Store::new($config, $email);
     $store->clear('login_wait');
     $store->flush();
+    return;
 }
 
 sub login {
-    my ($cgi, $session) = @_;
-    logout($cgi, $session);
-    my $email = $cgi->param('email') or abort "Missing param 'email'";
+    my ($req, $session) = @_;
+    logout($req, $session);
+    my $email = $req->param('email') or abort "Missing param 'email'";
     $email = lc $email;
     my $email2owners = load_json("email");
     $email2owners->{$email} or abort "Email address is not authorized";
-    my $pass = $cgi->param('pass') or abort "Missing param 'pass'";
-    my $app_url = $cgi->param('app') or abort "Missing param 'app'";
-    check_attack($email);
-    if (not check_password($email, $pass)) {
-	set_attack($email);
-	abort "Login failed";
+    my $app_url = $req->param('app') or abort "Missing param 'app'";
+
+    # User 'guest' needs no password.
+    if ($email ne 'guest') {
+        my $pass = $req->param('pass') or abort "Missing param 'pass'";
+        check_attack($email);
+        if (not check_password($email, $pass)) {
+            set_attack($email);
+            abort "Login failed";
+        }
+        clear_attack($email);
     }
-    clear_attack($email);
     $session->param('email', $email);
     $session->clear('user');		# Remove old, now unused param.
     $session->expire('logged_in', '60m');
@@ -1091,21 +1083,22 @@ sub logged_in {
 # Validate active owner. 
 # Email could be removed from any owner role at any time in netspoc data.
 sub validate_owner {
-    my ($cgi, $session, $owner_needed) = @_;
-    if (my $active_owner = $cgi->param('active_owner')) {
+    my ($req, $session, $owner_needed) = @_;
+    if (my $active_owner = $req->param('active_owner')) {
 	$owner_needed or abort abort "Must not send parameter 'active_owner'";
 	my $email = $session->param('email');
-	my $email2owners = load_current_json('email');
+	my $email2owners = $cache->load_json_current('email');
 	grep { $active_owner eq $_ } @{ $email2owners->{$email} } or
 	    abort "User $email isn't allowed to read owner $active_owner";
     } 
     else {
 	$owner_needed and abort "Missing parameter 'active_owner'";
     }
+    return;
 }
 
 sub logout {
-    my ($cgi, $session) = @_;
+    my ($req, $session) = @_;
     $session->clear('logged_in');
     $session->flush();
     return [];
@@ -1115,21 +1108,13 @@ sub logout {
 # This program must ensure that $session->param('email') is only set
 # if a user was successfully logged in at least once.
 sub session_email {
-    my ($cgi, $session) = @_;
+    my ($req, $session) = @_;
     return $session->param('email') || '';
 }
 
 ####################################################################
 # Request handling
 ####################################################################
-
-sub decode_params {
-    my ($cgi) = @_;
-    for my $param ($cgi->param()) {
-	my $val =  Encode::decode('UTF-8', $cgi->param($param));
-	$cgi->param($param, $val);
-    }
-}
 
 my %path2sub =
     (
@@ -1138,7 +1123,7 @@ my %path2sub =
      # - anon: anonymous user is allowed
      # - html: send html 
      # - redir: send redirect
-     # - owner: valid owner and history must be given as cgi parameter
+     # - owner: valid owner and history must be given as CGI parameter
      # - create_cookie: create cookie if no cookie is available
      login         => [ \&login,         { anon => 1, redir => 1, 
 					   create_cookie => 1, } ],
@@ -1173,26 +1158,40 @@ my %path2sub =
      set_diff_mail => [ \&set_diff_mail, { owner => 1, add_success => 1, } ],
       ); 
 
+# Change 'param' method of Plack::Request.
+# Convert UTF-8 bytes to Perl characters in values.
+{
+    package UTF8::Plack::Request;
+    use base "Plack::Request";
+
+    sub param {
+        my ($self, @arg) = @_;
+        return $self->SUPER::param() if not @arg;
+        return Encode::decode_utf8($self->SUPER::param(@arg));
+    }
+}
+
 sub handle_request {
-    my $cgi = CGI::Simple->new();
+    my ($env) = @_;
+    my $req = UTF8::Plack::Request->new($env);
     my $flags = { html => 1};
-    my $cookie;
+    my $res = Plack::Response->new(200);
 
     # Catch errors.
     eval {
+        my $cookie = $req->cookies->{CGISESSID};
         $CGI::Session::Driver::file::FileName = "%s";
-	my $session = CGI::Session->load("driver:file", $cgi,
+	my $session = CGI::Session->load("driver:file", $cookie,
 					 { Directory => 
 					       $config->{session_dir} }
-					 );
-	decode_params($cgi);
-	my $path = $cgi->path_info();
+            );
+	my $path = $req->path_info();
 	$path =~ s:^/::;
 	my $info = $path2sub{$path} or abort "Unknown path '$path'";
 	(my $sub, $flags) = @$info;
 	if ($session->is_empty()) {
 	    if ($flags->{create_cookie}) {
-		$session->new();
+                $session->new();
 	    }
             elsif ($flags->{anon}) {
 		abort "Cookies must be activated";
@@ -1205,22 +1204,20 @@ sub handle_request {
                 abort "Login required";
             }
 	}
-	select_history($cgi, $flags->{owner});
-	validate_owner($cgi, $session, $flags->{owner});
+	select_history($req, $flags->{owner});
+	validate_owner($req, $session, $flags->{owner});
 	$flags->{anon} or logged_in($session) or abort "Login required";
-	$cookie = $cgi->cookie( -name    => $session->name,
-				-value   => $session->id,
-				-expires => '+1y' );
-	my $data = $sub->($cgi, $session);
+        $res->cookies->{$session->name} = { value => $session->id, 
+                                            path => '/',
+                                            expires => time + 365*24*60*60 };
+	my $data = $sub->($req, $session);
+
 	if ($flags->{html}) {
-	    print $cgi->header( -type => 'text/html',
-				-charset => 'utf-8', 
-				-cookie => $cookie);
-	    print Encode::encode('UTF-8', $data);	    
+            $res->content_type('text/html; charset=utf-8');
+            $res->body(Encode::encode('UTF-8', $data));
 	}
 	elsif ($flags->{redir}) {
-	    print $cgi->redirect( -uri => $data, 
-				  -cookie => $cookie);
+            $res->redirect($data);
 	}
 	else {
             if ($flags->{add_success}) {
@@ -1238,10 +1235,8 @@ sub handle_request {
                 }
                 $data->{success} = JSON::true;
             }
-	    print $cgi->header( -type    => 'text/x-json',
-				-charset => 'utf-8',
-				-cookie  => $cookie);
-	    print to_json($data, {utf8 => 1, pretty => 1});    
+            $res->content_type('text/x-json');
+	    $res->body(to_json($data, {utf8 => 1, pretty => 1}));
 	}
     };
     if ($@) {
@@ -1252,91 +1247,34 @@ sub handle_request {
 	    # Don't use status 500 on all errors, because IE 
 	    # doesn't show error page.
 	    my $status = $flags->{err_status} || 200;
-	    print $cgi->header( -status  => $status,
-				-type    => 'text/html',
-				-charset => 'utf-8',
-				-cookie => $cookie);
-	    print Template::get($config->{error_page}, {msg => $msg});
+            $res->status($status);
+            $res->content_type('text/html; charset=utf-8');
+	    $res->body(Template::get($config->{error_page}, {msg => $msg}));
 	}
 	else
 	{
             my $result = { success => JSON::false, msg => $msg };
-	    print $cgi->header( -status  => 500,
-				-type    => 'text/x-json',
-				-charset => 'utf-8', );
-	    print encode_json($result), "\n";
+            $res->status(500);
+            $res->content_type('text/x-json');
+	    $res->body(encode_json($result) . "\n");
 	}
     }
-}
-
-sub run {
-    my ( %params ) = @_;
-
-    # Read from STDIN by default.
-    my $sock = 0;
-
-    if ($params{listen}) {
-	my $old_umask = umask;
-	umask(0);
-	$sock = FCGI::OpenSocket( $params{listen}, 100 )
-	    or die "failed to open FastCGI socket; $!";
-	umask($old_umask);
-    }
-
-    # Send STDERR to stdout or to the web server
-    my $error = $params{keep_stderr} ? \*STDOUT : \*STDERR;
-
-    my $request =
-      FCGI::Request( \*STDIN, \*STDOUT, $error, \%ENV, $sock,
-		     FCGI::FAIL_ACCEPT_ON_INTR ,
-      );
-
-    my $nproc = $params{nproc};
-    my $proc_manager;
-    if ($nproc) {
-	$proc_manager = FCGI::ProcManager->new
-	    (
-	     {
-		 n_processes => $params{nproc},
-		 pid_fname   => $params{pidfile},
-	     }
-	     );
-    }
-
-    $nproc && $proc_manager->pm_manage();
-    
-    # Give each child its own RNG state.
-    srand;
-
-    while ( $request->Accept >= 0 ) {
-        $nproc && $proc_manager->pm_pre_dispatch();
-        $params{request_handler}->();
-        $nproc && $proc_manager->pm_post_dispatch();
-    }
+    return $res->finalize;
 }
 
 ####################################################################
 # Start server
 ####################################################################
 
-$config = Load_Config::load($conf_file);
+$config = Load_Config::load();
 $cache = JSON_Cache->new(netspoc_data => $config->{netspoc_data},
 			 max_versions => 8);
 
-# Tell parent that we have initialized successfully.
-if (my $ppid = $ENV{PPID}) {
-    print STDERR "Sending USR2 signal to $ppid\n";
-    kill 'USR2', $ppid;
+my $app = \&handle_request;
+
+builder {
+
+    # Currently this server runs behind a HTTP proxy.
+    enable "XForwardedFor";
+    $app;
 }
-
-run (
-     # - listen on Port or 
-     # - read from STDIN when started by external proc manager
-     listen => $listen,
-
-     # Start FCGI::ProcManager with n processes.
-     nproc => $nproc,
-
-     request_handler => \&handle_request,
-     );
-     

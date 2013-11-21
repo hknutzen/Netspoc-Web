@@ -1,0 +1,39 @@
+#!/usr/local/bin/perl
+
+# Manually set password for user (email address) of Policy-Web.
+
+use strict;
+use warnings;
+use CGI::Session;
+use CGI::Session::Driver::file;
+use Digest::SHA qw/sha256_hex/;
+use Crypt::SaltedHash;
+
+use FindBin;
+use lib $FindBin::Bin;
+
+sub usage {
+    die "Usage: $0 DIRECTORY EMAIL PASSWD\n";
+}
+
+my $dir    = shift @ARGV or usage();
+my $email  = shift @ARGV or usage();
+my $passwd = shift @ARGV or usage();
+@ARGV and usage();
+
+
+# Create salted hash from password.
+my $csh = Crypt::SaltedHash->new(algorithm => 'SHA-256');
+$csh->add($passwd);
+my $hash = $csh->generate;
+$CGI::Session::Driver::file::FileName = "%s";
+my $store = CGI::Session->new ('driver:file;id:static', $email, 
+                               { Directory=> $dir })
+    or die "Can't open/create user store\n";
+$store->param('hash', $hash);
+$store->clear('old_hash');
+
+# Reset wait time.
+$store->clear('login_wait');
+
+$store->flush();

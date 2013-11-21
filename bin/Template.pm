@@ -10,11 +10,11 @@ use open IN => ':utf8';
 
 sub read_file {
     my ($file) = @_;
-    open(my $fh, $file) or croak "Can't open $file: $!";
+    open(my $fh, '<', $file) or croak "Can't open $file: $!";
     local $/ = undef;
     my $text = <$fh>;
     close $fh;
-    $text;
+    return $text;
 }
 
 # Do simple variable substitution.
@@ -24,14 +24,14 @@ sub process {
     while (my ($key, $value) = each %$vars) {
 	$text =~ s/\[% $key %\]/$value/g;
     }
-    $text;
+    return $text;
 }
 
 sub get {
     my ($file, $vars ) = @_;
     my $text = read_file($file);
     $text = process($text, $vars);
-    $text;
+    return $text;
 }					 
 
 1;

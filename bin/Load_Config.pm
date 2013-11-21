@@ -22,10 +22,10 @@ qw(
    );
 
 sub load {
-    my ($conf_file) = @_;
-    my $result;
+    my $conf_file = glob('~/policyweb.conf');
     -f $conf_file or croak("$conf_file must be a plain file");
-    open( my $fh, $conf_file ) or croak("Can't open $conf_file: $!");
+    my $result;
+    open( my $fh, '<', $conf_file ) or croak("Can't open $conf_file: $!");
     {
 	local $/ = undef;
 	$result = from_json(  <$fh>, { relaxed  => 1 } );

@@ -1,23 +1,19 @@
 #!/bin/sh
 
-usage () { echo "Usage: $0 <config>"; exit 1; }
-
-config=$1
+config=~/policyweb.conf
 link=current
 
 # Abort on any untested error.
 set -e
 
-abort () { [ "$1" ] && echo "Error: $1"; usage; }
+abort () { [ "$1" ] && echo "Error: $1" >&2; exit 1; }
 
 read_conf () { 
     grep "\"$1\"" $config|cut -d: -f2|cut -d'"' -f 2
 }
 
-[ -n "$config" ] || usage
 [ -f "$config" ] || abort "Can't read '$config'"
 dir=$(read_conf netspoc_data)
-prev_dir=$(pwd)
 cd $dir
 current=$(readlink $link)
 [ "$current" ] || abort "Can't read $dir/current"
@@ -64,10 +60,9 @@ for f in p* ; do
     esac
 done
 
-if [ -n $prev_date ] ; then
+if [ -n "$prev_date" ] ; then
     curr_date=$(rlog -zLT RCS/POLICY,v |grep date:|head -1|cut -d ' ' -f 2)
+
     # Send diff per mail
-    # $config path is relative to original working directory.
-    cd $prev_dir
-    ~/NetspocWeb/bin/send_diff.pl $config $prev_date $curr_date
+    ~/NetspocWeb/bin/send_diff.pl $prev_date $curr_date
 fi

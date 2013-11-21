@@ -1,5 +1,7 @@
 package User_Store;
 
+use strict;
+use warnings;
 use CGI::Session;
 use CGI::Session::Driver::file;
 
@@ -7,18 +9,16 @@ use CGI::Session::Driver::file;
 sub new {
     my ($config, $email) = @_;
     $CGI::Session::Driver::file::FileName = "%s";
-    CGI::Session->new ('driver:file;id:static', $email, 
-		      { Directory=> $config->{user_dir} } 
-		      ) 
-	or abort(CGI::Session->errstr());
+    return(CGI::Session->new ('driver:file;id:static', $email, 
+                              { Directory=> $config->{user_dir} }) 
+           or abort(CGI::Session->errstr()));
 }
 
 sub load {
     my ($config, $email) = @_;
     $CGI::Session::Driver::file::FileName = "%s";
-    CGI::Session->load ('driver:file;id:static', $email, 
-                        { Directory=> $config->{user_dir} } 
-		       );
+    return CGI::Session->load ('driver:file;id:static', $email, 
+                               { Directory=> $config->{user_dir} });
 }
 
 1;

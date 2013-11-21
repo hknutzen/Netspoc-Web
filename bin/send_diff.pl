@@ -14,16 +14,14 @@ use Policy_Diff;
 
 # Argument processing
 sub usage {
-    die "Usage: $0 CONFIG yyyy-mm-dd yyyy-mm-dd|pxxx\n";
+    die "Usage: $0 yyyy-mm-dd yyyy-mm-dd|pxxx\n";
 }
 
-# Configuration data.
-my $conf_file = shift @ARGV or usage();
 my $old_ver = shift @ARGV or usage();
 my $new_ver = shift @ARGV or usage();
 @ARGV and usage();
 
-my $config = Load_Config::load($conf_file);
+my $config = Load_Config::load();
 my $path = $config->{netspoc_data};
 
 # Cache holding JSON data.
@@ -90,11 +88,11 @@ sub convert {
         return(' ' x $level . $in);
     }
     elsif ($type eq 'HASH') {
-        return(map(convert($_, $level+1), 
-                   map { ($_, $in->{$_}) } sort keys %$in));
+        return(map { convert($_, $level+1) }
+                   map { ($_, $in->{$_}) } sort keys %$in);
     }
     elsif ($type eq 'ARRAY') {
-        return(map(convert($_, $level+1), @$in));
+        return(map { convert($_, $level+1) } @$in);
     }
 }
 
@@ -109,7 +107,7 @@ for my $owner (sort keys %owners) {
 
     my $changes = Policy_Diff::compare($cache, $old_ver, $new_ver, $owner);
     next if not $changes;
-    my $diff = join("\n", map(convert({ $_, $changes->{$_} }, -1),
+    my $diff = join("\n", map( { convert({ $_, $changes->{$_} }, -1) }
                               (sort { ($toplevel_sort{$a} || 999) <=> 
                                           ($toplevel_sort{$b} || 999) }
                                keys %$changes)));
@@ -127,8 +125,8 @@ for my $owner (sort keys %owners) {
         # -t: read recipient address from mail text
         # -f: set sender address
         # -F: don't use sender full name
-        open(my $mail, "|$sendmail -t -F '' -f $config->{noreply_address}") or 
-            die "Can't open $sendmail: $!";
+        open(my $mail, '|-', "$sendmail -t -F '' -f $config->{noreply_address}")
+          or die "Can't open $sendmail: $!";
         print $mail Encode::encode('UTF-8', $text);
         close $mail or warn "Can't close $sendmail: $!"; 
     }
