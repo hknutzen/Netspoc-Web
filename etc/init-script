@@ -1,5 +1,6 @@
 #!/bin/sh
 USER=netspocweb
+GROUP=nogroup
 BASE=/home/$USER/NetspocWeb/bin
 IP=127.0.0.1
 PORT=5000
@@ -19,6 +20,7 @@ case $1 in
             --workers $WORKER \
             --keepalive $KEEPALIVE \
             --user $USER \
+            --group $GROUP \
             $BASE/netspoc.psgi
 	;;
   reload)
@@ -26,6 +28,7 @@ case $1 in
 	;;
   restart)
 	$0 start
+	sleep 1
 	$0 stop
 	;;
   stop)
