@@ -80,7 +80,7 @@ Ext.define(
             appstate.addListener(
                 'changed', 
                 function () {
-                    if ( appstate.getInitPhase() ) { return; };
+                    if ( appstate.getInitPhase() ) { return; }
                     var cardpanel = this.getMainCardPanel();
                     var index = cardpanel.getLayout().getActiveItemIndex();
                     if ( index === 2 ) {

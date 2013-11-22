@@ -89,10 +89,11 @@ Ext.define(
         },
 
         onOwnerLoaded : function(store, records, success) {
+            var owner, alias;
             // Keep already selected owner.
             if (success && records.length) {
-                var owner = records[0].get('name');
-                var alias = records[0].get('alias');
+                owner = records[0].get('name');
+                alias = records[0].get('alias');
                 this.setOwnerState({ name  : owner, 
                                      alias : alias });
             }
@@ -103,8 +104,8 @@ Ext.define(
                 var all_owners = all_owners_store.getRange();
                 // Automatically select owner if only one is available.
                 if ( all_owners.length === 1 ) {
-                    var owner = all_owners[0].get('name');
-                    var alias = all_owners[0].get('alias');
+                    owner = all_owners[0].get('name');
+                    alias = all_owners[0].get('alias');
                     this.setOwner( owner, alias );
                 }
                 // Ask user to select one owner.

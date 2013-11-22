@@ -169,7 +169,7 @@ Ext.define(
             if ( appstate.getInitPhase() ) {
                 // Prevent double loading on startup.
                 return;
-            };
+            }
             this.getServiceStore().load();
         },
 
@@ -379,7 +379,12 @@ Ext.define(
             Ext.each(
                 checkboxes, 
                 function(cb) {
-                    cb.isDisabled() ? cb.enable() : cb.disable();
+                    if ( cb.isDisabled ) {
+                        cb.enable();
+                    }
+                    else {
+                        cb.disable();
+                    }
                 }
             );
         },
@@ -461,10 +466,10 @@ Ext.define(
             if ( newValue === true ) {
                 cbg.setValue(
                     {
-                        search_own             : cb_value['search_own'],
-                        search_used            : cb_value['search_used'],
-                        search_visible         : cb_value['search_visible'],
-                        search_in_all_services : cb_value['search_in_all_services'],
+                        search_own             : cb_value.search_own,
+                        search_used            : cb_value.search_used,
+                        search_visible         : cb_value.search_visible,
+                        search_in_all_services : cb_value.search_in_all_services,
                         search_in_rules        : true,
                         search_in_user         : true,
                         search_in_desc         : true,
@@ -475,10 +480,10 @@ Ext.define(
             else {
                 cbg.setValue(
                     {
-                        search_own             : cb_value['search_own'],
-                        search_used            : cb_value['search_used'],
-                        search_visible         : cb_value['search_visible'],
-                        search_in_all_services : cb_value['search_in_all_services'],
+                        search_own             : cb_value.search_own,
+                        search_used            : cb_value.search_used,
+                        search_visible         : cb_value.search_visible,
+                        search_in_all_services : cb_value.search_in_all_services,
                         search_in_rules       : false,
                         search_in_user        : false,
                         search_in_desc        : false,
@@ -498,10 +503,10 @@ Ext.define(
                         search_used            : true,
                         search_visible         : true,
                         search_in_all_services : true,
-                        search_in_rules        : cb_value['search_in_rules'],
-                        search_in_user         : cb_value['search_in_user'],
-                        search_in_desc         : cb_value['search_in_desc'],
-                        search_in_all_details  : cb_value['search_in_all_details']
+                        search_in_rules        : cb_value.search_in_rules,
+                        search_in_user         : cb_value.search_in_user,
+                        search_in_desc         : cb_value.search_in_desc,
+                        search_in_all_details  : cb_value.search_in_all_details
                     }
                 );
             }
@@ -512,10 +517,10 @@ Ext.define(
                         search_used            : false,
                         search_visible         : false,
                         search_in_all_services : false,
-                        search_in_rules        : cb_value['search_in_rules'],
-                        search_in_user         : cb_value['search_in_user'],
-                        search_in_desc         : cb_value['search_in_desc'],
-                        search_in_all_details  : cb_value['search_in_all_details']
+                        search_in_rules        : cb_value.search_in_rules,
+                        search_in_user         : cb_value.search_in_user,
+                        search_in_desc         : cb_value.search_in_desc,
+                        search_in_all_details  : cb_value.search_in_all_details
                     }
                 );
             }

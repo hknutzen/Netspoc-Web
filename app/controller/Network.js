@@ -69,7 +69,7 @@ Ext.define(
         },
 
         resetNetworks : function () {
-            if ( appstate.getInitPhase() ) { return; };
+            if ( appstate.getInitPhase() ) { return; }
 
             // Reset possibly previously chosen networks.
             appstate.changeNetworks( '' );
