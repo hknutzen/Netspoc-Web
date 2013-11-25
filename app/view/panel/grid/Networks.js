@@ -21,7 +21,7 @@ Ext.define(
             return {
                 selType     : 'checkboxmodel',
                 mode        : 'MULTI',
-                headerWidth : 12
+                headerWidth : 24
             };
         }
     }
