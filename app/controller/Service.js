@@ -302,7 +302,7 @@ Ext.define(
         },
 
         onButtonClick : function( button, event, eOpts ) {
-            var relation = button.relation || '';
+            var relation = button.relation;
             var store    = this.getServiceStore();
             var proxy    = store.getProxy();
             // Don't reload store if button clicked on is the one
@@ -446,6 +446,13 @@ Ext.define(
         },
         
         displaySearchWindow : function() {
+            // Remove list of displayed services before showing
+            // search window. Otherwise, if search is aborted or
+            // gives no results, the old list of services is still
+            // displayed, which can be irritating.
+            this.getServiceStore().removeAll();
+            this.clearDetails();
+
             if ( !search_window ) {
                 search_window = Ext.create(
                     'PolicyWeb.view.window.Search'
