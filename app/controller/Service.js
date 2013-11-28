@@ -379,7 +379,7 @@ Ext.define(
             Ext.each(
                 checkboxes, 
                 function(cb) {
-                    if ( cb.isDisabled ) {
+                    if ( cb.isDisabled() ) {
                         cb.enable();
                     }
                     else {
