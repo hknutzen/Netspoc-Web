@@ -691,7 +691,7 @@ sub get_diff {
     return [] if $version eq 'none';
     my $changed = 
         Policy_Diff::compare($cache, $version, $selected_history, $owner);
-    return if not $changed;
+    return [] if not $changed;
 
     # Convert to ExtJS tree.
     # Node: Hash with attributes "text" and 
