@@ -405,7 +405,7 @@ Ext.define(
             // Handle ENTER key press in search textfield.
             if ( e.getKey() == e.ENTER ) {
                 var sb = this.getStartSearchButton();
-                sb.fireEvent( 'click' );
+                sb.fireEvent( 'click', sb );
             }
         },
         
