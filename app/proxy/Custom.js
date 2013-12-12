@@ -6,7 +6,7 @@ Ext.define(
         pageParam   : false, //to remove param "page"
         startParam  : false, //to remove param "start"
         limitParam  : false, //to remove param "limit"
-        noCache     : false, //to remove param "_dc<xyz>"
+        noCache     : true,  //allow param "_dc<xyz>" to disable caching
 
         constructor : function() { 
             this.reader = { 
@@ -20,14 +20,14 @@ Ext.define(
         },
         
         buildUrl    : function (request) {
-            var url = 'backend/' + this.proxyurl;
+            var url = '';
             if ( this.proxyurl ) {
-                //console.log( 'Set proxy url to ' + url );
-                return url;
+                url = 'backend/' + this.proxyurl;
             }
             else {
-                console.log( 'NO PROXYURL CONFIGURED!' );
+                alert( 'Error: No proxyurl configured!' );
             }
+            return url;
         }
     }
 );

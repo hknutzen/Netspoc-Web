@@ -7,7 +7,6 @@ Ext.Loader.setConfig(
             'PolicyWeb' : './app',
             'Ext.ux'    : './resources/ux'
         }
-        //disableCaching : false
     }
 );
 

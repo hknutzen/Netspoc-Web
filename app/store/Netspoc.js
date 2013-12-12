@@ -7,7 +7,7 @@ Ext.define(
         autoLoad    : false,
         proxy       : {
             type     : 'policyweb',
-            proxyurl : 'override_me'
+            proxyurl : 'netspoc_override_me'
         },
         constructor : function() {
             this.callParent( arguments );

@@ -27,7 +27,6 @@ Ext.define(
         ],
 
         init : function() {
-            
             this.control(
                 {
                     'mainview': {
@@ -72,10 +71,19 @@ Ext.define(
 
 	onLaunch : function() {   
              appstate.setInitPhase( true );
+
             // Determine owner.
-            var store = this.getOwnerStore();
-            store.on( 'load', this.onOwnerLoaded, this );
-            store.load();
+            var ownerstore = this.getOwnerStore();
+            ownerstore.on( 'load', this.onOwnerLoaded, this );
+            // Load owner store AFTER the store of the combo box
+            // (AllOwners) was loaded. Otherwise the combo box will
+            // be empty in IE.
+            var oc = this.getOwnerCombo();
+            oc.getStore().on(
+                'load', function() {
+                    ownerstore.load();
+                }
+            );
 
             // History gets loaded later, after owner is set ...
             var hist_store = this.getHistoryStore();
@@ -220,7 +228,10 @@ Ext.define(
             var store = Ext.create(
                 'PolicyWeb.store.Netspoc',
                 {
-                    proxyurl    : 'logout',
+                    proxy       : {
+                        type     : 'policyweb',
+                        proxyurl : 'logout'
+                    },
                     fields      : [],
                     autoDestroy : true
                 }
