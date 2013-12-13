@@ -407,7 +407,7 @@ sub service_list {
 
             # Check if network or any of its contained resources
             # is user of current service.
-            if ($search_used || !$relation || $relation eq 'user') {
+            if ($search_used || $relation eq 'user') {
                 my $users = get_users_for_owner_and_service($req, $owner, $pname,
                     $network_names, $relevant_objects);
                 for my $user ( @$users ) {
@@ -422,7 +422,7 @@ sub service_list {
 	for my $pname ( sort @{$lists->{owner}} ) {
 
             # Check src and dst for own services.
-            if ($search_own || !$relation || $relation eq 'owner') {
+            if ($search_own || $relation eq 'owner') {
                 for my $rule (@{$services->{$pname}->{rules}}) {
                     for my $what (qw(src dst)) {
 			for my $obj (@{ $rule->{$what} }) {
