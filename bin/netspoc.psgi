@@ -276,11 +276,10 @@ sub get_services_and_rules {
     for my $sname ( @service_names ) {
 	my $rules =
             get_rules_for_owner_and_service( $req, $owner, $sname );
-	my $user_props = [];
+	my $user_props;
 	if ( $expand_users ) {
-            my $users =
-                get_users_for_owner_and_service( $req, $owner, $sname );
-	    map { push @$user_props, $_->{$disp_prop} } @$users;
+            my $users = get_users_for_owner_and_service( $req, $owner, $sname );
+	    $user_props = [ map { $_->{$disp_prop} } @$users ];
 	}
 	else {
 	    $user_props = [ 'User' ];
