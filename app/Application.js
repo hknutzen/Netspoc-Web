@@ -1,5 +1,27 @@
 
 // Main file that launches application.
+
+
+/* This overrides the sorttypes (code taken from
+ *  data\SortTypes.js File )*/
+Ext.apply(
+    Ext.data.SortTypes,
+    {
+        asUCText: function(s) {
+            return germanize(String(s).toUpperCase().replace(this.stripTagsRE, ""),false);
+        },
+        asUCString: function(s) {
+            return germanize(String(s).toUpperCase(),false);
+        },
+        asText: function(s) {
+            return germanize(String(s).replace(this.stripTagsRE, ""),true);
+        },
+        none: function(s) {
+            return germanize(s,true);
+        }
+    }
+);
+
 Ext.Loader.setConfig(
     {
         enabled        : true,

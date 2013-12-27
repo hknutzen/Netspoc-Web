@@ -54,6 +54,25 @@ function numeric2ip( num ) {
     return d;
 }
 
+var umlaut_re = /^[ÄÖÜäöü]/g;
+var specialchar2normalchar = {
+    'Ä' : 'A',
+    'Ö' : 'O',
+    'Ü' : 'U',
+    'ä' : 'a',
+    'ö' : 'o',
+    'ü' : 'u',
+    'ß' : 'ss'
+};
+function germanize(s, cs) {
+    var ret = s;
+    if ( s.search( umlaut_re ) != -1 ) {
+        ret = specialchar2normalchar[s.substring(0,1)] +
+            '_' + s.substring(1);
+    }
+    return ret;
+}
+
 function record_names_as_csv( records ) {
     var selected = [];
     Ext.each( records, function (item) {
