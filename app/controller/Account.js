@@ -65,6 +65,7 @@ Ext.define(
             this.getAdminEmailList().getStore().load();
             this.getWatchersStore().load();
             this.getSupervisorsStore().load();
+            this.getSupervisorEmailList().clear();
         },
         
         onSupervisorSelected : function( rowmodel, supervisor, index, eOpts ) {
@@ -72,10 +73,6 @@ Ext.define(
             if ( supervisor ) {
                 email_panel.show( supervisor.get('name'),
                                   supervisor.get('alias') );
-            }
-            else {
-                email_panel.clear();
-                return true;
             }
             return true;
         }
