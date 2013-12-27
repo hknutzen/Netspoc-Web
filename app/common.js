@@ -54,7 +54,7 @@ function numeric2ip( num ) {
     return d;
 }
 
-var umlaut_re = /^[ÄÖÜäöü]/g;
+var special_char_re = /^[ÄÖÜäöüß]/g;
 var specialchar2normalchar = {
     'Ä' : 'A',
     'Ö' : 'O',
@@ -64,9 +64,9 @@ var specialchar2normalchar = {
     'ü' : 'u',
     'ß' : 'ss'
 };
-function germanize(s, cs) {
+function germanize(s) {
     var ret = s;
-    if ( s.search( umlaut_re ) != -1 ) {
+    if ( s.search( special_char_re ) != -1 ) {
         ret = specialchar2normalchar[s.substring(0,1)] +
             '_' + s.substring(1);
     }

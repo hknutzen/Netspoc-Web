@@ -8,16 +8,16 @@ Ext.apply(
     Ext.data.SortTypes,
     {
         asUCText: function(s) {
-            return germanize(String(s).toUpperCase().replace(this.stripTagsRE, ""),false);
+            return germanize(String(s).toUpperCase().replace(this.stripTagsRE, ""));
         },
         asUCString: function(s) {
-            return germanize(String(s).toUpperCase(),false);
+            return germanize(String(s).toUpperCase());
         },
         asText: function(s) {
-            return germanize(String(s).replace(this.stripTagsRE, ""),true);
+            return germanize(String(s).replace(this.stripTagsRE, ""));
         },
         none: function(s) {
-            return germanize(s,true);
+            return germanize(s);
         }
     }
 );
