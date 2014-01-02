@@ -450,12 +450,14 @@ sub service_list {
 
 	# Search case-sensitive?
 	if ( !$req->param('search_case_sensitive') ) {
-	    $search = "(?i)$search";
+	    $search = qr/\Q$search\E/i;
 	}
-
+        else {
+            $search = qr/\Q$search\E/;
+        }
 	# Exact matches only?
 	if ( $req->param('search_exact') ) {
-	    $search = '^' . $search . '$';
+	    $search = qr/^$search$/;
 	}
 
 	# Reset $plist, it gets filled with search results below.
@@ -476,7 +478,7 @@ sub service_list {
 	for my $sname ( @$search_plist ) {
 
 	    # Check if service name itself contains $search.
-	    if ( $sname =~ /$search/ ) {
+	    if ( $sname =~ $search ) {
 		push @$plist, $sname;
 		next SERVICE;
 	    }
@@ -494,14 +496,14 @@ sub service_list {
 		    for my $r ( @$rules ) {
 			# Search in src or dst.
 			for my $item ( @{$r->{$lookup{$r->{has_user}}}} ) {
-			    if ( $item =~ /$search/ ) {
+			    if ( $item =~ $search ) {
 				push @$plist, $sname;
 				next SERVICE;
 			    }
 			}
 			# Search in protocol.
 			for my $item ( @{$r->{prt}} ) {
-			    if ( $item =~ /$search/ ) {
+			    if ( $item =~ $search ) {
 				push @$plist, $sname;
 				next SERVICE;
 			    }
@@ -514,15 +516,15 @@ sub service_list {
                     $network_names, $relevant_objects );
 		if ( $users ) {
 		    for my $u ( @$users ) {
-			if ( $u->{ip}  &&  $u->{ip} =~ /$search/ ) {
+			if ( $u->{ip}  &&  $u->{ip} =~ $search ) {
 			    push @$plist, $sname;
 			    next SERVICE;
 			}
-			elsif ( $u->{name}  &&  $u->{name} =~ /$search/ ) {
+			elsif ( $u->{name}  &&  $u->{name} =~ $search ) {
 			    push @$plist, $sname;
 			    next SERVICE;
 			}
-			elsif ( $u->{owner}  &&  $u->{owner} =~ /$search/ ) {
+			elsif ( $u->{owner}  &&  $u->{owner} =~ $search ) {
 			    push @$plist, $sname;
 			    next SERVICE;
 			}
@@ -531,7 +533,7 @@ sub service_list {
 	    }
 	    if ( $req->param('search_in_desc') ) {
 		if ( my $desc = $services->{$sname}->{details}->{description} ) {
-		    if ( $desc =~ /$search/ ) {
+		    if ( $desc =~ $search ) {
 			push @$plist, $sname;
 			next SERVICE;
 		    }
