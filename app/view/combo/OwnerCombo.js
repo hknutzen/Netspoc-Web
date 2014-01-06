@@ -14,7 +14,6 @@ Ext.define(
         minChars       : 1,
         displayField   : 'alias',
         valueField     : 'name',
-        loadingText    : 'Abfrage l&auml;uft ...',
         queryMode      : 'local',
         triggerAction  : 'all',
         listConfig     : {
