@@ -437,9 +437,13 @@ Ext.define(
         },
 
         onCheckboxChange : function( checkbox, newVal, oldVal, eOpts ) {
-            var params = this.getCheckboxParams( checkbox, newVal );
-            var rules  = this.getRulesStore();
-            rules.load( { params : params } );
+            var params;
+            var srv_store = this.getServiceStore();
+            if ( srv_store.getTotalCount() > 0 ) {
+                params = this.getCheckboxParams( checkbox, newVal );
+                var rules     = this.getRulesStore();
+                rules.load( { params : params } );
+            }
             if ( Ext.isObject( print_window ) ) {
                 this.onShowAllServices( print_window );
             }
