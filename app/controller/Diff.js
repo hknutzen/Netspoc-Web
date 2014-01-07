@@ -61,8 +61,10 @@ Ext.define(
             diff_store.on(
                 'beforeload',
                 function ( store, operation ) {
-                    store.getProxy().extraParams.active_owner = appstate.getOwner();
-                    store.getProxy().extraParams.history      = appstate.getHistory();
+                    store.getProxy().extraParams.active_owner =
+                        appstate.getOwner();
+                    store.getProxy().extraParams.history =
+                        appstate.getHistory();
                 },
                 this
             );
@@ -84,6 +86,9 @@ Ext.define(
                     var cardpanel = this.getMainCardPanel();
                     var index = cardpanel.getLayout().getActiveItemIndex();
                     if ( index === 2 ) {
+                        // Clear tree so no obsolete data is displayed.
+                        this.getDiffView().getRootNode().removeAll();
+
                         this.onBeforeActivate();
                     }
                 },
