@@ -35,8 +35,9 @@ Ext.define(
                     'networkview' : {
                         beforeactivate : this.onBeforeActivate
                     },
-                    'networklist': {
-                        select          : this.onSelect
+                    'networklist' : {
+                        select   : this.onSelect,
+                        deselect : this.onSelect
                     }
                 }
             );
@@ -131,7 +132,7 @@ Ext.define(
             }
         },
 
-        onSelectionChange : function( sm, selected, opts ) {
+        onSelectionChange : function( sm, selected ) {
             var button = this.getNetworkConfirmButton();
             if ( button.disabled ) {
                 button.enable();
