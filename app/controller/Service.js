@@ -149,7 +149,14 @@ Ext.define(
                     var cardpanel = this.getMainCardPanel();
                     var index = cardpanel.getLayout().getActiveItemIndex();
                     if ( index === 0 ) {
-                        this.onBeforeActivate();
+                        // Search again with changed policy if last thing
+                        // user did before changing policy was a search.
+                        if ( this.getCurrentRelation() === "search" ) {
+                            var sb = this.getStartSearchButton();
+                            sb.fireEvent( 'click', sb );
+                        } else {
+                            this.onBeforeActivate();
+                        }
                     }
                 },
                 this
