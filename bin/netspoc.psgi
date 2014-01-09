@@ -276,11 +276,10 @@ sub get_services_and_rules {
     for my $sname ( @service_names ) {
 	my $rules =
             get_rules_for_owner_and_service( $req, $owner, $sname );
-	my $users =
-            get_users_for_owner_and_service( $req, $owner, $sname );
-	my $user_props = [];
+	my $user_props;
 	if ( $expand_users ) {
-	    map { push @$user_props, $_->{$disp_prop} } @$users;
+            my $users = get_users_for_owner_and_service( $req, $owner, $sname );
+	    $user_props = [ map { $_->{$disp_prop} } @$users ];
 	}
 	else {
 	    $user_props = [ 'User' ];
@@ -402,14 +401,15 @@ sub service_list {
         $relevant_objects =
             relevant_objects_for_networks( $network_names, $assets );
 
-      USER_SERVICE:
-	for my $pname ( sort @{$lists->{user}} ) {
-
-            # Check if network or any of its contained resources
-            # is user of current service.
-            if ($search_used || !$relation || $relation eq 'user') {
-                my $users = get_users_for_owner_and_service($req, $owner, $pname,
-                    $network_names, $relevant_objects);
+        # Check if network or any of its contained resources
+        # is user of current service.
+        if ($search_used || $relation eq 'user') {
+          USER_SERVICE:
+            for my $pname ( sort @{$lists->{user}} ) {
+                my $users = 
+                    get_users_for_owner_and_service($req, $owner, $pname,
+                                                    $network_names, 
+                                                    $relevant_objects);
                 for my $user ( @$users ) {
                     if ($relevant_objects->{$user->{name}}) {
                         push @{$copy->{user}}, $pname;
@@ -418,11 +418,11 @@ sub service_list {
                 }
             }
         }
-      OWNER_SERVICE:
-	for my $pname ( sort @{$lists->{owner}} ) {
 
-            # Check src and dst for own services.
-            if ($search_own || !$relation || $relation eq 'owner') {
+        # Check src and dst for own services.
+        if ($search_own || $relation eq 'owner') {
+          OWNER_SERVICE:
+            for my $pname ( sort @{$lists->{owner}} ) {
                 for my $rule (@{$services->{$pname}->{rules}}) {
                     for my $what (qw(src dst)) {
 			for my $obj (@{ $rule->{$what} }) {

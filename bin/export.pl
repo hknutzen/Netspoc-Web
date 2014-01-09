@@ -2,6 +2,8 @@
 
 use strict;
 use warnings;
+use Getopt::Long;
+use File::Path 'make_path';
 use JSON;
 use Netspoc;
 use open qw(:std :utf8);
@@ -10,10 +12,12 @@ my $VERSION =
     ( split ' ', '$Id$' )[2];
 
 sub usage {
-    die "Usage: $0 netspoc-data out-directory\n";
+    die "Usage: $0 [-q] netspoc-data out-directory\n";
 }
+my $quiet;
 
 # Argument processing.
+GetOptions ('quiet!' => \$quiet) or usage();
 my $netspoc_data = shift @ARGV or usage();
 my $out_dir = shift @ARGV or usage();
 
@@ -37,12 +41,17 @@ sub internal_err {
 sub create_dirs {
     my ($path) = @_;
     $path = "$out_dir/$path";
-    my @parts = split('/', $path);
-    my $name = shift @parts;
-    Netspoc::check_output_dir($name);
-    for my $part (@parts) {
-        $name .= "/$part";
-        Netspoc::check_output_dir($name);
+    make_path($path, {error => \my $err} );
+    if (@$err) {
+        for my $diag (@$err) {
+            my ($file, $message) = %$diag;
+            if ($file eq '') {
+                die "General error: $message\n";
+            }
+            else {
+                die "Problem creating $file: $message\n";
+            }
+        }
     }
     return;
 }
@@ -631,7 +640,7 @@ sub export_assets {
     };
 
     # Different zones can use the same name from ipmask2aggregate
-    # '0/0' if the belong to the same zone_cluster. 
+    # '0/0' if they belong to the same zone_cluster. 
     # Hence augment existing hash.
     my $add_networks_hash = sub {
         my ($owner, $name, $hash) = @_;
@@ -643,13 +652,13 @@ sub export_assets {
         next if $zone->{disabled};
         next if $zone->{loopback};
 
-        # Ignore empty zone with only tunnel or unnumbered networks.
-        next if not @{ $zone->{networks} };
-
         # All aggregates can be used in rules.
         for my $aggregate (values %{ $zone->{ipmask2aggregate} }) {
             $all_objects{$aggregate} = $aggregate;
         }
+
+        # Ignore empty zone with only tunnel or unnumbered networks.
+        next if not @{ $zone->{networks} };
 
         # Zone with network 0/0 doesn't have an aggregate 0/0.
         my $any = $zone->{ipmask2aggregate}->{'0/0'};
@@ -658,7 +667,7 @@ sub export_assets {
         my $networks = add_subnetworks($zone->{networks});
         for my $owner (owner_for_object($zone), part_owners_for_object($zone)) {
 
-            # Show only own or sub_own networks in foreign zone.
+            # Show only own or part_owned networks in foreign zone.
             my $own_zone = $zone_owner eq $owner;
             my $own_networks;
             if (not $own_zone) {
@@ -755,6 +764,8 @@ sub export_services {
     export("services", \%shash);
 
     Netspoc::progress("Export users and service_lists");
+
+    # Create file even for owner having no service at all.
     $owner2type2shash{$_} ||= {} for keys %Netspoc::owners;
     for my $owner (sort keys %owner2type2shash) {
         my $type2shash = $owner2type2shash{$owner} || {};
@@ -901,7 +912,7 @@ sub copy_policy_file {
 ####################################################################
 # Initialize Netspoc data
 ####################################################################
-Netspoc::set_config({time_stamps => 1, max_errors => 9999});
+Netspoc::set_config({time_stamps => 1, max_errors => 9999, verbose => !$quiet});
 
 # Set global config variable of Netspoc to store attribute 'description'.
 Netspoc::store_description(1);
