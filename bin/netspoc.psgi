@@ -195,6 +195,16 @@ sub get_any {
     return get_nat_obj_list($any_names, $owner);
 }
 
+# Intersect chosen networks with all networks
+# within area of ownership.
+# Return untainted networks as array-ref.
+sub untaint_networks {
+    my ( $chosen, $assets ) = @_;
+    my $chosen_networks = [ split /,/, $chosen ];
+    my $network_names = $assets->{network_list};
+    return intersect( $chosen_networks, $network_names  );
+}
+
 sub get_networks {
     my ($req, $session) = @_;
     my $owner  = $req->param('active_owner');
@@ -272,13 +282,16 @@ sub get_services_and_rules {
     abort "Unknown display property $disp_prop"
 	unless $allowed{$disp_prop};
 
+    my $relevant_objects =  check_chosen_networks($req);
   SERVICE:
     for my $sname ( @service_names ) {
 	my $rules =
-            get_rules_for_owner_and_service( $req, $owner, $sname );
+            get_rules_for_owner_and_service( $req, $owner, $sname, 
+                                             $relevant_objects );
 	my $user_props;
 	if ( $expand_users ) {
-            my $users = get_users_for_owner_and_service( $req, $owner, $sname );
+            my $users = get_users_for_owner_and_service( $req, $owner, $sname,
+                                                         $relevant_objects);
 	    $user_props = [ map { $_->{$disp_prop} } @$users ];
 	}
 	else {
@@ -347,13 +360,12 @@ sub get_services_owners_and_admins {
     return $data;
 }
 
-sub relevant_objects_for_networks {
-    my ( $network_names, $assets ) = @_;
-    $network_names ||
-        internal_err "No networks specified in request for relevant objects!";
-    $assets ||
-        internal_err "No assets given in request for relevant objects!";
-
+sub check_chosen_networks {
+    my ( $req ) = @_;
+    my $chosen = $req->param('chosen_networks');
+    my $owner  = $req->param('active_owner');
+    my $assets = load_json("owner/$owner/assets");
+    my $network_names = untaint_networks($chosen, $assets);
     my %relevant_objects = 
         map({ $_ => 1 } (@$network_names, 
                          map({ @{ $assets->{net2childs}->{$_} } }
@@ -366,11 +378,115 @@ sub relevant_objects_for_networks {
 # Services, rules, users
 ####################################################################
 
+my %rule_lookup = ( 'src'  => 'dst',
+               'dst'  => 'src',
+               'both' => 'both'
+    );
+
+sub search_string {
+    my ($req, $service_lists, $relevant_objects) = @_;
+    my $search = $req->param('search_string');
+    my $owner = $req->param('active_owner');
+    my $services = load_json('services');
+    my $result = [];
+
+    # Strip leading and trailing whitespaces.
+    $search =~ s/^\s+//;
+    $search =~ s/\s+$//;
+
+    # Search case-sensitive?
+    if ( !$req->param('search_case_sensitive') ) {
+        $search = qr/\Q$search\E/i;
+    }
+    else {
+        $search = qr/\Q$search\E/;
+    }
+
+    # Exact matches only?
+    if ( $req->param('search_exact') ) {
+        $search = qr/^$search$/;
+    }
+
+    my @search_in = ();
+    if ( $req->param('search_own') ) {
+        push @search_in, 'owner';
+    }
+    if ( $req->param('search_used') ) {
+        push @search_in, 'user';
+    }
+    if ( $req->param('search_visible') ) {
+        push @search_in, 'visible';
+    }
+    my $search_plist = [ sort map { @$_ } @{$service_lists}{ @search_in } ];
+
+  SERVICE:
+    for my $sname ( @$search_plist ) {
+
+        # Check if service name itself contains $search.
+        if ( $sname =~ $search ) {
+            push @$result, $sname;
+            next SERVICE;
+        }
+
+        if ( $req->param('search_in_rules') ) {
+            my $rules = get_rules_for_owner_and_service( $req, $owner, $sname,
+                                                         $relevant_objects );
+            if ( $rules ) {
+                for my $r ( @$rules ) {
+                    # Search in src or dst.
+                    for my $item ( @{$r->{$rule_lookup{$r->{has_user}}}} ) {
+                        if ( $item =~ $search ) {
+                            push @$result, $sname;
+                            next SERVICE;
+                        }
+                    }
+                    # Search in protocol.
+                    for my $item ( @{$r->{prt}} ) {
+                        if ( $item =~ $search ) {
+                            push @$result, $sname;
+                            next SERVICE;
+                        }
+                    }
+                }
+            }
+        }
+        if ( $req->param('search_in_user') ) {
+            my $users = get_users_for_owner_and_service( $req, $owner, $sname,
+                                                         $relevant_objects );
+            if ( $users ) {
+                for my $u ( @$users ) {
+                    if ( $u->{ip}  &&  $u->{ip} =~ $search ) {
+                        push @$result, $sname;
+                        next SERVICE;
+                    }
+                    elsif ( $u->{name}  &&  $u->{name} =~ $search ) {
+                        push @$result, $sname;
+                        next SERVICE;
+                    }
+                    elsif ( $u->{owner}  &&  $u->{owner} =~ $search ) {
+                        push @$result, $sname;
+                        next SERVICE;
+                    }
+                }
+            }
+        }
+        if ( $req->param('search_in_desc') ) {
+            if ( my $desc = $services->{$sname}->{details}->{description} ) {
+                if ( $desc =~ $search ) {
+                    push @$result, $sname;
+                    next SERVICE;
+                }
+            }
+        }
+    }
+    return $result;
+}
+
 sub service_list {
     my ($req, $session) = @_;
     my $owner       = $req->param('active_owner');
     my $relation    = $req->param('relation');
-    my $search      = $req->param('search_string');
+    my $search_string = $req->param('search_string');
     my $chosen      = $req->param('chosen_networks');
     my $search_own  = $req->param('search_own');
     my $search_used = $req->param('search_used');
@@ -379,27 +495,18 @@ sub service_list {
     my $services = load_json('services');
     my $relevant_objects;
     my $network_names;
-    my $plist;
     $relation ||= 'user';   # take 'user' as default
 
     # Make a real copy not a reference.
-    my $copy = { %$lists };
+    my $service_lists = { %$lists };
 
     # Are we in restricted mode with only selected networks?
     if ( $chosen ) {
 
 	# Reset user and owner on copy of $lists.
-	$copy->{user}  = [];
-	$copy->{owner} = [];
-
-	# Untaint: Intersect chosen networks with all networks
-	# within area of ownership.
-	$network_names = untaint_networks( $chosen, $assets );
-
-	# Only collect services that are relevant for chosen
-	# networks stored in $network_names.
-        $relevant_objects =
-            relevant_objects_for_networks( $network_names, $assets );
+	$service_lists->{user}  = [];
+	$service_lists->{owner} = [];
+        $relevant_objects = check_chosen_networks($req);
 
         # Check if network or any of its contained resources
         # is user of current service.
@@ -407,12 +514,11 @@ sub service_list {
           USER_SERVICE:
             for my $pname ( sort @{$lists->{user}} ) {
                 my $users = 
-                    get_users_for_owner_and_service($req, $owner, $pname,
-                                                    $network_names, 
+                    get_users_for_owner_and_service($req, $owner, $pname, 
                                                     $relevant_objects);
                 for my $user ( @$users ) {
                     if ($relevant_objects->{$user->{name}}) {
-                        push @{$copy->{user}}, $pname;
+                        push @{$service_lists->{user}}, $pname;
                         next USER_SERVICE;
                     }
                 }
@@ -427,7 +533,7 @@ sub service_list {
                     for my $what (qw(src dst)) {
 			for my $obj (@{ $rule->{$what} }) {
 			    if ($relevant_objects->{$obj}) {
-				push @{$copy->{owner}}, $pname;
+				push @{$service_lists->{owner}}, $pname;
 				next OWNER_SERVICE;
 			    }
 			} 
@@ -437,111 +543,13 @@ sub service_list {
 	}
     }
 
-    # $plist is filled here but is overridden in code
-    # handling search, IF we are in search mode.
-    $plist = $copy->{$relation};
-
-    # Searching services?
-    if ( $search ) {
-
-	# Strip leading and trailing whitespaces.
-	$search =~ s/^\s+//;
-	$search =~ s/\s+$//;
-
-	# Search case-sensitive?
-	if ( !$req->param('search_case_sensitive') ) {
-	    $search = qr/\Q$search\E/i;
-	}
-        else {
-            $search = qr/\Q$search\E/;
-        }
-	# Exact matches only?
-	if ( $req->param('search_exact') ) {
-	    $search = qr/^$search$/;
-	}
-
-	# Reset $plist, it gets filled with search results below.
-	$plist = [];
-	my @search_in = ();
-	if ( $search_own ) {
-	    push @search_in, 'owner';
-	}
-	if ( $search_used ) {
-	    push @search_in, 'user';
-	}
-	if ( $req->param('search_visible') ) {
-	    push @search_in, 'visible';
-	}
-	my $search_plist = [ sort map { @$_ } @{$copy}{ @search_in } ];
-
-      SERVICE:
-	for my $sname ( @$search_plist ) {
-
-	    # Check if service name itself contains $search.
-	    if ( $sname =~ $search ) {
-		push @$plist, $sname;
-		next SERVICE;
-	    }
-
-	    if ( $req->param('search_in_rules') ) {
-		my %lookup = (
-			      'src'  => 'dst',
-			      'dst'  => 'src',
-			      'both' => 'both'
-			      );
-		# Get rules for current owner and service.
-		my $rules =
-                    get_rules_for_owner_and_service( $req, $owner, $sname );
-		if ( $rules ) {
-		    for my $r ( @$rules ) {
-			# Search in src or dst.
-			for my $item ( @{$r->{$lookup{$r->{has_user}}}} ) {
-			    if ( $item =~ $search ) {
-				push @$plist, $sname;
-				next SERVICE;
-			    }
-			}
-			# Search in protocol.
-			for my $item ( @{$r->{prt}} ) {
-			    if ( $item =~ $search ) {
-				push @$plist, $sname;
-				next SERVICE;
-			    }
-			}
-		    }
-		}
-	    }
-	    if ( $req->param('search_in_user') ) {
-		my $users = get_users_for_owner_and_service( $req, $owner, $sname,
-                    $network_names, $relevant_objects );
-		if ( $users ) {
-		    for my $u ( @$users ) {
-			if ( $u->{ip}  &&  $u->{ip} =~ $search ) {
-			    push @$plist, $sname;
-			    next SERVICE;
-			}
-			elsif ( $u->{name}  &&  $u->{name} =~ $search ) {
-			    push @$plist, $sname;
-			    next SERVICE;
-			}
-			elsif ( $u->{owner}  &&  $u->{owner} =~ $search ) {
-			    push @$plist, $sname;
-			    next SERVICE;
-			}
-		    }
-		}
-	    }
-	    if ( $req->param('search_in_desc') ) {
-		if ( my $desc = $services->{$sname}->{details}->{description} ) {
-		    if ( $desc =~ $search ) {
-			push @$plist, $sname;
-			next SERVICE;
-		    }
-		}
-	    }
-	}
+    my $result;
+    if ( $search_string ) {
+        $result = search_string($req, $service_lists);
     }
-
+    else {
+        $result = $service_lists->{$relation};
+    }
     my $owner2alias = load_json('owner2alias');
     my $add_alias = sub {
         my ($owner) = @_;
@@ -561,17 +569,7 @@ sub service_list {
 	$hash->{sub_owner} and 
             $hash->{sub_owner} = $add_alias->($hash->{sub_owner});
 	$hash;
-    } @$plist ];
-}
-
-# Untaint: Intersect chosen networks with all networks
-# within area of ownership.
-# Return untainted networks as array-ref.
-sub untaint_networks {
-    my ( $chosen, $assets ) = @_;
-    my $chosen_networks = [ split /,/, $chosen ];
-    my $network_names = $assets->{network_list};
-    return intersect( $chosen_networks, $network_names  );
+    } @$result ];
 }
 
 sub get_users_for_owner_and_service {
@@ -588,14 +586,7 @@ sub get_users_for_owner_and_service {
 
     # Are we in restricted mode with only selected networks?
     # Only filter users for own services.
-    if ( $chosen && $lists->{hash}->{$sname} eq 'user' ) {
-        my $assets = load_json("owner/$owner/assets");
-        $networks ||= untaint_networks( $chosen, $assets );
-
-	# Only collect users that are relevant for chosen
-	# networks stored in $network_names.
-        $relevant_objects ||=
-            relevant_objects_for_networks( $networks, $assets );
+    if ( $relevant_objects && $lists->{hash}->{$sname} eq 'user' ) {
         @{$user_objs} = grep { $relevant_objects->{$_} } @$user_objs;
     }
     return get_nat_obj_list( $user_objs, $owner);
@@ -606,14 +597,13 @@ my %src_or_dst =  (
     dst  => 'src',
     both => 1
     );
+
 sub get_rules_for_owner_and_service {
-    my ( $req, $owner, $sname ) = @_;
+    my ( $req, $owner, $sname, $relevant_objects ) = @_;
     my $expand_users = $req->param('expand_users');
-    my $chosen       = $req->param('chosen_networks');
     my $prop         = $req->param('display_property');
     my $lists        = load_json("owner/$owner/service_lists");
     $prop ||= 'ip';  # 'ip' as default property to display
-    my $relevant_objects;
 
     # Check if owner is allowed to access this service.
     $lists->{hash}->{$sname} or abort "Unknown service '$sname'";
@@ -625,13 +615,7 @@ sub get_rules_for_owner_and_service {
     # If networks were selected and own services are displayed,
     # filter rules to those containing these networks
     # (and their child objects).
-    if ( $chosen && $lists->{hash}->{$sname} eq 'owner' ) {
-        my $assets = load_json("owner/$owner/assets");
-        my $network_names = untaint_networks( $chosen, $assets );
-
-	# Get relevant objects for currently chosen networks.
-        $relevant_objects =
-            relevant_objects_for_networks( $network_names, $assets );
+    if ( $relevant_objects && $lists->{hash}->{$sname} eq 'owner' ) {
         $rules = [ grep {
             $_->{has_user} ne 'both' &&
                 grep({ $relevant_objects->{$_} } 
@@ -646,7 +630,8 @@ sub get_rules_for_owner_and_service {
     my $crules;
     my $user;
     if ( $expand_users ) {
-        $user = get_users_for_owner_and_service( $req, $owner, $sname );
+        $user = get_users_for_owner_and_service( $req, $owner, $sname, 
+                                                 $relevant_objects );
     }
     for my $rule (@$rules) {
 	my $crule = { %$rule };
@@ -668,14 +653,18 @@ sub get_rules {
     my ($req, $session) = @_;
     my $owner = $req->param('active_owner');
     my $sname = $req->param('service') or abort "Missing parameter 'service'";
-    return get_rules_for_owner_and_service( $req, $owner, $sname );
+    my $relevant_objects = check_chosen_networks($req);
+    return get_rules_for_owner_and_service( $req, $owner, $sname, 
+                                            $relevant_objects );
 }
 
 sub get_users {
     my ($req, $session) = @_;
     my $owner = $req->param('active_owner');
     my $sname = $req->param('service') or abort "Missing parameter 'service'";
-    return get_users_for_owner_and_service( $req, $owner, $sname );
+    my $relevant_objects = check_chosen_networks($req);
+    return get_users_for_owner_and_service( $req, $owner, $sname, 
+                                            $relevant_objects );
 }
 
 my %text2css = ( '+' => 'icon-add',
