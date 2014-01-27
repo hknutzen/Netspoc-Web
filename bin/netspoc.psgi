@@ -278,7 +278,7 @@ sub get_services_and_rules {
     $disp_prop =~ /^(?:name|ip)$/ or 
         abort "Unknown display property $disp_prop";
 
-    my $relevant_objects =  check_chosen_networks($req);
+    my $relevant_objects = check_chosen_networks($req);
   SERVICE:
     for my $sname ( @service_names ) {
 	my $rules =
@@ -358,7 +358,7 @@ sub get_services_owners_and_admins {
 
 sub check_chosen_networks {
     my ( $req ) = @_;
-    my $chosen = $req->param('chosen_networks');
+    my $chosen = $req->param('chosen_networks') or return;
     my $owner  = $req->param('active_owner');
     my $assets = load_json("owner/$owner/assets");
     my $network_names = untaint_networks($chosen, $assets);
