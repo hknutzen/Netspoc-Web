@@ -266,21 +266,17 @@ sub get_services_and_rules {
     my $expand_users = $req->param('expand_users');
     my $lists        = load_json("owner/$owner/service_lists");
     my $assets       = load_json("owner/$owner/assets");
-    my $services     = service_list( $req, $session );
     $disp_prop ||= 'ip';
     my $data = [];
 
-    # Don't continue if there are no services.
+    my $services = service_list( $req, $session );
+    return [] if !@$services;
+
     my @service_names = map { $_->{name} } @$services;
-    return [] unless scalar @service_names;
 
     # Untaint display property.
-    my %allowed = (
-	name => 1,
-	ip   => 1
-	);
-    abort "Unknown display property $disp_prop"
-	unless $allowed{$disp_prop};
+    $disp_prop =~ /^(?:name|ip)$/ or 
+        abort "Unknown display property $disp_prop";
 
     my $relevant_objects =  check_chosen_networks($req);
   SERVICE:
