@@ -511,7 +511,6 @@ sub service_list {
     my ($req, $session) = @_;
     my $owner       = $req->param('active_owner');
     my $relation    = $req->param('relation');
-    my $search_string = $req->param('search_string');
     my $chosen      = $req->param('chosen_networks');
     my $search_own  = $req->param('search_own');
     my $search_used = $req->param('search_used');
@@ -540,7 +539,7 @@ sub service_list {
                     get_users_for_owner_and_service($req, $owner, $pname, 
                                                     $relevant_objects);
                 for my $user ( @$users ) {
-                    if ($relevant_objects->{$user->{name}}) {
+                    if ($relevant_objects->{$user}) {
                         push @{$service_lists->{user}}, $pname;
                         next USER_SERVICE;
                     }
@@ -567,8 +566,8 @@ sub service_list {
     }
 
     my $result;
-    if ( $search_string ) {
-        $result = search_string($req, $service_lists);
+    if ( $req->param('search_string') ) {
+        $result = search_string($req, $service_lists, $relevant_objects);
     }
     else {
         $result = $service_lists->{$relation};
