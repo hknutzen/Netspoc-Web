@@ -353,6 +353,9 @@ sub get_services_and_rules {
                 $rule->{src} = $user_const if has_user($rule, 'src');
                 $rule->{dst} = $user_const if has_user($rule, 'dst');
             }
+
+            # Frontend uses proto instead of prt in this context.
+            $rule->{proto} = delete $rule->{prt};
             push @result, $rule;
         }
     }
