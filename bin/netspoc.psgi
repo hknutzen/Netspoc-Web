@@ -151,18 +151,27 @@ sub load_json {
     return $cache->load_json_version($selected_history, $path);
 }
 
-sub get_objects {
-    return load_json('objects');
-}
-
 sub get_no_nat_set {
     my ($owner) = @_;
     return load_json("owner/$owner/no_nat_set");
 }
 
+sub name2ip {
+    my ($obj_name, $no_nat_set) = @_;
+    my $objects = load_json('objects');
+    my $obj = $objects->{$obj_name};
+    if (my $href = $obj->{nat} and $no_nat_set) {
+	for my $tag (keys %$href) {
+	    next if $no_nat_set->{$tag};
+	    return $href->{$tag};
+	}
+    }
+    return $obj->{ip};
+}
+
 sub get_nat_obj {
     my ($obj_name, $no_nat_set) = @_;
-    my $objects = get_objects();
+    my $objects = load_json('objects');
     my $owner2alias = load_json('owner2alias');
     my $obj = $objects->{$obj_name};
     if (my $href = $obj->{nat} and $no_nat_set) {
@@ -259,52 +268,55 @@ sub get_hosts {
     return get_nat_obj_list($child_names, $owner);
 }
 
-sub get_services_and_rules {
-    my ($req, $session) = @_;
-    my $owner        = $req->param('active_owner');
-    my $disp_prop    = $req->param('display_property');
+# Substitute objects in rules by ip or name.
+# Substitute 'users' keyword by ip or name of users.
+sub adapt_name_ip_user {
+    my ($req, $owner, $sname, $rules, $relevant_objects) = @_;
     my $expand_users = $req->param('expand_users');
-    my $lists        = load_json("owner/$owner/service_lists");
-    my $assets       = load_json("owner/$owner/assets");
-    $disp_prop ||= 'ip';
-    my $data = [];
+    my $disp_prop    = $req->param('display_property') || 'ip';
+    my $no_nat_set   = get_no_nat_set($owner);
 
-    my $services = service_list( $req, $session );
-    return [] if !@$services;
-
-    my @service_names = map { $_->{name} } @$services;
-
-    # Untaint display property.
+    # Untaint user input.
     $disp_prop =~ /^(?:name|ip)$/ or 
-        abort "Unknown display property $disp_prop";
+        abort "Unknown display property '$disp_prop'";
 
-    my $relevant_objects = check_chosen_networks($req);
-  SERVICE:
-    for my $sname ( @service_names ) {
-	my $rules =
-            get_rules_for_owner_and_service( $req, $owner, $sname, 
-                                             $relevant_objects );
-	my $user_props;
-	if ( $expand_users ) {
-            my $users = get_users_for_owner_and_service( $req, $owner, $sname,
-                                                         $relevant_objects);
-	    $user_props = [ map { $_->{$disp_prop} } @$users ];
-	}
-	else {
-	    $user_props = [ 'User' ];
-	}
-
-	for my $rule ( @$rules ) {
-	    push @$data, {
-		service => $sname,
-		action  => $rule->{action},
-		src     => has_src_user($rule) ? $user_props : $rule->{src},
-		dst     => has_dst_user($rule) ? $user_props : $rule->{dst},
-		proto   => $rule->{prt},
-	    };
-	}
+    # Rules reference objects by name.
+    # Build copy with 
+    # - names substituted by objects
+    # - IP addresses in object with NAT applied.
+    my @result;
+    my $user_props;
+    if ( $expand_users ) {
+        my $user_names = get_users_for_owner_and_service( $req, $owner, $sname,
+                                                          $relevant_objects);
+        if ($disp_prop eq 'ip') {
+            $user_props = [ map { name2ip($_, $no_nat_set) } @$user_names ];
+        }
+        else {
+            $user_props = $user_names;
+        }
     }
-    return $data;
+    for my $rule ( @$rules ) {
+        my ($src, $dst) = @{$rule}{qw(src dst)};
+        if ($disp_prop eq 'ip') {
+            $src = [ map { name2ip($_, $no_nat_set) } @$src ];
+            $dst = [ map { name2ip($_, $no_nat_set) } @$dst ];
+        }
+        if ($expand_users) {
+            has_user($rule, 'src') and $src = $user_props;
+            has_user($rule, 'dst') and $dst = $user_props;
+        }
+        my $copy =  {
+            action   => $rule->{action},
+            src      => $src,
+            dst      => $dst,
+            prt      => $rule->{prt},
+        };
+        $copy->{has_user} = $rule->{has_user} if !$expand_users;
+        push @result, $copy;
+
+    }
+    return \@result;
 }
 
 sub has_user {
@@ -312,13 +324,39 @@ sub has_user {
     return $rule->{has_user} &&
         ( $rule->{has_user} eq $what  || $rule->{has_user} eq 'both' );
 }
-sub has_src_user {
-    my ( $rule ) = @_;
-    return has_user( $rule, 'src' );
-}
-sub has_dst_user {
-    my ( $rule ) = @_;
-    return has_user( $rule, 'dst' );
+
+my $user_const = ['User'];
+sub get_services_and_rules {
+    my ($req, $session) = @_;
+    my $owner        = $req->param('active_owner');
+    my $expand_users = $req->param('expand_users');
+    my $lists        = load_json("owner/$owner/service_lists");
+    my $assets       = load_json("owner/$owner/assets");
+
+    my $services = service_list( $req, $session );
+    return [] if !@$services;
+
+    my @service_names = map { $_->{name} } @$services;
+
+    my $relevant_objects = check_chosen_networks($req);
+    my @result;
+    for my $sname ( @service_names ) {
+	my $rules = get_rules_for_owner_and_service( $req, $owner, $sname, 
+                                                     $relevant_objects );
+        $rules = adapt_name_ip_user($req, $owner, $sname, $rules,
+                                    $relevant_objects);
+
+        # Adapt multi service result.
+        for my $rule (@$rules) {
+            $rule->{service} = $sname;
+            if (!$expand_users) {
+                $rule->{src} = $user_const if has_user($rule, 'src');
+                $rule->{dst} = $user_const if has_user($rule, 'dst');
+            }
+            push @result, $rule;
+        }
+    }
+    return \@result;
 }
 
 sub get_services_owners_and_admins {
@@ -427,21 +465,19 @@ sub search_string {
         if ( $req->param('search_in_rules') ) {
             my $rules = get_rules_for_owner_and_service( $req, $owner, $sname,
                                                          $relevant_objects );
-            if ( $rules ) {
-                for my $r ( @$rules ) {
-                    # Search in src or dst.
-                    for my $item ( @{$r->{$rule_lookup{$r->{has_user}}}} ) {
-                        if ( $item =~ $search ) {
-                            push @$result, $sname;
-                            next SERVICE;
-                        }
+            for my $r ( @$rules ) {
+                # Search in src or dst.
+                for my $item ( @{$r->{$rule_lookup{$r->{has_user}}}} ) {
+                    if ( $item =~ $search ) {
+                        push @$result, $sname;
+                        next SERVICE;
                     }
-                    # Search in protocol.
-                    for my $item ( @{$r->{prt}} ) {
-                        if ( $item =~ $search ) {
-                            push @$result, $sname;
-                            next SERVICE;
-                        }
+                }
+                # Search in protocol.
+                for my $item ( @{$r->{prt}} ) {
+                    if ( $item =~ $search ) {
+                        push @$result, $sname;
+                        next SERVICE;
                     }
                 }
             }
@@ -449,20 +485,10 @@ sub search_string {
         if ( $req->param('search_in_user') ) {
             my $users = get_users_for_owner_and_service( $req, $owner, $sname,
                                                          $relevant_objects );
-            if ( $users ) {
-                for my $u ( @$users ) {
-                    if ( $u->{ip}  &&  $u->{ip} =~ $search ) {
-                        push @$result, $sname;
-                        next SERVICE;
-                    }
-                    elsif ( $u->{name}  &&  $u->{name} =~ $search ) {
-                        push @$result, $sname;
-                        next SERVICE;
-                    }
-                    elsif ( $u->{owner}  &&  $u->{owner} =~ $search ) {
-                        push @$result, $sname;
-                        next SERVICE;
-                    }
+            for my $u ( @$users ) {
+                if ( $u =~ $search ) {
+                    push @$result, $sname;
+                    next SERVICE;
                 }
             }
         }
@@ -578,34 +604,27 @@ sub get_users_for_owner_and_service {
     my $sname2users = load_json( $path );
     
     # Empty user list is not exported intentionally.
-    my $user_objs = $sname2users->{$sname} || [];
+    my $users = $sname2users->{$sname} || [];
 
     # Are we in restricted mode with only selected networks?
     # Only filter users for own services.
     if ( $relevant_objects && $lists->{hash}->{$sname} eq 'user' ) {
-        @{$user_objs} = grep { $relevant_objects->{$_} } @$user_objs;
+        @{$users} = grep { $relevant_objects->{$_} } @$users;
     }
-    return get_nat_obj_list( $user_objs, $owner);
+    return $users;
 }
 
-my %src_or_dst =  (
-    src  => 'dst',
-    dst  => 'src',
-    both => 1
-    );
+my %src_or_dst = ( src  => 'dst', dst  => 'src');
 
 sub get_rules_for_owner_and_service {
     my ( $req, $owner, $sname, $relevant_objects ) = @_;
     my $expand_users = $req->param('expand_users');
-    my $prop         = $req->param('display_property');
     my $lists        = load_json("owner/$owner/service_lists");
-    $prop ||= 'ip';  # 'ip' as default property to display
 
     # Check if owner is allowed to access this service.
     $lists->{hash}->{$sname} or abort "Unknown service '$sname'";
     my $services = load_json('services');
 
-    my $no_nat_set = get_no_nat_set($owner);
     my $rules = $services->{$sname}->{rules};
 
     # If networks were selected and own services are displayed,
@@ -618,31 +637,7 @@ sub get_rules_for_owner_and_service {
                      @{$_->{$src_or_dst{$_->{has_user}}}});
         } @$rules ];
     }
-
-    # Rules reference objects by name.
-    # Build copy with 
-    # - names substituted by objects
-    # - IP addresses in object with NAT applied.
-    my $crules;
-    my $user;
-    if ( $expand_users ) {
-        $user = get_users_for_owner_and_service( $req, $owner, $sname, 
-                                                 $relevant_objects );
-    }
-    for my $rule (@$rules) {
-	my $crule = { %$rule };
-	for my $what (qw(src dst)) {
-	    $crule->{$what} = 
-		[ map( { (get_nat_obj($_, $no_nat_set))->{$prop} }
-		      @{ $rule->{$what} }) ];
-	}
-        if ( $expand_users ) {
-            $crule->{$rule->{has_user}} = [ map { $_->{$prop} } @$user ];
-            undef $crule->{has_user};
-        }
-	push @$crules, $crule;
-    }
-    return $crules;
+    return $rules;
 }
 
 sub get_rules {
@@ -650,8 +645,9 @@ sub get_rules {
     my $owner = $req->param('active_owner');
     my $sname = $req->param('service') or abort "Missing parameter 'service'";
     my $relevant_objects = check_chosen_networks($req);
-    return get_rules_for_owner_and_service( $req, $owner, $sname, 
-                                            $relevant_objects );
+    my $rules = get_rules_for_owner_and_service( $req, $owner, $sname, 
+                                                 $relevant_objects );
+    return adapt_name_ip_user($req, $owner, $sname, $rules, $relevant_objects);
 }
 
 sub get_users {
@@ -659,8 +655,9 @@ sub get_users {
     my $owner = $req->param('active_owner');
     my $sname = $req->param('service') or abort "Missing parameter 'service'";
     my $relevant_objects = check_chosen_networks($req);
-    return get_users_for_owner_and_service( $req, $owner, $sname, 
-                                            $relevant_objects );
+    my $users = get_users_for_owner_and_service( $req, $owner, $sname, 
+                                                 $relevant_objects );
+    return get_nat_obj_list( $users, $owner);
 }
 
 my %text2css = ( '+' => 'icon-add',
