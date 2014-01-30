@@ -516,10 +516,8 @@ sub service_list {
     my $search_own  = $req->param('search_own');
     my $search_used = $req->param('search_used');
     my $lists    = load_json("owner/$owner/service_lists");
-    my $assets   = load_json("owner/$owner/assets");
     my $services = load_json('services');
     my $relevant_objects;
-    my $network_names;
     $relation ||= 'user';   # take 'user' as default
 
     # Make a real copy not a reference.
