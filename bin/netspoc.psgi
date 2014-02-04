@@ -507,6 +507,252 @@ sub search_string {
     return $result;
 }
 
+sub ip2int {
+    my ($string) = @_;
+    $string =~ m/^(\d+)\.(\d+)\.(\d+)\.(\d+)$/ or 
+        abort("Invalid IP address: '$string'");
+    if ($1 > 255 or $2 > 255 or $3 > 255 or $4 > 255) {
+        abort("Invalid IP address: '$string'");
+    }
+    return unpack 'N', pack 'C4', $1, $2, $3, $4;
+}
+
+sub int2ip {
+    my ($int) = @_;
+    return sprintf "%vd", pack 'N', $int;
+}
+
+# Check if $ip1 is located inside network $ip/$mask.
+sub match_ip {
+    my ($ip1, $ip, $mask) = @_;
+    return ($ip == ($ip1 & $mask));
+}
+
+# Conversion from netmask to prefix and vice versa.
+{
+
+    # Initialize private variables of this block.
+    my %mask2prefix;
+    my %prefix2mask;
+    for my $prefix (0 .. 32) {
+        my $mask = 2**32 - 2**(32 - $prefix);
+        $mask2prefix{$mask}   = $prefix;
+        $prefix2mask{$prefix} = $mask;
+    }
+
+    # Convert a network mask to a prefix ranging from 0 to 32.
+    sub mask2prefix {
+        my $mask = shift;
+        return $mask2prefix{$mask};
+    }
+
+    sub prefix2mask {
+        my $prefix = shift;
+        return $prefix2mask{$prefix};
+    }
+}
+
+sub build_search_hash {
+    my ($search) = @_;
+
+    # Undefined value or empty string or "0" is handled like "match all".
+    return if !$search;
+    my $lookup;
+    my ($ip, $mask) =
+        ($search =~ m'(\d+\.\d+\.\d+\.\d+)(?:[ /](\d+(?:\.\d+\.\d+\.\d+)?))?')
+        or abort "Invalid ip/mask in '$search'";
+
+    $mask = 32 if !defined($mask);
+    my $len;
+    if ($mask =~ /\D/) {
+        $len = mask2prefix(ip2int($mask)) or 
+            abort "Invalid netmask '$mask'";
+    }
+    elsif ($mask > 32) {
+            abort "Prefix len '$mask' too large";
+    }
+    else {
+        $len = $mask;
+    }
+    
+    # Check for valid ip.
+    my $i = ip2int($ip);
+    my $m = prefix2mask($len);
+    
+    # Mask 0 matches all.
+#    return if !$m;
+    
+    # Adapt ip to mask.
+    $i = $i & $m;
+    
+    # Back to strings, because objects use stringified ip address.
+    $ip = int2ip($i);
+    $mask = int2ip($m);
+    $lookup = "$ip/$mask";
+
+    # Collect names of matching objects into %hash.
+    my $objects = load_json('objects');
+    my %hash;
+    for my $name (keys %$objects) {
+        my $obj = $objects->{$name};
+        my $obj_ip = $obj->{ip};
+
+        # Missing mask at host and interface.
+        if ($name =~ /^(?:host|interface):/) {
+            32 == $len or next;
+
+            # Handle range.
+            if ($obj_ip =~ /-/) {
+                my ($ip1, $ip2) = split /-/, $obj_ip;
+                my $i1 = ip2int($ip1);
+                my $i2 = ip2int($ip2);
+                if ($i1 <= $i && $i <= $i2) {
+                    $hash{$name} = 1;
+                    next;
+                }
+            }
+
+            # Single IP address.
+            else {
+                if ($ip == $obj_ip) {
+                    $hash{$name} = 1;
+                    next;
+                }
+            }   
+            next;
+        }
+
+        # Aggregate with ip 0 has missing mask.
+        elsif ($obj_ip eq '0.0.0.0') {
+            if (0 == $m) {
+                $hash{$name} = 1;
+            }
+            next;
+        }
+
+        # Add name of matching object.
+        if ($obj_ip eq $lookup) {
+            $hash{$name} = 1;
+        }
+
+    }
+    return \%hash;
+}
+
+# Search for search_ip1, search_ip2 in rules and users.
+# If both are given, 
+# 1. search for ip1 in rules and ip2 in users
+# 2. search for ip2 in rules and ip1 in users
+# ip1 and ip2 can have an ip 
+# Later: or string value.
+# ip is
+# - single ip adress
+# - ip address followed by mask or prefix len
+#   delimiter is slash or single blank.
+# Later: - string value to search in object names.
+#
+# Algorithm:
+# 1. Build list of all objects referenced in rules and users.
+# 2. Build sublist1 with names of objects matching ip1
+# 3. Build sublist2 with names of objects matching ip2
+# 4. Search rules and objects by simply comparing object names.
+# Later:
+# Handle attributes search_supernet, search_subnet
+sub search_rules {
+    my ($req, $service_lists, $relevant_objects) = @_;
+    my $ip1 = $req->param('search_ip1');
+    my $ip2 = $req->param('search_ip2');
+    my $search_proto = $req->param('search_proto');
+    my $owner = $req->param('active_owner');
+    my $services = load_json('services');
+    my $ip1_hash = build_search_hash($ip1);
+    my $ip2_hash = build_search_hash($ip2);
+    my $result = [];
+
+    my @search_in = ();
+    if ( $req->param('search_own') ) {
+        push @search_in, 'owner';
+    }
+    if ( $req->param('search_used') ) {
+        push @search_in, 'user';
+    }
+    if ( $req->param('search_visible') ) {
+        push @search_in, 'visible';
+    }
+    my $search_plist = [ sort map { @$_ } @{$service_lists}{ @search_in } ];
+
+  SERVICE:
+    for my $sname ( @$search_plist ) {
+
+        my $users = get_users_for_owner_and_service( $req, $owner, $sname,
+                                                     $relevant_objects );
+        my $rules = get_rules_for_owner_and_service( $req, $owner, $sname,
+                                                     $relevant_objects );
+        
+        my $match_users = sub {
+            my ($obj_hash) = @_;
+            return 1 if !$obj_hash;
+            for my $user (@$users) {
+                if ($obj_hash->{$user}) {
+                    return 1;
+                }
+            }
+            return;
+        };
+        my $match_rules = sub {
+            my ($obj_hash) = @_;
+            return 1 if !$obj_hash;
+            for my $rule (@$rules) {
+                my $has_user = $rule->{has_user};
+                if ($has_user eq 'both') {
+                    if ($match_users->($obj_hash)) {
+                        return 1;
+                    }
+                }
+                else {
+
+                    # Search in src or dst.
+                    for my $item ( @{$rule->{$rule_lookup{$has_user}}} ) {
+                        if ($obj_hash->{$item}) {
+                            return 1;
+                        }
+                    }
+                }
+            }
+            return;
+        };
+        my $match_proto = sub {
+            return 1 if !$search_proto;
+            for my $rule (@$rules) {
+                for my $item ( @{$rule->{prt}} ) {
+                    if ( $item =~ $search_proto ) {
+                        return 1;
+                    }
+                }
+            }
+            return;
+        };
+
+        if ($match_users->($ip1_hash)) {
+            if ($match_rules->($ip2_hash)) {
+                if ($match_proto->()) {
+                    push @$result, $sname;
+                    next SERVICE;
+                }
+            }
+        }
+        if ($match_users->($ip2_hash)) {
+            if ($match_rules->($ip1_hash)) {
+                if ($match_proto->()) {
+                    push @$result, $sname;
+                    next SERVICE;
+                }
+            }
+        }
+    }
+    return $result;
+}
+
 sub service_list {
     my ($req, $session) = @_;
     my $owner       = $req->param('active_owner');
@@ -568,6 +814,9 @@ sub service_list {
     my $result;
     if ( $req->param('search_string') ) {
         $result = search_string($req, $service_lists, $relevant_objects);
+    }
+    elsif ( $req->param('search_ip1') || $req->param('search_ip2') ) {
+        $result = search_rules($req, $service_lists, $relevant_objects);
     }
     else {
         $result = $service_lists->{$relation};
