@@ -107,6 +107,9 @@ Ext.application(
                     }
                 }
             );
+            // Initialize tooltips manager. Now a tooltip tag
+            // "just works" for most components.
+            Ext.tip.QuickTipManager.init();
         },
         
         onJsonException : function(connection, response, options, eOpts) {
