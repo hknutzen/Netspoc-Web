@@ -22,11 +22,6 @@ Ext.define(
             var networklist = Ext.create(
                 'PolicyWeb.view.panel.grid.Networks'
             );
-            var routerpanel = {
-                padding : 20,
-                border  : false,
-                html    : '<h2> Diese Ansicht wird noch implementiert ... </h2>'
-            };
             return {
                 xtype          : 'cardprintactive',
                 flex           : 2,
@@ -40,13 +35,15 @@ Ext.define(
                         pressed      : true
                     },
                     {
-                        text         : 'Router',
-                        toggleGroup  : 'netRouterGrp',
-                        enableToggle : true
-                    },
-                    {
                         text         : 'Netzauswahl bestätigen',
                         iconCls      : 'icon-accept',
+                        disabled     : true,
+                        enableToggle : false
+                    },
+                    {
+                        text         : 'Netzauswahl aufheben',
+                        iconCls      : 'icon-cancel',
+                        disabled     : true,
                         enableToggle : false
                     },
                     '->',
@@ -56,8 +53,7 @@ Ext.define(
                     }
                 ],
                 items     : [
-                    networklist,
-                    routerpanel
+                    networklist
                 ]
             };
         },

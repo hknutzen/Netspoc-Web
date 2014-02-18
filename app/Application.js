@@ -133,7 +133,7 @@ Ext.application(
                 // message box is shown, so delay for 1s before
                 // checking for the owner window to be present.
                 // TODO: avoid showing both windows at the same
-                // time at the first place, instead of closing
+                // time in the first place, instead of closing
                 // choose-owner-window if present.
                 var task = new Ext.util.DelayedTask(
                     function(){}

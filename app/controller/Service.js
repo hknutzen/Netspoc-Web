@@ -457,7 +457,7 @@ Ext.define(
             // TODO: make focus() actually work!
             var tf = new_card.query( 'textfield:first' );
             var t  = tf[0];
-            debugger;
+            //debugger;
             t.focus( true, 20 );
         },
 
