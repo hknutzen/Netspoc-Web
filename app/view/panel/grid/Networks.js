@@ -22,7 +22,7 @@ Ext.define(
                 selType            : 'checkboxmodel',
                 mode               : 'MULTI',
                 showHeaderCheckbox : false,
-                headerWidth        : 24
+                headerWidth        : 12
             };
         }
     }

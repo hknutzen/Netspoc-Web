@@ -454,11 +454,8 @@ Ext.define(
         },
         
         onSearchWindowTabchange : function( tab_panel, new_card, old_card ) {
-            // TODO: make focus() actually work!
             var tf = new_card.query( 'textfield:first' );
-            var t  = tf[0];
-            //debugger;
-            t.focus( true, 20 );
+            tf[0].focus( true, 20 );
         },
 
         getCheckboxParams : function( checkbox, newVal ) {

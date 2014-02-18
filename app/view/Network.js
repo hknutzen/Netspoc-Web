@@ -28,20 +28,15 @@ Ext.define(
                 activeItem     : 0,
                 layoutConfig   : { deferredRender : false },
                 tbar : [
+                    'Netzauswahl',
                     {
-                        text         : 'Netze',
-                        toggleGroup  : 'netRouterGrp',
-                        enableToggle : true,
-                        pressed      : true
-                    },
-                    {
-                        text         : 'Netzauswahl bestätigen',
+                        text         : 'Bestätigen',
                         iconCls      : 'icon-accept',
                         disabled     : true,
                         enableToggle : false
                     },
                     {
-                        text         : 'Netzauswahl aufheben',
+                        text         : 'Aufheben',
                         iconCls      : 'icon-cancel',
                         disabled     : true,
                         enableToggle : false
