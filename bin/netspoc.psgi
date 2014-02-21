@@ -510,7 +510,7 @@ sub search_string {
 sub ip2int {
     my ($string) = @_;
     $string =~ m/^(\d+)\.(\d+)\.(\d+)\.(\d+)$/ or 
-        abort("Invalid IP address: '$string'");
+        abort("Expected IP address: '$string'");
     if ($1 > 255 or $2 > 255 or $3 > 255 or $4 > 255) {
         abort("Invalid IP address: '$string'");
     }
@@ -553,7 +553,7 @@ sub match_ip {
 }
 
 sub build_search_hash {
-    my ($search) = @_;
+    my ($search, $sub, $super, $no_nat_set) = @_;
 
     # Undefined value or empty string or "0" is handled like "match all".
     return if !$search;
@@ -580,7 +580,7 @@ sub build_search_hash {
     my $m = prefix2mask($len);
     
     # Mask 0 matches all.
-#    return if !$m;
+    return if !$m && $sub;
     
     # Adapt ip to mask.
     $i = $i & $m;
@@ -595,18 +595,32 @@ sub build_search_hash {
     my %hash;
     for my $name (keys %$objects) {
         my $obj = $objects->{$name};
-        my $obj_ip = $obj->{ip};
+        my $obj_ip;
 
-        # Missing mask at host and interface.
-        if ($name =~ /^(?:host|interface):/) {
-            32 == $len or next;
+        # Get NAT IP
+        if (my $href = $obj->{nat} and $no_nat_set) {
+            for my $tag (keys %$href) {
+                next if $no_nat_set->{$tag};
+                $obj_ip = $href->{$tag};
+                last;
+            }
+        }
+        else {
+            $obj_ip = $obj->{ip};
+        }
+
+        # Missing mask (at most hosts and interfaces).
+        if ($obj_ip !~ m'/') {
+            32 == $len or $sub or next;
 
             # Handle range.
             if ($obj_ip =~ /-/) {
                 my ($ip1, $ip2) = split /-/, $obj_ip;
                 my $i1 = ip2int($ip1);
                 my $i2 = ip2int($ip2);
-                if ($i1 <= $i && $i <= $i2) {
+                if (   $sub && (match_ip($i1, $i, $m) || match_ip($i2, $i, $m))
+                    || ($i1 <= $i && $i <= $i2)) 
+                {
                     $hash{$name} = 1;
                     next;
                 }
@@ -614,7 +628,17 @@ sub build_search_hash {
 
             # Single IP address.
             else {
-                if ($ip == $obj_ip) {
+                if ($sub) {
+
+                    # Ignore interface without IP address.
+                    $obj_ip =~ /^\d/ or next;
+                    my $i1 = ip2int($obj_ip);
+                    if (match_ip($i1, $i, $m)) {
+                        $hash{$name} = 1;
+                        next;
+                    }
+                }   
+                elsif ($ip == $obj_ip) {
                     $hash{$name} = 1;
                     next;
                 }
@@ -624,14 +648,32 @@ sub build_search_hash {
 
         # Aggregate with ip 0 has missing mask.
         elsif ($obj_ip eq '0.0.0.0') {
-            if (0 == $m) {
+            if (0 == $m || $super) {
                 $hash{$name} = 1;
             }
             next;
         }
 
-        # Add name of matching object.
-        if ($obj_ip eq $lookup) {
+        # Network or (matching) aggregate.
+        elsif ($sub || $super) {
+            my ($ip, $mask) = split '/', $obj_ip;
+            my $i1 = ip2int($ip);
+            my $m1 = ip2int($mask);
+            if ($m1 == $m) {
+                $i1 == $i or next;
+            }
+            elsif ($m1 < $m) {
+                $super or next;
+                match_ip($i, $i1, $m1) or next;
+            }
+            else {
+                $sub or next;
+                match_ip($i1, $i, $m) or next;
+            }
+            $hash{$name} = 1;
+            next;
+        }
+        elsif ($obj_ip eq $lookup) {
             $hash{$name} = 1;
         }
 
@@ -660,13 +702,16 @@ sub build_search_hash {
 # Handle attributes search_supernet, search_subnet
 sub search_rules {
     my ($req, $service_lists, $relevant_objects) = @_;
-    my $ip1 = $req->param('search_ip1');
-    my $ip2 = $req->param('search_ip2');
+    my $ip1          = $req->param('search_ip1');
+    my $ip2          = $req->param('search_ip2');
+    my $sub          = $req->param('search_subnet');
+    my $super        = $req->param('search_supernet');
     my $search_proto = $req->param('search_proto');
-    my $owner = $req->param('active_owner');
-    my $services = load_json('services');
-    my $ip1_hash = build_search_hash($ip1);
-    my $ip2_hash = build_search_hash($ip2);
+    my $owner        = $req->param('active_owner');
+    my $services     = load_json('services');
+    my $no_nat_set   = get_no_nat_set($owner);
+    my $ip1_hash = build_search_hash($ip1, $sub, $super);
+    my $ip2_hash = build_search_hash($ip2, $sub, $super);
     my $result = [];
 
     my @search_in = ();
@@ -1322,7 +1367,7 @@ sub validate_owner {
 	my $email = $session->param('email');
 	my $email2owners = $cache->load_json_current('email');
 	grep { $active_owner eq $_ } @{ $email2owners->{$email} } or
-	    abort "User $email isn't allowed to read owner $active_owner";
+	    abort "User '$email' isn't allowed to read owner '$active_owner'";
     } 
     else {
 	$owner_needed and abort "Missing parameter 'active_owner'";
@@ -1482,7 +1527,11 @@ sub handle_request {
 	    my $status = $flags->{err_status} || 200;
             $res->status($status);
             $res->content_type('text/html; charset=utf-8');
-	    $res->body(Template::get($config->{error_page}, {msg => $msg}));
+            my $body = $msg;
+            if (my $page = $config->{error_page}) {
+                $body = Template::get($page, {msg => $msg});
+            }
+	    $res->body($body);
 	}
 	else
 	{
