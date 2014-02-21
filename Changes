@@ -1,0 +1,4 @@
+{{$NEXT}}
+
+ - Regeln für ein Aggregat / Supernetz werden auch dem Owner 
+   der darin entaltenen Subnetze angezeigt.
