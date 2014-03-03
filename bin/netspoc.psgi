@@ -638,7 +638,7 @@ sub build_search_hash {
                         next;
                     }
                 }   
-                elsif ($ip == $obj_ip) {
+                elsif ($ip eq $obj_ip) {
                     $hash{$name} = 1;
                     next;
                 }
