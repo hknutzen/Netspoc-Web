@@ -118,7 +118,24 @@ router:asa = {
 }
 
 network:Kunde = { ip = 10.2.2.0/24; }
+
+service:Test1 = {
+ user = network:Sub;
+ permit src = user; dst = network:Kunde; prt = tcp 80;
+}
+ 
+service:Test2 = {
+ user = network:Big;
+ permit src = user; dst = network:Kunde; prt = tcp 80;
+}
+
+service:Test3 = {
+ user = network:Sub;
+ permit src = user; dst = network:Kunde; prt = tcp 81;
+}
+   
 END
+############################################################
 
 prepare_export($netspoc);
 prepare_runtime();
@@ -138,13 +155,13 @@ $title = 'Search service by exact ip pair';
 ############################################################
 
 $params = {
-    search_ip1   => '10.1.11.0/255.255.255.0',
-    search_ip2   => '192.168.0.0/16',
+    search_ip1   => '10.1.1.0/255.255.255.0',
+    search_ip2   => '10.2.2.0/24',
     search_own   => '1',
     search_user  => '1',
 };
 
-$out = [ qw(Test Test1) ];
+$out = [ qw(Test1 Test3) ];
 
 test_run($title, $path, $params, $owner, $out, $service_names);
 
