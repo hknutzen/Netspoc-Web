@@ -685,8 +685,7 @@ sub build_search_hash {
 # If both are given, 
 # 1. search for ip1 in rules and ip2 in users
 # 2. search for ip2 in rules and ip1 in users
-# ip1 and ip2 can have an ip 
-# Later: or string value.
+# ip1 and ip2 can have an ip or (later) string value.
 # ip is
 # - single ip adress
 # - ip address followed by mask or prefix len
@@ -694,12 +693,10 @@ sub build_search_hash {
 # Later: - string value to search in object names.
 #
 # Algorithm:
-# 1. Build list of all objects referenced in rules and users.
-# 2. Build sublist1 with names of objects matching ip1
-# 3. Build sublist2 with names of objects matching ip2
-# 4. Search rules and objects by simply comparing object names.
-# Later:
-# Handle attributes search_supernet, search_subnet
+# 1. Build ip1_hash with names of objects matching ip1
+# 2. Build ip2_hash with names of objects matching ip2
+# 3. Search rules and users by simply comparing object names.
+#
 sub search_rules {
     my ($req, $service_lists, $relevant_objects) = @_;
     my $ip1          = $req->param('search_ip1');
@@ -710,9 +707,11 @@ sub search_rules {
     my $owner        = $req->param('active_owner');
     my $services     = load_json('services');
     my $no_nat_set   = get_no_nat_set($owner);
-    my $ip1_hash = build_search_hash($ip1, $sub, $super);
-    my $ip2_hash = build_search_hash($ip2, $sub, $super);
-    my $result = [];
+    my $ip1_hash     = build_search_hash($ip1, $sub, $super);
+    my $ip2_hash     = build_search_hash($ip2, $sub, $super);
+    my $result       = [];
+    my $proto_regex;
+    $proto_regex = qr/ \Q$search_proto\E /ix if $search_proto;
 
     my @search_in = ();
     if ( $req->param('search_own') ) {
@@ -770,7 +769,7 @@ sub search_rules {
             return 1 if !$search_proto;
             for my $rule (@$rules) {
                 for my $item ( @{$rule->{prt}} ) {
-                    if ( $item =~ $search_proto ) {
+                    if ( $item =~ $proto_regex ) {
                         return 1;
                     }
                 }
@@ -860,7 +859,10 @@ sub service_list {
     if ( $req->param('search_string') ) {
         $result = search_string($req, $service_lists, $relevant_objects);
     }
-    elsif ( $req->param('search_ip1') || $req->param('search_ip2') ) {
+    elsif ( $req->param('search_ip1') || 
+            $req->param('search_ip2') ||
+            $req->param('search_proto'))
+    {
         $result = search_rules($req, $service_lists, $relevant_objects);
     }
     else {
