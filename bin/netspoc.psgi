@@ -593,6 +593,13 @@ sub build_search_hash {
     # Collect names of matching objects into %hash.
     my $objects = load_json('objects');
     my %hash;
+
+    # Collect matching supernets to be inserted into %hash.
+    my @supernets;
+
+    # Collect names of zone where at least one non supernet matches.
+    my %matching_zones;
+
     for my $name (keys %$objects) {
         my $obj = $objects->{$name};
         my $obj_ip;
@@ -609,16 +616,11 @@ sub build_search_hash {
             $obj_ip = $obj->{ip};
         }
 
-        # Aggregate with ip 0 has missing mask.
-        if ($obj_ip eq '0.0.0.0') {
-            if (0 == $m || $super) {
-                $hash{$name} = 1;
-            }
-            next;
-        }
+        # Missing mask at aggregate with ip 0.
+        $obj_ip .= '/0.0.0.0' if $obj_ip eq '0.0.0.0';
 
         # Missing mask (at most hosts and interfaces).
-        elsif ($obj_ip !~ m'/') {
+        if ($obj_ip !~ m'/') {
             32 == $len or $sub or next;
 
             # Handle range.
@@ -661,10 +663,18 @@ sub build_search_hash {
             my $m1 = ip2int($mask);
             if ($m1 == $m) {
                 $i1 == $i or next;
+                $matching_zones{$obj->{zone}} = 1 if $super;
             }
             elsif ($m1 < $m) {
                 $super or next;
                 match_ip($i, $i1, $m1) or next;
+                if ($obj->{is_supernet}) {
+                    push @supernets, $name;
+                    next;
+                }
+                elsif (my $zone = $obj->{zone}) {
+                    $matching_zones{$zone} = 1;
+                }
             }
             else {
                 $sub or next;
@@ -678,6 +688,22 @@ sub build_search_hash {
         }
 
     }
+
+    if ($super) {
+        if (!keys %matching_zones) {
+            @hash{@supernets} = (1) x @supernets;
+        }
+        else {
+            for my $name (@supernets) {
+                my $obj = $objects->{$name};
+                my $zone = $obj->{zone};
+                if ($matching_zones{$zone}) {
+                    $hash{$name} = 1;
+                }
+            }
+        }
+    }
+                
     return \%hash;
 }
 

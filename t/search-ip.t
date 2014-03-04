@@ -127,12 +127,13 @@ router:asa = {
 }
 
 network:Kunde = { ip = 10.2.2.0/24; host:k = { ip = 10.2.2.2; } }
+any:Kunde = { link = network:Kunde; }
 
 service:Test1 = {
  user = network:Sub;
  permit src = user; dst = network:Kunde; prt = tcp 80;
 }
- 
+
 service:Test2 = {
  user = network:Big, any:Sub1;
  permit src = user; dst = host:k; prt = udp 80;
@@ -142,12 +143,22 @@ service:Test3 = {
  user = network:Sub;
  permit src = user; dst = network:Kunde; prt = tcp 81;
 }
-  
+
 service:Test4 = {
  user = host:B10, host:Range, interface:u.Big;
  permit src = user; dst = host:k; prt = tcp 81;
 }
-   
+
+service:Test5 = {
+ user = any:Big;
+ permit src = user; dst = host:k; prt = tcp 82;
+}
+
+service:Test6 = {
+ user = host:B10;
+ permit src = user; dst = any:Kunde; prt = udp 82;
+}
+
 END
 ############################################################
 
@@ -271,7 +282,7 @@ $params = {
     search_used  => 1,
 };
 
-$out = [ qw(Test1 Test3 Test4) ];
+$out = [ qw(Test1 Test3 Test4 Test5) ];
 
 test_run($title, $path, $params, $owner, $out, $service_names);
 
@@ -301,7 +312,7 @@ $params = {
     search_used  => 1,
 };
 
-$out = [ qw(Test2 Test4) ];
+$out = [ qw(Test2 Test4 Test5) ];
 
 test_run($title, $path, $params, $owner, $out, $service_names);
 
@@ -316,7 +327,23 @@ $params = {
     search_used  => 1,
 };
 
-$out = [ qw(Test1 Test3) ];
+$out = [ qw(Test1 Test3 Test6) ];
+
+test_run($title, $path, $params, $owner, $out, $service_names);
+
+############################################################
+$title = 'Supernet IP search for aggregate';
+############################################################
+
+$params = {
+    search_ip1   => '10.1.0.0/16',
+    search_ip2   => '10.2.2.2',
+    search_supernet => 1,
+    search_own   => 1,
+    search_used  => 1,
+};
+
+$out = [ qw(Test2 Test5) ];
 
 test_run($title, $path, $params, $owner, $out, $service_names);
 
