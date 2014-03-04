@@ -86,9 +86,17 @@ sub test_run {
 }
 
 ############################################################
+# Extracts data from result of request.
+############################################################
+my $service_names = sub { 
+    my ($result) = @_;
+    my $records = $result->{records} or die 'Missing records in response';
+    return [ map { $_->{name} } @$records ];
+};
+
+############################################################
 # Shared Netspoc configuration
 ############################################################
-
 my $netspoc = <<'END';
 owner:x = { admins = guest; }
 owner:y = { admins = guest; }
@@ -102,11 +110,12 @@ any:Sub2 = { ip = 10.1.1.0/25; link = network:Big; }
 network:Sub = { ip = 10.1.1.0/24; owner = z; subnet_of = network:Big; }
 router:u = { 
  interface:Sub;
- interface:Big; 
+ interface:Big = { ip = 10.1.0.2; } 
 }
 network:Big = { 
  ip = 10.1.0.0/16;
  host:B10 = { ip = 10.1.0.10; owner = z; }
+ host:Range = { range = 10.1.0.90-10.1.0.99; }
 }
 
 router:asa = {
@@ -117,7 +126,7 @@ router:asa = {
  interface:Kunde = { ip = 10.2.2.1; hardware = inside; }
 }
 
-network:Kunde = { ip = 10.2.2.0/24; }
+network:Kunde = { ip = 10.2.2.0/24; host:k = { ip = 10.2.2.2; } }
 
 service:Test1 = {
  user = network:Sub;
@@ -125,13 +134,18 @@ service:Test1 = {
 }
  
 service:Test2 = {
- user = network:Big;
- permit src = user; dst = network:Kunde; prt = tcp 80;
+ user = network:Big, any:Sub1;
+ permit src = user; dst = host:k; prt = udp 80;
 }
 
 service:Test3 = {
  user = network:Sub;
  permit src = user; dst = network:Kunde; prt = tcp 81;
+}
+  
+service:Test4 = {
+ user = host:B10, host:Range, interface:u.Big;
+ permit src = user; dst = host:k; prt = tcp 81;
 }
    
 END
@@ -140,25 +154,166 @@ END
 prepare_export($netspoc);
 prepare_runtime();
 
-my $service_names = sub { 
-    my ($result) = @_;
-    my $records = $result->{records} or die 'Missing records in response';
-    return [ map { $_->{name} } @$records ];
-};
-
 my ($path, $params, $owner, $out, $title);
 $path = 'service_list';
-$owner = 'x'; 
 
 ############################################################
-$title = 'Search service by exact ip pair';
+$title = 'Exact IP search in used services';
 ############################################################
 
+$owner = 'z'; 
 $params = {
     search_ip1   => '10.1.1.0/255.255.255.0',
     search_ip2   => '10.2.2.0/24',
-    search_own   => '1',
-    search_user  => '1',
+    search_used  => 1,
+};
+
+$out = [ qw(Test1 Test3) ];
+
+test_run($title, $path, $params, $owner, $out, $service_names);
+
+############################################################
+$title = 'Exact IP search in own services';
+############################################################
+
+$owner = 'x'; 
+$params = {
+    search_ip1   => '10.1.0.0/255.255.0.0',
+    search_ip2   => '10.2.2.2/32',
+    search_own   => 1,
+};
+
+$out = [ qw(Test2) ];
+
+test_run($title, $path, $params, $owner, $out, $service_names);
+
+############################################################
+$title = 'Exact IP search for host';
+############################################################
+
+$params = {
+    search_ip1   => '10.1.0.10/32',
+    search_ip2   => '10.2.2.2',
+    search_own   => 1,
+    search_used  => 1,
+};
+
+$out = [ qw(Test4) ];
+
+test_run($title, $path, $params, $owner, $out, $service_names);
+
+############################################################
+$title = 'Exact IP search for range';
+############################################################
+
+$params = {
+    search_ip1   => '10.1.0.93/32',
+    search_ip2   => '10.2.2.2',
+    search_own   => 1,
+    search_used  => 1,
+};
+
+$out = [ qw(Test4) ];
+
+test_run($title, $path, $params, $owner, $out, $service_names);
+
+############################################################
+$title = 'Exact IP search for interface';
+############################################################
+
+$params = {
+    search_ip1   => '10.1.0.2',
+    search_ip2   => '10.2.2.2',
+    search_own   => 1,
+    search_used  => 1,
+};
+
+$out = [ qw(Test4) ];
+
+test_run($title, $path, $params, $owner, $out, $service_names);
+
+############################################################
+$title = 'Exact IP search for aggregate';
+############################################################
+
+$params = {
+    search_ip1   => '10.1.0.0/23',
+    search_ip2   => '10.2.2.2',
+    search_own   => 1,
+    search_used  => 1,
+};
+
+$out = [ qw(Test2) ];
+
+test_run($title, $path, $params, $owner, $out, $service_names);
+
+############################################################
+$title = 'Exact IP search for single address';
+############################################################
+
+$params = {
+    search_ip1   => '10.2.2.0/24',
+    search_own   => 1,
+    search_used  => 1,
+};
+
+$out = [ qw(Test1 Test3) ];
+
+test_run($title, $path, $params, $owner, $out, $service_names);
+
+############################################################
+$title = 'Search for protocol';
+############################################################
+
+$params = {
+    search_proto => 'TCP',
+    search_own   => 1,
+    search_used  => 1,
+};
+
+$out = [ qw(Test1 Test3 Test4) ];
+
+test_run($title, $path, $params, $owner, $out, $service_names);
+
+############################################################
+$title = 'Search for proto and exact IP';
+############################################################
+
+$params = {
+    search_ip1   => '10.2.2.0/24',
+    search_proto => '81',
+    search_own   => 1,
+    search_used  => 1,
+};
+
+$out = [ qw(Test3) ];
+
+test_run($title, $path, $params, $owner, $out, $service_names);
+
+############################################################
+$title = 'Subnet IP search for single address';
+############################################################
+
+$params = {
+    search_ip1   => '10.2.2.0/25',
+    search_subnet => 1,
+    search_own   => 1,
+    search_used  => 1,
+};
+
+$out = [ qw(Test2 Test4) ];
+
+test_run($title, $path, $params, $owner, $out, $service_names);
+
+############################################################
+$title = 'Supernet IP search for single address';
+############################################################
+
+$params = {
+    search_ip1   => '10.2.2.0/25',
+    search_supernet => 1,
+    search_own   => 1,
+    search_used  => 1,
 };
 
 $out = [ qw(Test1 Test3) ];
