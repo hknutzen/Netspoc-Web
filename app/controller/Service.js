@@ -63,15 +63,23 @@ Ext.define(
                 ref      : 'detailsAndUserView'
             },
             {
+                selector : 'searchwindow > panel',
+                ref      : 'searchCardPanel'   
+            },
+            {
                 selector : 'searchwindow > form',
                 ref      : 'searchFormPanel'
+            },
+            {
+                selector : 'searchwindow > form > tabpanel',
+                ref      : 'searchTabPanel'
             },
             {
                 selector : 'chooseservice[pressed="true"]',
                 ref      : 'chooseServiceButton'
             },
             {
-                selector : 'searchwindow > form button',
+                selector : 'searchwindow > form button[text="Suche starten"]',
                 ref      : 'startSearchButton'
             },
             {
@@ -96,7 +104,7 @@ Ext.define(
                         click  : this.onTriggerClick
                     },
                     'serviceview checkbox' : {
-                        change  : this.onCheckboxChange
+                        change : this.onCheckboxChange
                     },
                     'serviceview > grid chooseservice' : {
                         click  : this.onButtonClick
@@ -110,17 +118,18 @@ Ext.define(
                     'expandedservices' : {
                         beforeshow : this.onShowAllServices
                     },
-                    'searchwindow > form button' : {
+                    'searchwindow > panel button[toggleGroup="navGrp"]': {
+                        click  : this.onNavButtonClick
+                    },
+                    'searchwindow > form button[text="Suche starten"]' : {
                         click  : this.onStartSearchButtonClick
                     },
-                    'searchwindow > form textfield' : { 
+                    'searchwindow > form > tabpanel fieldset > textfield' : { 
                         specialkey  : this.onSearchWindowSpecialKey
                     },
-                    'searchwindow > form checkbox[name="search_in_all_details"]' : { 
-                        change : this.onSearchDetailsChange
-                    },
-                    'searchwindow > form checkbox[name="search_in_all_services"]' : { 
-                        change : this.onSearchServicesChange
+                    'searchwindow > form > tabpanel' : { 
+                        tabchange  : this.onSearchWindowTabchange
+                        //focus  : this.onSearchWindowTabchange
                     },
                     'serviceview cardprintactive button[toggleGroup=polDVGrp]' : {
                         click  : this.onServiceDetailsButtonClick
@@ -140,6 +149,7 @@ Ext.define(
                           else {
                               this.getServicesGrid().select0();
                           }
+                          //this.displaySearchWindow(); // for debug
                       },
                       this
                     );
@@ -169,7 +179,8 @@ Ext.define(
                       },
                       this
                     );
-
+            
+            this.createToolTips();
         },
         
 	onBeforeActivate : function() {
@@ -323,14 +334,40 @@ Ext.define(
             store.load();
         },
 
+        onNavButtonClick : function( button, event, eOpts ) {
+            var card  = this.getSearchCardPanel();
+            var index = button.ownerCt.items.indexOf(button);
+            card.layout.setActiveItem( index );
+        },
+
+        removeNonActiveParams : function( params ) {
+            /*
+             * Remove textfield params of non-active tabpanel
+             * from search parameters.
+             */
+            var tab_panel  = this.getSearchTabPanel();
+            var active_tab = tab_panel.getActiveTab();
+            var index = tab_panel.items.indexOf( active_tab );
+            if ( index === 1 ) {
+                params.search_string = '';
+            }
+            else {
+                params.search_ip1    = '';
+                params.search_ip2    = '';
+                params.search_proto  = '';
+            }
+            return params;
+        },
+
         onStartSearchButtonClick : function( button, event, eOpts ) {
             var form = this.getSearchFormPanel().getForm();
             if ( form.isValid() ) {
                 button.search_params = form.getValues();
                 var store      = this.getServiceStore();
                 var relation   = button.relation;
-                var params     = button.search_params;
                 var keep_front = false;
+                var params     = this.removeNonActiveParams(
+                    button.search_params);
             
                 if ( params ) {
                     keep_front = params.keep_front;
@@ -416,6 +453,11 @@ Ext.define(
             }
         },
         
+        onSearchWindowTabchange : function( tab_panel, new_card, old_card ) {
+            var tf = new_card.query( 'textfield:first' );
+            tf[0].focus( true, 20 );
+        },
+
         getCheckboxParams : function( checkbox, newVal ) {
             var params     = {};
             var view       = this.getServiceView();
@@ -470,7 +512,9 @@ Ext.define(
                 );
                 search_window.on( 'show', function () {
                                       search_window.center();
-                                      var t = search_window.query('textfield');
+                                      var t = search_window.query(
+                                          'form > tabpanel fieldset > textfield'
+                                      );
                                       t[0].focus( true, 20 );
                                   }
                                 );
@@ -478,70 +522,13 @@ Ext.define(
             search_window.show();
         },
 
-        onSearchDetailsChange : function( cb, newValue, oldValue, eOpts ) {
-            var cbg = this.getSearchCheckboxGroup();
-            var cb_value = cbg.getValue();
-            if ( newValue === true ) {
-                cbg.setValue(
-                    {
-                        search_own             : cb_value.search_own,
-                        search_used            : cb_value.search_used,
-                        search_visible         : cb_value.search_visible,
-                        search_in_all_services : cb_value.search_in_all_services,
-                        search_in_rules        : true,
-                        search_in_user         : true,
-                        search_in_desc         : true,
-                        search_in_all_details  : true
-                    }
-                );
-            }
-            else {
-                cbg.setValue(
-                    {
-                        search_own             : cb_value.search_own,
-                        search_used            : cb_value.search_used,
-                        search_visible         : cb_value.search_visible,
-                        search_in_all_services : cb_value.search_in_all_services,
-                        search_in_rules       : false,
-                        search_in_user        : false,
-                        search_in_desc        : false,
-                        search_in_all_details : false
-                    }
-                );
-            }
-        },
-
-        onSearchServicesChange : function( cb, newValue, oldValue, eOpts ) {
-            var cbg = this.getSearchCheckboxGroup();
-            var cb_value = cbg.getValue();
-            if ( newValue === true ) {
-                cbg.setValue(
-                    {
-                        search_own             : true,
-                        search_used            : true,
-                        search_visible         : true,
-                        search_in_all_services : true,
-                        search_in_rules        : cb_value.search_in_rules,
-                        search_in_user         : cb_value.search_in_user,
-                        search_in_desc         : cb_value.search_in_desc,
-                        search_in_all_details  : cb_value.search_in_all_details
-                    }
-                );
-            }
-            else {
-                cbg.setValue(
-                    {
-                        search_own             : false,
-                        search_used            : false,
-                        search_visible         : false,
-                        search_in_all_services : false,
-                        search_in_rules        : cb_value.search_in_rules,
-                        search_in_user         : cb_value.search_in_user,
-                        search_in_desc         : cb_value.search_in_desc,
-                        search_in_all_details  : cb_value.search_in_all_details
-                    }
-                );
-            }
+        createToolTips : function() {
+            var tip = Ext.create(
+                'Ext.tip.ToolTip',
+                {
+                    html : 'Tip'
+                }
+            );
         }
     }
 );

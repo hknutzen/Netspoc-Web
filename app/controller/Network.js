@@ -17,6 +17,10 @@ Ext.define(
                 ref      : 'networkConfirmButton'
             },
             {
+                selector : 'networkview button[iconCls="icon-cancel"]',
+                ref      : 'networkCancelButton'
+            },
+            {
                 selector : 'networkresources',
                 ref      : 'networkResourcesGrid'
             }
@@ -26,11 +30,11 @@ Ext.define(
             
             this.control(
                 {
-                    'networkview button[toggleGroup="netRouterGrp"]': {
-                        click  : this.onNetworkRouterButtonClick
-                    },
                     'networkview button[iconCls="icon-accept"]': {
                         click  : this.onConfirmNetworkSelection
+                    },
+                    'networkview button[iconCls="icon-cancel"]': {
+                        click  : this.onCancelNetworkSelection
                     },
                     'networkview' : {
                         beforeactivate : this.onBeforeActivate
@@ -91,73 +95,78 @@ Ext.define(
             var grid = this.getNetworksGrid();
             var networks_csv = appstate.getNetworks();
             var net_hash = {};
-            if ( networks_csv === '' ) {
-                grid.select0();
-            }
-            else {
-                Ext.each(
-                    networks_csv.split(','),
-                    function( key ) {
-                        net_hash[key] = true;
-                    }
-                );
-                var net_filter = function(item) {
-                    return net_hash[item.get('name')];
-                };
-                var all_records = grid.getStore().getRange();
-                var records = all_records.filter( net_filter );
-                grid.getSelectionModel().select( records );
-            }
+            Ext.each(
+                networks_csv.split(','),
+                function( key ) {
+                    net_hash[key] = true;
+                }
+            );
+            var net_filter = function(item) {
+                return net_hash[item.get('name')];
+            };
+            var all_records = grid.getStore().getRange();
+            var records = all_records.filter( net_filter );
+            grid.getSelectionModel().select( records );
         },
 
 	onSelect : function( sm, network ) {
             this.onSelectionChange( sm, sm.getSelection() );
         },
 
-	onNetworkRouterButtonClick : function( button ) {
-            var card_panel = button.findParentByType( 'panel' );
-            if ( button.getText() === 'Netze'  ) {
-                card_panel.layout.setActiveItem( 0 );
-                this.getNetworksStore().load(
-                    {
-                        params : {
-                            chosen_networks : ''
-                        }
-                    }
-                );
+        onSelectionChange : function( sm, selected ) {
+            var confirm_button = this.getNetworkConfirmButton();
+            var cancel_button  = this.getNetworkCancelButton();
+            var res_store      = this.getNetworkResourcesStore();
+
+            // Enable previously disabled buttons.
+            if ( confirm_button.disabled ) {
+                confirm_button.enable();
+            }
+            if ( cancel_button.disabled ) {
+                cancel_button.enable();
+            }
+            // Load resources store for selected networks.
+            if ( selected.length > 0 ) {
+                res_store.getProxy().extraParams.selected_networks =
+                    record_names_as_csv( selected );
+                res_store.load();
             }
             else {
-                card_panel.layout.setActiveItem( 1 );
-                this.getNetworkResourcesStore().removeAll();
+                res_store.removeAll();
             }
         },
 
-        onSelectionChange : function( sm, selected ) {
-            var button = this.getNetworkConfirmButton();
-            if ( button.disabled ) {
-                button.enable();
-            }
-            var store = this.getNetworkResourcesStore();
-            if ( selected ) {
-                store.getProxy().extraParams.selected_networks =
-                    record_names_as_csv( selected );
-                store.load();
-            }
-            else {
-                store.removeAll();
-            }
+        onCancelNetworkSelection : function ( button, event ) {
+            var networks       = '';
+            var grid           = this.getNetworksGrid();
+            var sm             = grid.getSelectionModel();
+            var sel            = sm.getSelection();
+            var confirm_button = this.getNetworkConfirmButton();
+            var cancel_button  = this.getNetworkCancelButton();
+            var res_store      = this.getNetworkResourcesStore();
+
+            cancel_button.disable();
+
+            // Make selection empty and auto-confirm this
+            // empty selection.
+            sm.deselectAll( true ); // prevent deselect events
+            appstate.changeNetworks( networks );
+            confirm_button.fireEvent( 'click', confirm_button );
+            
+            // Erase possibly displayed network resources.
+            res_store.removeAll();
         },
 
         onConfirmNetworkSelection : function ( button, event ) {
+            var networks        = '';
+            var grid            = this.getNetworksGrid();
+            var sm              = grid.getSelectionModel();
+            var sel             = sm.getSelection();
+            var store_count     = grid.getStore().getTotalCount();
+            var selection_count = sm.getCount();
+
             // Button will be enabled again on selection change.
             button.disable();
-
-            var networks = '';
-            var grid = this.getNetworksGrid();
-            var sm   = grid.getSelectionModel();
-            var sel  = sm.getSelection();
-            var store_count = grid.getStore().getTotalCount();
-            var selection_count = sm.getCount();
 
             // Selecting all records is to be treated as
             // if none were selected.

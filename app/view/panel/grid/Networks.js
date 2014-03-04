@@ -19,9 +19,10 @@ Ext.define(
         ],
         buildSelModel : function() {
             return {
-                selType     : 'checkboxmodel',
-                mode        : 'MULTI',
-                headerWidth : 24
+                selType            : 'checkboxmodel',
+                mode               : 'MULTI',
+                showHeaderCheckbox : false,
+                headerWidth        : 12
             };
         }
     }
