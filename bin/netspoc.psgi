@@ -609,8 +609,16 @@ sub build_search_hash {
             $obj_ip = $obj->{ip};
         }
 
+        # Aggregate with ip 0 has missing mask.
+        if ($obj_ip eq '0.0.0.0') {
+            if (0 == $m || $super) {
+                $hash{$name} = 1;
+            }
+            next;
+        }
+
         # Missing mask (at most hosts and interfaces).
-        if ($obj_ip !~ m'/') {
+        elsif ($obj_ip !~ m'/') {
             32 == $len or $sub or next;
 
             # Handle range.
@@ -643,14 +651,6 @@ sub build_search_hash {
                     next;
                 }
             }   
-            next;
-        }
-
-        # Aggregate with ip 0 has missing mask.
-        elsif ($obj_ip eq '0.0.0.0') {
-            if (0 == $m || $super) {
-                $hash{$name} = 1;
-            }
             next;
         }
 
