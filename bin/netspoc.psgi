@@ -751,8 +751,8 @@ sub search_rules {
     my $owner        = $req->param('active_owner');
     my $services     = load_json('services');
     my $no_nat_set   = get_no_nat_set($owner);
-    my $ip1_hash     = build_search_hash($ip1, $sub, $super);
-    my $ip2_hash     = build_search_hash($ip2, $sub, $super);
+    my $ip1_hash     = build_search_hash($ip1, $sub, $super, $no_nat_set);
+    my $ip2_hash     = build_search_hash($ip2, $sub, $super, $no_nat_set);
     my $result       = [];
     my $proto_regex;
     $proto_regex = qr/ \Q$search_proto\E /ix if $search_proto;
