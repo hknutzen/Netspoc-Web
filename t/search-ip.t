@@ -124,16 +124,22 @@ router:asa = {
  model = ASA;
  routing = manual;
  interface:Big = { ip = 10.1.0.1; hardware = outside; }
- interface:DMZ = { ip = 10.9.9.1; hardware = dmz; }
  interface:Kunde = { ip = 10.2.2.1; hardware = inside; }
+ interface:DMZ = { ip = 10.9.9.1; hardware = dmz; }
 }
-
-network:DMZ = { ip = 10.9.9.0/24; }
-any:DMZ10 = { ip = 10.0.0.0/8; link = network:DMZ; }
-any:DMZ = { link = network:DMZ; }
 
 network:Kunde = { ip = 10.2.2.0/24; host:k = { ip = 10.2.2.2; } }
 any:Kunde = { link = network:Kunde; }
+
+network:DMZ = { ip = 10.9.9.0/24; }
+any:DMZ10 = { ip = 10.0.0.0/8; link = network:DMZ; }
+
+router:inet = {
+ interface:DMZ;
+ interface:Internet; 
+}
+
+network:Internet = { ip = 0.0.0.0/0; }
 
 service:Test1 = {
  user = network:Sub;
@@ -167,7 +173,12 @@ service:Test6 = {
 
 service:Test7 = {
  user = host:B10;
- permit src = user; dst = any:DMZ; prt = udp 82;
+ permit src = user; dst = network:Internet; prt = udp 82;
+}
+
+service:Test8 = {
+ user = host:B10;
+ permit src = user; dst = any:DMZ10; prt = udp 82;
 }
 
 END
@@ -369,7 +380,7 @@ $params = {
     search_used  => 1,
 };
 
-$out = [ qw(Test5 Test6 Test7) ];
+$out = [ qw(Test7 Test8) ];
 
 test_run($title, $path, $params, $owner, $out, $service_names);
 
@@ -385,6 +396,21 @@ $params = {
 };
 
 $out = [ qw(Test5) ];
+
+test_run($title, $path, $params, $owner, $out, $service_names);
+
+############################################################
+$title = 'Supernet IP search for unknown internet address';
+############################################################
+
+$params = {
+    search_ip1   => '9.9.9.9',
+    search_supernet => 1,
+    search_own   => 1,
+    search_used  => 1,
+};
+
+$out = [ qw(Test7) ];
 
 test_run($title, $path, $params, $owner, $out, $service_names);
 
