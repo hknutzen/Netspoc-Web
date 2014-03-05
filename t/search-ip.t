@@ -110,6 +110,7 @@ any:Sub2 = { ip = 10.1.1.0/25; link = network:Big; }
 network:Sub = { ip = 10.1.1.0/24; owner = z; subnet_of = network:Big; }
 router:u = { 
  interface:Sub;
+ interface:L = { ip = 10.3.3.3; loopback; }
  interface:Big = { ip = 10.1.0.2; } 
 }
 network:Big = { 
@@ -123,8 +124,13 @@ router:asa = {
  model = ASA;
  routing = manual;
  interface:Big = { ip = 10.1.0.1; hardware = outside; }
+ interface:DMZ = { ip = 10.9.9.1; hardware = dmz; }
  interface:Kunde = { ip = 10.2.2.1; hardware = inside; }
 }
+
+network:DMZ = { ip = 10.9.9.0/24; }
+any:DMZ10 = { ip = 10.0.0.0/8; link = network:DMZ; }
+any:DMZ = { link = network:DMZ; }
 
 network:Kunde = { ip = 10.2.2.0/24; host:k = { ip = 10.2.2.2; } }
 any:Kunde = { link = network:Kunde; }
@@ -157,6 +163,11 @@ service:Test5 = {
 service:Test6 = {
  user = host:B10;
  permit src = user; dst = any:Kunde; prt = udp 82;
+}
+
+service:Test7 = {
+ user = host:B10;
+ permit src = user; dst = any:DMZ; prt = udp 82;
 }
 
 END
@@ -344,6 +355,36 @@ $params = {
 };
 
 $out = [ qw(Test2 Test5) ];
+
+test_run($title, $path, $params, $owner, $out, $service_names);
+
+############################################################
+$title = 'Supernet IP search finds all aggregates';
+############################################################
+
+$params = {
+    search_ip1   => '10.0.0.0/8',
+    search_supernet => 1,
+    search_own   => 1,
+    search_used  => 1,
+};
+
+$out = [ qw(Test5 Test6 Test7) ];
+
+test_run($title, $path, $params, $owner, $out, $service_names);
+
+############################################################
+$title = 'Supernet IP search for loopback';
+############################################################
+
+$params = {
+    search_ip1   => '10.3.3.3',
+    search_supernet => 1,
+    search_own   => 1,
+    search_used  => 1,
+};
+
+$out = [ qw(Test5) ];
 
 test_run($title, $path, $params, $owner, $out, $service_names);
 
