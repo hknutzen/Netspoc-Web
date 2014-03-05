@@ -514,7 +514,7 @@ sub ip2int {
     if ($1 > 255 or $2 > 255 or $3 > 255 or $4 > 255) {
         abort("Invalid IP address: '$string'");
     }
-    return unpack 'N', pack 'C4', $1, $2, $3, $4;
+    return $1 << 24 | $2 << 16 | $3 << 8 | $4;
 }
 
 sub int2ip {
@@ -621,6 +621,7 @@ sub build_search_hash {
                 $obj_ip = $href->{$tag};
                 last;
             }
+            $obj_ip ||= $obj->{ip};
         }
         else {
             $obj_ip = $obj->{ip};
