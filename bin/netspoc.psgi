@@ -597,8 +597,19 @@ sub build_search_hash {
     # Collect matching supernets to be inserted into %hash.
     my @supernets;
 
-    # Collect names of zone where at least one non supernet matches.
+    # Collect names of zones where at least one non supernet / non
+    # aggregate matches.
     my %matching_zones;
+    my $add_matching_zone = sub {
+        my ($obj) = @_;
+        my $name = $obj->{name};
+        $name =~ /^any:/ and return;
+
+        # Ignore hosts, interfaces, but not loopback interfaces.
+        if (my $zone = $obj->{zone}) {
+            $matching_zones{$zone} = 1 if $super;
+        }
+    };
 
     for my $name (keys %$objects) {
         my $obj = $objects->{$name};
@@ -650,6 +661,9 @@ sub build_search_hash {
                 }   
                 elsif ($ip eq $obj_ip) {
                     $hash{$name} = 1;
+
+                    # Needed for loopback interface/network.
+                    $add_matching_zone->($obj);
                     next;
                 }
             }   
@@ -663,7 +677,7 @@ sub build_search_hash {
             my $m1 = ip2int($mask);
             if ($m1 == $m) {
                 $i1 == $i or next;
-                $matching_zones{$obj->{zone}} = 1 if $super;
+                $add_matching_zone->($obj);
             }
             elsif ($m1 < $m) {
                 $super or next;
@@ -672,9 +686,7 @@ sub build_search_hash {
                     push @supernets, $name;
                     next;
                 }
-                elsif (my $zone = $obj->{zone}) {
-                    $matching_zones{$zone} = 1;
-                }
+                $add_matching_zone->($obj);
             }
             else {
                 $sub or next;
