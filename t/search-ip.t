@@ -24,7 +24,7 @@ sub prepare_export {
     my $status = $?;
     $status == 0 or die "Export failed:\n$stderr\n";
     $stderr and die "Unexpected output during export:\n$stderr\n";
-    system("echo '# p1 #' > $export_dir/$policy/POLICY") == 0 or die;
+    system("echo '# $policy #' > $export_dir/$policy/POLICY") == 0 or die;
     system("cd $export_dir; ln -s $policy current") == 0 or die;
 }
 
@@ -73,7 +73,7 @@ sub test_run {
     my ($title, $path, $request, $owner, $out, $process_result) = @_;
     
     $request->{active_owner} = $owner;
-    $request->{history} = 'p1';
+    $request->{history} = $policy;
 
     my $uri = "/$path?" . join '&', map { "$_=$request->{$_}" } keys %$request;
     test_psgi $app, sub {
