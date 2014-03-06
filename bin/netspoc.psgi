@@ -147,8 +147,18 @@ sub select_history {
 my $cache;
 
 sub load_json {
-    my ($path) = @_;
-    return $cache->load_json_version($selected_history, $path);
+    my ($key) = @_;
+    return $cache->load_json_version($selected_history, $key);
+}
+
+sub store_cache {
+    my ($key, $data) = @_;
+    return $cache->store_cache_version($selected_history, $key, $data);
+}
+
+sub load_cache {
+    my ($key) = @_;
+    return $cache->load_cache_version($selected_history, $key);
 }
 
 sub get_no_nat_set {
@@ -552,12 +562,84 @@ sub match_ip {
     }
 }
 
-sub build_search_hash {
-    my ($search, $sub, $super, $no_nat_set) = @_;
+sub build_ip_hash {
+    my ($owner) = @_;
+    my $cache_key = "ip_hash/$owner";
+    if (my $result = load_cache($cache_key)) {
+        return $result;
+    }
+    my $no_nat_set = get_no_nat_set($owner);
 
-    # Undefined value or empty string or "0" is handled like "match all".
+    my %ip_hash; 
+    my $objects = load_json('objects');
+    for my $name (keys %$objects) {
+        my $obj = $objects->{$name};
+        my $obj_ip;
+
+        # Get NAT IP
+        if (my $href = $obj->{nat} and $no_nat_set) {
+            for my $tag (keys %$href) {
+                next if $no_nat_set->{$tag};
+                $obj_ip = $href->{$tag};
+                last;
+            }
+            $obj_ip ||= $obj->{ip};
+        }
+        else {
+            $obj_ip = $obj->{ip};
+        }
+
+        # Ignore interface without IP address.
+        $obj_ip =~ /^\d/ or next;
+
+        # Missing mask (at most hosts and interfaces).
+        if ($obj_ip !~ m'/') {
+
+            # Missing mask at aggregate with ip 0.
+            if ($obj_ip eq '0.0.0.0') {
+                $ip_hash{$name} = { ip1 => 0, mask => 0 };
+            }
+
+            # Handle range.
+            elsif ($obj_ip =~ /-/) {
+                my ($ip1, $ip2) = split /-/, $obj_ip;
+                my $i1 = ip2int($ip1);
+                my $i2 = ip2int($ip2);
+                $ip_hash{$name} = { ip1 => $i1, 
+                                    ip2 => $i2,
+                                    mask => 0xffffffff };
+            }
+
+            # Single IP address.
+            else {
+                my $i1 = ip2int($obj_ip);
+                $ip_hash{$name} = { ip1 => $i1, mask => 0xffffffff };
+            }
+        }
+
+        # Network or (matching) aggregate.
+        else {
+            my ($ip, $mask) = split '/', $obj_ip;
+            my $i1 = ip2int($ip);
+            my $m1 = ip2int($mask);
+            $ip_hash{$name} = { ip1 => $i1, mask => $m1 };
+        }
+    }
+    return store_cache($cache_key, \%ip_hash);
+}
+
+sub build_search_hash {
+    my ($nth, $search, $sub, $super, $owner) = @_;
+
+    # Undefined value or empty string or "0" is handled as "match all".
     return if !$search;
-    my $lookup;
+
+    $sub   ||= 0;
+    $super ||= 0;
+    my $cache_key = "search$nth/$owner/$sub/$super/$search";
+    if (my $result = load_cache($cache_key)) {
+        return $result;
+    }
     my ($ip, $mask) =
         ($search =~ m'(\d+\.\d+\.\d+\.\d+)(?:[ /](\d+(?:\.\d+\.\d+\.\d+)?))?')
         or abort "Invalid ip/mask in '$search'";
@@ -588,7 +670,6 @@ sub build_search_hash {
     # Back to strings, because objects use stringified ip address.
     $ip = int2ip($i);
     $mask = int2ip($m);
-    $lookup = "$ip/$mask";
 
     # Collect names of matching objects into %hash.
     my $objects = load_json('objects');
@@ -601,8 +682,8 @@ sub build_search_hash {
     # aggregate matches.
     my %matching_zones;
     my $add_matching_zone = sub {
-        my ($obj) = @_;
-        my $name = $obj->{name};
+        my ($name) = @_;
+        my $obj = $objects->{$name};
 
         # Ignore hosts, interfaces, but not loopback interfaces.
         if (my $zone = $obj->{zone}) {
@@ -610,98 +691,46 @@ sub build_search_hash {
         }
     };
 
+    my $ip_hash = build_ip_hash($owner);
     for my $name (keys %$objects) {
-        my $obj = $objects->{$name};
-        my $obj_ip;
+        my ($i1, $i2, $m1) = @{$ip_hash->{$name}}{qw(ip1 ip2 mask)};
 
-        # Get NAT IP
-        if (my $href = $obj->{nat} and $no_nat_set) {
-            for my $tag (keys %$href) {
-                next if $no_nat_set->{$tag};
-                $obj_ip = $href->{$tag};
-                last;
+        # Interface without IP address
+        defined $i1 or next;
+
+        # Range
+        if ($i2) {
+            if ($sub && 
+                (match_ip($i1, $i, $m) || match_ip($i2, $i, $m))
+                || ($i1 <= $i && $i <= $i2)) 
+            {
+                $hash{$name} = 1;
             }
-            $obj_ip ||= $obj->{ip};
+            next;
+        }
+
+        if ($m1 == $m) {
+            $i1 == $i or next;
+
+            # Add exact matchi
+            $add_matching_zone->($name) if $super;
+        }
+        elsif ($m1 < $m) {
+            $super or next;
+            match_ip($i, $i1, $m1) or next;
+            my $obj = $objects->{$name};
+            if ($obj->{is_supernet}) {
+                push @supernets, $name;
+                next;
+            }
+            $add_matching_zone->($name) if $name !~ /^any:/;
+
         }
         else {
-            $obj_ip = $obj->{ip};
+            $sub or next;
+            match_ip($i1, $i, $m) or next;
         }
-
-        # Missing mask at aggregate with ip 0.
-        $obj_ip .= '/0.0.0.0' if $obj_ip eq '0.0.0.0';
-
-        # Missing mask (at most hosts and interfaces).
-        if ($obj_ip !~ m'/') {
-            32 == $len or $sub or next;
-
-            # Handle range.
-            if ($obj_ip =~ /-/) {
-                my ($ip1, $ip2) = split /-/, $obj_ip;
-                my $i1 = ip2int($ip1);
-                my $i2 = ip2int($ip2);
-                if (   $sub && (match_ip($i1, $i, $m) || match_ip($i2, $i, $m))
-                    || ($i1 <= $i && $i <= $i2)) 
-                {
-                    $hash{$name} = 1;
-                    next;
-                }
-            }
-
-            # Single IP address.
-            else {
-                if ($sub) {
-
-                    # Ignore interface without IP address.
-                    $obj_ip =~ /^\d/ or next;
-                    my $i1 = ip2int($obj_ip);
-                    if (match_ip($i1, $i, $m)) {
-                        $hash{$name} = 1;
-                        next;
-                    }
-                }   
-                elsif ($ip eq $obj_ip) {
-                    $hash{$name} = 1;
-
-                    # Needed for loopback interface/network.
-                    $add_matching_zone->($obj) if $super;
-                    next;
-                }
-            }   
-            next;
-        }
-
-        # Network or (matching) aggregate.
-        elsif ($sub || $super) {
-            my ($ip, $mask) = split '/', $obj_ip;
-            my $i1 = ip2int($ip);
-            my $m1 = ip2int($mask);
-            if ($m1 == $m) {
-                $i1 == $i or next;
-
-                # Add exact matchi
-                $add_matching_zone->($obj) if $super;
-            }
-            elsif ($m1 < $m) {
-                $super or next;
-                match_ip($i, $i1, $m1) or next;
-                if ($obj->{is_supernet}) {
-                    push @supernets, $name;
-                    next;
-                }
-                $add_matching_zone->($obj) if $name !~ /^any:/;
-
-            }
-            else {
-                $sub or next;
-                match_ip($i1, $i, $m) or next;
-            }
-            $hash{$name} = 1;
-            next;
-        }
-        elsif ($obj_ip eq $lookup) {
-            $hash{$name} = 1;
-        }
-
+        $hash{$name} = 1;
     }
 
     if ($super) {
@@ -722,8 +751,7 @@ sub build_search_hash {
             }
         }
     }
-                
-    return \%hash;
+    return store_cache($cache_key, \%hash);
 }
 
 # Search for search_ip1, search_ip2 in rules and users.
@@ -751,9 +779,8 @@ sub search_rules {
     my $search_proto = $req->param('search_proto');
     my $owner        = $req->param('active_owner');
     my $services     = load_json('services');
-    my $no_nat_set   = get_no_nat_set($owner);
-    my $ip1_hash     = build_search_hash($ip1, $sub, $super, $no_nat_set);
-    my $ip2_hash     = build_search_hash($ip2, $sub, $super, $no_nat_set);
+    my $ip1_hash     = build_search_hash('1', $ip1, $sub, $super, $owner);
+    my $ip2_hash     = build_search_hash('2', $ip2, $sub, $super, $owner);
     my $result       = [];
     my $proto_regex;
     $proto_regex = qr/ \Q$search_proto\E /ix if $search_proto;
