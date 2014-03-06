@@ -278,6 +278,10 @@ sub get_hosts {
     return get_nat_obj_list($child_names, $owner);
 }
 
+####################################################################
+# Services, rules, users
+####################################################################
+
 # Substitute objects in rules by ip or name.
 # Substitute 'users' keyword by ip or name of users.
 sub adapt_name_ip_user {
@@ -419,11 +423,6 @@ sub check_chosen_networks {
                              @$network_names)));
     return \%relevant_objects;
 }
-
-
-####################################################################
-# Services, rules, users
-####################################################################
 
 my %rule_lookup = ( 'src'  => 'dst',
                'dst'  => 'src',
