@@ -954,23 +954,21 @@ my %src_or_dst = ( src  => 'dst', dst  => 'src');
 sub get_rules_for_owner_and_service {
     my ( $req, $owner, $sname, $relevant_objects ) = @_;
     my $expand_users = $req->param('expand_users');
-    my $lists        = load_json("owner/$owner/service_lists");
-
-    # Check if owner is allowed to access this service.
-    $lists->{hash}->{$sname} or abort "Unknown service '$sname'";
-    my $services = load_json('services');
-
-    my $rules = $services->{$sname}->{rules};
+    my $services     = load_json('services');
+    my $rules        = $services->{$sname}->{rules};
 
     # If networks were selected and own services are displayed,
     # filter rules to those containing these networks
     # (and their child objects).
-    if ( $relevant_objects && $lists->{hash}->{$sname} eq 'owner' ) {
-        $rules = [ grep {
-            $_->{has_user} ne 'both' &&
-                grep({ $relevant_objects->{$_} } 
-                     @{$_->{$src_or_dst{$_->{has_user}}}});
-        } @$rules ];
+    if ($relevant_objects) {
+        my $lists = load_json("owner/$owner/service_lists");
+        if ($lists->{hash}->{$sname} eq 'owner' ) {
+            $rules = [ grep {
+                $_->{has_user} ne 'both' &&
+                    grep({ $relevant_objects->{$_} } 
+                         @{$_->{$src_or_dst{$_->{has_user}}}});
+                       } @$rules ];
+        }
     }
     return $rules;
 }
@@ -979,6 +977,10 @@ sub get_rules {
     my ($req, $session) = @_;
     my $owner = $req->param('active_owner');
     my $sname = $req->param('service') or abort "Missing parameter 'service'";
+    my $lists = load_json("owner/$owner/service_lists");
+
+    # Check if owner is allowed to access this service.
+    $lists->{hash}->{$sname} or abort "Unknown service '$sname'";
     my $relevant_objects = check_chosen_networks($req);
     my $rules = get_rules_for_owner_and_service( $req, $owner, $sname, 
                                                  $relevant_objects );
