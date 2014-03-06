@@ -658,11 +658,8 @@ sub build_search_hash {
     };
 
     my $ip_hash = build_ip_hash($owner);
-    for my $name (keys %$objects) {
+    for my $name (keys %$ip_hash) {
         my ($i1, $i2, $m1) = @{$ip_hash->{$name}}{qw(ip1 ip2 mask)};
-
-        # Interface without IP address
-        defined $i1 or next;
 
         # Range
         if ($i2) {
