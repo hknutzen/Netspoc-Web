@@ -636,17 +636,23 @@ sub build_search_hash {
 
     $sub   ||= 0;
     $super ||= 0;
-    my $cache_key = "search$nth/$owner/$sub/$super/$search";
-    if (my $result = load_cache($cache_key)) {
-        return $result;
+    my $cache_key_prop = "search$nth/$owner/prop";
+    my $cache_key_hash = "search$nth/$owner/hash";
+    my $search_prop = "$sub/$super/$search";
+    if (my $prop = load_cache($cache_key_prop)) {
+        if ($prop eq $search_prop) {
+            return load_cache($cache_key_hash);
+        }
     }
     my ($ip, $mask) =
         ($search =~ m'(\d+\.\d+\.\d+\.\d+)(?:[ /](\d+(?:\.\d+\.\d+\.\d+)?))?')
         or abort "Invalid ip/mask in '$search'";
 
-    $mask = 32 if !defined($mask);
     my $len;
-    if ($mask =~ /\D/) {
+    if(!$mask) {
+        $len = 32;
+    }
+    elsif ($mask =~ /\D/) {
         $len = mask2prefix(ip2int($mask)) or 
             abort "Invalid netmask '$mask'";
     }
@@ -667,10 +673,6 @@ sub build_search_hash {
     # Adapt ip to mask.
     $i = $i & $m;
     
-    # Back to strings, because objects use stringified ip address.
-    $ip = int2ip($i);
-    $mask = int2ip($m);
-
     # Collect names of matching objects into %hash.
     my $objects = load_json('objects');
     my %hash;
@@ -751,7 +753,8 @@ sub build_search_hash {
             }
         }
     }
-    return store_cache($cache_key, \%hash);
+    store_cache($cache_key_prop, $search_prop);
+    return store_cache($cache_key_hash, \%hash);
 }
 
 # Search for search_ip1, search_ip2 in rules and users.
