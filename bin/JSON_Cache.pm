@@ -13,6 +13,9 @@ our $VERSION = ( split ' ',
 
 # Exported method
 # - sub load_json_version($path, $version)
+# - sub load_json_current($path)
+# - sub store_cache_version($version, $path, $data)
+# - sub load_cache_version($version, $path)
 
 # Creates a new JSON_Cache object.
 #
@@ -200,6 +203,25 @@ sub load_json_current {
         die "Internal: Can't find policy name in $policy_path";
     $policy = $1;
     return $self->load_json_version($policy, $path);
+}
+
+sub store_cache_version {
+    my ($self, $version, $key, $data) = @_;
+
+    # Last access time for data of this version.
+    $self->{atime}->{$version} = time();
+    $self->clean_cache();
+
+    return $self->{cache}->{$version}->{$key} = $data;
+}
+
+sub load_cache_version {
+    my ($self, $version, $key) = @_;
+
+    # Last access time for data of this version.
+    $self->{atime}->{$version} = time();
+
+    return $self->{cache}->{$version}->{$key};
 }
 
 1;
