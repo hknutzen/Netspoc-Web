@@ -376,41 +376,6 @@ sub get_services_and_rules {
     return \@result;
 }
 
-sub get_services_owners_and_admins {
-    my ($req, $session) = @_;
-    my $owner     = $req->param('active_owner');
-    my $srv_list  = $req->param('services');
-    my $lists     = load_json("owner/$owner/service_lists");
-    my $assets    = load_json("owner/$owner/assets");
-    my $services  = load_json('services');
-    my $service_names = [ split ",", $srv_list ];
-    my $data = [];
-
-    my $owner2alias = load_json('owner2alias');
-    my $hash = $lists->{hash};
-  SERVICE:
-    for my $srv_name (@{$service_names}) {
-        
-        # Check if owner is allowed to access this service.
-        $hash->{$srv_name} or abort "Unknown service '$srv_name'";
-
-        my $details = $services->{$srv_name}->{details};
-	my @owners = ($details ->{sub_owner} || (), @{ $details->{owner} });
-
-	my $admins;
-	for my $o (@owners) {
-	    my $emails = load_json("owner/$o/emails");
-	    push @$admins, map { $_->{email} } @$emails;
-	}
-	push @$data, {
-	    service   => $srv_name,
-	    srv_owner => [ map { $owner2alias->{$_} || $_ } @owners ],
-	    admins    => $admins,
-	};
-    }
-    return $data;
-}
-
 sub check_chosen_networks {
     my ( $req ) = @_;
     my $chosen = $req->param('chosen_networks') or return;
@@ -1505,8 +1470,6 @@ my %path2sub =
 	 \&get_services_and_rules,       { owner => 1, add_success => 1, } ],
      get_network_resources => [
 	 \&get_network_resources,       { owner => 1, add_success => 1, } ],
-     get_services_owners_and_admins => [
-	 \&get_services_owners_and_admins,{ owner => 1, add_success => 1, } ],
      get_diff      => [ \&get_diff,      { owner => 1, } ],
      get_diff_mail => [ \&get_diff_mail, { owner => 1, add_success => 1, } ],
      set_diff_mail => [ \&set_diff_mail, { owner => 1, add_success => 1, } ],
