@@ -156,6 +156,12 @@ service:Test3 = {
  permit src = user; dst = network:Kunde; prt = tcp 81;
 }
 
+service:Test3a = {
+ user = network:Sub;
+ permit src = user; dst = network:Kunde; prt = tcp 80;
+ permit src = user; dst = network:DMZ; prt = tcp 81;
+}
+
 service:Test4 = {
  user = host:B10, host:Range, interface:u.Big;
  permit src = user; dst = host:k; prt = tcp 81;
@@ -201,7 +207,7 @@ $params = {
     search_used  => 1,
 };
 
-$out = [ qw(Test1 Test3) ];
+$out = [ qw(Test1 Test3 Test3a) ];
 
 test_run($title, $path, $params, $owner, $out, $service_names);
 
@@ -290,7 +296,7 @@ $params = {
     search_used  => 1,
 };
 
-$out = [ qw(Test1 Test3) ];
+$out = [ qw(Test1 Test3 Test3a) ];
 
 test_run($title, $path, $params, $owner, $out, $service_names);
 
@@ -304,7 +310,7 @@ $params = {
     search_used  => 1,
 };
 
-$out = [ qw(Test1 Test3 Test4 Test5) ];
+$out = [ qw(Test1 Test3 Test3a Test4 Test5) ];
 
 test_run($title, $path, $params, $owner, $out, $service_names);
 
@@ -314,6 +320,7 @@ $title = 'Search for proto and exact IP';
 
 $params = {
     search_ip1   => '10.2.2.0/24',
+    search_ip2   => '10.1.1.0/24',
     search_proto => '81',
     search_own   => 1,
     search_used  => 1,
@@ -349,7 +356,7 @@ $params = {
     search_used  => 1,
 };
 
-$out = [ qw(Test1 Test3 Test6) ];
+$out = [ qw(Test1 Test3 Test3a Test6) ];
 
 test_run($title, $path, $params, $owner, $out, $service_names);
 
