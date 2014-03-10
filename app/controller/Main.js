@@ -221,7 +221,11 @@ Ext.define(
 
             // Load stores that need history to be set.
             this.getHistoryStore().load();
-            this.getServiceStore().load();
+            var store = this.getServiceStore();
+            var proxy = store.getProxy();
+            // 'user' is default relation.
+            proxy.extraParams.relation = 'user';
+            store.load();
         },
             
         onLogout : function() {
