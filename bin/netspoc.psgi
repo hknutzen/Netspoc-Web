@@ -361,12 +361,8 @@ my %rule_lookup = ( 'src'  => 'dst',
                'both' => 'both'
     );
 
-sub search_string {
-    my ($req, $service_lists) = @_;
-    my $search   = $req->param('search_string');
-    my $owner    = $req->param('active_owner');
-    my $services = load_json('services');
-    my $result   = [];
+sub gen_search_regex {
+    my ($req, $search) = @_;
 
     # Strip leading and trailing whitespaces.
     $search =~ s/^\s+//;
@@ -383,20 +379,29 @@ sub search_string {
     if ( $req->param('search_exact') ) {
         $search = qr/^$search$/;
     }
+    return $search;
+}
 
-  SERVICE:
-    for my $sname ( @$service_lists ) {
+sub search_string {
+    my ($req, $service_list) = @_;
+    my $search   = $req->param('search_string') or return $service_list;
+    my $owner    = $req->param('active_owner');
+    my $services = load_json('services');
+    my $result   = [];
+    my $regex = gen_search_regex($req, $search);
+
+    for my $sname ( @$service_list ) {
 
         # Check if service name itself contains $search.
-        if ( $sname =~ $search ) {
+        if ( $sname =~ $regex ) {
             push @$result, $sname;
-            next SERVICE;
+            next;
         }
         if ( $req->param('search_in_desc') ) {
             if ( my $desc = $services->{$sname}->{details}->{description} ) {
-                if ( $desc =~ $search ) {
+                if ( $desc =~ $regex ) {
                     push @$result, $sname;
-                    next SERVICE;
+                    next;
                 }
             }
         }
@@ -522,23 +527,8 @@ sub build_ip_hash {
 
 # Chreate hash having those object names as key which match
 # search request in $search, $sub, $super.
-sub build_search_hash {
-    my ($nth, $search, $sub, $super, $owner) = @_;
-
-    # Undefined value or empty string or "0" is handled as "match all".
-    return if !$search;
-
-    $sub   ||= 0;
-    $super ||= 0;
-    my $cache_key_hash = "search$nth/$owner/hash";
-    my $search_prop    = "$sub/$super/$search";
-    if (my $result = load_cache($cache_key_hash, $search_prop)) {
-        return $result;
-    }
-
-    my ($ip, $mask) =
-        ($search =~ m'(\d+\.\d+\.\d+\.\d+)(?:[ /](\d+(?:\.\d+\.\d+\.\d+)?))?')
-        or abort "Invalid ip/mask in '$search'";
+sub build_ip_search_hash {
+    my ($ip, $mask, $sub, $super, $owner) = @_;
 
     my $len;
     if(!$mask) {
@@ -642,7 +632,43 @@ sub build_search_hash {
             }
         }
     }
-    return store_cache($cache_key_hash, \%hash, $search_prop);
+    return \%hash;
+}
+
+sub build_text_search_hash {
+    my ($req, $search) = @_;
+    my $regex = gen_search_regex($req, $search);
+    my $objects = load_json('objects');
+    return { map { $_ => 1 } grep { $_ =~ $regex } keys %$objects };
+}
+    
+# Chreate hash having those object names as key which match
+# search request in $search, $sub, $super.
+sub build_search_hash {
+    my ($req, $key) = @_;
+
+    # Undefined value or empty string or "0" is handled as "match all".
+    my $search     = $req->param($key) or return;
+    my $owner      = $req->param('active_owner');
+    my $sub        = $req->param('search_subnet') || 0;
+    my $super      = $req->param('search_supernet') || 0;
+
+    my $cache_key_hash = "$key/$owner/hash";
+    my $search_prop    = "$sub/$super/$search";
+    if (my $result = load_cache($cache_key_hash, $search_prop)) {
+        return $result;
+    }
+
+    my $result;
+    if (my ($ip, $mask) =
+        ($search =~ m'(\d+\.\d+\.\d+\.\d+)(?:[ /](\d+(?:\.\d+\.\d+\.\d+)?))?'))
+    {
+        $result = build_ip_search_hash($ip, $mask, $sub, $super, $owner);
+    }
+    else {
+        $result = build_text_search_hash($req, $search);
+    }
+    return store_cache($cache_key_hash, $result, $search_prop);
 }
 
 # Search for search_ip1, search_ip2 in rules and users.
@@ -663,13 +689,8 @@ sub build_search_hash {
 #
 sub gen_search_req {
     my ($req) = @_;
-    my $ip1          = $req->param('search_ip1');
-    my $ip2          = $req->param('search_ip2');
-    my $sub          = $req->param('search_subnet');
-    my $super        = $req->param('search_supernet');
-    my $owner        = $req->param('active_owner');
-    my $ip1_hash     = build_search_hash('1', $ip1, $sub, $super, $owner);
-    my $ip2_hash     = build_search_hash('2', $ip2, $sub, $super, $owner);
+    my $ip1_hash     = build_search_hash($req, 'search_ip1');
+    my $ip2_hash     = build_search_hash($req, 'search_ip2');
     my $search_proto = $req->param('search_proto');
     my $proto_regex;
     $proto_regex = qr/ \Q$search_proto\E /ix if $search_proto;
@@ -819,9 +840,7 @@ sub service_list {
         $result = select_services($req, $result, 
                                   $obj1_hash, $obj2_hash, $proto_regex);
     }
-    if ( $req->param('search_string') ) {
-        $result = search_string($req, $result);
-    }
+    $result = search_string($req, $result);
 
     my $owner2alias = load_json('owner2alias');
     my $add_alias = sub {

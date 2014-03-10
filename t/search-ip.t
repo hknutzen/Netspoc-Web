@@ -153,6 +153,7 @@ service:Test1 = {
 }
 
 service:Test2 = {
+ description = My foo
  user = network:Big, any:Sub1;
  permit src = user; dst = host:k; prt = udp 80;
 }
@@ -170,6 +171,7 @@ service:Test3a = {
 }
 
 service:Test4 = {
+ description = Your foo
  multi_owner;
  user = host:B10, host:k, host:Range, interface:u.Big, network:DMZ;
  permit src = user; dst = host:k; prt = tcp 81;
@@ -453,6 +455,63 @@ $out = [ qw(Test7) ];
 test_run($title, $path, $params, $owner, $out, $extract_names);
 
 ############################################################
+$title = 'Text search in rules and users';
+############################################################
+
+$params = {
+    search_ip1   => 'Sub',
+    search_own   => 1,
+    search_used  => 1,
+};
+
+$out = [ qw(Test1 Test2 Test3 Test3a) ];
+
+test_run($title, $path, $params, $owner, $out, $extract_names);
+
+############################################################
+$title = 'Text search for type in rules and users';
+############################################################
+
+$params = {
+    search_ip1   => 'any:',
+    search_own   => 1,
+    search_used  => 1,
+};
+
+$out = [ qw(Test2 Test5 Test6 Test8) ];
+
+test_run($title, $path, $params, $owner, $out, $extract_names);
+
+############################################################
+$title = 'Text search in rule names';
+############################################################
+
+$params = {
+    search_string => 'Test3',
+    search_own   => 1,
+    search_used  => 1,
+};
+
+$out = [ qw( Test3 Test3a) ];
+
+test_run($title, $path, $params, $owner, $out, $extract_names);
+
+############################################################
+$title = 'Text search in description of rules';
+############################################################
+
+$params = {
+    search_string  => 'foo',
+    search_in_desc => 1,
+    search_own     => 1,
+    search_used    => 1,
+};
+
+$out = [ qw( Test2 Test4) ];
+
+test_run($title, $path, $params, $owner, $out, $extract_names);
+
+############################################################
 $title = 'Show matching users of service, 2x ip';
 ############################################################
 $path = 'get_users';
@@ -567,7 +626,7 @@ $out = [ ];
 test_run($title, $path, $params, $owner, $out, $extract_records);
 
 ############################################################
-$title = 'Show services with rules';
+$title = 'Show services with rules of IP search';
 ############################################################
 $path = 'get_services_and_rules';
 
