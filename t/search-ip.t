@@ -88,7 +88,13 @@ sub test_run {
 ############################################################
 # Extracts data from result of request.
 ############################################################
-my $service_names = sub { 
+my $extract_records = sub { 
+    my ($result) = @_;
+    my $records = $result->{records} or die 'Missing records in response';
+    return $records;
+};
+
+my $extract_names = sub { 
     my ($result) = @_;
     my $records = $result->{records} or die 'Missing records in response';
     return [ map { $_->{name} } @$records ];
@@ -163,8 +169,10 @@ service:Test3a = {
 }
 
 service:Test4 = {
- user = host:B10, host:Range, interface:u.Big;
+ multi_owner;
+ user = host:B10, host:k, host:Range, interface:u.Big, network:DMZ;
  permit src = user; dst = host:k; prt = tcp 81;
+ permit src = user; dst = host:B10; prt = tcp 82;
 }
 
 service:Test5 = {
@@ -185,6 +193,12 @@ service:Test7 = {
 service:Test8 = {
  user = host:B10;
  permit src = user; dst = any:DMZ10; prt = udp 82;
+}
+
+service:Test9 = {
+ user = host:B10, host:k;
+ permit src = user; dst = user; prt = udp 83;
+ permit src = user; dst = network:DMZ; prt = udp 83;
 }
 
 END
@@ -209,7 +223,7 @@ $params = {
 
 $out = [ qw(Test1 Test3 Test3a) ];
 
-test_run($title, $path, $params, $owner, $out, $service_names);
+test_run($title, $path, $params, $owner, $out, $extract_names);
 
 ############################################################
 $title = 'Exact IP search in own services';
@@ -224,7 +238,7 @@ $params = {
 
 $out = [ qw(Test2) ];
 
-test_run($title, $path, $params, $owner, $out, $service_names);
+test_run($title, $path, $params, $owner, $out, $extract_names);
 
 ############################################################
 $title = 'Exact IP search for host';
@@ -237,9 +251,9 @@ $params = {
     search_used  => 1,
 };
 
-$out = [ qw(Test4) ];
+$out = [ qw(Test4 Test9) ];
 
-test_run($title, $path, $params, $owner, $out, $service_names);
+test_run($title, $path, $params, $owner, $out, $extract_names);
 
 ############################################################
 $title = 'Exact IP search for range';
@@ -254,7 +268,7 @@ $params = {
 
 $out = [ qw(Test4) ];
 
-test_run($title, $path, $params, $owner, $out, $service_names);
+test_run($title, $path, $params, $owner, $out, $extract_names);
 
 ############################################################
 $title = 'Exact IP search for interface';
@@ -269,7 +283,7 @@ $params = {
 
 $out = [ qw(Test4) ];
 
-test_run($title, $path, $params, $owner, $out, $service_names);
+test_run($title, $path, $params, $owner, $out, $extract_names);
 
 ############################################################
 $title = 'Exact IP search for aggregate';
@@ -284,7 +298,7 @@ $params = {
 
 $out = [ qw(Test2) ];
 
-test_run($title, $path, $params, $owner, $out, $service_names);
+test_run($title, $path, $params, $owner, $out, $extract_names);
 
 ############################################################
 $title = 'Exact IP search for single address';
@@ -298,7 +312,7 @@ $params = {
 
 $out = [ qw(Test1 Test3 Test3a) ];
 
-test_run($title, $path, $params, $owner, $out, $service_names);
+test_run($title, $path, $params, $owner, $out, $extract_names);
 
 ############################################################
 $title = 'Search for protocol';
@@ -312,7 +326,7 @@ $params = {
 
 $out = [ qw(Test1 Test3 Test3a Test4 Test5) ];
 
-test_run($title, $path, $params, $owner, $out, $service_names);
+test_run($title, $path, $params, $owner, $out, $extract_names);
 
 ############################################################
 $title = 'Search for proto and exact IP';
@@ -328,7 +342,7 @@ $params = {
 
 $out = [ qw(Test3) ];
 
-test_run($title, $path, $params, $owner, $out, $service_names);
+test_run($title, $path, $params, $owner, $out, $extract_names);
 
 ############################################################
 $title = 'Subnet IP search for single address';
@@ -341,9 +355,9 @@ $params = {
     search_used  => 1,
 };
 
-$out = [ qw(Test2 Test4 Test5) ];
+$out = [ qw(Test2 Test4 Test5 Test9) ];
 
-test_run($title, $path, $params, $owner, $out, $service_names);
+test_run($title, $path, $params, $owner, $out, $extract_names);
 
 ############################################################
 $title = 'Supernet IP search for single address';
@@ -358,7 +372,7 @@ $params = {
 
 $out = [ qw(Test1 Test3 Test3a Test6) ];
 
-test_run($title, $path, $params, $owner, $out, $service_names);
+test_run($title, $path, $params, $owner, $out, $extract_names);
 
 ############################################################
 $title = 'Supernet IP search for aggregate';
@@ -374,7 +388,7 @@ $params = {
 
 $out = [ qw(Test2 Test5) ];
 
-test_run($title, $path, $params, $owner, $out, $service_names);
+test_run($title, $path, $params, $owner, $out, $extract_names);
 
 ############################################################
 $title = 'Supernet IP search finds all aggregates';
@@ -389,7 +403,7 @@ $params = {
 
 $out = [ qw(Test7 Test8) ];
 
-test_run($title, $path, $params, $owner, $out, $service_names);
+test_run($title, $path, $params, $owner, $out, $extract_names);
 
 ############################################################
 $title = 'Supernet IP search for loopback';
@@ -404,7 +418,7 @@ $params = {
 
 $out = [ qw(Test5) ];
 
-test_run($title, $path, $params, $owner, $out, $service_names);
+test_run($title, $path, $params, $owner, $out, $extract_names);
 
 ############################################################
 $title = 'Supernet IP search for unknown internet address';
@@ -419,7 +433,120 @@ $params = {
 
 $out = [ qw(Test7) ];
 
-test_run($title, $path, $params, $owner, $out, $service_names);
+test_run($title, $path, $params, $owner, $out, $extract_names);
+
+############################################################
+$title = 'Show matching users of service, 2x ip';
+############################################################
+$path = 'get_users';
+
+# Rules match both, search_ip1 and search_ip2;
+# hence find union of both in users
+$params = {
+    service      => 'Test4',
+    search_ip1   => '10.1.0.0/16',
+    search_ip2   => '10.2.2.2',
+    search_subnet => 1,
+};
+
+$out = [ qw(host:B10 host:Range interface:u.Big host:k) ];
+
+test_run($title, $path, $params, $owner, $out, $extract_names);
+
+############################################################
+$title = 'Show matching users of service, proto + 2x ip';
+############################################################
+$path = 'get_users';
+
+$params = {
+    service      => 'Test4',
+    search_ip1   => '10.1.0.0/16',
+    search_ip2   => '10.2.2.2',
+    search_subnet => 1,
+    search_proto => '81',
+};
+
+$out = [ qw(host:B10 host:Range interface:u.Big) ];
+
+test_run($title, $path, $params, $owner, $out, $extract_names);
+
+############################################################
+$title = 'Show matching rules with expanded users';
+############################################################
+$path = 'get_rules';
+
+$params = {
+    service      => 'Test4',
+    search_ip1   => '10.2.2.2',
+    search_ip2   => '10.1.0.10',
+    search_proto => '81',
+    expand_users => 1,
+    display_property => 'name',
+};
+
+$out = [ {                           
+    action => 'permit',
+    dst => [ 'host:k' ],
+    prt => [ 'tcp 81' ],
+    src => [ 'host:B10' ]
+         }
+    ];
+
+test_run($title, $path, $params, $owner, $out, $extract_records);
+
+############################################################
+$title = 'Show matching rules of service with user -> user';
+############################################################
+$path = 'get_rules';
+
+# Search pattern doesn't matter with has_user => 'both'
+$params = {
+    service      => 'Test9',
+    search_ip1   => '10.3.3.0/24',
+};
+
+$out = [ {                           
+    action => 'permit',
+    dst => [],
+    has_user => 'both',
+    prt => [ 'udp 83' ],
+    src => []
+         }
+    ];
+
+test_run($title, $path, $params, $owner, $out, $extract_records);
+
+############################################################
+$title = 'Show services with rules';
+############################################################
+$path = 'get_services_and_rules';
+
+$params = {
+    search_ip1   => '10.0.0.0/8',
+    search_supernet => 1,
+    search_own   => 1,
+    search_used  => 1,
+};
+
+$out = [ {                     
+    action => 'permit', 
+    dst => [ '0.0.0.0/0.0.0.0' ],                  
+    has_user => 'src',  
+    proto => [ 'udp 82' ],                  
+    service => 'Test7', 
+    src => [ 'User' ]                   
+  },                    
+  {                     
+    action => 'permit', 
+    dst => [ '10.0.0.0/255.0.0.0' ],                  
+    has_user => 'src',  
+    proto => [ 'udp 82' ],                  
+    service => 'Test8', 
+    src => [ 'User' ]                   
+  }                     
+];
+
+test_run($title, $path, $params, $owner, $out, $extract_records);
 
 ############################################################
 done_testing;
