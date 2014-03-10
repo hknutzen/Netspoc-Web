@@ -104,12 +104,12 @@ my $extract_names = sub {
 # Shared Netspoc configuration
 ############################################################
 my $netspoc = <<'END';
-owner:x = { admins = guest; }
+owner:x = { admins = guest; show_all; }
 owner:y = { admins = guest; }
 owner:z = { admins = guest; }
 
 area:all = { owner = x; anchor = network:Big; }
-any:Big  = { owner = y; link = network:Big; }
+any:Big  = { link = network:Big; }
 any:Sub1 = { ip = 10.1.0.0/23; link = network:Big; }
 any:Sub2 = { ip = 10.1.1.0/25; link = network:Big; }
 
@@ -134,7 +134,7 @@ router:asa = {
  interface:DMZ = { ip = 10.9.9.1; hardware = dmz; }
 }
 
-network:Kunde = { ip = 10.2.2.0/24; host:k = { ip = 10.2.2.2; } }
+network:Kunde = { ip = 10.2.2.0/24; owner = y; host:k = { ip = 10.2.2.2; } }
 any:Kunde = { link = network:Kunde; }
 
 network:DMZ = { ip = 10.9.9.0/24; }
@@ -163,6 +163,7 @@ service:Test3 = {
 }
 
 service:Test3a = {
+ multi_owner;
  user = network:Sub;
  permit src = user; dst = network:Kunde; prt = tcp 80;
  permit src = user; dst = network:DMZ; prt = tcp 81;
@@ -229,7 +230,7 @@ test_run($title, $path, $params, $owner, $out, $extract_names);
 $title = 'Exact IP search in own services';
 ############################################################
 
-$owner = 'x'; 
+$owner = 'y'; 
 $params = {
     search_ip1   => '10.1.0.0/255.255.0.0',
     search_ip2   => '10.2.2.2/32',
@@ -244,6 +245,7 @@ test_run($title, $path, $params, $owner, $out, $extract_names);
 $title = 'Exact IP search for host';
 ############################################################
 
+$owner = 'x'; 
 $params = {
     search_ip1   => '10.1.0.10/32',
     search_ip2   => '10.2.2.2',
@@ -360,6 +362,21 @@ $out = [ qw(Test2 Test4 Test5 Test9) ];
 test_run($title, $path, $params, $owner, $out, $extract_names);
 
 ############################################################
+$title = 'Subnet IP search for single address and chosen network';
+############################################################
+
+$params = {
+    search_ip1   => '10.2.2.2',
+    search_own   => 1,
+    search_used  => 1,
+    chosen_networks => 'network:Sub,network:DMZ',
+};
+
+$out = [ qw(Test4 Test9) ];
+
+test_run($title, $path, $params, $owner, $out, $extract_names);
+
+############################################################
 $title = 'Supernet IP search for single address';
 ############################################################
 
@@ -454,6 +471,24 @@ $out = [ qw(host:B10 host:Range interface:u.Big host:k) ];
 test_run($title, $path, $params, $owner, $out, $extract_names);
 
 ############################################################
+$title = 'Show matching users of service, 2x ip, chosen networks';
+############################################################
+$path = 'get_users';
+
+# Rules match both, search_ip1 and search_ip2;
+# hence find union of both in users
+$params = {
+    service      => 'Test9',
+    search_ip1   => '10.1.0.0/16',
+    search_subnet => 1,
+    chosen_networks => 'network:DMZ',
+};
+
+$out = [ qw(host:B10) ];
+
+test_run($title, $path, $params, $owner, $out, $extract_names);
+
+############################################################
 $title = 'Show matching users of service, proto + 2x ip';
 ############################################################
 $path = 'get_users';
@@ -499,10 +534,10 @@ $title = 'Show matching rules of service with user -> user';
 ############################################################
 $path = 'get_rules';
 
-# Search pattern doesn't matter with has_user => 'both'
 $params = {
     service      => 'Test9',
-    search_ip1   => '10.3.3.0/24',
+    search_ip1   => '10.2.2.2',
+    search_ip2   => '10.1.0.10',
 };
 
 $out = [ {                           
@@ -513,6 +548,21 @@ $out = [ {
     src => []
          }
     ];
+
+test_run($title, $path, $params, $owner, $out, $extract_records);
+
+############################################################
+$title = 'Non-matching rules of service with user -> user';
+############################################################
+$path = 'get_rules';
+
+# Must not find non-matching user->user rule.
+$params = {
+    service      => 'Test9',
+    search_ip1   => '10.3.3.3',
+};
+
+$out = [ ];
 
 test_run($title, $path, $params, $owner, $out, $extract_records);
 

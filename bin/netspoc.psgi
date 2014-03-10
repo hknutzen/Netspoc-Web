@@ -404,6 +404,7 @@ sub search_string {
     return $result;
 }
 
+# Convert from IP address in dotted notation into integer.
 sub ip2int {
     my ($string) = @_;
     $string =~ m/^(\d+)\.(\d+)\.(\d+)\.(\d+)$/ or 
@@ -414,6 +415,7 @@ sub ip2int {
     return $1 << 24 | $2 << 16 | $3 << 8 | $4;
 }
 
+# Convert from integer to IP address in dotted notation.
 sub int2ip {
     my ($int) = @_;
     return sprintf "%vd", pack 'N', $int;
@@ -449,6 +451,9 @@ sub match_ip {
     }
 }
 
+# Build hash which maps from object name to
+# - { ip => i, mask => m }
+# - or { ip1 => i1, $ip2 => i2, mask => m } for ranges.
 sub build_ip_hash {
     my ($owner) = @_;
     my $cache_key = "ip_hash/$owner";
@@ -515,6 +520,8 @@ sub build_ip_hash {
     return store_cache($cache_key, \%ip_hash);
 }
 
+# Chreate hash having those object names as key which match
+# search request in $search, $sub, $super.
 sub build_search_hash {
     my ($nth, $search, $sub, $super, $owner) = @_;
 
@@ -654,9 +661,8 @@ sub build_search_hash {
 # 2. Build ip2_hash with names of objects matching ip2
 # 3. Search rules and users by simply comparing object names.
 #
-sub gen_search_data {
+sub gen_search_req {
     my ($req) = @_;
-    my $relevant_objects = check_chosen_networks($req);
     my $ip1          = $req->param('search_ip1');
     my $ip2          = $req->param('search_ip2');
     my $sub          = $req->param('search_subnet');
@@ -664,14 +670,18 @@ sub gen_search_data {
     my $owner        = $req->param('active_owner');
     my $ip1_hash     = build_search_hash('1', $ip1, $sub, $super, $owner);
     my $ip2_hash     = build_search_hash('2', $ip2, $sub, $super, $owner);
-    if ($relevant_objects) {
-        $ip1_hash = intersect($ip1_hash, $relevant_objects) if $ip1_hash;
-        $ip2_hash = intersect($ip2_hash, $relevant_objects) if $ip2_hash;
-    }
     my $search_proto = $req->param('search_proto');
     my $proto_regex;
     $proto_regex = qr/ \Q$search_proto\E /ix if $search_proto;
+
+    $ip1_hash or $ip2_hash or $search_proto or return;
     return ($ip1_hash, $ip2_hash, $proto_regex);
+}
+
+sub gen_search_chosen {
+    my ($req) = @_;
+    my $chosen_objects = check_chosen_networks($req) or return;
+    return ($chosen_objects, undef, undef);
 }
 
 sub select_users {
@@ -681,7 +691,7 @@ sub select_users {
 }
 
 sub select_rules {
-    my ($rules, $obj_hash, $proto_regex) = @_;
+    my ($rules, $matching_users, $obj_hash, $proto_regex) = @_;
     return $rules if !$obj_hash && !$proto_regex;
     my @result;
     for my $rule (@$rules) {
@@ -695,8 +705,7 @@ sub select_rules {
         my $has_user = $rule->{has_user};
         if ($has_user eq 'both') {
 
-            # ToDo: should use match result of users.
-            push @result, $rule;
+            push @result, $rule if $matching_users;
             next;
         }
 
@@ -711,16 +720,15 @@ sub select_rules {
     return \@result;
 }
 
-sub search_rules {
-    my ($req, $service_lists) = @_;
-    my ($ip1_hash, $ip2_hash, $proto_regex) = gen_search_data($req);
+sub select_services {
+    my ($req, $service_list, $obj1_hash, $obj2_hash, $proto_regex) = @_;
+
     my $owner  = $req->param('active_owner');
     my $sname2users = load_json( "owner/$owner/users" );
     my $services = load_json('services');
     my $result = [];
-
   SERVICE:
-    for my $sname ( @$service_lists ) {
+    for my $sname ( @$service_list ) {
 
         my $users = $sname2users->{$sname} || [];
         my $rules = $services->{$sname}->{rules};
@@ -760,14 +768,14 @@ sub search_rules {
             return;
         };
 
-        if ($match_users->($ip1_hash)) {
-            if ($match_rules->($ip2_hash)) {
+        if ($match_users->($obj1_hash)) {
+            if ($match_rules->($obj2_hash)) {
                 push @$result, $sname;
                 next SERVICE;
             }
         }
-        if ($match_users->($ip2_hash)) {
-            if ($match_rules->($ip1_hash)) {
+        if ($match_users->($obj2_hash)) {
+            if ($match_rules->($obj1_hash)) {
                 push @$result, $sname;
             }
         }
@@ -803,7 +811,14 @@ sub service_list {
         $result = [ sort map { @$_ } @{$service_lists}{ @search_in } ];
     }
 
-    $result = search_rules($req, $result);
+    if (my ($obj1_hash, $obj2_hash, $proto_regex) = gen_search_chosen($req)) {
+        $result = select_services($req, $result, 
+                                  $obj1_hash, $obj2_hash, $proto_regex);
+    }
+    if (my ($obj1_hash, $obj2_hash, $proto_regex) = gen_search_req($req)) {
+        $result = select_services($req, $result, 
+                                  $obj1_hash, $obj2_hash, $proto_regex);
+    }
     if ( $req->param('search_string') ) {
         $result = search_string($req, $result);
     }
@@ -841,61 +856,74 @@ sub service_list {
 #  - if some users match first, some second and
 #    if some rules match first, some second
 #    then show all matching rules and users
-sub get_maching_rules_and_users {
-    my ($req, $sname) = @_;
+sub select_rules_and_users {
+    my ($rules, $users, $obj1_hash, $obj2_hash, $proto_regex) = @_;
+
+    if ($obj1_hash && $obj2_hash) {
+        my $users1 = select_users($users, $obj1_hash);
+        my $users2 = select_users($users, $obj2_hash);
+        if (@$users1 && @$users2) {
+            my $rules1 = select_rules($rules, 1, $obj1_hash, $proto_regex);
+            my $rules2 = select_rules($rules, 1, $obj2_hash, $proto_regex);
+            if (@$rules1 && @$rules2) {
+                $rules = [ unique(@$rules1, @$rules2) ];
+                $users = [ unique(@$users1, @$users2) ];
+            }
+            elsif (@$rules1) {
+                $rules = $rules1;
+                $users = $users2;
+            }
+            elsif (@$rules2) {
+                $rules = $rules2;
+                $users = $users1;
+            }
+            else {
+                $rules = [];
+                $users = [];
+            }                    
+        }
+        elsif (@$users1) {
+            $rules = select_rules($rules, 0, $obj2_hash, $proto_regex);
+            $users = $users1;
+        }
+        elsif (@$users2) {
+            $rules = select_rules($rules, 0, $obj1_hash, $proto_regex);
+            $users = $users2;
+        }
+        else {
+            $rules = [];
+            $users = [];
+        }
+    }
+    else {
+        my $obj_hash = $obj1_hash || $obj2_hash;
+        my $users1 = select_users($users, $obj_hash);
+        if (!@$users1) {
+            $rules = select_rules($rules, 0, $obj_hash, $proto_regex);
+        }
+        else {
+            $users = $users1;
+        }
+    }
+    return ($rules, $users);
+}
+
+sub get_matching_rules_and_users {
+    my ($req, $sname)  = @_;
     my $owner       = $req->param('active_owner');
     my $services    = load_json('services');
     my $sname2users = load_json( "owner/$owner/users" );
     my $rules       = $services->{$sname}->{rules};
     my $users       = $sname2users->{$sname} || [];
-    my ($obj1_hash, $obj2_hash, $proto_regex) = gen_search_data($req);
-    if ($obj1_hash || $obj2_hash || $proto_regex) {
-        if ($obj1_hash && $obj2_hash) {
-            my $users1 = select_users($users, $obj1_hash);
-            my $users2 = select_users($users, $obj2_hash);
-            if (@$users1 && @$users2) {
-                my $rules1 = select_rules($rules, $obj1_hash, $proto_regex);
-                my $rules2 = select_rules($rules, $obj2_hash, $proto_regex);
-                if (@$rules1 && @$rules2) {
-                    $rules = [ unique(@$rules1, @$rules2) ];
-                    $users = [ unique(@$users1, @$users2) ];
-                }
-                elsif (@$rules1) {
-                    $rules = $rules1;
-                    $users = $users2;
-                }
-                elsif (@$rules2) {
-                    $rules = $rules2;
-                    $users = $users1;
-                }
-                else {
-                    $rules = [];
-                    $users = [];
-                }                    
-            }
-            elsif (@$users1) {
-                $rules = select_rules($rules, $obj2_hash, $proto_regex);
-                $users = $users1;
-            }
-            elsif (@$users2) {
-                $rules = select_rules($rules, $obj1_hash, $proto_regex);
-                $users = $users2;
-            }
-            else {
-                $rules = [];
-                $users = [];
-            }
-        }
-        else {
-            my $obj_hash = $obj1_hash || $obj2_hash;
-            my $users1 = select_users($users, $obj_hash);
-            if (!@$users1) {
-                $rules = select_rules($rules, $obj_hash, $proto_regex);
-            }
-            else {
-                $users = $users1;
-            }
-        }
+    if (my ($obj1_hash, $obj2_hash, $proto_regex) = gen_search_chosen($req)) {
+        ($rules, $users) = select_rules_and_users($rules, $users, 
+                                                  $obj1_hash, $obj2_hash, 
+                                                  $proto_regex);
+    }
+    if (my ($obj1_hash, $obj2_hash, $proto_regex) = gen_search_req($req)) {
+        ($rules, $users) = select_rules_and_users($rules, $users, 
+                                                  $obj1_hash, $obj2_hash, 
+                                                  $proto_regex);
     }
     return ($rules, $users);
 }
@@ -904,13 +932,13 @@ sub get_users {
     my ($req, $session) = @_;
     my $owner = $req->param('active_owner');
     my $sname = $req->param('service') or abort "Missing parameter 'service'";
-    my ($rules, $users) = get_maching_rules_and_users($req, $sname);
+    my ($rules, $users) = get_matching_rules_and_users($req, $sname);
     return get_nat_obj_list($users, $owner);
 }
 
 sub expand_rules {
     my ($req, $sname) = @_;
-    my ($rules, $users) = get_maching_rules_and_users($req, $sname);
+    my ($rules, $users) = get_matching_rules_and_users($req, $sname);
     return adapt_name_ip_user($req, $rules, $users);
 }
 
