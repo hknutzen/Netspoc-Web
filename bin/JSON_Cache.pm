@@ -206,22 +206,28 @@ sub load_json_current {
 }
 
 sub store_cache_version {
-    my ($self, $version, $key, $data) = @_;
+    my ($self, $version, $key, $data, $context) = @_;
 
     # Last access time for data of this version.
     $self->{atime}->{$version} = time();
     $self->clean_cache();
 
-    return $self->{cache}->{$version}->{$key} = $data;
+    $context ||= 1;
+    $self->{cache}->{$version}->{':context'}->{$key} = $context;
+    return $self->{cache}->{$version}->{':store'}->{$key} = $data;
 }
 
 sub load_cache_version {
-    my ($self, $version, $key) = @_;
+    my ($self, $version, $key, $context) = @_;
 
     # Last access time for data of this version.
     $self->{atime}->{$version} = time();
 
-    return $self->{cache}->{$version}->{$key};
+    $context ||= 1;
+    if (my $old =$self->{cache}->{$version}->{':context'}->{$key}) {
+        $old eq $context or return;
+    }
+    return $self->{cache}->{$version}->{':store'}->{$key};
 }
 
 1;
