@@ -12,7 +12,7 @@ Ext.define(
                 {
                     title       : 'IP-Adresse oder Zeichenkette suchen',
                     width       : 350, 
-                    height      : 460,
+                    height      : 400,
                     resizable   : false,
                     closeAction : 'hide',
                     items       : [
@@ -24,10 +24,11 @@ Ext.define(
         },
         
         buildSearchForm : function () {
-
+            var datatip = new Ext.ux.DataTip();
             var form = Ext.widget(
                 {
                     xtype         : 'form',
+                    plugins       : datatip,
                     buttonAlign   : 'center',
                     bodyPadding   : 5,
                     width         : '100%',
@@ -35,12 +36,11 @@ Ext.define(
                         labelAlign : 'left',
                         msgTarget  : 'top'
                     },
-                    items: [
+                    items : [
                         this.buildTabPanel(),
                         this.buildOptionsFieldSet(),
                         this.buildGeneralOptionsFieldSet()
                     ],
-                    
                     buttons : [
                         {
                             text  : 'Suche starten'
@@ -56,13 +56,13 @@ Ext.define(
                 xtype     : 'tabpanel',
                 plain     : true,
                 activeTab : 0,
-                height    : 220,
+                height    : 200,
                 defaults  : {
                     bodyPadding : 10
                 },
                 items : [
-                    this.buildGeneralSearchTab(),
-                    this.buildIPSearchTab()
+                    this.buildIPSearchTab(),
+                    this.buildGeneralSearchTab()
                 ]
             };
             return tab_panel;
@@ -84,20 +84,12 @@ Ext.define(
                     textfield
                 ]
             };
-            var options = {
-                xtype       : 'fieldset',
-                title       : 'Suche in ...',
-                defaults    : { anchor : '100%' },
-                items       : [
-                    this.buildOptionsCheckboxGroup()
-                ]
-            };
             return {
                 title    : 'Allgemeine Suche',
                 layout   : 'anchor',
                 items : [
                     fieldset,
-                    options
+                    this.buildOptionsCheckboxGroup()
                 ]
             };
         },
@@ -112,20 +104,9 @@ Ext.define(
                 },
                 items       : [
                     {
-                        boxLabel   : 'Namen der Dienste',
-                        name       : 'search_in_service_names'
-                    },
-                    {
-                        boxLabel   : 'Dienstbeschreibungen',
+                        boxLabel   : 'Suche auch in Dienstbeschreibungen',
+                        checked    : true,
                         name       : 'search_in_desc'
-                    },
-                    {
-                        boxLabel   : 'Regeln der Dienste',
-                        name       : 'search_in_rules'
-                    },
-                    {
-                        boxLabel   : 'Nutzer (User) der Dienste',
-                        name       : 'search_in_user'
                     }
                 ]
             };
@@ -210,26 +191,9 @@ Ext.define(
             return {
                 title : 'Ende-zu-Ende-Suche',
                 items : [
-                    this.buildSideTabPanel()
+                    this.buildIPSearchPanel()
                 ]
             };
-        },
-
-        buildSideTabPanel : function() {
-            var tab = {
-                xtype       : 'tabpanel',
-                defaults  : {
-                    bodyPadding : 5
-                },
-                tabPosition : 'right',
-                plain       : true,
-                activeTab   : 0,
-                items       : [
-                    this.buildIPSearchPanel(),
-                    this.buildInfoPanel()
-                ]
-            };
-            return tab;
         },
 
         buildIPSearchPanel : function() {
@@ -265,8 +229,10 @@ Ext.define(
                         margin         : '0 10 0 0', // top,r,b,l
                         padding        : '4 0 0 0',  // top,r,b,l
                         emptyText      : 'IP oder Zeichenkette',
-                        fieldLabel     : 'IP 1',
-                        tooltip        : 'IP (Klassisch: 10.1.2.3.4/255.255.255.0 oder in CIDR-Notation: 10.1.2.3.4/24) oder Zeichenkette eingeben'
+                        loader         : {
+                            url : 'html/ip_search_tooltip'
+                        },
+                        fieldLabel     : 'IP 1'
                     },
                     {
                         xtype          : 'textfield',
@@ -276,8 +242,10 @@ Ext.define(
                         margin         : '0 10 0 0', // top,r,b,l
                         padding        : '4 0 0 0',  // top,r,b,l
                         emptyText      : 'IP oder Zeichenkette',
-                        fieldLabel     : 'IP 2',
-                        tooltip        : 'IP (Klassisch: 10.1.2.3.4/255.255.255.0 oder in CIDR-Notation: 10.1.2.3.4/24) oder Zeichenkette eingeben'
+                        loader         : {
+                            url : 'html/ip_search_tooltip'
+                        },
+                        fieldLabel     : 'IP 2'
                     },
                     {
                         xtype          : 'textfield',
@@ -286,47 +254,15 @@ Ext.define(
                         margin         : '0 10 0 0', // top,r,b,l
                         padding        : '4 0 10 0', // top,r,b,l
                         emptyText      : 'Protokoll oder Port',
-                        fieldLabel     : 'Protokoll',
-                        tooltip        : 'Protokoll (z.B. "tcp" oder "udp" oder Port), nach dem gefiltert werden soll'
+                        loader         : {
+                            url : 'html/ip_search_proto_tooltip'
+                        },
+                        fieldLabel     : 'Protokoll'
                     },
                     cbg
                 ]
             };
-            return {
-                title  : 'Parameter',
-                height : 170,
-                width  : 300,
-                items  : [
-                    fieldset
-                ]
-            };
-        },
-
-        buildInfoPanel : function() {
-            var info = Ext.widget(
-                'panel',
-                {
-                    title  : 'Info',
-                    iconCls : 'icon-info',
-                    border : false,
-                    height : 170,
-                    width  : 480,
-                    loader : {
-                        autoLoad : true,
-                        url      : 'html/explain_ip_search'
-                    },
-                    style  : {
-                        'padding'       : '5px',
-                        'margin'        : '5px',
-                        'border-radius' : '6px 6px 6px 6px',
-                        'box-shadow'    : '0 0 5px rgba(0, 0, 0, 0.3)'
-                    },
-                    bodyStyle : {
-                        'color' : '#646464'
-                    }
-                }
-            );
-            return info;
+            return fieldset;
         }
     }
 );   

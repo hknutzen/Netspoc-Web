@@ -1,0 +1,10 @@
+<div style="padding : 5px; border-radius : 6px 6px 6px 6px; background-color : white; box-shadow : 0 0 5px rgba(0, 0, 0, 0.3)">
+
+<p>
+ Sie können die Suche auf Protokoll-Namen und/oder Port-Nummern einschränken.
+</p>
+<p>
+ Bei Suche nach Protokoll <strong> und </strong> Port bitte nur ein Leerzeichen verwenden. Eine Suche nach "tcp 80" wird bei Eingabe von "tcp &nbsp; &nbsp; 80" keinen Treffer produzieren.
+</p>
+</div>
+

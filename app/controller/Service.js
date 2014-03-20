@@ -1,3 +1,4 @@
+var ip_search_tooltip;
 var search_window;
 var print_window;
 var cb_params_key2val = {
@@ -129,7 +130,6 @@ Ext.define(
                     },
                     'searchwindow > form > tabpanel' : { 
                         tabchange  : this.onSearchWindowTabchange
-                        //focus  : this.onSearchWindowTabchange
                     },
                     'serviceview cardprintactive button[toggleGroup=polDVGrp]' : {
                         click  : this.onServiceDetailsButtonClick
@@ -179,8 +179,6 @@ Ext.define(
                       },
                       this
                     );
-            
-            this.createToolTips();
         },
         
 	onBeforeActivate : function() {
@@ -520,15 +518,6 @@ Ext.define(
                                 );
             }
             search_window.show();
-        },
-
-        createToolTips : function() {
-            var tip = Ext.create(
-                'Ext.tip.ToolTip',
-                {
-                    html : 'Tip'
-                }
-            );
         }
     }
 );

@@ -1,0 +1,13 @@
+<div style="padding : 5px; border-radius : 6px 6px 6px 6px; background-color : white; box-shadow : 0 0 5px rgba(0, 0, 0, 0.3)">
+
+<p>
+ Eine IP kann im klassischen Format: <strong> 10.1.2.3.4/255.255.255.0 </strong> oder in CIDR-Notation: <strong>10.1.2.3.4/24 </strong>) eingegeben werden.
+</p>
+<p>
+ Bei Eingabe einer Zeichenkette wird nach dieser in den Namen der Objekte gesucht.
+</p>
+<p>
+ IP 1 oder IP 2 kann jeweils leer gelassen werden, was eine Suche für beliebige Quelle bzw. beliebiges Ziel bedeutet.
+</p>
+</div>
+

@@ -33,6 +33,7 @@ Ext.Loader.setConfig(
 );
 
 Ext.require( [
+                 'Ext.ux.DataTip',
                  'Ext.ux.grid.Printer',
                  'PolicyWeb.proxy.Custom',
                  'PolicyWeb.store.Service',
