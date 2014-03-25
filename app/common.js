@@ -41,17 +41,34 @@ function captureEvents(observable) {
 }
 
 function ip2numeric( dot ) {
-    var d = dot.split('.');
-    return ((((((+d[0])*256)+(+d[1]))*256)+(+d[2]))*256)+(+d[3]);
+    var rex = /[a-zA-Z]/;
+    var d;
+    var max;
+    if ( rex.test(dot) === true ) {
+        max = ((((((255)*256)+(255))*256)+(255))*256)+(255);
+        return max;
+    }
+    else {
+        d = dot.split('.');
+        return ((((((+d[0])*256)+(+d[1]))*256)+(+d[2]))*256)+(+d[3]);
+    }
 }
 
 function numeric2ip( num ) {
+    var rex = /[a-zA-Z]/;
     var d = num%256;
-    for (var i = 3; i > 0; i--) {
-        num = Math.floor(num/256);
-        d = num%256 + '.' + d;
+    var max;
+    if ( rex.test(num) === true ) {
+        max = ((((((255)*256)+(255))*256)+(255))*256)+(255);
+        return max;
     }
-    return d;
+    else {
+        for (var i = 3; i > 0; i--) {
+            num = Math.floor(num/256);
+            d = num%256 + '.' + d;
+        }
+        return d;
+    }
 }
 
 var specialchar2normalchar = {
