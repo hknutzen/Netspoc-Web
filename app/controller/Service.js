@@ -346,7 +346,7 @@ Ext.define(
             var tab_panel  = this.getSearchTabPanel();
             var active_tab = tab_panel.getActiveTab();
             var index = tab_panel.items.indexOf( active_tab );
-            if ( index === 1 ) {
+            if ( index === 0 ) {
                 params.search_string = '';
             }
             else {
