@@ -373,16 +373,13 @@ Ext.define(
                 if ( search_window && !keep_front ) {
                     search_window.hide();
                 }
-                if ( relation && relation === store.baseParams.relation) {
-                    return;
-                }
+                params.relation = '';
                 store.load(
                     {
-                        params   : params,
-                        relation : relation
+                        params   : params
                     }
                 );
-                this.clearDetails();
+                //this.clearDetails();
             } else {
                 var m = 'Bitte Eingaben in rot markierten ' +
                     'Feldern korrigieren.';

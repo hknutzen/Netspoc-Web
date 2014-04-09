@@ -12,7 +12,7 @@ Ext.define(
                 {
                     title       : 'IP-Adresse oder Zeichenkette suchen',
                     width       : 350, 
-                    height      : 400,
+                    height      : 430,
                     resizable   : false,
                     closeAction : 'hide',
                     items       : [
