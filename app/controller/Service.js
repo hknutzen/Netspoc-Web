@@ -238,13 +238,16 @@ Ext.define(
             var name  = service.get( 'name' );
             var store = this.getRulesStore();
             store.getProxy().extraParams.service = name;
-            var params = this.getCheckboxParams();
+            var params = Ext.merge(
+                this.getCheckboxParams(),
+                this.getSearchParams()
+            );
             store.load( { params : params } );
 
             // Load users.
             store = this.getUsersStore();
             store.getProxy().extraParams.service = name;
-            store.load();
+            store.load( { params : params } );
         },
         
         onTriggerClick : function() {
@@ -287,27 +290,31 @@ Ext.define(
             print_window.show();
         },
         
-        onShowAllServices : function( win ) {
-            var srv_store    = this.getServiceStore();
-            var grid         = win.down( 'grid' );
-            var extra_params = srv_store.getProxy().extraParams;
-            var cb_params    = this.getCheckboxParams();
-            var params       = Ext.merge( cb_params, extra_params );
-            params.relation  = this.getCurrentRelation();
+        getSearchParams : function() {
+            var search_params = {};
+            var form;
             if ( Ext.isObject(search_window) ) {
-                var form = this.getSearchFormPanel().getForm();
+                form = this.getSearchFormPanel().getForm();
                 if ( form.isValid() ) {
-                    var search_params = form.getValues();
-                    if ( search_params ) {
-                        params = Ext.merge( params, search_params );
-                    }
+                    search_params = form.getValues();
+                    return this.removeNonActiveParams( search_params );
                 }
             }
-            grid.getStore().load(
-                {
-                    params : params
-                }
+            return {};
+        },
+
+        onShowAllServices : function( win ) {
+            var srv_store     = this.getServiceStore();
+            var grid          = win.down( 'grid' );
+            var extra_params  = srv_store.getProxy().extraParams;
+            var cb_params     = this.getCheckboxParams();
+            var params        = Ext.merge( cb_params, extra_params );
+            params.relation   = this.getCurrentRelation();
+            params = Ext.merge(
+                params,
+                this.getSearchParams()
             );
+            grid.getStore().load( { params : params } );
         },
 
         getCurrentRelation : function() {
@@ -379,7 +386,6 @@ Ext.define(
                         params   : params
                     }
                 );
-                //this.clearDetails();
             } else {
                 var m = 'Bitte Eingaben in rot markierten ' +
                     'Feldern korrigieren.';
