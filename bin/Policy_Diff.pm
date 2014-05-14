@@ -16,7 +16,8 @@ our $VERSION = ( split ' ',
 my %lookup = ( src => 'objects', dst => 'objects', );
 
 # Die Werte der angegebenen Keys nicht untersuchen.
-my %ignore = ( sub_owners => 1, name => 1, hash => 1, has_user => 1, nat => 1);
+my %ignore = map { $_ => 1 } 
+qw(hash has_user name nat is_supernet sub_owners zone);
 
 sub compare_global {
     my ($state, $path, $key) = @_;
