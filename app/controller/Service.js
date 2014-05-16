@@ -236,18 +236,26 @@ Ext.define(
 
             // Load rules.
             var name  = service.get( 'name' );
-            var store = this.getRulesStore();
-            store.getProxy().extraParams.service = name;
-            var params = Ext.merge(
-                this.getCheckboxParams(),
-                this.getSearchParams()
-            );
-            store.load( { params : params } );
+            var rules_store = this.getRulesStore();
+            rules_store.getProxy().extraParams.service = name;
+            var params = this.getCheckboxParams();
+            var relation = this.getCurrentRelation();
+            // The buttons "Eigene", "Genutzte" and "Nutzbare"
+            // have a relation attribute. The only one without this
+            // attribute is the search button and relation will
+            // be undefined, so we merge in the search parameters.
+            if ( typeof relation === 'undefined' ) {
+                params = Ext.merge(
+                    params,
+                    this.getSearchParams()
+                );
+            }
+            rules_store.load( { params : params } );
 
             // Load users.
-            store = this.getUsersStore();
-            store.getProxy().extraParams.service = name;
-            store.load( { params : params } );
+            var user_store = this.getUsersStore();
+            user_store.getProxy().extraParams.service = name;
+            user_store.load( { params : params } );
         },
         
         onTriggerClick : function() {
