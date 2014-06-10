@@ -1,0 +1,34 @@
+owner:x = { admins = daniel.brunkhorst@dataport.de; }
+owner:y = { admins = y@b.c; }
+owner:z = { admins = z@b.c; }
+
+area:all = { owner = x; anchor = network:Big; }
+any:Big  = { owner = y; link = network:Big; }
+any:Sub1 = { ip = 10.1.0.0/23; link = network:Big; }
+any:Sub2 = { ip = 10.1.1.0/25; link = network:Big; }
+
+network:Sub = { ip = 10.1.1.0/24; owner = z; subnet_of = network:Big; }
+router:u = { 
+ interface:Sub;
+ interface:Big; 
+}
+network:Big = { 
+ ip = 10.1.0.0/16;
+ host:B10 = { ip = 10.1.0.10; owner = z; }
+}
+
+router:asa = {
+ managed;
+ model = ASA;
+ routing = manual;
+ interface:Big = { ip = 10.1.0.1; hardware = outside; }
+ interface:Kunde = { ip = 10.2.2.1; hardware = inside; }
+}
+
+network:Kunde = { ip = 10.2.2.0/24; }
+
+service:test = {
+ user = network:Sub;
+ permit src = user; dst = network:Kunde; prt = tcp 80; 
+}
+

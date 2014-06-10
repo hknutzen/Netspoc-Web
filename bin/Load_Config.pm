@@ -22,7 +22,8 @@ qw(
    );
 
 sub load {
-    my $conf_file = glob('~/policyweb.conf');
+    my $conf_file = glob( $ENV{'PW_FRONTEND_TEST'} ?
+                          '~/policyweb-test.conf' : '~/policyweb.conf');
     -f $conf_file or croak("$conf_file must be a plain file");
     my $result;
     open( my $fh, '<', $conf_file ) or croak("Can't open $conf_file: $!");

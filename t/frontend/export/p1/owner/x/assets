@@ -1,0 +1,11 @@
+{
+   "anys" : {
+      "any:[network:Kunde]" : {
+         "networks" : {
+            "network:Kunde" : [
+               "interface:asa.Kunde"
+            ]
+         }
+      }
+   }
+}
