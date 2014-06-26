@@ -4,10 +4,7 @@ Ext.define(
     {
         extend : 'PolicyWeb.model.Netspoc',
         fields : [
-            {
-                name     : 'service',
-                sortType : 'asUCString' 
-            },
+            { name : 'service' },
             { name : 'action' },
             {
                 name    : 'src',
