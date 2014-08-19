@@ -11,11 +11,11 @@ our $VERSION = ( split ' ',
  '$Id$' )[2];
 
 
-# Exported method
-# - sub load_json_version($path, $version)
+# Exported methods
+# - sub load_json_version($version, $path)
 # - sub load_json_current($path)
-# - sub store_cache_version($version, $path, $data)
-# - sub load_cache_version($version, $path)
+# - sub store_cache_version($version, $key, $data, $context)
+# - sub load_cache_version($version, $key, $context)
 
 # Creates a new JSON_Cache object.
 #
