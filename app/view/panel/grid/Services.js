@@ -42,7 +42,6 @@ Ext.define(
             },
             {
                 text         : 'Suche',
-                toggleGroup  : 'polNavBtnGrp',
                 enableToggle : false,
                 allowDepress : false
             },

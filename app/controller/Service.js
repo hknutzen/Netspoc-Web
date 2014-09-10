@@ -80,6 +80,10 @@ Ext.define(
                 ref      : 'chooseServiceButton'
             },
             {
+                selector : 'serviceview > grid button[text="Suche"]',
+                ref      : 'searchServiceButton'
+            },
+            {
                 selector : 'searchwindow > form button[text="Suche starten"]',
                 ref      : 'startSearchButton'
             },
@@ -326,16 +330,24 @@ Ext.define(
         },
 
         getCurrentRelation : function() {
+            var b = this.getCurrentlyPressedServiceButton();
+            return b.relation;
+        },
+
+        getCurrentlyPressedServiceButton : function() {
             var sg = this.getServicesGrid();
             var tb = sg.getDockedItems('toolbar[dock="top"]');
             var b  = tb[0].query( 'button[pressed=true]' );
-            return b[0].relation;
+            return b[0];
         },
 
         onButtonClick : function( button, event, eOpts ) {
             var relation = button.relation;
             var store    = this.getServiceStore();
             var proxy    = store.getProxy();
+            var sb       = this.getSearchServiceButton();
+            sb.toggle( false );
+
             // Don't reload store if button clicked on is the one
             // that was already selected.
             if ( !button.pressed && relation &&
@@ -374,6 +386,7 @@ Ext.define(
 
         onStartSearchButtonClick : function( button, event, eOpts ) {
             var form = this.getSearchFormPanel().getForm();
+            var sb = this.getSearchServiceButton();
             if ( form.isValid() ) {
                 button.search_params = form.getValues();
                 var store      = this.getServiceStore();
@@ -389,6 +402,22 @@ Ext.define(
                     search_window.hide();
                 }
                 params.relation = '';
+                store.on(
+                    'load',
+                    function ( mystore, records ) {
+                        if ( records.length === 0 ) {
+                            var m = 'Ihre Suche ergab keine Treffer!';
+                            Ext.MessageBox.alert( 'Keine Treffer für Ihre Suche!', m );
+                        }
+
+                        // Highlight "Suche"-button
+                        var b = this.getCurrentlyPressedServiceButton();
+                        b.toggle(false);
+                        sb.toggle(true);
+                    },
+                    this,  // scope (defaults to the object which fired the event)
+                    { single : true }   // deactivate after being run once 
+                );
                 store.load(
                     {
                         params   : params
@@ -508,13 +537,6 @@ Ext.define(
         },
         
         displaySearchWindow : function() {
-            // Remove list of displayed services before showing
-            // search window. Otherwise, if search is aborted or
-            // gives no results, the old list of services is still
-            // displayed, which can be irritating.
-            this.getServiceStore().removeAll();
-            this.clearDetails();
-
             if ( !search_window ) {
                 search_window = Ext.create(
                     'PolicyWeb.view.window.Search'
