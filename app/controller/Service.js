@@ -268,23 +268,25 @@ Ext.define(
             var formpanel   = this.getServiceDetailsForm();
             var form   = formpanel.getForm();
             var record = form.getRecord();
-            var array  = record.get( 'all_owners' );
-            var owner1 = array.shift();
-            var name   = owner1.name;
-            var alias  = owner1.alias || name;
-            array.push(owner1);
-            owner_field.setFieldLabel(
-                owner1.sub_owner ? 'Verwalter:' : 'Verantwortung:');
-            owner_text.setValue( alias );
-            var emails = this.getOwnerEmails();
-            emails.show( name, alias );
+            if ( record ) {
+                var array  = record.get( 'all_owners' );
+                var owner1 = array.shift();
+                var name   = owner1.name;
+                var alias  = owner1.alias || name;
+                array.push(owner1);
+                owner_field.setFieldLabel(
+                    owner1.sub_owner ? 'Verwalter:' : 'Verantwortung:');
+                owner_text.setValue( alias );
+                var emails = this.getOwnerEmails();
+                emails.show( name, alias );
+            }
         },
 
         clearDetails : function() {
             var formpanel = this.getServiceDetailsForm();
             var form      = formpanel.getForm();
             var trigger   = this.getOwnerTrigger();
-            form.reset();
+            form.reset( true );
             trigger.hide();
             trigger.ownerCt.doLayout();
             this.getRulesStore().removeAll();
