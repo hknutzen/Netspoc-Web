@@ -1,0 +1,79 @@
+#!/bin/sh
+# cleanup-history
+# Remove revisions such that history back to $old remains accessible.
+# We can't simply remove all revisions older than $old.
+# We must retain older revisions if they have never been changed or
+# have been changed just some days ago.
+#
+# Only files under RCS/owner can be cleaned up. Toplevel files must
+# be left unchanged, because old revisons may still be referenced from
+# older files under RCS/owner.
+
+usage () { echo "Usage: $0 <export_dir>"; }
+
+# Bug:
+# Wir können Änderungen an "visible" haben, ohne dass das zu einem Diff führt.
+# ==> neuer Algorithmus erforderlich:
+# - das Datum von POLICY bestimmen
+# - dann von den anderen Dateien die neueste Version vor diesem Dateum behalten
+# ==> dann können wir auch gleich das älteste dateum aller POLICY bestimmen
+# und entsprechend die globalen Dateien bereinigen.
+
+# This must be understood by "date" command.
+old='1 year ago'
+export=$1
+RCS=$export/RCS
+current=$export/current
+
+# Abort on any untested error.
+set -e
+
+abort () { [ "$1" ] && echo "Error: $1"; usage; exit 1; }
+debug () { echo $1; }
+
+[ -d "$RCS" ] || abort "Missing RCS directory '$RCS'"
+[ -d "$current" ] || abort "Missing directory '$current'"
+
+old_date=$(date -R -d "$old")
+
+
+# Cleanup only owner/* directories.
+for dir in $RCS/owner/* ; do
+
+    # Check if owner has already been removed before $old.
+    c_dir=$(echo $dir|sed -e "s|$RCS|$current|")
+    if [ ! -d "$c_dir"  ] ; then 
+
+        # Find newest revision newer than $old
+        p_file=$dir/POLICY,v
+        p_rev=$(rlog -d"$old_date<" -zLT $p_file|
+            head -14|tail -1|grep '^revision') || true
+        if [ -z "$p_rev" ] ; then
+
+            # Remove whole RCS directory
+            debug "Deleting $dir"
+	    rm -rf $dir
+	    continue
+        fi
+    fi
+
+    for file in $(find $dir/ -name '*,v') ; do
+
+        # Show two newest revisions older than $old.
+        # First revision will be retained.
+        # Next older revision will be removed.
+        line=$(rlog -d"$old_date>=" -zLT $file|
+            head -20|grep '^revision'|head -2|cut -d' ' -f2|paste -s -d' ')
+        read o1_rev o_rev <<EOF
+$line
+EOF
+
+        # No next older revision found
+        [ -z "$o_rev" ] && continue
+
+        # Remove from beginning of branch (oldest) up to and
+        # including old revison
+        debug "Removing up to $o_rev in $file"
+        rcs -q -o:$o_rev $file
+    done
+done
