@@ -15,8 +15,7 @@ read_conf () {
 [ -f "$config" ] || abort "Can't read '$config'"
 dir=$(read_conf netspoc_data)
 cd $dir
-current=$(readlink $link)
-[ "$current" ] || abort "Can't read $dir/current"
+current=$(readlink $link) || abort "Can't read link $dir/current"
 
 version=$current
 mkdir -p RCS
