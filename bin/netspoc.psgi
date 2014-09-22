@@ -136,7 +136,7 @@ my $selected_history;
 sub select_history {
     my ($req, $history_needed) = @_;
 
-    # Read requested version date from cgi paramter.
+    # Read requested version date from cgi parameter.
     if ($selected_history = $req->param('history')) {
 	$history_needed or abort "Must not send parameter 'history'";
     }
