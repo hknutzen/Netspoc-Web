@@ -48,7 +48,10 @@ fi
 # Add current version to RCS.
 ~/NetspocWeb/bin/add_to_rcs $current RCS $version
 
-# Remove all versions except current one.
+# Remove history from RCS.
+~/NetspocWeb/bin/cleanup_old_rcs $dir
+
+# Remove all policies except current one.
 for f in p* ; do
     case $f in
 	$current)
