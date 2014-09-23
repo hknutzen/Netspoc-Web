@@ -17,10 +17,6 @@ Ext.define(
                 ref      : 'diffHistoryCombo'   
             },
             {
-                selector : 'mainview historycombo',
-                ref      : 'mainHistoryCombo'   
-            },
-            {
                 selector : 'diffview checkbox',
                 ref      : 'diffMailCheckbox'
             }
