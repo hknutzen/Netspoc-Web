@@ -144,6 +144,7 @@ Ext.define(
                          },
                          this,
                          { single : true });
+                store.load();
             }
             else {
                 store.filterBy(filter);

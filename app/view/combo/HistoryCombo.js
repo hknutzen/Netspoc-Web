@@ -11,8 +11,13 @@ Ext.define(
         displayField   : undefined,
         valueField     : undefined,
         loadingText    : 'Abfrage l&auml;uft ...',
-        mode           : 'remote',
-        triggerAction  : 'all',
+
+	// Store is reloaded manually, when HistoryCombo is selected,
+        // but isn't reloaded, when diffHistoryCombo is selected.
+        queryMode      : 'local',
+
+        // Is needed, for filterBy of diffHistoryCombo to work.
+        lastQuery      : '',
         width          : 140,
         listConfig     : {
             minWidth : 200,

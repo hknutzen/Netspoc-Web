@@ -45,8 +45,10 @@ Ext.define(
                         select       : this.onPolicySelected,
                         beforequery  : function(qe){
                             var combo = qe.combo;
+                            var store = combo.getStore();
                             delete combo.lastQuery;
-                            combo.getStore().needLoad = false;
+                            store.needLoad = false;
+                            store.reload();
                         }
                     }
                 }
