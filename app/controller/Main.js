@@ -218,11 +218,12 @@ Ext.define(
             
             appstate.setInitPhase( false );
 
+            // Set combo without loading the store.
             var ownercombo = this.getOwnerCombo();
             ownercombo.setValue( appstate.getOwnerAlias() );
+            var historycombo = this.getMainHistoryCombo();
+            historycombo.setValue( appstate.showHistory() );
 
-            // Load stores that need history to be set.
-            this.getHistoryStore().load();
             var store = this.getServiceStore();
             var proxy = store.getProxy();
             // 'user' is default relation.
