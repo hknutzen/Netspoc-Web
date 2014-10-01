@@ -652,9 +652,11 @@ sub build_search_hash {
     my $owner      = $req->param('active_owner');
     my $sub        = $req->param('search_subnet') || 0;
     my $super      = $req->param('search_supernet') || 0;
+    my $case       = $req->param('search_case_sensitive') || 0;
+    my $exact      = $req->param('search_exact') || 0;
 
     my $cache_key_hash = "$key/$owner/hash";
-    my $search_prop    = "$sub/$super/$search";
+    my $search_prop    = "$sub/$super/$search/$case/$exact";
     if (my $result = load_cache($cache_key_hash, $search_prop)) {
         return $result;
     }
