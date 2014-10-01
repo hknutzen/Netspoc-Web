@@ -129,12 +129,16 @@ router:asa = {
  managed;
  model = ASA;
  routing = manual;
- interface:Big = { ip = 10.1.0.1; hardware = outside; }
- interface:Kunde = { ip = 10.2.2.1; hardware = inside; }
- interface:DMZ = { ip = 10.9.9.1; hardware = dmz; }
+ interface:Big    = { ip = 10.1.0.1; hardware = outside; }
+ interface:Kunde  = { ip = 10.2.2.1; hardware = inside; }
+ interface:KUNDE  = { ip = 10.2.3.1; hardware = inside; }
+ interface:KUNDE1 = { ip = 10.2.4.1; hardware = inside; }
+ interface:DMZ    = { ip = 10.9.9.1; hardware = dmz; }
 }
 
-network:Kunde = { ip = 10.2.2.0/24; owner = y; host:k = { ip = 10.2.2.2; } }
+network:Kunde  = { ip = 10.2.2.0/24; owner = y; host:k  = { ip = 10.2.2.2; } }
+network:KUNDE  = { ip = 10.2.3.0/24; owner = y; host:K  = { ip = 10.2.3.3; } }
+network:KUNDE1 = { ip = 10.2.4.0/24; owner = y; host:K1 = { ip = 10.2.4.4; } }
 any:Kunde = { link = network:Kunde; }
 
 network:DMZ = { ip = 10.9.9.0/24; }
@@ -202,6 +206,16 @@ service:Test9 = {
  user = host:B10, host:k;
  permit src = user; dst = user; prt = udp 83;
  permit src = user; dst = network:DMZ; prt = udp 83;
+}
+
+service:Test10 = {
+ user = network:Sub;
+ permit src = user; dst = network:KUNDE; prt = tcp 84;
+}
+
+service:Test11 = {
+ user = network:Sub;
+ permit src = user; dst = network:KUNDE1; prt = tcp 84;
 }
 
 END
@@ -328,7 +342,7 @@ $params = {
     search_used  => 1,
 };
 
-$out = [ qw(Test1 Test3 Test3a Test4 Test5) ];
+$out = [ qw(Test1 Test10 Test11 Test3 Test3a Test4 Test5) ];
 
 test_run($title, $path, $params, $owner, $out, $extract_names);
 
@@ -464,7 +478,38 @@ $params = {
     search_used  => 1,
 };
 
-$out = [ qw(Test1 Test2 Test3 Test3a) ];
+$out = [ qw(Test1 Test10 Test11 Test2 Test3 Test3a) ];
+
+test_run($title, $path, $params, $owner, $out, $extract_names);
+
+############################################################
+$title = 'Case sensitive text search in rules and users';
+############################################################
+
+$params = {
+    search_ip1            => 'KUNDE',
+    search_case_sensitive => 1,
+    search_own            => 1,
+    search_used           => 1,
+};
+
+$out = [ qw(Test10 Test11) ];
+
+test_run($title, $path, $params, $owner, $out, $extract_names);
+
+############################################################
+$title = 'Exact match for text search in rules and users';
+############################################################
+
+$params = {
+    search_ip1            => 'network:KUNDE',
+    search_case_sensitive => 1,
+    search_exact          => 1,
+    search_own            => 1,
+    search_used           => 1,
+};
+
+$out = [ qw(Test10) ];
 
 test_run($title, $path, $params, $owner, $out, $extract_names);
 
