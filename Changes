@@ -1,4 +1,28 @@
 {{$NEXT}}
 
+ - Die "watchers" eines Owner mit Attribut "extend" oder "extend_only"
+   sind nun berechtigt, die Rolle der Owner von enthaltenen Netzen anzunehmen.
+   Vorher galt dies nur für die "admins".
+ - In der Historie werden nun alte Stände gelöscht. 
+   Dabei wird gewährleistet, dass noch der Stand von vor einem Jahr
+   angezeigt werden kann. Das gilt auch dann, wenn dieser alte Stand
+   beispielsweise seit 2 Jahren unverändert ist.
+   Wenn ein Owner vor mehr als einem Jahr gelöscht wurde, 
+   dann wird dessen komplette Historie entfernt.
+ - Wenn Dienste keinem Owner zugeordnet werden können,
+   dann werden diese nun unter dem Namen ':unknown' verfügbar gemacht.
+ - Die Combo-Box für "vergleiche mit" unter "Diff" zeigt nun beim 
+   ersten Anzeigen nicht mehr alle, sondern nur die älteren Stände an.
+ - Beim Export von Zonen, die durch Pathrestrictions in einen Zone-Cluster 
+   aufgeteilt wurden, war der Name bisher nichtdeterministisch. 
+   Das wurde behoben.
+ - Für Loopback-Interfaces wird keine Zone mehr exportiert.
+ - Wenn die Adresse eines Interface "hidden" ist, dann wird diese
+   nicht ausgegeben.
+
+0.926
+0.925
+0.924
+
  - Regeln für ein Aggregat / Supernetz werden auch dem Owner 
-   der darin entaltenen Subnetze angezeigt.
+   der darin enthaltenen Subnetze angezeigt.
