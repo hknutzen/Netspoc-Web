@@ -6,7 +6,6 @@ Ext.define(
         alias       : 'widget.servicedetails',
         defaultType : 'textfield',
         defaults    : { anchor : '100%' },
-        //layout      : 'form',
         border      : false,
         style       : { "margin-left" : "3px" },
         items       : [
@@ -30,8 +29,6 @@ Ext.define(
                       hidden  : true,
                       flex    : 0,
                       iconCls : 'icon-group'
-                      //scope   : this
-                      //handler : this.onTriggerClick
                     },
                     { xtype      : 'textfield',
                       flex       : 1,

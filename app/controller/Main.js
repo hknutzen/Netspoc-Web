@@ -210,8 +210,10 @@ Ext.define(
         onPolicyLoaded : function( records, operation, success ) {
             var owner_ob = operation.owner;
             if (success && records.length) {
-                // Don't fire change event.
-                appstate.changeHistory(records[0], true);
+                appstate.changeHistory(
+                    records[0],
+                    true   // Don't fire change event.
+                );
             }
             appstate.changeOwner(owner_ob.name, owner_ob.alias);
             operation.store.destroy();
@@ -226,8 +228,9 @@ Ext.define(
 
             var store = this.getServiceStore();
             var proxy = store.getProxy();
-            // 'user' is default relation.
-            proxy.extraParams.relation = 'user';
+            var service_controller = this.getController( 'Service' );
+            var relation = service_controller.getCurrentRelation();
+            proxy.extraParams.relation = relation;
             store.load();
         },
             

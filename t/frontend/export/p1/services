@@ -1,0 +1,23 @@
+{
+   "test" : {
+      "details" : {
+         "description" : null,
+         "owner" : [
+            "x"
+         ]
+      },
+      "rules" : [
+         {
+            "action" : "permit",
+            "dst" : [
+               "network:Kunde"
+            ],
+            "has_user" : "src",
+            "prt" : [
+               "tcp 80"
+            ],
+            "src" : []
+         }
+      ]
+   }
+}

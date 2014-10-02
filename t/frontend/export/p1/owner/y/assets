@@ -1,0 +1,16 @@
+{
+   "anys" : {
+      "any:Big" : {
+         "networks" : {
+            "network:Big" : [
+               "host:B10",
+               "interface:asa.Big",
+               "interface:u.Big"
+            ],
+            "network:Sub" : [
+               "interface:u.Sub"
+            ]
+         }
+      }
+   }
+}

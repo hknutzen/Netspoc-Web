@@ -1,0 +1,56 @@
+{
+   "any:Big" : {
+      "ip" : "0.0.0.0",
+      "is_supernet" : 1,
+      "owner" : "y",
+      "zone" : "any:Big"
+   },
+   "any:Sub1" : {
+      "ip" : "10.1.0.0/255.255.254.0",
+      "is_supernet" : 1,
+      "owner" : "y",
+      "zone" : "any:Big"
+   },
+   "any:Sub2" : {
+      "ip" : "10.1.1.0/255.255.255.128",
+      "owner" : "z",
+      "zone" : "any:Big"
+   },
+   "host:B10" : {
+      "ip" : "10.1.0.10",
+      "owner" : "z"
+   },
+   "interface:asa.Big" : {
+      "ip" : "10.1.0.1",
+      "owner" : null
+   },
+   "interface:asa.Kunde" : {
+      "ip" : "10.2.2.1",
+      "owner" : null
+   },
+   "interface:u.Big" : {
+      "ip" : "short",
+      "owner" : "y"
+   },
+   "interface:u.Sub" : {
+      "ip" : "short",
+      "owner" : "z"
+   },
+   "network:Big" : {
+      "ip" : "10.1.0.0/255.255.0.0",
+      "is_supernet" : 1,
+      "owner" : "y",
+      "zone" : "any:Big"
+   },
+   "network:Kunde" : {
+      "ip" : "10.2.2.0/255.255.255.0",
+      "owner" : "x",
+      "zone" : "any:[network:Kunde]"
+   },
+   "network:Sub" : {
+      "ip" : "10.1.1.0/255.255.255.0",
+      "is_supernet" : 1,
+      "owner" : "z",
+      "zone" : "any:Big"
+   }
+}
