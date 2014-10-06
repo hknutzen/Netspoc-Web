@@ -717,26 +717,27 @@ sub select_rules {
     my ($rules, $matching_users, $obj_hash, $proto_regex) = @_;
     return $rules if !$obj_hash && !$proto_regex;
     my @result;
+  RULE:
     for my $rule (@$rules) {
         if ($proto_regex) {
             grep { $_ =~ $proto_regex } @{$rule->{prt}} or next;
         }
         if (!$obj_hash) {
             push @result, $rule;
-            next;
+            next RULE;
         }
         my $has_user = $rule->{has_user};
         if ($has_user eq 'both') {
 
             push @result, $rule if $matching_users;
-            next;
+            next RULE;
         }
 
         # Search in src or dst.
         for my $item ( @{$rule->{$rule_lookup{$has_user}}} ) {
             if ($obj_hash->{$item}) {
                 push @result, $rule;
-                next;
+                next RULE;
             }
         }
     }
