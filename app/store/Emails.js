@@ -8,7 +8,7 @@ Ext.define(
         autoLoad : false,
         proxy    : {
             type     : 'policyweb',
-            proxyurl : 'get_emails'
+            proxyurl : 'get_admins'
         }
     }
 );

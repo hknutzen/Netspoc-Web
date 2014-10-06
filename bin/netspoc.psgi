@@ -1160,9 +1160,9 @@ sub get_owners {
                  @{ $email2owners->{$email} }) ];
 }
 
-# Get list of all emails for given owner.
+# Get list of admin emails for given owner.
 # If parameter 'owner' is missing, take 'active_owner'.
-sub get_emails {
+sub get_admins {
     my ($req, $session) = @_;
     my $owner = $req->param('owner') || $req->param('active_owner') 
         or abort "Missing param 'owner'";
@@ -1467,7 +1467,7 @@ my %path2sub =
      set           => [ \&set_session_data, { add_success => 1, } ],
      get_history   => [ \&get_history,   { owner => 1, add_success => 1, } ],
      service_list  => [ \&service_list,  { owner => 1, add_success => 1, } ],
-     get_emails    => [ \&get_emails,    { owner => 1, add_success => 1, } ],
+     get_admins    => [ \&get_admins,    { owner => 1, add_success => 1, } ],
      get_watchers  => [ \&get_watchers,  { owner => 1, add_success => 1, } ],
      get_supervisors  => [ 
          \&get_supervisors,  { owner => 1, add_success => 1, } ],
