@@ -21,7 +21,9 @@ current=$export/current
 set -e
 
 abort () { [ "$1" ] && echo "Error: $1"; usage; exit 1; }
-debug () { echo $1; }
+
+# Only print if connected to terminal.
+debug () { tty -s && echo $1; }
 
 [ -d "$RCS" ] || abort "Missing RCS directory '$RCS'"
 [ -d "$current" ] || abort "Missing directory '$current'"
