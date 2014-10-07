@@ -9,9 +9,6 @@ use lib $FindBin::Bin;
 use JSON_Cache;
 use Policy_Diff;
 
-my $VERSION = ( split ' ',
- '$Id$' )[2];
-
 # Argument processing
 sub usage {
     die "Usage: $0 JSON_path yyyy-mm-dd yyyy-mm-dd|pxxx\n";

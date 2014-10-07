@@ -7,9 +7,6 @@ use warnings;
 use Carp;
 use Algorithm::Diff;
 
-our $VERSION = ( split ' ',
- '$Id$' )[2];
-
 # Der Wert für die angegebenen Keys ist ein Array mit Namen aus
 # 'objects' bzw. 'services'.
 # Diese nicht wieder neu prüfen, sondern das Ergebnis abrufen aus $cache.

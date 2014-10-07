@@ -7,10 +7,6 @@ use JSON;
 use Encode;
 use open qw(:std :utf8);
 
-our $VERSION = ( split ' ',
- '$Id$' )[2];
-
-
 # Exported methods
 # - sub load_json_version($version, $path)
 # - sub load_json_current($path)

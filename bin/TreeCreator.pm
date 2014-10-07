@@ -6,9 +6,6 @@ use strict;
 use warnings;
 use Carp;
 
-our $VERSION = ( split ' ',
- '$Id$' )[2];
-
 # Convert to ExtJS tree.
 # Node: Hash with attributes "text" and 
 # - either "leaf: true"
