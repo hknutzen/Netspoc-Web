@@ -1,8 +1,12 @@
 {{$NEXT}}
 
+0.927     2014-10-07 12:03:21 Europe/Berlin
+
  - Die "watchers" eines Owner mit Attribut "extend" oder "extend_only"
    sind nun berechtigt, die Rolle der Owner von enthaltenen Netzen anzunehmen.
    Vorher galt dies nur für die "admins".
+ - "watcher" und "admins" werden nun zusammen angezeigt 
+   in der Liste der Berechtigten eines übergeordneten Owners.
  - In der Historie werden nun alte Stände gelöscht. 
    Dabei wird gewährleistet, dass noch der Stand von vor einem Jahr
    angezeigt werden kann. Das gilt auch dann, wenn dieser alte Stand
@@ -19,6 +23,9 @@
  - Für Loopback-Interfaces wird keine Zone mehr exportiert.
  - Wenn die Adresse eines Interface "hidden" ist, dann wird diese
    nicht ausgegeben.
+ - Bei aktiver Suche wurde eine Regel mehrfach ausgegeben, 
+   wenn in Quelle/Ziel das Suchobjekt mehrfach gefunden wurde. 
+   Das ist nun behoben.
 
 0.926
 0.925
