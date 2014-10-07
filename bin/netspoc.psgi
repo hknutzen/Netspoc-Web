@@ -1195,6 +1195,15 @@ sub get_supervisors {
                  } @$supervisors) ];
 }
 
+# Get sorted list of combined admin and watcher emails
+# for given supervisor owner.
+sub get_admins_watchers {
+    my ($req, $session) = @_;
+    my $owner = $req->param('owner') or abort "Missing param 'owner'";
+    return [ sort { $a->{email} cmp $b->{email} } (
+                 @{ load_json("owner/$owner/emails") },
+                 @{ load_json("owner/$owner/watchers") }) ];
+}
 
 ####################################################################
 # Send HTML as answer
@@ -1470,7 +1479,9 @@ my %path2sub =
      get_admins    => [ \&get_admins,    { owner => 1, add_success => 1, } ],
      get_watchers  => [ \&get_watchers,  { owner => 1, add_success => 1, } ],
      get_supervisors  => [ 
-         \&get_supervisors,  { owner => 1, add_success => 1, } ],
+         \&get_supervisors, { owner => 1, add_success => 1, } ],
+     get_admins_watchers => [
+         \&get_admins_watchers, { owner => 1, add_success => 1, } ],
      get_rules     => [ \&get_rules,     { owner => 1, add_success => 1, } ],
      get_users     => [ \&get_users,     { owner => 1, add_success => 1, } ],
      get_networks  => [ \&get_networks,  { owner => 1, add_success => 1, } ],

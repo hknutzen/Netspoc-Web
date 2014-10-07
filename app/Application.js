@@ -53,6 +53,7 @@ Ext.require( [
                  'PolicyWeb.store.DiffGetMail',
                  'PolicyWeb.store.DiffTree',
                  'PolicyWeb.store.Supervisors',
+                 'PolicyWeb.store.SupervisorEmails',
                  'PolicyWeb.store.Watchers',
                  'PolicyWeb.view.Network',
                  'PolicyWeb.view.Service',
@@ -72,6 +73,7 @@ Ext.require( [
                  'PolicyWeb.view.panel.grid.Supervisors',
                  'PolicyWeb.view.panel.grid.Users',
                  'PolicyWeb.view.panel.grid.Watchers',
+                 'PolicyWeb.view.panel.grid.SupervisorEmails',
                  'PolicyWeb.view.panel.card.PrintActive',
                  'PolicyWeb.view.panel.form.ServiceDetails',
                  'PolicyWeb.view.tree.Diff',
@@ -91,7 +93,7 @@ Ext.application(
                                'AllOwners', 'AllServices', 'History',
                                'CurrentPolicy', 'Networks', 'NetworkResources',
                                'DiffGetMail', 'DiffSetMail', 'DiffTree',
-                               'Watchers', 'Supervisors'
+                               'Watchers', 'Supervisors', 'SupervisorEmails'
                              ],
 	controllers        : [ 'Main', 'Service', 'Network',
                                'Diff', 'Account' ],

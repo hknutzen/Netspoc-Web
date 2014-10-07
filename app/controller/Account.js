@@ -2,7 +2,7 @@
 Ext.define(
     'PolicyWeb.controller.Account', {
         extend : 'Ext.app.Controller',
-        stores : [ 'Watchers', 'Emails', 'Supervisors' ],
+        stores : [ 'Watchers', 'Emails', 'Supervisors', 'SupervisorEmails' ],
         refs   : [
             {
                 selector : 'mainview > panel',
@@ -17,8 +17,8 @@ Ext.define(
                 ref      : 'supervisorsGrid'
             },
             {
-                selector : '#supervisorEmails',
-                ref      : 'supervisorEmailList'
+                selector : 'supervisoremaillist',
+                ref      : 'supervisorEmailGrid'
             },
             {
                 selector : '#adminEmails',
@@ -64,12 +64,12 @@ Ext.define(
         onBeforeActivate : function ( new_card, old_card ) {
             this.getAdminEmailList().getStore().load();
             this.getWatchersStore().load();
+            this.getSupervisorEmailGrid().clear();
             this.getSupervisorsStore().load();
-            this.getSupervisorEmailList().clear();
         },
         
         onSupervisorSelected : function( rowmodel, supervisor, index, eOpts ) {
-            var email_panel = this.getSupervisorEmailList();
+            var email_panel = this.getSupervisorEmailGrid();
             if ( supervisor ) {
                 email_panel.show( supervisor.get('name'),
                                   supervisor.get('alias') );

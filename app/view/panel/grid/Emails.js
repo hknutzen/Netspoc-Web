@@ -9,7 +9,7 @@ Ext.define(
         flex        : 1,
         border      : false,
         hideHeaders : true,
-        title       : 'Verantwortliche',
+        title_prefix : 'Verantwortliche', // custom option
         split       : true,
         height      : 68,
         columns     : [
@@ -40,7 +40,7 @@ Ext.define(
                 return;
             }
             store.load ({ params : { owner : owner } });
-            this.setTitle('Verantwortliche f&uuml;r ' + alias);
+            this.setTitle(this.title_prefix + ' f&uuml;r ' + alias);
         },
 
         clear : function() {

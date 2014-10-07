@@ -49,18 +49,8 @@ Ext.define(
         },
 
         buildSupervisorEmailsListpanel : function() {
-            var store = Ext.create(
-                'PolicyWeb.store.Emails'
-            );
             return Ext.create(
-                'PolicyWeb.view.panel.grid.Emails',
-                {
-                    id          : 'supervisorEmails',
-                    store       : store,
-                    title       : 'Verantwortliche für',
-                    border      : true,
-                    flex        : 1
-                }
+                'PolicyWeb.view.panel.grid.SupervisorEmails'
             );
         }
     }
