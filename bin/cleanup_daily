@@ -66,16 +66,8 @@ fi
 # Remove history from RCS.
 ~/NetspocWeb/bin/cleanup_old_rcs $dir
 
-# Remove all policies except current one.
-for f in p* ; do
-    case $f in
-	$current)
-	    ;;
-	*)
-	    rm -rf $f
-	    ;;
-    esac
-done
+# Remove all policies older than current one.
+find . -name 'p*' ! -name $current ! -newer $current | xargs rm -rf
 
 if [ -n "$prev_date" ] ; then
     curr_date=$(rlog -zLT RCS/POLICY,v |grep date:|head -1|cut -d ' ' -f 2)
