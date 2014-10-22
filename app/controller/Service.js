@@ -115,7 +115,7 @@ Ext.define(
             this.control(
                 {
                     'serviceview' : {
-                        beforeactivate : this.onBeforeActivate
+                        //beforeactivate : this.onBeforeActivate
                     },
                     'serviceview > servicelist' : {
                         select : this.onServiceSelected
@@ -175,24 +175,6 @@ Ext.define(
                       },
                       this
                     );
-            appstate.addListener(
-                'changed', 
-                function () {
-                    var cardpanel = this.getMainCardPanel();
-                    var index = cardpanel.getLayout().getActiveItemIndex();
-                    if ( index === 0 ) {
-                        // Search again with changed policy if last thing
-                        // user did before changing policy was a search.
-                        if ( this.getCurrentRelation() === "search" ) {
-                            var sb = this.getStartSearchButton();
-                            sb.fireEvent( 'click', sb );
-                        } else {
-                            this.onBeforeActivate();
-                        }
-                    }
-                },
-                this
-            );
 
             var userstore = this.getUsersStore();
             userstore.on( 'load',
@@ -202,7 +184,8 @@ Ext.define(
                       this
                     );
         },
-        
+
+/*        
 	onBeforeActivate : function() {
             if ( appstate.getInitPhase() ) {
                 // Prevent double loading on startup.
@@ -210,6 +193,8 @@ Ext.define(
             }
             this.getServiceStore().load();
         },
+*/
+
 
         onServiceSelected : function( rowmodel, service, index, eOpts ) {
             // Load details, rules and emails of owners
@@ -375,6 +360,13 @@ Ext.define(
                      button.toggle( true );
                      return;
             }
+
+            // Pressing "Eigene/Genutzte Dienste" should clear
+            // search form. Otherwise when changing owner, a search
+            // with leftover params will be performed, although
+            // own or used services should be displayed.
+            this.getSearchFormPanel().getForm().reset();
+            
             proxy.extraParams.relation = relation;
             store.load();
         },
