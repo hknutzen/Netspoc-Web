@@ -40,10 +40,6 @@ Ext.define(
             {
                 selector : 'ownercombo',
                 ref      : 'ownerCombo'   
-            },
-            {
-                selector : 'searchwindow',
-                ref      : 'searchWindow'   
             }
         ],
 
@@ -304,12 +300,6 @@ Ext.define(
         closeSearchWindow : function() {
             if ( Ext.isObject( search_window ) ) {
                 search_window.close();
-            }
-        },
-
-        showSearchWindow : function() {
-            if ( Ext.isObject( search_window ) ) {
-                search_window.show();
             }
         },
 

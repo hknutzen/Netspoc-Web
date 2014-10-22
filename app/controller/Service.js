@@ -114,9 +114,6 @@ Ext.define(
         init : function() {
             this.control(
                 {
-                    'serviceview' : {
-                        //beforeactivate : this.onBeforeActivate
-                    },
                     'serviceview > servicelist' : {
                         select : this.onServiceSelected
                     },
@@ -184,17 +181,6 @@ Ext.define(
                       this
                     );
         },
-
-/*        
-	onBeforeActivate : function() {
-            if ( appstate.getInitPhase() ) {
-                // Prevent double loading on startup.
-                return;
-            }
-            this.getServiceStore().load();
-        },
-*/
-
 
         onServiceSelected : function( rowmodel, service, index, eOpts ) {
             // Load details, rules and emails of owners
@@ -365,7 +351,9 @@ Ext.define(
             // search form. Otherwise when changing owner, a search
             // with leftover params will be performed, although
             // own or used services should be displayed.
-            this.getSearchFormPanel().getForm().reset();
+            if ( Ext.isObject( search_window ) ) {
+                this.getSearchFormPanel().getForm().reset();
+            }
             
             proxy.extraParams.relation = relation;
             store.load();
