@@ -1153,13 +1153,21 @@ sub set_session_data {
 # Email -> Admin -> Owner
 ####################################################################
 
+sub can_access_owner {
+    my ($session, $owner) = @_;
+    my $email = $session->param('email');
+    my $email2owners = $cache->load_json_current('email');
+    return grep { $owner eq $_ } @{ $email2owners->{$email} }
+}
+
 # Get currently selected owner.
 sub get_owner {
     my ($req, $session) = @_;
     my $owner2alias = load_json('owner2alias');
-    if (my $active_owner = $session->param('owner')) {
-        my $v = { name => $active_owner };
-        if (my $a = $owner2alias->{$active_owner}) { 
+    my $owner = $session->param('owner');
+    if ($owner && can_access_owner($session, $owner)) {
+        my $v = { name => $owner };
+        if (my $a = $owner2alias->{$owner}) { 
             $v->{alias} = $a; 
         }
 	return [ $v ];
@@ -1447,10 +1455,8 @@ sub validate_owner {
     my ($req, $session, $owner_needed) = @_;
     if (my $active_owner = $req->param('active_owner')) {
 	$owner_needed or abort abort "Must not send parameter 'active_owner'";
-	my $email = $session->param('email');
-	my $email2owners = $cache->load_json_current('email');
-	grep { $active_owner eq $_ } @{ $email2owners->{$email} } or
-	    abort "User '$email' isn't allowed to read owner '$active_owner'";
+        can_access_owner($session, $active_owner) or
+	    abort "Not authorized to access owner '$active_owner'";
     } 
     else {
 	$owner_needed and abort "Missing parameter 'active_owner'";
