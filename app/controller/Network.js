@@ -101,10 +101,12 @@ Ext.define(
             
             // Reload network store, but only if network
             // tab is currently active.
+            // Also reset network resources store.
             var cardpanel = this.getMainCardPanel();
             var index = cardpanel.getLayout().getActiveItemIndex();
             if ( index === 1 ) {
                 this.getNetworksStore().load();
+                this.getNetworkResourcesStore().removeAll();
             }
         },
 
