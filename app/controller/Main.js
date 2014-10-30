@@ -40,6 +40,10 @@ Ext.define(
             {
                 selector : 'ownercombo',
                 ref      : 'ownerCombo'   
+            },
+            {
+                selector : 'searchwindow',
+                ref      : 'searchWindow'   
             }
         ],
 
@@ -199,8 +203,8 @@ Ext.define(
                 {
                     scope    : this,
                     owner    : owner_obj,
-                    store    : store,
                     callback : this.onPolicyLoaded
+
                 }
             );
         },
@@ -224,8 +228,8 @@ Ext.define(
             this.setOwner(owner, alias);
         },
         
-        onPolicyLoaded : function( records, operation, success ) {
-            var owner_ob = operation.owner;
+        onPolicyLoaded : function( records, options, success ) {
+            var owner_ob = options.owner;
             if (success && records.length) {
                 appstate.changeHistory(
                     records[0],
@@ -233,7 +237,6 @@ Ext.define(
                 );
             }
             appstate.changeOwner(owner_ob.name, owner_ob.alias);
-            operation.store.destroy();
             
             appstate.setInitPhase( false );
 
@@ -243,12 +246,20 @@ Ext.define(
             var historycombo = this.getMainHistoryCombo();
             historycombo.setValue( appstate.showHistory() );
 
-            var store = this.getServiceStore();
-            var proxy = store.getProxy();
+            // Take search and other params into account when
+            // loading service-store.
+            var store              = this.getServiceStore();
+            var proxy              = store.getProxy();
             var service_controller = this.getController( 'Service' );
-            var relation = service_controller.getCurrentRelation();
-            proxy.extraParams.relation = relation;
-            store.load();
+            var relation           = service_controller.getCurrentRelation();
+            var extra_params       = store.getProxy().extraParams;
+            var cb_params          = service_controller.getCheckboxParams();
+            var search_params      = service_controller.getSearchParams();
+            var params             = Ext.merge( cb_params, extra_params );
+            params.relation        = relation;
+            params                 = Ext.merge( params, search_params );
+
+            store.load( { params : params } );
         },
             
         onLogout : function() {
@@ -293,6 +304,12 @@ Ext.define(
         closeSearchWindow : function() {
             if ( Ext.isObject( search_window ) ) {
                 search_window.close();
+            }
+        },
+
+        showSearchWindow : function() {
+            if ( Ext.isObject( search_window ) ) {
+                search_window.show();
             }
         },
 
