@@ -1,5 +1,7 @@
 {{$NEXT}}
 
+0.927     2014-11-03 12:42:17 Europe/Berlin
+
  - Add: Introduced frontend integration tests.
  - Add: Cleanup history older than 1 year in RCS.
  - Add: Email list for supervisor shows also watchers now.
