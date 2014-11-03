@@ -96,7 +96,7 @@ Ext.define(
                                     Ext.create(
                                         'Ext.tip.ToolTip', {
                                             target : c.getEl(),
-                                            html   : 'Alle Regeln oder nur diejenigen, die zum Suchergebnis pasen, anzeigen' 
+                                            html   : 'Alle Regeln oder nur zum Suchergebnis passende anzeigen' 
                                         }
                                     );
                                 }
