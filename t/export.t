@@ -225,7 +225,7 @@ END
 test_run($title, $in, $out);
 
 ############################################################
-$title = 'Network and host having different owner';
+$title = 'Network and host as user having different owner';
 ############################################################
 
 $in = <<END;
@@ -256,6 +256,44 @@ $out = <<END;
       "test",
       "test2"
    ],
+   "visible" : []
+}
+END
+
+test_run($title, $in, $out);
+
+############################################################
+$title = 'Network and host in rule having different owner';
+############################################################
+
+$in = <<END;
+$topo
+service:test = {
+ user = network:Kunde;
+ permit src = host:B10; dst = user; prt = tcp 80; 
+}
+service:test2 = {
+ user = network:Kunde;
+ permit src = network:Big; dst = user; prt = tcp 88; 
+}
+END
+
+$out = <<END;
+--owner/y/service_lists
+{
+   "owner" : [
+      "test2"
+   ],
+   "user" : [],
+   "visible" : []
+}
+--owner/z/service_lists
+{
+   "owner" : [
+      "test",
+      "test2"
+   ],
+   "user" : [],
    "visible" : []
 }
 END
@@ -479,6 +517,386 @@ $out = <<'END';
 END
 
 test_run($title, $in, $out);
+
+############################################################
+# Changed $topo
+############################################################
+$topo = <<'END';
+owner:all  = { admins = all@b.c; extend_only; }
+owner:a123 = { admins = a123@b.c; extend; }
+owner:a12  = { admins = a12@b.c; extend_only; }
+owner:a1   = { admins = a1@b.c; }
+owner:n2   = { admins = n2@b.c; }
+
+area:all  = { owner = all; anchor = network:n1; }
+area:a123 = { owner = a123; inclusive_border = interface:r2.n4; }
+area:a12  = { owner = a12; border = interface:r2.n2; }
+area:a1   = { owner = a1; border = interface:r1.n1; }
+
+network:n1 = { ip = 10.1.1.0/24; }
+router:r1 = { 
+ managed;
+ model = ASA;
+ routing = manual;
+ interface:n1 = { ip = 10.1.1.1; hardware = n1; }
+ interface:n2 = { ip = 10.1.2.1; hardware = n2; }
+}
+
+network:n2 = { 
+ owner = n2;
+ ip = 10.1.2.0/24;
+ host:h10 = { ip = 10.1.2.10; }
+}
+
+router:r2 = {
+ managed;
+ model = ASA;
+ routing = manual;
+ interface:n2 = { ip = 10.1.2.2; hardware = n2; }
+ interface:n3 = { ip = 10.1.3.1; hardware = n3; }
+ interface:n4 = { ip = 10.1.4.1; hardware = n4; }
+}
+
+network:n3 = { ip = 10.1.3.0/24; }
+network:n4 = { ip = 10.1.4.0/24; }
+END
+
+############################################################
+$title = 'Nested extend_only';
+############################################################
+
+$in = $topo;
+
+$out = <<'END';
+--owner/a1/assets
+{
+   "anys" : {
+      "any:[network:n1]" : {
+         "networks" : {
+            "network:n1" : [
+               "interface:r1.n1"
+            ]
+         }
+      }
+   }
+}
+--owner/n2/assets
+{
+   "anys" : {
+      "any:[network:n2]" : {
+         "networks" : {
+            "network:n2" : [
+               "host:h10",
+               "interface:r1.n2",
+               "interface:r2.n2"
+            ]
+         }
+      }
+   }
+}
+--owner/a12/assets
+{
+   "anys" : {
+      "any:[network:n1]" : {
+         "networks" : {
+            "network:n1" : [
+               "interface:r1.n1"
+            ]
+         }
+      },
+      "any:[network:n2]" : {
+         "networks" : {
+            "network:n2" : [
+               "host:h10",
+               "interface:r1.n2",
+               "interface:r2.n2"
+            ]
+         }
+      }
+   }
+}
+--owner/a123/assets
+{
+   "anys" : {
+      "any:[network:n3]" : {
+         "networks" : {
+            "network:n3" : [
+               "interface:r2.n3"
+            ]
+         }
+      }
+   }
+}
+--owner/all/assets
+{
+   "anys" : {
+      "any:[network:n1]" : {
+         "networks" : {
+            "network:n1" : [
+               "interface:r1.n1"
+            ]
+         }
+      },
+      "any:[network:n2]" : {
+         "networks" : {
+            "network:n2" : [
+               "host:h10",
+               "interface:r1.n2",
+               "interface:r2.n2"
+            ]
+         }
+      },
+      "any:[network:n3]" : {
+         "networks" : {
+            "network:n3" : [
+               "interface:r2.n3"
+            ]
+         }
+      },
+      "any:[network:n4]" : {
+         "networks" : {
+            "network:n4" : [
+               "interface:r2.n4"
+            ]
+         }
+      }
+   }
+}
+--owner/a123/extended_by
+[
+   {
+      "name" : "all"
+   }
+]
+--owner/a12/extended_by
+[
+   {
+      "name" : "a123"
+   },
+   {
+      "name" : "all"
+   }
+]
+--owner/a1/extended_by
+[
+   {
+      "name" : "a12"
+   },
+   {
+      "name" : "a123"
+   },
+   {
+      "name" : "all"
+   }
+]
+--owner/all/extended_by
+[]
+--owner/n2/extended_by
+[
+   {
+      "name" : "a12"
+   },
+   {
+      "name" : "a123"
+   },
+   {
+      "name" : "all"
+   }
+]
+END
+
+test_run($title, $in, $out);
+
+############################################################
+$title = 'Owner of aggregate at tunnel of unmanaged device';
+############################################################
+
+# Must not take the undefined owner of tunnel.
+
+$in = <<'END';
+owner:Extern_VPN = { admins = abc@d.com; }
+area:internet_vpn = { owner = Extern_VPN; border = interface:r.n2; }
+
+isakmp:ikeaes256SHA = {
+ identity = address;
+ authentication = preshare;
+ encryption = aes256;
+ hash = sha;
+ group = 2;
+ lifetime = 86400 sec;
+}
+ipsec:ipsecaes256SHA = {
+ key_exchange = isakmp:ikeaes256SHA;
+ esp_encryption = aes256;
+ esp_authentication = sha_hmac;
+ pfs_group = 2;
+ lifetime = 3600 sec;
+}
+crypto:vpn = { type = ipsec:ipsecaes256SHA; tunnel_all; }
+
+network:n1 = { ip = 10.1.1.0/24;}
+
+router:r = {
+ model = ASA, 8.4;
+ managed;
+ interface:n1 = { ip = 10.1.1.1; hardware = inside; }
+ interface:n2 = { ip = 192.168.1.2; hardware = outside; hub = crypto:vpn; }
+}
+
+network:n2 = { ip = 192.168.1.0/28;}
+
+router:dmz = {
+ interface:n2 = { ip = 192.168.1.1; }
+ interface:Internet;
+}
+
+network:Internet = { ip = 0.0.0.0/0; has_subnets; }
+
+router:VPN1 = {
+ interface:Internet = { ip = 1.1.1.1; spoke = crypto:vpn; }
+ interface:v1;
+}
+network:v1 = { ip = 10.9.1.0/24; }
+
+router:VPN2 = {
+ interface:Internet = { ip = 1.1.1.2; spoke = crypto:vpn; }
+ interface:v2;
+}
+network:v2 = { ip = 10.9.2.0/24; }
+
+router:VPN3 = {
+ interface:Internet = { ip = 1.1.1.3; spoke = crypto:vpn; }
+ interface:v3;
+}
+network:v3 = { ip = 10.9.3.0/24; }
+
+
+service:Test = {
+ user = network:[any:[ip=10.9.0.0/21 & area:internet_vpn]];
+ permit src = network:n1; dst = user; prt = udp 53;
+}
+END
+
+$out = <<'END';
+--objects
+{
+   "any:[ip=10.9.0.0/21 & network:Internet]" : {
+      "ip" : "10.9.0.0/255.255.248.0",
+      "is_supernet" : 1,
+      "owner" : "Extern_VPN",
+      "zone" : "any:[network:Internet]"
+   },
+   "any:[ip=10.9.0.0/21 & network:v1]" : {
+      "ip" : "10.9.0.0/255.255.248.0",
+      "is_supernet" : 1,
+      "owner" : "Extern_VPN",
+      "zone" : "any:[network:v1]"
+   },
+   "any:[ip=10.9.0.0/21 & network:v2]" : {
+      "ip" : "10.9.0.0/255.255.248.0",
+      "is_supernet" : 1,
+      "owner" : "Extern_VPN",
+      "zone" : "any:[network:v2]"
+   },
+   "any:[ip=10.9.0.0/21 & network:v3]" : {
+      "ip" : "10.9.0.0/255.255.248.0",
+      "is_supernet" : 1,
+      "owner" : "Extern_VPN",
+      "zone" : "any:[network:v3]"
+   },
+   "interface:VPN1.Internet" : {
+      "ip" : "1.1.1.1",
+      "owner" : "Extern_VPN"
+   },
+   "interface:VPN1.v1" : {
+      "ip" : "short",
+      "owner" : "Extern_VPN"
+   },
+   "interface:VPN2.Internet" : {
+      "ip" : "1.1.1.2",
+      "owner" : "Extern_VPN"
+   },
+   "interface:VPN2.v2" : {
+      "ip" : "short",
+      "owner" : "Extern_VPN"
+   },
+   "interface:VPN3.Internet" : {
+      "ip" : "1.1.1.3",
+      "owner" : "Extern_VPN"
+   },
+   "interface:VPN3.v3" : {
+      "ip" : "short",
+      "owner" : "Extern_VPN"
+   },
+   "interface:dmz.Internet" : {
+      "ip" : "short",
+      "owner" : "Extern_VPN"
+   },
+   "interface:dmz.n2" : {
+      "ip" : "192.168.1.1",
+      "owner" : "Extern_VPN"
+   },
+   "interface:r.n2" : {
+      "ip" : "192.168.1.2",
+      "owner" : null
+   },
+   "network:Internet" : {
+      "ip" : "0.0.0.0/0.0.0.0",
+      "is_supernet" : 1,
+      "owner" : "Extern_VPN",
+      "zone" : "any:[network:Internet]"
+   },
+   "network:n1" : {
+      "ip" : "10.1.1.0/255.255.255.0",
+      "owner" : null,
+      "zone" : "any:[network:n1]"
+   },
+   "network:n2" : {
+      "ip" : "192.168.1.0/255.255.255.240",
+      "owner" : "Extern_VPN",
+      "zone" : "any:[network:Internet]"
+   },
+   "network:v1" : {
+      "ip" : "10.9.1.0/255.255.255.0",
+      "owner" : "Extern_VPN",
+      "zone" : "any:[network:v1]"
+   },
+   "network:v2" : {
+      "ip" : "10.9.2.0/255.255.255.0",
+      "owner" : "Extern_VPN",
+      "zone" : "any:[network:v2]"
+   },
+   "network:v3" : {
+      "ip" : "10.9.3.0/255.255.255.0",
+      "owner" : "Extern_VPN",
+      "zone" : "any:[network:v3]"
+   }
+}
+--services
+{
+   "Test" : {
+      "details" : {
+         "description" : null,
+         "owner" : [
+            ":unknown"
+         ]
+      },
+      "rules" : [
+         {
+            "action" : "permit",
+            "dst" : [],
+            "has_user" : "dst",
+            "prt" : [
+               "udp 53"
+            ],
+            "src" : [
+               "network:n1"
+            ]
+         }
+      ]
+   }
+}
+END
 
 ############################################################
 done_testing;
