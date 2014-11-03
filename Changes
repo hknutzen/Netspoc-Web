@@ -1,7 +1,26 @@
 {{$NEXT}}
 
-0.927     2014-10-07 12:03:21 Europe/Berlin
-
+ - Add: Introduced frontend integration tests.
+ - Add: Cleanup history older than 1 year in RCS.
+ - Add: Email list for supervisor shows also watchers now.
+ - Add: Watchers of owner with 'extend' sees other owner.
+ - Fix: Only send search params when searching.
+ - Fix: Correct sort order for service overview.
+ - Fix: Filter of diffHistoryCombo (and don't load combo before it is actually needed).
+ - Fix: Keep type of services on owner change.
+ - Fix: Respect case sensitivity and exact match in search ("Ende-zu-Ende"), including tests
+ - Fix: Bug with empty text in service details form.
+ - Fix: clear network resources on owner change.
+ - Fixed issues:
+   #1: Search criteria are forgotten when checking and unchecking "Expand users"
+   #2: Add checkbox to toggle display of filtered/unfiltered rules when performing a search
+   #3: Network ressources view isn't updated when changing owner
+   #4: Duplicate calls to backend, when changing owner
+   #5: Wrong service list when changing owner while search tab is active
+   #6: Select new owner if previously selected owner is no longer available
+ - Add: Ein Owner mit dem Attribut "extend_only" hat nun nicht mehr nur die Möglichkeit, die Rolle
+        der untergeordneten Owner anzunehmen, die im eigenen Verantwortungsbereich liegen.s
+        Vielmehr sieht er nun alle Dienste der untergeordneten Owner unter "Eigene Dienste".
  - Die "watchers" eines Owner mit Attribut "extend" oder "extend_only"
    sind nun berechtigt, die Rolle der Owner von enthaltenen Netzen anzunehmen.
    Vorher galt dies nur für die "admins".

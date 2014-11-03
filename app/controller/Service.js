@@ -27,6 +27,10 @@ var cb_params_key2val = {
     'expand_users' : {
         'true'  : 1,
         'false' : 0
+    },
+    'filter_rules' : {
+        'true'  : 1,
+        'false' : 0
     }
 };
 
@@ -237,7 +241,7 @@ Ext.define(
             // have a relation attribute. The only one without this
             // attribute is the search button and relation will
             // be undefined, so we merge in the search parameters.
-            if ( typeof relation === 'undefined' ) {
+            if ( typeof relation === 'undefined' && params.filter_rules === 1 ) {
                 params = Ext.merge(
                     params,
                     this.getSearchParams()
@@ -338,6 +342,18 @@ Ext.define(
             var proxy    = store.getProxy();
             var sb       = this.getSearchServiceButton();
             sb.toggle( false );
+            
+            // Enable checkboxes for user expansion and toggling
+            // of ip and names of objects.
+            this.enableAndDisableCheckboxes(
+                {
+                    'expand_users'     : 1,
+                    'display_property' : 1
+                },
+                {
+                    'filter_rules' : 1
+                }
+            );
 
             // Don't reload store if button clicked on is the one
             // that was already selected.
@@ -387,6 +403,7 @@ Ext.define(
         onStartSearchButtonClick : function( button, event, eOpts ) {
             var form = this.getSearchFormPanel().getForm();
             var sb = this.getSearchServiceButton();
+            this.enableCheckboxes( {'filter_rules' : 1} );
             if ( form.isValid() ) {
                 button.search_params = form.getValues();
                 var store      = this.getServiceStore();
@@ -401,6 +418,15 @@ Ext.define(
                 if ( search_window && !keep_front ) {
                     search_window.hide();
                 }
+
+                // Highlight "Suche"-button
+                var b = this.getCurrentlyPressedServiceButton();
+                b.toggle(false);
+                sb.toggle(true);
+
+                // Enable appropriate checkboxes.
+                this.enableAndDisableCheckboxes( {'filter_rules' : 1} );
+                
                 params.relation = '';
                 store.on(
                     'load',
@@ -409,11 +435,6 @@ Ext.define(
                             var m = 'Ihre Suche ergab keine Treffer!';
                             Ext.MessageBox.alert( 'Keine Treffer für Ihre Suche!', m );
                         }
-
-                        // Highlight "Suche"-button
-                        var b = this.getCurrentlyPressedServiceButton();
-                        b.toggle(false);
-                        sb.toggle(true);
                     },
                     this,  // scope (defaults to the object which fired the event)
                     { single : true }   // deactivate after being run once 
@@ -443,30 +464,76 @@ Ext.define(
                 // This is necessary because the vertical separator
                 // between the two buttons has an index, too.
                 index = index - 1;
+                this.disableAllCheckboxes();
             }
             else {
                 this.onTriggerClick();
+                // Only enable filter checkbox if we are in search mode
+                // (relation is undefined).
+                var filter = this.getCurrentRelation() === undefined ? 1 : 0;
+                this.enableCheckboxes(
+                    {
+                        'expand_users'     : 1,
+                        'display_property' : 1,
+                        'filter_rules'     : filter
+                    }
+                );
             }
             if ( index === active_idx ) {
                 button.toggle();
                 return;
             }
-            this.toggleCheckboxEnabled();
             card.layout.setActiveItem( index );
         },
 
-        toggleCheckboxEnabled : function() {
+        enableAndDisableCheckboxes : function( to_enable, to_disable ) {
+            var card  = this.getDetailsAndUserView();
+            var active_idx = card.items.indexOf( card.layout.activeItem );
+            if ( active_idx > 0 ) {
+                this.disableAllCheckboxes();
+            }
+            else {
+                if ( typeof to_enable !== 'undefined' ) {
+                    this.enableCheckboxes(  to_enable  );
+                }
+                if ( typeof to_disable !== 'undefined' ) {
+                    this.disableCheckboxes( to_disable );
+                }
+            }
+        },
+
+        enableCheckboxes : function(cb_hash) {
             var view       = this.getServiceView();
             var checkboxes = view.query('checkbox');
             Ext.each(
                 checkboxes, 
                 function(cb) {
-                    if ( cb.isDisabled() ) {
+                    if ( cb_hash[cb.name] === 1 ) {
                         cb.enable();
                     }
-                    else {
+                }
+            );
+        },
+
+        disableCheckboxes : function(cb_hash) {
+            var view       = this.getServiceView();
+            var checkboxes = view.query('checkbox');
+            Ext.each(
+                checkboxes, 
+                function(cb) {
+                    if ( cb_hash[cb.name] === 1 ) {
                         cb.disable();
                     }
+                }
+            );
+        },
+
+        disableAllCheckboxes : function() {
+            this.disableCheckboxes(
+                {
+                    'filter_rules'     : 1,
+                    'expand_users'     : 1,
+                    'display_property' : 1
                 }
             );
         },
@@ -528,6 +595,12 @@ Ext.define(
             var srv_store = this.getServiceStore();
             if ( srv_store.getTotalCount() > 0 ) {
                 params = this.getCheckboxParams( checkbox, newVal );
+                if ( typeof relation === 'undefined' && params.filter_rules === 1 ) {
+                    params = Ext.merge(
+                        params,
+                        this.getSearchParams()
+                    );
+                }
                 var rules     = this.getRulesStore();
                 rules.load( { params : params } );
             }

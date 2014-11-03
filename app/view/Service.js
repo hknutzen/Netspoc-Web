@@ -85,6 +85,23 @@ Ext.define(
                             name     : 'display_property',
                             boxLabel : 'Namen statt IPs'
                         },
+                        {
+                            xtype     : 'checkbox',
+                            name      : 'filter_rules',
+                            boxLabel  : 'Regeln filtern',
+                            checked   : true,
+                            disabled  : true,
+                            listeners : {
+                                afterrender: function(c) {
+                                    Ext.create(
+                                        'Ext.tip.ToolTip', {
+                                            target : c.getEl(),
+                                            html   : 'Alle Regeln oder nur diejenigen, die zum Suchergebnis pasen, anzeigen' 
+                                        }
+                                    );
+                                }
+                            }
+                        },
                         '->',
                         {
                             xtype   : 'printbutton',
