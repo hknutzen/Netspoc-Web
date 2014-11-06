@@ -634,6 +634,33 @@ $out = [ {
 test_run($title, $path, $params, $owner, $out, $extract_records);
 
 ############################################################
+$title = 'Match only protocol in rules';
+############################################################
+$path = 'get_rules';
+
+$params = {
+    service      => 'Test4',
+    search_proto => '81',
+    expand_users => 1,
+    display_property => 'name',
+};
+
+$out = [ {                           
+    action => 'permit',
+    dst => [ 'host:k' ],
+    prt => [ 'tcp 81' ],
+    src => [ 'host:B10',
+             'host:Range',
+             'host:k',
+             'interface:u.Big',
+             'network:DMZ'
+        ]
+         }
+    ];
+
+test_run($title, $path, $params, $owner, $out, $extract_records);
+
+############################################################
 $title = 'Show matching rules of service with user -> user';
 ############################################################
 $path = 'get_rules';

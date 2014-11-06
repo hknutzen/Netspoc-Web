@@ -894,7 +894,7 @@ sub service_list {
 # Get rules and users of selected service.
 # If search is active:
 # - one obj_hash:
-#  - if users match, then show all rules
+#  - if users match, then show all rules matching protocol
 #  - if users don't match, then show matching rules
 # - two obj_hash
 #  - if users match first hash, then show rules matching second hash
@@ -949,6 +949,7 @@ sub select_rules_and_users {
         }
         else {
             $users = $users1;
+            $rules = select_rules($rules, 0, undef, $proto_regex);
         }
     }
     return ($rules, $users);
