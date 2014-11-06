@@ -1,5 +1,16 @@
 {{$NEXT}}
 
+0.928     2014-11-06 16:18:31 Europe/Berlin
+
+ - Fixed a bug in new cleanup script for history older than 1 year.
+   The script failed when started from crontab (without a terminal).
+   This failure also broke the general cleanup script, such that
+   - daily policy files were not deleted and
+   - mail about policy diffs were not sent.
+ - Fixed a bug in end-to-end search.
+   If only a protocol and no IP address was given, 
+   not only the rules with matching protocol, but all rules were shown.
+
 0.927     2014-11-03 12:42:17 Europe/Berlin
 
  - Add: Introduced frontend integration tests.
