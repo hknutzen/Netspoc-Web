@@ -38,7 +38,7 @@ set -e
 abort () { [ "$1" ] && echo "Error: $1"; usage; exit 1; }
 
 # Only print if connected to terminal.
-debug () { if tty -s; then echo $1; fi}
+debug () { if tty -s; then echo $1; fi }
 
 [ -d "$RCS" ] || abort "Missing RCS directory '$RCS'"
 [ -d "$current" ] || abort "Missing directory '$current'"
