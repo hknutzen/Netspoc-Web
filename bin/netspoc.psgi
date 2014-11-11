@@ -1133,10 +1133,51 @@ sub set_diff_mail {
 }
 
 ####################################################################
+# Data for about dialog 
+####################################################################
+
+sub get_about_info {
+    my ($req, $session) = @_;
+    # FOO
+    # Get version number of Netspoc.pm
+    my $netspoc_pm = `perldoc -l Netspoc`;
+    my $line = `grep '\$VERSION' $netspoc_pm`;
+    $line =~ /'(\d\.\d+)'/;
+    my $netspoc_version = $1;
+    
+    # Get version of ExtJs used in frontend with Ext.getVersion(); .
+    
+    # Get version of Policy-Web-release.
+    $line = `ls -1 -d -tr ~/policyweb-* | tail -1`;
+    $line =~ /-(\d\.\d{3})/;
+    my $pw_version = $1;
+    
+    my $data = {
+        netspoc_version   => $netspoc_version,
+        policyweb_version => $pw_version
+    };
+    
+    return $data;
+}
+
+# Get theme from session or set it to default.
+sub get_theme {
+    my ($req, $session) = @_;
+    my $theme = $session->param('theme');
+    if ($theme) {
+        my $v = { name => $theme };
+	return [ $v ];
+    }
+    else {
+	return [];
+    }
+}
+
+####################################################################
 # Save session data
 ####################################################################
 
-my %saveparam = ( owner => 1 );
+my %saveparam = ( owner => 1, theme => 1 );
 
 sub set_session_data {
     my ($req, $session) = @_;
@@ -1492,22 +1533,23 @@ my %path2sub =
      # - redir: send redirect
      # - owner: valid owner and history must be given as CGI parameter
      # - create_cookie: create cookie if no cookie is available
-     login         => [ \&login,         { anon => 1, redir => 1, 
-					   create_cookie => 1, } ],
-     register      => [ \&register,      { anon => 1, html  => 1, 
-					   create_cookie => 1, } ],
-     verify        => [ \&verify,        { anon => 1, html  => 1, } ],
-     session_email => [ \&session_email, { anon => 1, html => 1, 
-					   err_status => 500} ],
-     get_policy    => [ \&get_policy,    { anon => 1, add_success => 1, } ],
-     logout        => [ \&logout,        { add_success => 1, } ],
-     get_owner     => [ \&get_owner,     { add_success => 1, } ],
-     get_owners    => [ \&get_owners,    { add_success => 1, } ],
-     set           => [ \&set_session_data, { add_success => 1, } ],
-     get_history   => [ \&get_history,   { owner => 1, add_success => 1, } ],
-     service_list  => [ \&service_list,  { owner => 1, add_success => 1, } ],
-     get_admins    => [ \&get_admins,    { owner => 1, add_success => 1, } ],
-     get_watchers  => [ \&get_watchers,  { owner => 1, add_success => 1, } ],
+     login            => [ \&login,         { anon => 1, redir => 1, 
+                                              create_cookie => 1, } ],
+     register         => [ \&register,      { anon => 1, html  => 1, 
+                                              create_cookie => 1, } ],
+     verify           => [ \&verify,        { anon => 1, html  => 1, } ],
+     session_email    => [ \&session_email, { anon => 1, html => 1, 
+                                              err_status => 500} ],
+     get_policy       => [ \&get_policy,    { anon => 1, add_success => 1, } ],
+     logout           => [ \&logout,        { add_success => 1, } ],
+     get_owner        => [ \&get_owner,     { add_success => 1, } ],
+     get_owners       => [ \&get_owners,    { add_success => 1, } ],
+     set              => [ \&set_session_data, { add_success => 1, } ],
+     get_about_info   => [ \&get_about_info,{ owner => 1, add_success => 1, } ],
+     get_history      => [ \&get_history,   { owner => 1, add_success => 1, } ],
+     service_list     => [ \&service_list,  { owner => 1, add_success => 1, } ],
+     get_admins       => [ \&get_admins,    { owner => 1, add_success => 1, } ],
+     get_watchers     => [ \&get_watchers,  { owner => 1, add_success => 1, } ],
      get_supervisors  => [ 
          \&get_supervisors, { owner => 1, add_success => 1, } ],
      get_admins_watchers => [
