@@ -73,7 +73,7 @@ EOF
 
     # Remove from beginning of branch (oldest) up to and
     # including old revison
-    debug "Removing up to $o_rev in $file"
+    debug "Removing up to $o_rev ($o_date) in $file"
     rcs -q -o:$o_rev $file
 }
 
@@ -100,7 +100,10 @@ for dir in $RCS/owner/* ; do
 
     # Find newest revision of POLICY older than $old_date.
     p_rev=$(rlog -d"$old_date>=" -zLT $p_file|
-        head -14|grep '^revision'|head -1|cut -d' ' -f2) || continue
+        head -14|grep '^revision'|head -1|cut -d' ' -f2)
+
+    # All revision are newer, leave unchanged.
+    [ -z "$p_rev" ] && continue
 
     # Identify date of newest revision of POLICY older than $old_date.
     p_date=$(rlog -r$p_rev -zLT $p_file|grep '^date:'|cut -d' ' -f2-3|cut -d';' -f1)
