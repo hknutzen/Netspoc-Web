@@ -1,5 +1,5 @@
 StartTest(function(t) {
-    t.diag("Sanity test, loading classes on demand and verifying they were indeed loaded.")
+    t.diag("Sanity test, loading classes on demand and verifying they were indeed loaded.");
     
     t.ok(Ext, 'ExtJS is here');
 
@@ -48,4 +48,4 @@ StartTest(function(t) {
     t.requireOk('PolicyWeb.view.window.ExpandedServices');
     t.requireOk('PolicyWeb.view.window.Search');
 
-})    
+});

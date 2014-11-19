@@ -33,4 +33,4 @@ StartTest(function(t) {
             t.matchGridCellContent(t.cq1('gridpanel'), 0, 0, 'foo Spencer', 'Updated name found in grid');
         }
     );
-})    
+});
