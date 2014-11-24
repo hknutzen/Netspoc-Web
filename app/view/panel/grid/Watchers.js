@@ -27,6 +27,15 @@ Ext.define(
         hideHeaders : true,
         flex        : 1,
         title       : 'Zuschauer (Watcher)',
+        tools       : [
+            {
+                type    : 'print',
+                scope   : this,
+                callback : function ( panel ) {
+                    panel.printview();
+                }
+            }
+        ],
         columns     : {
             items : [
                 { dataIndex : 'email'    }

@@ -29,6 +29,15 @@ Ext.define(
         title_prefix : 'Verantwortliche', // custom option
         split       : true,
         height      : 68,
+        tools       : [
+            {
+                type    : 'print',
+                scope   : this,
+                callback : function ( panel ) {
+                    panel.printview();
+                }
+            }
+        ],
         columns     : [
             {
                 dataIndex : 'email'
