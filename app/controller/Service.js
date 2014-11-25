@@ -172,7 +172,9 @@ Ext.define(
                           else {
                               this.getServicesGrid().select0();
                           }
-                          //this.displaySearchWindow(); // for debug
+                          var grid = this.getServicesGrid();
+                          var bottom_comp = grid.getDockedItems( 'component[dock="bottom"]' );
+                          bottom_comp[0].update( "Anzahl Dienste: " + store.getCount() );
                       },
                       this
                     );

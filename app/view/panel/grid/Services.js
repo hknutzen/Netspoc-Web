@@ -25,6 +25,18 @@ Ext.define(
         store       : 'Service',
         border      : false,
         width       : 310,
+        dockedItems : [
+            {
+                xtype   : 'box',
+                html    : 'Anzahl Dienste: ',
+                dock    : 'bottom',
+                padding : 2,
+                style   : {
+                    'text-align' :'right'
+                },
+                layout  : 'fit'
+            }
+        ],
         columns     : {
             items : [
                 { text : 'Dienstname',  dataIndex : 'name' }
