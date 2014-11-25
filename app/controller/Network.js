@@ -202,19 +202,6 @@ Ext.define(
             appstate.changeNetworks( networks );
         },
 
-        activateNetworkList : function () {
-            // Find cardpanel, activate network-list-panel
-            // and make "Netze"-button look pressed.
-            var card = Ext.getCmp("netlistPanelId");
-            if(!card.rendered) {
-                return;
-            }
-            card.layout.setActiveItem(0);
-            card.doLayout();
-            var card_buttons = card.getTopToolbar().findByType( 'button' );
-            card_buttons[0].toggle( true );
-        },
-
         setOwnNetworksButton : function ( status ) {
             var panel = this.getMainCardPanel();
             var toolbar = panel.getDockedItems('toolbar[dock="top"]')[0];

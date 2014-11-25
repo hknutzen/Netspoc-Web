@@ -186,8 +186,39 @@ Ext.define(
                       },
                       this
                     );
+            appstate.addListener(
+                'changed', 
+                function () {
+                    if ( appstate.getInitPhase() ) { return; }
+                    var cardpanel = this.getMainCardPanel();
+                    var index = cardpanel.getLayout().getActiveItemIndex();
+                    if ( index === 1 ) {
+                        this.onBeforeActivate();
+                    }
+                },
+                this
+            );
+        },
+        
+        onBeforeActivate : function () {
+            this.loadServiceStoreWithParams();
         },
 
+        loadServiceStoreWithParams : function () {
+            // Take search and other params into account when
+            // loading service-store.
+            var store         = this.getServiceStore();
+            var relation      = this.getCurrentRelation();
+            var extra_params  = store.getProxy().extraParams;
+            var cb_params     = this.getCheckboxParams();
+            var search_params = this.getSearchParams();
+            var params        = Ext.merge( cb_params, extra_params );
+            params            = Ext.merge( params, search_params );
+            params.relation   = relation;
+            
+            store.load( { params : params } );
+        },
+        
         onServiceSelected : function( rowmodel, service, index, eOpts ) {
             // Load details, rules and emails of owners
             // for selected service.

@@ -244,18 +244,8 @@ Ext.define(
 
             // Take search and other params into account when
             // loading service-store.
-            var store              = this.getServiceStore();
-            var proxy              = store.getProxy();
             var service_controller = this.getController( 'Service' );
-            var relation           = service_controller.getCurrentRelation();
-            var extra_params       = store.getProxy().extraParams;
-            var cb_params          = service_controller.getCheckboxParams();
-            var search_params      = service_controller.getSearchParams();
-            var params             = Ext.merge( cb_params, extra_params );
-            params.relation        = relation;
-            params                 = Ext.merge( params, search_params );
-
-            store.load( { params : params } );
+            service_controller.loadServiceStoreWithParams();
         },
             
         onLogout : function() {
