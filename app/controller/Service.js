@@ -173,8 +173,8 @@ Ext.define(
                               this.getServicesGrid().select0();
                           }
                           var grid = this.getServicesGrid();
-                          var bottom_comp = grid.getDockedItems( 'component[dock="bottom"]' );
-                          bottom_comp[0].update( "Anzahl Dienste: " + store.getCount() );
+                          grid.getView().getHeaderCt().getHeaderAtIndex(0).setText(
+                              'Dienstname (Anzahl: ' + store.getCount() + ')' );
                       },
                       this
                     );
