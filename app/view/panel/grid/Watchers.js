@@ -38,7 +38,13 @@ Ext.define(
         ],
         columns     : {
             items : [
-                { dataIndex : 'email'    }
+                {
+                    dataIndex : 'email',
+                    renderer : function(value) {
+                        return Ext.String.format(
+                            '<a href="mailto:{0}">{1}</a>', value, value);
+                    }
+                }
             ]
         }
     }
