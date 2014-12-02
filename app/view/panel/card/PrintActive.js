@@ -32,7 +32,7 @@ Ext.define(
             if ( activePanel.layout ) {
                 if ( activePanel.layout.type == 'border' ) {
                     var cp = activePanel.down( 'grid[region=center]' );
-                    Ext.ux.grid.Printer.print( cp );
+                    cp.printview();
                 }
                 else if ( activePanel.layout.type == 'fit' ) {
                     Ext.ux.grid.Printer.print( activePanel );

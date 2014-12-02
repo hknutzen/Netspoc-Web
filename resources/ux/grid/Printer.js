@@ -204,6 +204,7 @@ Ext.define("Ext.ux.grid.Printer", {
                       '<a class="' + Ext.baseCSSPrefix + 'ux-grid-printer-linkclose" href="javascript:void(0);" onclick="window.close();">' + this.closeLinkText + '</a>',
                   '</div>',
                   '<h1>' + this.mainTitle + '</h1>',
+                  '<br>',
                     '<table>',
                       '<tr>',
                         headings,

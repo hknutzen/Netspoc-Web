@@ -50,6 +50,10 @@ Ext.define(
                 ref      : 'servicesGrid'
             },
             {
+                selector : 'servicerules',
+                ref      : 'rulesGrid'
+            },
+            {
                 selector : 'servicedetails',
                 ref      : 'serviceDetailsForm'
             },
@@ -120,6 +124,9 @@ Ext.define(
                 {
                     'serviceview > servicelist' : {
                         select : this.onServiceSelected
+                    },
+                    'servicerules' : {
+                        printrules : this.onPrintRules
                     },
                     'serviceusers' : {
                         select : this.onUserDetailsSelected
@@ -202,6 +209,22 @@ Ext.define(
         
         onBeforeActivate : function () {
             this.loadServiceStoreWithParams();
+        },
+
+        onPrintRules : function () {
+            // This overrides the standard printview mechanism, so
+            // that we can add the service name to the grid of rules
+            // to be printed.
+            var service_grid = this.getServicesGrid();
+            var sel_model = service_grid.getSelectionModel();
+            var selected  = sel_model.getSelection();
+            if ( selected ) {
+                var service = selected[0].data;
+                var rules_grid = this.getRulesGrid();
+                Ext.ux.grid.Printer.mainTitle = 'Dienst: ' + service.name;
+                Ext.ux.grid.Printer.print( rules_grid );
+                Ext.ux.grid.Printer.mainTitle = '';
+            }
         },
 
         loadServiceStoreWithParams : function () {

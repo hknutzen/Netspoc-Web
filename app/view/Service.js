@@ -163,7 +163,10 @@ Ext.define(
             return Ext.create(
                 'PolicyWeb.view.panel.grid.Rules',
                 {
-                    region : 'center'
+                    region    : 'center',
+                    printview : function () {
+                        this.fireEvent( 'printrules' );
+                    }
                 }
             );
         },
