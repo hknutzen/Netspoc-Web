@@ -1,4 +1,10 @@
-{{$NEXT}}
+1.000     2014-12-09 11:06:38+01:00 Europe/Berlin
+
+ - Add: display nr of services in status line (issue #7).
+ - Add: print-button to list of email-addresses (issue #8).
+ - Add: name of service in rule printout (issue #11).
+ - Add: emails displayed are now mailto-links (issue #13).
+ - Fix: selecting networks change displayed services (issue #9).
 
 0.930     2014-11-19 11:06:38+01:00 Europe/Berlin
 
