@@ -129,6 +129,11 @@ Ext.application(
             // Initialize tooltips manager. Now a tooltip tag
             // "just works" for most components.
             Ext.tip.QuickTipManager.init();
+
+            // Define these defaults for the gridprinter plugin.
+            Ext.ux.grid.Printer.printLinkText = 'Drucken';
+            Ext.ux.grid.Printer.closeLinkText = 'Schließen';
+            Ext.ux.grid.Printer.pageTitle     = 'Druckansicht';
         },
         
         onJsonException : function(connection, response, options, eOpts) {
