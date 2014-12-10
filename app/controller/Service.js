@@ -523,7 +523,6 @@ Ext.define(
                 this.disableAllCheckboxes();
             }
             else {
-                this.onTriggerClick();
                 // Only enable filter checkbox if we are in search mode
                 // (relation is undefined).
                 var filter = this.getCurrentRelation() === undefined ? 1 : 0;
