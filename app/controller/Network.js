@@ -68,6 +68,9 @@ Ext.define(
             var store = this.getNetworksStore();
             store.on( 'load', this.preSelect, this );
 
+            var res_store = this.getNetworkResourcesStore();
+            res_store.on( 'load', this.preCollapse, this );
+
             appstate.addListener(
                 'ownerChanged', 
                 this.resetNetworks,
@@ -108,6 +111,21 @@ Ext.define(
                 this.getNetworksStore().load();
                 this.getNetworkResourcesStore().removeAll();
             }
+        },
+
+        preCollapse : function (store, records) {
+            var threshold = 100;
+            var groups    = store.getGroups();
+            var grid      = this.getNetworkResourcesGrid();
+            var grouping  = get_store_feature( grid, 'grouping' ); // see common.js
+            Ext.each(
+                groups,
+                function(group, index) {
+                    if ( group.children.length > threshold ) {
+                        grouping.collapse( group.name );
+                    }
+                }
+            );
         },
 
         preSelect : function () {
