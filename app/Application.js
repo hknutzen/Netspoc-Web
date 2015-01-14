@@ -94,6 +94,7 @@ Ext.require( [
                  'PolicyWeb.view.panel.form.ServiceDetails',
                  'PolicyWeb.view.tree.Diff',
                  'PolicyWeb.view.window.ExpandedServices',
+                 'PolicyWeb.view.window.About',
                  'PolicyWeb.view.window.Search'
              ]
            );

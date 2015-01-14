@@ -19,6 +19,7 @@ qw(
    verify_fail_template
    verify_mail_template
    verify_ok_template
+   about_info_template
    );
 
 sub load {

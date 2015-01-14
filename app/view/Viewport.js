@@ -82,6 +82,9 @@ Ext.define(
                         iconCls : 'icon-door_out',
                         scope   : this,
                         handler : this.fireLogoutEvent
+                    },
+                    {
+                        iconCls : 'icon-info'
                     }
                 ]
             };

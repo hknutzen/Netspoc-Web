@@ -16,6 +16,9 @@ You should have received a copy of the GNU General Public License
 along with this program. If not, see <http://www.gnu.org/licenses/>.
 */
 
+var global_theme_name = 'neptune';
+var about_window;
+
 Ext.define(
     'PolicyWeb.controller.Main', {
         extend : 'Ext.app.Controller',
@@ -48,6 +51,9 @@ Ext.define(
                 {
                     'mainview': {
                         logout       : this.onLogout
+                    },
+                    'mainview panel button[iconCls="icon-info"]': {
+                        click        : this.onMainInfoButtonClick
                     },
                     'messagebox[title="Sitzung abgelaufen"] button': {
                         click        : this.onSessionTimeout
@@ -123,6 +129,8 @@ Ext.define(
                 alias = records[0].get('alias');
                 this.setOwnerState({ name  : owner, 
                                      alias : alias });
+                // Get theme from session.
+                // FOO
             }
             // Owner was never selected, 
             // check number of available owners.
@@ -194,6 +202,13 @@ Ext.define(
         },
 
         setOwnerState : function(owner_obj) {
+/*
+            global_theme_name = 'gray';
+            var theme = '/extjs4/resources/ext-theme-' + global_theme_name + '/ext-theme-' +
+                global_theme_name + '-all.css';
+            console.log(theme);
+            Ext.util.CSS.swapStyleSheet("theme", theme);
+*/
             var store = this.getCurrentPolicyStore();
             store.load(
                 {
@@ -266,6 +281,24 @@ Ext.define(
                   scope    : this
                 }
             );
+        },
+
+        onMainInfoButtonClick : function() {
+            if ( !about_window ) {
+                about_window = Ext.create(
+                    'PolicyWeb.view.window.About'
+                );
+                about_window.on( 'show', function () {
+                                     about_window.center();
+                                 }
+                               );
+            }
+            if ( about_window.isHidden() ) {
+                about_window.show();
+            }
+            else {
+                about_window.hide();
+            }
         },
 
         onAfterLogout : function() {

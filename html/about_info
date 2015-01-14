@@ -1,0 +1,42 @@
+
+<body>
+
+<center>
+  <p><img src="resources/images/magnifying_glass2.png" alt="Policy-Web-Logo"></p>
+  <table class="smaller-font">
+    <tr>
+      <td> Policy-Web-Version &nbsp; &nbsp; </td>
+      <td> [% policy_web_version %] </td>
+    </tr>
+    <tr>
+      <td> Quelltext </td>
+      <td> <a href="https://github.com/hknutzen/Netspoc-Web"> https://github.com/hknutzen/Netspoc-Web </a> </td>
+    </tr>
+    <tr>
+      <td colspan="2">
+        <br>
+        Policy-Web ist ein Web-Interface für den von Dataport entwickelten<br>
+        "Network Security Policy Compiler" (kurz: Netspoc):
+        <br>
+      </td>
+    </tr>
+    <tr>
+      <td> Netspoc </td>
+      <td> <a href="https://github.com/hknutzen/Netspoc"> https://github.com/hknutzen/Netspoc </a> </td>
+    </tr>
+    <tr>
+      <td> Netspoc-Approve </td>
+      <td> <a href="https://github.com/hknutzen/Netspoc-Approve"> https://github.com/hknutzen/Netspoc-Approve </a> </td>
+    </tr>
+    <tr>
+      <td> Netspoc-Handbuch </td>
+      <td> <a href="http://hknutzen.github.io/Netspoc/"> http://hknutzen.github.io/Netspoc </a> </td>
+    </tr>
+  </table>
+
+
+
+</center>
+
+
+</body>
