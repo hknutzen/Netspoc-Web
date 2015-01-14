@@ -27,65 +27,57 @@ Ext.define(
             Ext.apply(
                 this,
                 {
-                    title       : 'Info über Policy-Web',
-                    width       : 350,
+                    width       : 520,
                     height      : 500,
-                    resizable   : false,
                     closeAction : 'hide',
-                    items       : [
-                        this.buildForm()
-                    ]
+                    resizable   : false,
+                    border      : false,
+                    frame       : false,
+                    header      : false,
+                    bodyStyle   : {
+                        background : '#fff'
+                    },
+                    loader      : {
+                        url        : 'backend/get_about_info',
+                        autoLoad   : true,
+                        baseParams : {
+                            history      : appstate.getHistory(),
+                            active_owner : appstate.getOwner()
+                        }
+                    },
+                    dockedItems : this.buildBottomToolbar()
                 }
             );
             this.callParent(arguments);
         },
-        
-        buildForm : function () {
-            var form = Ext.widget(
-                {
-                    xtype         : 'form',
-                    bodyPadding   : 5,
-                    width         : '100%',
-                    fieldDefaults : {
-                        labelAlign : 'left',
-                        msgTarget  : 'top'
-                    },
-                    items : [
-                        this.buildInfoPanel(),
-                        this.buildThemeChooser()
-                    ]
-                }
-            );
-            return form;
-	},
-        
-        buildInfoPanel : function() {
-            var panel = {
-                xtype     : 'panel',
-                height    : 200,
-                defaults  : {
-                    bodyPadding : 10
+
+        buildBottomToolbar : function() {
+            var toolbar = {
+                xtype  : 'toolbar',
+                dock   : 'bottom',
+                border : false,
+                frame  : false,
+                layout : {
+                    type : 'hbox',
+                    pack : 'center'
                 },
                 items : [
                     {
-                        xtype      : 'textfield',
-                        name       : 'netspoc_version',
-                        fieldLabel : 'Netspoc-Version',
-                        allowBlank : false
-                    },
-                    {
-                        xtype      : 'textfield',
-                        name       : 'extjs_version',
-                        fieldLabel : 'ExtJs-Version',
-                        allowBlank : false
+                        text    : "Schließen",
+                        handler : function() {
+                            this.previousNode('window').hide();
+                        }
                     }
                 ]
             };
-            return panel;
+            return toolbar;
+        },
+
+        buildTimeoutChooser : function() {
+            
         },
 
         buildThemeChooser : function() {
-
             function getQueryParam(name, queryString) {
                 var match = RegExp(name + '=([^&]*)').exec(
                     queryString || location.search

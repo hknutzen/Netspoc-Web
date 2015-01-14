@@ -1136,6 +1136,27 @@ sub set_diff_mail {
 # Data for about dialog 
 ####################################################################
 
+sub get_session_timeout {
+    my ($req, $session) = @_;
+    my $email = $session->param('email');
+    return([{ user_timeout => '60m' }]) if $email eq 'guest';
+    my $owner = $req->param('active_owner');
+    my $store = User_Store::new($config, $email);
+    return $store->param('user_timeout') || '60m';
+}
+
+sub set_session_timeout {
+    my ($req, $session) = @_;
+    my $email = $session->param('email');
+    abort("Can't set timeout for user 'guest'") if $email eq 'guest';
+    validate_owner($req, $session, 1);
+    my $owner = $req->param('active_owner');
+    my $timeout = $req->param('user_timeout')
+        || abort "Parameter 'user_timeout' not found!";
+    my $store = User_Store::new($config, $email);
+    $store->param('user_timeout', $timeout);
+}
+
 sub get_about_info {
     my ($req, $session) = @_;
     # FOO
@@ -1151,13 +1172,10 @@ sub get_about_info {
     $line = `ls -1 -d -tr ~/policyweb-* | tail -1`;
     $line =~ /-(\d\.\d{3})/;
     my $pw_version = $1;
-    
-    my $data = {
-        netspoc_version   => $netspoc_version,
-        policyweb_version => $pw_version
+    my $vars = {
+        policy_web_version => $pw_version
     };
-    
-    return $data;
+    return Template::get($config->{about_info_template}, $vars);
 }
 
 # Get theme from session or set it to default.
@@ -1495,7 +1513,7 @@ sub logged_in {
 sub validate_owner {
     my ($req, $session, $owner_needed) = @_;
     if (my $active_owner = $req->param('active_owner')) {
-	$owner_needed or abort abort "Must not send parameter 'active_owner'";
+	$owner_needed or abort "Must not send parameter 'active_owner'";
         can_access_owner($session, $active_owner) or
 	    abort "Not authorized to access owner '$active_owner'";
     } 
@@ -1545,7 +1563,7 @@ my %path2sub =
      get_owner        => [ \&get_owner,     { add_success => 1, } ],
      get_owners       => [ \&get_owners,    { add_success => 1, } ],
      set              => [ \&set_session_data, { add_success => 1, } ],
-     get_about_info   => [ \&get_about_info,{ owner => 1, add_success => 1, } ],
+     get_about_info   => [ \&get_about_info,{ owner => 1, html => 1 } ],
      get_history      => [ \&get_history,   { owner => 1, add_success => 1, } ],
      service_list     => [ \&service_list,  { owner => 1, add_success => 1, } ],
      get_admins       => [ \&get_admins,    { owner => 1, add_success => 1, } ],

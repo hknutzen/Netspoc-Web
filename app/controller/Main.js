@@ -17,6 +17,7 @@ along with this program. If not, see <http://www.gnu.org/licenses/>.
 */
 
 var global_theme_name = 'neptune';
+var about_window;
 
 Ext.define(
     'PolicyWeb.controller.Main', {
@@ -302,7 +303,12 @@ Ext.define(
                                  }
                                );
             }
-            about_window.show();
+            if ( about_window.isHidden() ) {
+                about_window.show();
+            }
+            else {
+                about_window.hide();
+            }
         },
 
         onAfterLogout : function() {
