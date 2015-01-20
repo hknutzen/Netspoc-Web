@@ -14,6 +14,7 @@ qw(
    noreply_address
    sendmail_command
    session_dir
+   expire_logged_in
    show_passwd_template
    user_dir
    verify_fail_template

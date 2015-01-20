@@ -49,6 +49,10 @@ use JSON_Cache;
 use Policy_Diff;
 
 
+# VERSION: inserted by DZP::OurPkgVersion
+my $version = __PACKAGE__->VERSION || 'devel';
+
+
 sub abort {
     my ($msg) = @_;
     die "$msg\n";
@@ -1160,7 +1164,7 @@ sub set_session_timeout {
 
 sub get_about_info {
     my ($req, $session) = @_;
-    # FOO
+
     # Get version number of Netspoc.pm
     my $netspoc_pm = `perldoc -l Netspoc`;
     my $line = `grep '\$VERSION' $netspoc_pm`;
@@ -1169,12 +1173,8 @@ sub get_about_info {
     
     # Get version of ExtJs used in frontend with Ext.getVersion(); .
     
-    # Get version of Policy-Web-release.
-    $line = `ls -1 -d -tr ~/policyweb-* | tail -1`;
-    $line =~ /-(\d\.\d{3})/;
-    my $pw_version = $1;
     my $vars = {
-        policy_web_version => $pw_version
+        policy_web_version => $version
     };
     return Template::get($config->{about_info_template}, $vars);
 }
@@ -1296,37 +1296,6 @@ sub get_admins_watchers {
                  @{ load_json("owner/$owner/emails") },
                  @{ load_json("owner/$owner/watchers") }) ];
 }
-
-####################################################################
-# Send HTML as answer
-####################################################################
-
-sub read_template {
-    my ($file) = @_;
-    open(my $fh, '<', $file) or internal_err "Can't open $file: $!";
-    local $/ = undef;
-    my $text = <$fh>;
-    close $fh;
-    return $text;
-}
-
-# Do simple variable substitution.
-# Use syntax of template toolkit.
-sub process_template {
-    my ($text, $vars) = @_;
-    while (my ($key, $value) = each %$vars) {
-	$text =~ s/\[% $key %\]/$value/g;
-    }
-    return $text;
-}
-
-sub get_substituted_html {
-    my ($file, $vars ) = @_;
-    my $text = read_template($file);
-    $text = process_template($text, $vars);
-    return $text;
-}					 
-   
 
 ####################################################################
 # Register / reset password
@@ -1496,9 +1465,16 @@ sub login {
         }
         clear_attack($email);
     }
+
+    # Validate session timeout config param.
+    my $expire = $config->{expire_logged_in} || "480";
+    ($expire > 14 && $expire < 601 ) or
+        abort "Session timeout needs to be between 15min and 10h.";
+    $expire .= 'm';
+
     $session->param('email', $email);
     $session->clear('user');		# Remove old, now unused param.
-    $session->expire('logged_in', '60m');
+    $session->expire('logged_in', $expire);
     $session->param('logged_in', 1);
     $session->flush();
     return $app_url;

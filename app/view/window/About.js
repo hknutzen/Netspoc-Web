@@ -30,6 +30,7 @@ Ext.define(
                     width       : 520,
                     height      : 500,
                     closeAction : 'hide',
+                    autoScroll  : true,
                     resizable   : false,
                     border      : false,
                     frame       : false,
@@ -45,34 +46,38 @@ Ext.define(
                             active_owner : appstate.getOwner()
                         }
                     },
-                    dockedItems : this.buildBottomToolbar()
+                    dockedItems : this.buildBottomButton()
                 }
             );
             this.callParent(arguments);
         },
 
-        buildBottomToolbar : function() {
-            var toolbar = {
-                xtype  : 'toolbar',
-                dock   : 'bottom',
-                border : false,
-                frame  : false,
-                layout : {
-                    type : 'hbox',
-                    pack : 'center'
-                },
-                items : [
+        buildBottomButton : function() {
+            var button = {
+                xtype: 'container',
+                layout: 'hbox',
+                dock: 'bottom',
+                items: [
                     {
-                        text    : "Schließen",
-                        handler : function() {
+                        xtype : 'container',
+                        flex  : 1
+                    },
+                    {
+                        xtype    : 'button',
+                        text     : 'Schließen',
+                        minWidth : 50,
+                        handler  : function() {
                             this.previousNode('window').hide();
-                        }
+                        }                    },
+                    {
+                        xtype : 'container',
+                        flex  : 1
                     }
                 ]
             };
-            return toolbar;
+            return button;
         },
-
+        
         buildTimeoutChooser : function() {
             
         },
