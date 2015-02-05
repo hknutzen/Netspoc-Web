@@ -480,9 +480,6 @@ Ext.define(
                 b.toggle(false);
                 sb.toggle(true);
 
-                // Enable appropriate checkboxes.
-                this.enableAndDisableCheckboxes( {'filter_rules' : 1} );
-                
                 params.relation = '';
                 store.on(
                     'load',
@@ -516,16 +513,26 @@ Ext.define(
             var card  = this.getDetailsAndUserView();
             var index = button.ownerCt.items.indexOf(button);
             var active_idx = card.items.indexOf( card.layout.activeItem );
+
+            // Only enable filter checkbox if we are in search mode
+            // (relation is undefined).
+            var filter = this.getCurrentRelation() === undefined ? 1 : 0;
+
             if ( index === 2 ) {
                 // This is necessary because the vertical separator
                 // between the two buttons has an index, too.
                 index = index - 1;
-                this.disableAllCheckboxes();
+                this.enableAndDisableCheckboxes(
+                    {
+                        'filter_rules'     : filter
+                    },
+                    {
+                        'expand_users'     : 1,
+                        'display_property' : 1
+                    }
+                );
             }
             else {
-                // Only enable filter checkbox if we are in search mode
-                // (relation is undefined).
-                var filter = this.getCurrentRelation() === undefined ? 1 : 0;
                 this.enableCheckboxes(
                     {
                         'expand_users'     : 1,
@@ -656,8 +663,10 @@ Ext.define(
                         this.getSearchParams()
                     );
                 }
-                var rules     = this.getRulesStore();
+                var rules = this.getRulesStore();
                 rules.load( { params : params } );
+                var users = this.getUsersStore();
+                users.load( { params : params } );
             }
             if ( Ext.isObject( print_window ) ) {
                 this.onShowAllServices( print_window );

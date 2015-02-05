@@ -88,7 +88,7 @@ Ext.define(
                         {
                             xtype     : 'checkbox',
                             name      : 'filter_rules',
-                            boxLabel  : 'Regeln filtern',
+                            boxLabel  : 'Filtern bzgl. Suche',
                             checked   : true,
                             disabled  : true,
                             listeners : {
