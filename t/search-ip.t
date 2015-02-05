@@ -43,6 +43,8 @@ my $conf_data = <<END;
  "verify_fail_template" : "",
  "verify_mail_template" : "",
  "verify_ok_template"   : "",
+ "expire_logged_in"     : "",
+ "about_info_template"  : "",
 }    
 END
 

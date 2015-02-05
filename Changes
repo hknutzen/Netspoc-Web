@@ -1,3 +1,13 @@
+{{$NEXT}}
+
+ - Add: icon and favicon.
+ - Add: "About"-window that displays info about Policy-Web (issue #18).
+ - Add: enable filtering checkbox for user-tab when searching (issue #15).
+ - Add: collapse network ressources if too many (issue #10).
+ - Add: gridprinter rowsummary and ExtJs 5.x support (issue #16).
+ - Add: login expiration configurable via config param (issue #17).
+ - Fix: toggle details/user view changes data (issue #14).
+
 1.000     2014-12-09 11:06:38+01:00 Europe/Berlin
 
  - Add: display nr of services in status line (issue #7).
