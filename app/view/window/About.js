@@ -28,7 +28,7 @@ Ext.define(
                 this,
                 {
                     width       : 520,
-                    height      : 500,
+                    height      : 540,
                     closeAction : 'hide',
                     autoScroll  : true,
                     resizable   : false,
