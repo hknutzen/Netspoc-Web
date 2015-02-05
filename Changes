@@ -1,5 +1,7 @@
 {{$NEXT}}
 
+1.001     2015-02-05 13:16:52+01:00 Europe/Berlin
+
  - Add: icon and favicon.
  - Add: "About"-window that displays info about Policy-Web (issue #18).
  - Add: enable filtering checkbox for user-tab when searching (issue #15).
