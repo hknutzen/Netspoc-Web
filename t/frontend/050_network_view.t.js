@@ -3,23 +3,22 @@ StartTest(
 
         t.requireOk(
             [
+                'PolicyWeb.proxy.Custom',
                 'PolicyWeb.model.Network',
+                'PolicyWeb.store.Netspoc', 
                 'PolicyWeb.store.NetspocState', 
                 'PolicyWeb.store.Networks',
                 'PolicyWeb.view.panel.grid.Networks'
             ], 
             function() {
-                console.log("HALLO?");
                 var grid;
                 var store = Ext.create(
                     'PolicyWeb.store.Networks'
                 );
-                console.log("WELT?");
 
                 store.on(
                     'load',
                     function() {
-                        alert("HERE!");
                         grid = Ext.create(
                             'PolicyWeb.view.panel.grid.Networks', {
                                 renderTo : Ext.getBody(),
@@ -30,7 +29,14 @@ StartTest(
                         );
                     }
                 );
-                store.load();
+                store.load(
+                    {
+                        params : {
+                            active_owner : 'x',
+                            history      : 'p1'
+                        }
+                    }
+                    );
 
                 t.waitForRowsVisible(
                     grid,

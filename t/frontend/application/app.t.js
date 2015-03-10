@@ -1,4 +1,19 @@
-StartTest(function(t) {
+StartTest(
+    function(t) {
+
+    t.chain(
+        { waitFor : 'CQ', args : 'serviceview' },
+
+        function(next, grids) {
+            var userGrid = grids[0];
+
+            t.willFireNTimes(userGrid.store, 'write', 1);
+            next();
+        }
+
+    );
+
+/*
     t.chain(
         { waitFor : 'CQ', args : 'gridpanel' },
 
@@ -33,4 +48,9 @@ StartTest(function(t) {
             t.matchGridCellContent(t.cq1('gridpanel'), 0, 0, 'foo Spencer', 'Updated name found in grid');
         }
     );
-});
+ */
+
+
+        
+    }
+);

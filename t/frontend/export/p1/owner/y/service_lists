@@ -1,5 +1,10 @@
 {
-   "owner" : [],
-   "user" : [],
+   "owner" : [
+      "FromKunde2HostInBigNet",
+      "Usable_Service"
+   ],
+   "user" : [
+      "FromBigNet2Kunde_OWN"
+   ],
    "visible" : []
 }
