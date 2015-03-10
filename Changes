@@ -1,5 +1,7 @@
 {{$NEXT}}
 
+1.002     2015-03-10 12:29:39+01:00 Europe/Berlin
+
  - Fix: change GET to POST for get_history proxy.
  - Add: more advanced frontend tests
 
