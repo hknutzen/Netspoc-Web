@@ -1,5 +1,7 @@
 {{$NEXT}}
 
+ - Fix: change GET to POST for get_history proxy.
+
 1.001     2015-02-05 13:16:52+01:00 Europe/Berlin
 
  - Add: icon and favicon.
