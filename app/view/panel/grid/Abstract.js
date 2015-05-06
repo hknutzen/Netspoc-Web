@@ -23,8 +23,9 @@ along with this program. If not, see <http://www.gnu.org/licenses/>.
 Ext.define(
     'PolicyWeb.view.panel.grid.Abstract',
     {
-        extend : 'Ext.grid.Panel',
-        alias  : 'widget.abstractgrid',
+        extend  : 'Ext.grid.Panel',
+        alias   : 'widget.abstractgrid',
+        plugins : 'bufferedrenderer',
         
         initComponent : function() {
             Ext.apply(

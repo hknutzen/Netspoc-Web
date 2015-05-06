@@ -6,6 +6,7 @@ Ext.define(
         extend   : 'PolicyWeb.store.NetspocState',
         model    : 'PolicyWeb.model.Service',
         autoLoad : false,
+        pageSize : 100,
         sorters  : [
             {
                 property  : 'name',
