@@ -1,7 +1,5 @@
 {{$NEXT}}
 
-1.003     2015-05-13 10:40:16+02:00 Europe/Berlin
-
  - Fix: IE problems with rendering many rows (using Sencha plugin for buffered rendering).
 
 1.002     2015-03-10 12:29:39+01:00 Europe/Berlin

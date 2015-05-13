@@ -125,8 +125,8 @@ Ext.define(
                 if (src.indexOf('include-ext.js') !== -1) {
                     defaultQueryString = src.split('?')[1];
                     if (defaultQueryString) {
-                        defaultTheme = getQueryParam('theme', defaultQueryString)
-                            || defaultTheme;
+                        defaultTheme =
+                            getQueryParam('theme', defaultQueryString) || defaultTheme;
                     }
                     break;
                 }
