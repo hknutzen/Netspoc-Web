@@ -173,15 +173,17 @@ Ext.define(
             var store = this.getServiceStore();
             store.on( 'load',
                       function () {
-                          if ( store.getCount() === 0 ) {
+                          var count = store.getCount();
+                          var grid = this.getServicesGrid();
+                          if ( count === 0 ) {
                               this.clearDetails();
                           }
                           else {
                               this.getServicesGrid().select0();
                           }
-                          var grid = this.getServicesGrid();
+                          // Display nr of services in header.
                           grid.getView().getHeaderCt().getHeaderAtIndex(0).setText(
-                              'Dienstname (Anzahl: ' + store.getCount() + ')' );
+                              'Dienstname (Anzahl: ' + count + ')' );
                       },
                       this
                     );

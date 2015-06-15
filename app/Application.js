@@ -51,6 +51,7 @@ Ext.Loader.setConfig(
 Ext.require( [
                  'Ext.ux.DataTip',
                  'Ext.ux.grid.Printer',
+                 'Ext.grid.plugin.BufferedRenderer',
                  'PolicyWeb.proxy.Custom',
                  'PolicyWeb.store.Service',
                  'PolicyWeb.store.Networks',

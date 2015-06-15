@@ -1,5 +1,8 @@
 {
-   "test" : [
+   "FromBigNet2Kunde_OWN" : [
+      "network:Big"
+   ],
+   "FromSubNet2Kunde" : [
       "network:Sub"
    ]
 }

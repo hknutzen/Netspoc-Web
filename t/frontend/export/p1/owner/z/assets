@@ -5,8 +5,11 @@
             "network:Big" : [
                "host:B10"
             ],
+            "network:InBigA" : [
+               "interface:r2.InBigA"
+            ],
             "network:Sub" : [
-               "interface:u.Sub"
+               "interface:r1.Sub"
             ]
          }
       }

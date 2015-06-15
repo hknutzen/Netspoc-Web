@@ -4,11 +4,19 @@
          "networks" : {
             "network:Big" : [
                "host:B10",
+               "host:B20",
                "interface:asa.Big",
-               "interface:u.Big"
+               "interface:r1.Big",
+               "interface:r2.Big"
+            ],
+            "network:InBigA" : [
+               "interface:r2.InBigA"
+            ],
+            "network:Kunde_B" : [
+               "interface:r1.Kunde_B"
             ],
             "network:Sub" : [
-               "interface:u.Sub"
+               "interface:r1.Sub"
             ]
          }
       }

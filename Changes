@@ -1,5 +1,20 @@
 {{$NEXT}}
 
+1.004     2015-05-13 11:16:50+02:00 Europe/Berlin
+
+ - Fix: minor errors reported by jshint.
+
+1.003     2015-05-13 10:40:26+01:00 Europe/Berlin
+
+ - Fix: IE problems with rendering many rows (using Sencha plugin for buffered rendering).
+
+1.002     2015-03-10 12:29:39+01:00 Europe/Berlin
+
+ - Fix: change GET to POST for get_history proxy.
+ - Add: more advanced frontend tests
+
+1.001     2015-02-05 13:16:52+01:00 Europe/Berlin
+
  - Add: icon and favicon.
  - Add: "About"-window that displays info about Policy-Web (issue #18).
  - Add: enable filtering checkbox for user-tab when searching (issue #15).

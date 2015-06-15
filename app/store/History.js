@@ -8,8 +8,9 @@ Ext.define(
         autoLoad : false,
         needLoad : true, // own config param, not ExtJs
         proxy    : {
-            type     : 'policyweb',
-            proxyurl : 'get_history'
+            type          : 'policyweb',
+            actionMethods : { read: 'POST' },
+            proxyurl      : 'get_history'
         }
     }
 );

@@ -125,7 +125,7 @@ function get_store_feature( grid, featureFType ) {
     var features;
 
     if (view.features)
-      	features = view.features;
+        features = view.features;
     else if (view.featuresMC)
     features = view.featuresMC.items;
     else if (view.normalView.featuresMC)
@@ -135,13 +135,13 @@ function get_store_feature( grid, featureFType ) {
         for (var i = 0; i <features.length; i++) {
             if (featureFType == 'grouping')
                 if (features[i].ftype == 'grouping' || features[i].ftype == 'groupingsummary')
-        	    return features[i];
+                    return features[i];
             if (featureFType == 'groupingsummary')
-        	if (features[i].ftype == 'groupingsummary')
-        	    return features[i];        				
+                if (features[i].ftype == 'groupingsummary')
+                    return features[i];                                 
             if (featureFType == 'summary')
-        	if (features[i].ftype == 'summary')
-        	    return features[i];        				
+                if (features[i].ftype == 'summary')
+                    return features[i];                                 
         }
     return undefined;
 }

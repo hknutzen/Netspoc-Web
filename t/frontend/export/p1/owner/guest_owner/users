@@ -5,6 +5,9 @@
    "FromKunde2HostInBigNet" : [
       "network:Kunde_A"
    ],
+   "FromSubNet2Kunde" : [
+      "network:Sub"
+   ],
    "Usable_Service" : [
       "network:Kunde_A"
    ]
