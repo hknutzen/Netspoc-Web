@@ -20,6 +20,7 @@ qw(
    verify_fail_template
    verify_mail_template
    verify_ok_template
+   template_path
    about_info_template
    );
 

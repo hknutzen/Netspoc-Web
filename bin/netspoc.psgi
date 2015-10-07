@@ -45,6 +45,7 @@ use lib $FindBin::Bin;
 use Load_Config;
 use User_Store;
 use Template;
+use Text::Template 'fill_in_file';
 use JSON_Cache;
 use Policy_Diff;
 
@@ -1029,6 +1030,41 @@ sub get_services_and_rules {
     return \@result;
 }
 
+sub send_task_mail {
+    my ($req, $session) = @_;
+    my $email = session_email( $req, $session );
+    my $service = $req->param('service');
+    my $new_object = $req->param('new_user_object') || 'new object';
+    my $users = get_users($req, $session);
+    my $services = load_json("services");
+    my $srv_owners = $services->{$service}->{'details'}->{'owner'};
+    my $filename = $config->{template_path} . '/task_add_object_to_user.tmpl';
+
+    # Fill template with data to get text to send via sendmail
+    my $text = fill_in_file(
+        $filename,
+        HASH => {
+            email           => $email,
+            service         => $service,
+            srv_owners      => $srv_owners,
+            new_user_object => $new_object,
+            users           => $users
+        }
+        );
+
+    my $sendmail = $config->{sendmail_command};
+
+    # -t: read recipient address from mail text
+    # -f: set sender address
+    # -F: don't use sender full name
+    open(my $mail, '|-', "$sendmail -t -F '' -f $config->{noreply_address}") or 
+	internal_err "Can't open $sendmail: $!";
+    print $mail $text;
+    #print $mail Encode::encode('UTF-8', $text);
+    close $mail or warn "Can't close $sendmail: $!\n";
+    return [];
+}
+
 ####################################################################
 # Diff
 ####################################################################
@@ -1560,6 +1596,7 @@ my %path2sub =
      get_diff      => [ \&get_diff,      { owner => 1, } ],
      get_diff_mail => [ \&get_diff_mail, { owner => 1, add_success => 1, } ],
      set_diff_mail => [ \&set_diff_mail, { owner => 1, add_success => 1, } ],
+     send_task_mail => [ \&send_task_mail, { owner => 1, add_success => 1, } ],
       ); 
 
 # Change 'param' method of Plack::Request.

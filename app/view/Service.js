@@ -61,51 +61,69 @@ Ext.define(
                         // wechselt.
                         layoutOnCardChange : true
                     },
-                    tbar         : [
+                    dockedItems  : [
                         {
-                            text          : 'Details zum Dienst',
-                            toggleGroup   : 'polDVGrp',
-                            enableToggle  : true,
-                            pressed       : true
-                        },
-                        '-',
-                        {
-                            text         : 'Benutzer (User) des Dienstes',
-                            toggleGroup  : 'polDVGrp',
-                            enableToggle : true
-                        },
-                        '-',
-                        {
-                            xtype    : 'checkbox',
-                            name     : 'expand_users',
-                            boxLabel : 'User expandieren'
-                        },
-                        {
-                            xtype    : 'checkbox',
-                            name     : 'display_property',
-                            boxLabel : 'Namen statt IPs'
-                        },
-                        {
-                            xtype     : 'checkbox',
-                            name      : 'filter_rules',
-                            boxLabel  : 'Filtern nach Suche',
-                            checked   : true,
-                            disabled  : true,
-                            listeners : {
-                                afterrender: function(c) {
-                                    Ext.create(
-                                        'Ext.tip.ToolTip', {
-                                            target : c.getEl(),
-                                            html   : 'Alle Regeln oder nur zum Suchergebnis passende anzeigen' 
-                                        }
-                                    );
+                            xtype : 'toolbar',
+                            dock  : 'top',
+                            items : [
+                                {
+                                    text          : 'Details zum Dienst',
+                                    toggleGroup   : 'polDVGrp',
+                                    enableToggle  : true,
+                                    pressed       : true
+                                },
+                                '-',
+                                {
+                                    text         : 'Benutzer (User) des Dienstes',
+                                    toggleGroup  : 'polDVGrp',
+                                    enableToggle : true
+                                },
+                                '->',
+                                {
+                                    xtype   : 'printbutton',
+                                    tooltip : 'Druckansicht für Regeln oder User des aktuell ausgewählten Dienstes'
                                 }
-                            }
+                            ]
                         },
-                        '->',
                         {
-                            xtype   : 'printbutton',
-                            tooltip : 'Druckansicht für Regeln oder User des aktuell ausgewählten Dienstes'
+                            xtype : 'toolbar',
+                            dock  : 'top',
+                            items : [
+                                {
+                                    iconCls      : 'icon-add'
+                                },
+                                {
+                                    iconCls      : 'icon-delete'
+                                },
+                                '-',
+                                {
+                                    xtype    : 'checkbox',
+                                    name     : 'expand_users',
+                                    boxLabel : 'User expandieren'
+                                },
+                                {
+                                    xtype    : 'checkbox',
+                                    name     : 'display_property',
+                                    boxLabel : 'Namen statt IPs'
+                                },
+                                {
+                                    xtype     : 'checkbox',
+                                    name      : 'filter_rules',
+                                    boxLabel  : 'Filtern nach Suche',
+                                    checked   : true,
+                                    disabled  : true,
+                                    listeners : {
+                                        afterrender: function(c) {
+                                            Ext.create(
+                                                'Ext.tip.ToolTip', {
+                                                    target : c.getEl(),
+                                                    html   : 'Alle Regeln oder nur zum Suchergebnis passende anzeigen' 
+                                                }
+                                            );
+                                        }
+                                    }
+                                }
+                            ]
                         }
                     ],
                     items : [

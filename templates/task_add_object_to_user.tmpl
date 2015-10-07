@@ -1,0 +1,22 @@
+To: {$email}
+Subject: Auftrag zum Hinzufügen eines Objekts zu "User" des Dienstes {$service}
+Content-Type: text/plain; charset=UTF-8
+
+----------------------------------------------------------------------------------------------------
+Objekt zu "User" eines bestehenden Dienstes hinzufügen
+----------------------------------------------------------------------------------------------------
+
+Dienst: {$service}
+
+Owner des Dienstes: { foreach $o (@srv_owners) { $OUT .= $o . ',' } }
+
+Dieses Objekt soll zu "User" hinzugefügt werden: {$new_user_object}
+
+"User" bisher:
+
+{ foreach $user (@users) {
+    $OUT .= "\t" . $user->{name} . "\n";
+  }    
+}
+
+

@@ -39,7 +39,9 @@ Ext.define(
         extend : 'Ext.app.Controller',
         views  : [ 'panel.form.ServiceDetails' ],
         models : [ 'Service' ],
-        stores : [ 'Service', 'AllServices', 'Rules', 'Users' ],
+        stores : [ 'Service', 'AllServices', 'Rules', 'Users',
+                   'SendNewUserTaskMail'
+                 ],
         refs   : [
             {
                 selector : 'mainview > panel',
@@ -94,6 +96,10 @@ Ext.define(
                 ref      : 'searchCardPanel'   
             },
             {
+                selector : 'adduserwindow > form',
+                ref      : 'addUserFormPanel'
+            },
+            {
                 selector : 'searchwindow > form',
                 ref      : 'searchFormPanel'
             },
@@ -128,6 +134,9 @@ Ext.define(
                     'servicerules' : {
                         printrules : this.onPrintRules
                     },
+                    'serviceview button[iconCls=icon-add]' : {
+                        click : this.onAddUserClick
+                    },
                     'serviceusers' : {
                         select : this.onUserDetailsSelected
                     },
@@ -148,6 +157,9 @@ Ext.define(
                     },
                     'expandedservices' : {
                         beforeshow : this.onShowAllServices
+                    },
+                    'adduserwindow > form button[text="Auftrag per Mail senden"]' : {
+                        click  : this.onSendTaskAsMail
                     },
                     'searchwindow > panel button[toggleGroup="navGrp"]': {
                         click  : this.onNavButtonClick
@@ -213,17 +225,19 @@ Ext.define(
             this.loadServiceStoreWithParams();
         },
 
+        onAddUserClick : function () {
+            var win = Ext.create('PolicyWeb.view.window.AddUser');
+            win.show();
+        },
+
         onPrintRules : function () {
             // This overrides the standard printview mechanism, so
             // that we can add the service name to the grid of rules
             // to be printed.
-            var service_grid = this.getServicesGrid();
-            var sel_model = service_grid.getSelectionModel();
-            var selected  = sel_model.getSelection();
-            if ( selected ) {
-                var service = selected[0].data;
+            var service_name = this.getSelectedServiceName();
+            if ( service_name ) {
                 var rules_grid = this.getRulesGrid();
-                Ext.ux.grid.Printer.mainTitle = 'Dienst: ' + service.name;
+                Ext.ux.grid.Printer.mainTitle = 'Dienst: ' + service_name;
                 Ext.ux.grid.Printer.print( rules_grid );
                 Ext.ux.grid.Printer.mainTitle = '';
             }
@@ -506,6 +520,24 @@ Ext.define(
             }
         },
         
+        onSendTaskAsMail : function() {
+            //var store = getSendNewUserTaskMailStore();
+            var store   = this.getStore('SendNewUserTaskMail');
+            var service = this.getSelectedServiceName();
+            var panel   = this.getAddUserFormPanel();
+            var form    = panel.getForm();
+            if ( form.isValid() ) {
+                
+            }
+            var tfs = panel.query('textfield');
+            var new_object = tfs[0].getValue();
+            var params = {
+                service         : service,
+                new_user_object : new_object
+            };
+            store.load( { params : params  } );
+        },
+
         onServiceDetailsButtonClick : function( button, event, eOpts ) {
             // We have two buttons: "Details zum Dienst"
             // and "Benutzer (User) des Dienstes".
@@ -690,6 +722,38 @@ Ext.define(
                                 );
             }
             search_window.show();
+        },
+
+        //
+        // Helper functions for convenience and code reuse.
+        //
+        getSelectedService : function () {
+            var service;
+            var service_grid = this.getServicesGrid();
+            var sel_model = service_grid.getSelectionModel();
+            var selected  = sel_model.getSelection();
+            if ( selected ) {
+                service = selected[0];
+            }
+            return service;
+        },
+
+        getSelectedServiceData : function () {
+            var data;
+            var service = this.getSelectedService();
+            if ( service ) {
+                data = service.data;
+            }
+            return data || undefined;
+        },        
+
+        getSelectedServiceName : function () {
+            var service_name;
+            var data = this.getSelectedServiceData();
+            if ( data ) {
+                service_name = data.name;
+            }
+            return service_name || undefined;
         }
     }
 );
