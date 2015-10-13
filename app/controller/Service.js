@@ -19,6 +19,7 @@ along with this program. If not, see <http://www.gnu.org/licenses/>.
 var ip_search_tooltip;
 var search_window;
 var print_window;
+var add_user_window;
 var cb_params_key2val = {
     'display_property' : {
         'true'  : 'name',
@@ -161,6 +162,13 @@ Ext.define(
                     'adduserwindow > form button[text="Auftrag per Mail senden"]' : {
                         click  : this.onSendTaskAsMail
                     },
+                    'adduserwindow > form textfield' : { 
+                        specialkey  : this.onSpecialKey
+                    },
+                    'adduserwindow' : { 
+                        beforeshow : this.onAddUserWindowBeforeShow,
+                        show       : this.onAddUserWindowShow
+                    },
                     'searchwindow > panel button[toggleGroup="navGrp"]': {
                         click  : this.onNavButtonClick
                     },
@@ -226,8 +234,8 @@ Ext.define(
         },
 
         onAddUserClick : function () {
-            var win = Ext.create('PolicyWeb.view.window.AddUser');
-            win.show();
+            add_user_window = Ext.create('PolicyWeb.view.window.AddUser');
+            add_user_window.show();
         },
 
         onPrintRules : function () {
@@ -268,6 +276,10 @@ Ext.define(
 
             if ( Ext.isObject( print_window )) {
                 print_window.hide();
+            }
+
+            if ( Ext.isObject( add_user_window )) {
+                add_user_window.close();
             }
 
             // Merge delegated owner and (multiple) std. owners.
@@ -527,15 +539,17 @@ Ext.define(
             var panel   = this.getAddUserFormPanel();
             var form    = panel.getForm();
             if ( form.isValid() ) {
-                
+                var tfs = panel.query('textfield');
+                var new_object    = tfs[0].getValue();
+                var new_object_ip = tfs[1].getValue();
+                var params = {
+                    service            : service,
+                    new_user_object    : new_object,
+                    new_user_object_ip : new_object_ip
+                };
+                store.load( { params : params  } );
+                add_user_window.close();
             }
-            var tfs = panel.query('textfield');
-            var new_object = tfs[0].getValue();
-            var params = {
-                service         : service,
-                new_user_object : new_object
-            };
-            store.load( { params : params  } );
         },
 
         onServiceDetailsButtonClick : function( button, event, eOpts ) {
@@ -654,6 +668,25 @@ Ext.define(
             }
         },
         
+        onSpecialKey : function( field, e ) {
+            // Handle ENTER key press in search textfield.
+            var fp = field.up( 'form' );
+            var button = fp.down( 'button' );
+            if ( e.getKey() == e.ENTER ) {
+                button.fireEvent( 'click', button );
+            }
+        },
+        
+        onAddUserWindowBeforeShow : function( au_window ) {
+            var service = this.getSelectedServiceName();
+            au_window.setTitle('Benutzer("User") hinzufügen für "' + service + '"');
+        },
+
+        onAddUserWindowShow : function( au_window ) {
+            var tf = au_window.query( 'textfield:first' );
+            tf[0].focus( true, 20 );
+        },
+
         onSearchWindowTabchange : function( tab_panel, new_card, old_card ) {
             var tf = new_card.query( 'textfield:first' );
             tf[0].focus( true, 20 );

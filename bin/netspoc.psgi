@@ -1034,7 +1034,11 @@ sub send_task_mail {
     my ($req, $session) = @_;
     my $email = session_email( $req, $session );
     my $service = $req->param('service');
-    my $new_object = $req->param('new_user_object') || 'new object';
+    my $new_object = $req->param('new_user_object')
+        || '<< Name wird ggf. vom Netzbetrieb oder ' .
+        'Dienstanbieter vergeben >>';
+    my $new_object_ip = $req->param('new_user_object_ip')
+        || 'Error: empty IP! (form validation failed!?';
     my $users = get_users($req, $session);
     my $services = load_json("services");
     my $srv_owners = $services->{$service}->{'details'}->{'owner'};
@@ -1044,11 +1048,12 @@ sub send_task_mail {
     my $text = fill_in_file(
         $filename,
         HASH => {
-            email           => $email,
-            service         => $service,
-            srv_owners      => $srv_owners,
-            new_user_object => $new_object,
-            users           => $users
+            email              => $email,
+            service            => $service,
+            srv_owners         => $srv_owners,
+            new_user_object    => $new_object,
+            new_user_object_ip => $new_object_ip,
+            users              => $users
         }
         );
 

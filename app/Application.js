@@ -130,6 +130,21 @@ Ext.application(
                     }
                 }
             );
+
+            // Custom Vtype for textfields in forms (vtype:'IPAddress')
+            Ext.apply(
+                Ext.form.field.VTypes,
+                {
+                    IPAddress :  function(v) {
+                        return /^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}|\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3} \d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}|\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}\/\d{1,2}|\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}-\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}|\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}\/\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}$/.test(v);
+                    },
+                    IPAddressText : "IP-Adresse (mit Maske) oder Range. (Beispiele:" +
+                        "  10.1.2.3 oder 10.1.2.0/24 oder 10.1.2.0 255.255.255.0 " +
+                        "oder 10.1.2.0/255.255.255.0 oder 10.1.2.50-10.2.2.52)",
+                    IPAddressMask : /[\d\.\/-\s]/i
+                }
+            );
+
             // Initialize tooltips manager. Now a tooltip tag
             // "just works" for most components.
             Ext.tip.QuickTipManager.init();

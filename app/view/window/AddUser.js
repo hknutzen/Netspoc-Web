@@ -27,9 +27,9 @@ Ext.define(
             Ext.apply(
                 this,
                 {
-                    title       : 'Objekt als "User" hinzufügen',
-                    width       : 330, 
-                    height      : 105,
+                    title       : 'Objekt zu Benutzern("User") hinzufügen',
+                    width       : 500, 
+                    height      : 158,
                     resizable   : false,
                     items       : [
                         this.buildAddUserForm()
@@ -50,23 +50,43 @@ Ext.define(
                     width       : '100%',
                     items       : [
                         this.buildInfoTextPanel(),
+                        this.buildFieldset(),
                         {
-                            xtype     : 'textfield',
-                            width     : '100%',
-                            name      : 'add_user_string',
-                            blankText : 'Bitte Netz, Host oder Interface angeben'
-                        }
-                    ],
-                    buttons : [
-                        {
-                            text  : 'Auftrag per Mail senden'
+                            xtype : 'button',
+                            text  : 'Auftrag per Mail senden',
+                            width : '100%'
                         }
                     ]
                 }
             );
             return form;
 	},
-        
+
+        buildFieldset : function () {
+            var fieldset = 
+                {
+                    xtype       : 'fieldset',
+                    title       : 'Name und IP-Adresse',
+                    defaultType : 'textfield',
+                    defaults    : {anchor: '100%'},
+                    layout      : 'anchor',
+                    items       : [
+                        {
+                            fieldLabel : 'IP-Adresse (erforderlich)',
+                            name       : 'add_user_ip',
+                            allowBlank : false,
+                            vtype      : 'IPAddress'
+                        },
+                        {
+                            fieldLabel : 'Name (optional)',
+                            name       : 'add_user_string',
+                            labelWidth : 100
+                        }
+                    ]
+                };
+            return fieldset;
+        },
+
         buildInfoTextPanel : function() {
             return Ext.create( 'PolicyWeb.view.container.TaskEmailInfo' );
         }
