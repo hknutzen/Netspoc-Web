@@ -29,7 +29,7 @@ Ext.define(
                 {
                     title       : 'Objekt zu Benutzern("User") hinzufügen',
                     width       : 500, 
-                    height      : 158,
+                    height      : 223,
                     resizable   : false,
                     items       : [
                         this.buildAddUserForm()

@@ -82,6 +82,7 @@ Ext.require( [
                  'PolicyWeb.view.button.PrintAllButton',
                  'PolicyWeb.view.combo.OwnerCombo',
                  'PolicyWeb.view.combo.HistoryCombo',
+                 'PolicyWeb.view.container.TaskEmailInfo',
                  'PolicyWeb.view.panel.grid.AllServices',
                  'PolicyWeb.view.panel.grid.Emails',
                  'PolicyWeb.view.panel.grid.NetworkResources',
