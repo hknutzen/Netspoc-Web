@@ -318,11 +318,18 @@ Ext.define(
         closeOpenWindows : function() {
             this.closeSearchWindow();
             this.closePrintWindow();
+            this.closeAddUserObjectWindow();
         },
 
         closeSearchWindow : function() {
             if ( Ext.isObject( search_window ) ) {
                 search_window.close();
+            }
+        },
+
+        closeAddUserObjectWindow : function() {
+            if ( Ext.isObject( add_user_window ) ) {
+                add_user_window.close();
             }
         },
 
