@@ -319,6 +319,7 @@ Ext.define(
             this.closeSearchWindow();
             this.closePrintWindow();
             this.closeAddUserObjectWindow();
+            this.closeDeleteUserObjectWindow();
         },
 
         closeSearchWindow : function() {
@@ -330,6 +331,12 @@ Ext.define(
         closeAddUserObjectWindow : function() {
             if ( Ext.isObject( add_user_window ) ) {
                 add_user_window.close();
+            }
+        },
+
+        closeDeleteUserObjectWindow : function() {
+            if ( Ext.isObject( del_user_window ) ) {
+                del_user_window.close();
             }
         },
 

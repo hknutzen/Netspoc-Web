@@ -1030,32 +1030,19 @@ sub get_services_and_rules {
     return \@result;
 }
 
-sub send_task_mail {
-    my ($req, $session) = @_;
-    my $email = session_email( $req, $session );
-    my $service = $req->param('service');
-    my $new_object = $req->param('new_user_object')
-        || '<< Name wird ggf. vom Netzbetrieb oder ' .
-        'Dienstanbieter vergeben >>';
-    my $new_object_ip = $req->param('new_user_object_ip')
-        || 'Error: empty IP! (form validation failed!?';
-    my $users = get_users($req, $session);
-    my $services = load_json("services");
-    my $srv_owners = $services->{$service}->{'details'}->{'owner'};
-    my $filename = $config->{template_path} . '/task_add_object_to_user.tmpl';
 
-    # Fill template with data to get text to send via sendmail
-    my $text = fill_in_file(
-        $filename,
-        HASH => {
-            email              => $email,
-            service            => $service,
-            srv_owners         => $srv_owners,
-            new_user_object    => $new_object,
-            new_user_object_ip => $new_object_ip,
-            users              => $users
-        }
-        );
+################################################################################
+#
+# Task Email Workflow
+#
+################################################################################
+
+sub send_template_mail {
+    my ($req, $session, $template, $hash) = @_;
+    my $filename = $config->{template_path} . '/' . $template;
+    my $email = session_email( $req, $session );
+    $hash->{email} = $email;
+    my $text = fill_in_file( $filename, HASH => $hash );
 
     my $sendmail = $config->{sendmail_command};
 
@@ -1069,6 +1056,48 @@ sub send_task_mail {
     close $mail or warn "Can't close $sendmail: $!\n";
     return [];
 }
+
+sub send_user_task_mail {
+    my ($req, $session, $template) = @_;
+    my $service = $req->param('service');
+    my $user_object_name = $req->param('user_object_name')
+        || '<< Name wird ggf. vom Netzbetrieb oder ' .
+        'Dienstanbieter vergeben >>';
+    my $user_object_ip = $req->param('user_object_ip')
+        || 'Error: empty IP! (form validation failed!?';
+    my $users = get_users($req, $session);
+    my $services = load_json("services");
+    my $srv_owners = $services->{$service}->{'details'}->{'owner'};
+
+    # Hash to fill template with data to send via sendmail.
+    my $hash = {
+        service          => $service,
+        srv_owners       => $srv_owners,
+        user_object_name => $user_object_name,
+        user_object_ip   => $user_object_ip,
+        users            => $users
+    };
+    send_template_mail( $req, $session, $template, $hash );
+}
+
+sub send_delete_user_task_mail {
+    my ($req, $session) = @_;
+    my $template = 'task_delete_object_from_user.tmpl';
+    send_user_task_mail( $req, $session, $template );
+}
+
+sub send_add_user_task_mail {
+    my ($req, $session) = @_;
+    my $template = 'task_add_object_to_user.tmpl';
+    send_user_task_mail( $req, $session, $template );
+}
+
+sub service_users {
+    my ($req, $session) = @_;
+    my $users = get_users($req, $session);
+    return [ map { { name => $_->{ip} . "\t" . $_->{name} } } @{$users} ];
+}
+
 
 ####################################################################
 # Diff
@@ -1601,7 +1630,9 @@ my %path2sub =
      get_diff      => [ \&get_diff,      { owner => 1, } ],
      get_diff_mail => [ \&get_diff_mail, { owner => 1, add_success => 1, } ],
      set_diff_mail => [ \&set_diff_mail, { owner => 1, add_success => 1, } ],
-     send_task_mail => [ \&send_task_mail, { owner => 1, add_success => 1, } ],
+     service_users => [ \&service_users, { owner => 1, add_success => 1, } ],
+     send_add_user_task_mail => [ \&send_add_user_task_mail, { owner => 1, add_success => 1, } ],
+     send_delete_user_task_mail => [ \&send_delete_user_task_mail, { owner => 1, add_success => 1, } ],
       ); 
 
 # Change 'param' method of Plack::Request.

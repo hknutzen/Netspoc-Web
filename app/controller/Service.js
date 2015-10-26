@@ -20,6 +20,7 @@ var ip_search_tooltip;
 var search_window;
 var print_window;
 var add_user_window;
+var del_user_window;
 var cb_params_key2val = {
     'display_property' : {
         'true'  : 'name',
@@ -101,6 +102,10 @@ Ext.define(
                 ref      : 'addUserFormPanel'
             },
             {
+                selector : 'deluserwindow > form',
+                ref      : 'delUserFormPanel'
+            },
+            {
                 selector : 'searchwindow > form',
                 ref      : 'searchFormPanel'
             },
@@ -138,6 +143,9 @@ Ext.define(
                     'serviceview button[iconCls=icon-add]' : {
                         click : this.onAddUserClick
                     },
+                    'serviceview button[iconCls=icon-delete]' : {
+                        click : this.onDeleteUserClick
+                    },
                     'serviceusers' : {
                         select : this.onUserDetailsSelected
                     },
@@ -160,7 +168,7 @@ Ext.define(
                         beforeshow : this.onShowAllServices
                     },
                     'adduserwindow > form button[text="Auftrag per Mail senden"]' : {
-                        click  : this.onSendTaskAsMail
+                        click  : this.onSendAddUserTaskAsMail
                     },
                     'adduserwindow > form textfield' : { 
                         specialkey  : this.onSpecialKey
@@ -168,6 +176,12 @@ Ext.define(
                     'adduserwindow' : { 
                         beforeshow : this.onAddUserWindowBeforeShow,
                         show       : this.onAddUserWindowShow
+                    },
+                    'deluserwindow' : { 
+                        afterrender : this.onAfterDelUserWindowRender
+                    },
+                    'deluserwindow > form button[text="Auftrag per Mail senden"]' : {
+                        click  : this.onSendDelUserTaskAsMail
                     },
                     'searchwindow > panel button[toggleGroup="navGrp"]': {
                         click  : this.onNavButtonClick
@@ -238,6 +252,11 @@ Ext.define(
             add_user_window.show();
         },
 
+        onDeleteUserClick : function () {
+            del_user_window = Ext.create('PolicyWeb.view.window.DeleteUser');
+            del_user_window.show();
+        },
+
         onPrintRules : function () {
             // This overrides the standard printview mechanism, so
             // that we can add the service name to the grid of rules
@@ -280,6 +299,10 @@ Ext.define(
 
             if ( Ext.isObject( add_user_window )) {
                 add_user_window.close();
+            }
+
+            if ( Ext.isObject( del_user_window )) {
+                del_user_window.close();
             }
 
             // Merge delegated owner and (multiple) std. owners.
@@ -532,24 +555,60 @@ Ext.define(
             }
         },
         
-        onSendTaskAsMail : function() {
-            //var store = getSendNewUserTaskMailStore();
+        onSendAddUserTaskAsMail : function() {
             var store   = this.getStore('SendNewUserTaskMail');
             var service = this.getSelectedServiceName();
             var panel   = this.getAddUserFormPanel();
             var form    = panel.getForm();
             if ( form.isValid() ) {
                 var tfs = panel.query('textfield');
-                var new_object    = tfs[0].getValue();
-                var new_object_ip = tfs[1].getValue();
+                var user_object_ip   = tfs[0].getValue();
+                var user_object_name = tfs[1].getValue();
                 var params = {
-                    service            : service,
-                    new_user_object    : new_object,
-                    new_user_object_ip : new_object_ip
+                    service          : service,
+                    user_object_name : user_object_name,
+                    user_object_ip   : user_object_ip
                 };
                 store.load( { params : params  } );
                 add_user_window.close();
             }
+        },
+
+        onSendDelUserTaskAsMail : function() {
+            var store   = this.getStore('SendDeleteUserTaskMail');
+            var service = this.getSelectedServiceName();
+            var panel   = this.getDelUserFormPanel();
+            var form    = panel.getForm();
+            if ( form.isValid() ) {
+                var combos = panel.query('combo');
+                var value  = combos[0].getValue();
+                var array  = value.split("\t");
+                var user_object_ip   = array[0];
+                var user_object_name = array[1];
+                var params = {
+                    service          : service,
+                    user_object_name : user_object_name,
+                    user_object_ip   : user_object_ip
+                };
+                store.load( { params : params  } );
+                del_user_window.close();
+            }
+        },
+
+        onAfterDelUserWindowRender : function( window ) {
+            var service = this.getSelectedServiceName();
+            var params = {
+                service : service
+            };
+            var combo = window.down('combo');
+            //debugger;
+            var store = combo.getStore();
+            store.on(
+                'beforeload',
+                function(store, operation, eOpts) {
+                    operation.params = params;
+                }
+            );
         },
 
         onServiceDetailsButtonClick : function( button, event, eOpts ) {
@@ -670,8 +729,8 @@ Ext.define(
         
         onSpecialKey : function( field, e ) {
             // Handle ENTER key press in search textfield.
-            var fp = field.up( 'form' );
-            var button = fp.down( 'button' );
+            var form_panel = field.up( 'form' );
+            var button = form_panel.down( 'button' );
             if ( e.getKey() == e.ENTER ) {
                 button.fireEvent( 'click', button );
             }
