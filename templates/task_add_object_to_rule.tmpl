@@ -1,0 +1,37 @@
+To: {$email}
+Subject: Auftrag: Hinzufügen eines Objekts zu Regel des Dienstes "{$service}"
+Content-Type: text/plain; charset=UTF-8
+
+Senden Sie diese Mail nach eingehender Prüfung bitte weiter an das Kommunikationsmanagement
+Dataport, damit nach dortiger Prüfung und Einholung eventuell erforderlicher Genehmigungen
+ein Auftrag für die gewünschte Änderung des Regelwerks in Netspoc erteilt wird.
+
+----------------------------------------------------------------------------------------------------
+Objekt zu Regel hinzufügen
+----------------------------------------------------------------------------------------------------
+
+Dienst: {$service}
+
+Owner des Dienstes: { foreach $o (@srv_owners) { $OUT .= $o . ',' } }
+
+
+Es soll bei unten stehender Regel zu "{$add_what}" hinzugefügt werden:	{$new_object}
+
+
+----------------------------------------------------
+Regel bisher:
+----------------------------------------------------
+
+Aktion	   Quelle                                   Ziel                                     Protokoll
+
+{
+  for my $i (0..$max) {
+    my $action = sprintf("%-10s", $actions[$i] || '');
+    my $src    = sprintf("%-40s", $sources[$i] || '');
+    my $dst    = sprintf("%-40s", $dests[$i]   || '');
+    my $prt    = sprintf("%-30s", $protos[$i]  || '');
+    $OUT .= "$action $src $dst $prt\n";
+  }
+}
+
+

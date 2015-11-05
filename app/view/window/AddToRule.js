@@ -17,34 +17,35 @@ along with this program. If not, see <http://www.gnu.org/licenses/>.
 */
 
 Ext.define(
-    'PolicyWeb.view.window.AddUser',
+    'PolicyWeb.view.window.AddToRule',
     {
         extend  : 'Ext.window.Window',
-        alias   : 'widget.adduserwindow',
+        alias   : 'widget.addtorulewindow',
 
         initComponent : function() {
             // Force defaults
             Ext.apply(
                 this,
                 {
-                    title       : 'Objekt zu Benutzern("User") hinzufügen',
+                    title       : 'Objekt zu Regel hinzufügen',
                     width       : 500,
-                    height      : 221,
+                    height      : 354,
                     resizable   : false,
                     items       : [
-                        this.buildAddUserForm()
+                        this.buildAddToRuleForm()
                     ]
                 }
             );
             this.callParent(arguments);
         },
         
-        buildAddUserForm : function () {
-            var datatip = new Ext.ux.DataTip();
+        buildAddToRuleForm : function () {
             var form = Ext.widget(
                 {
                     xtype       : 'form',
-                    plugins     : datatip,
+                    method      : 'POST',
+                    jsonSubmit  : true,
+                    url         : 'backend/add_object_to_rule',
                     buttonAlign : 'center',
                     bodyPadding : 5,
                     width       : '100%',
@@ -71,20 +72,51 @@ Ext.define(
                     defaults    : {anchor: '100%'},
                     layout      : 'anchor',
                     items       : [
-                        {
-                            fieldLabel : 'IP-Adresse (erforderlich)',
-                            name       : 'add_user_ip',
-                            allowBlank : false,
-                            vtype      : 'IPAddress'
-                        },
-                        {
-                            fieldLabel : 'Name (optional)',
-                            name       : 'add_user_string',
-                            labelWidth : 100
-                        }
+                        this.createRadioGroup(),
+                        this.createTextField(),
+                        this.createGridPanel()
                     ]
                 };
             return fieldset;
+        },
+
+        createRadioGroup : function() {
+            return {
+                xtype      : 'radiogroup',
+                fieldLabel : 'Hinzufügen zu',
+                columns    : 1,
+                vertical   : true,
+                items      : [
+                    { boxLabel : 'Quelle',    name : 'rb', inputValue : 'Quelle'},
+                    { boxLabel : 'Ziel',      name : 'rb', inputValue : 'Ziel' },
+                    { boxLabel : 'Protokoll', name : 'rb',
+                      inputValue : 'Protokoll', checked : true }
+                ]
+            };
+        },
+
+        createTextField : function() {
+            return {
+                fieldLabel : 'Hinzufügen',
+                name       : 'object2add_to_rule',
+                allowBlank : false
+            };
+        },
+
+        createGridPanel : function() {
+            // Important: We have to create a new store here, so that the
+            // grid displaying the original rules stays untouched!
+            var store = Ext.create('PolicyWeb.store.Rules');
+            var grid = Ext.create(
+                'PolicyWeb.view.panel.grid.Rules',
+                {
+                    xtype  : 'servicerules',
+                    store  : store,
+                    height : 100,
+                    layout : 'fit'
+                }
+            );
+            return grid;
         },
 
         buildInfoTextPanel : function() {

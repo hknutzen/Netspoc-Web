@@ -130,7 +130,6 @@ Ext.define(
                 this.setOwnerState({ name  : owner, 
                                      alias : alias });
                 // Get theme from session.
-                // FOO
             }
             // Owner was never selected, 
             // check number of available owners.

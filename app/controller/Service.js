@@ -21,6 +21,8 @@ var search_window;
 var print_window;
 var add_user_window;
 var del_user_window;
+var add_to_rule_window;
+var del_from_rule_window;
 var cb_params_key2val = {
     'display_property' : {
         'true'  : 'name',
@@ -106,6 +108,10 @@ Ext.define(
                 ref      : 'delUserFormPanel'
             },
             {
+                selector : 'addtorulewindow > form',
+                ref      : 'addToRuleFormPanel'
+            },
+            {
                 selector : 'searchwindow > form',
                 ref      : 'searchFormPanel'
             },
@@ -138,7 +144,10 @@ Ext.define(
                         select : this.onServiceSelected
                     },
                     'servicerules' : {
-                        printrules : this.onPrintRules
+                        printrules      : this.onPrintRules
+                    },
+                    'servicerules actioncolumn' : {
+                        addobjecttorule : this.onAddObjectToRule
                     },
                     'serviceview button[iconCls=icon-add]' : {
                         click : this.onAddUserClick
@@ -168,7 +177,7 @@ Ext.define(
                         beforeshow : this.onShowAllServices
                     },
                     'adduserwindow > form button[text="Auftrag per Mail senden"]' : {
-                        click  : this.onSendAddUserTaskAsMail
+                        click : this.onSendAddUserTaskAsMail
                     },
                     'adduserwindow > form textfield' : { 
                         specialkey  : this.onSpecialKey
@@ -181,7 +190,16 @@ Ext.define(
                         afterrender : this.onAfterDelUserWindowRender
                     },
                     'deluserwindow > form button[text="Auftrag per Mail senden"]' : {
-                        click  : this.onSendDelUserTaskAsMail
+                        click : this.onSendDelUserTaskAsMail
+                    },
+                    'addtorulewindow' : { 
+                        show : this.onAddToRuleWindowShow
+                    },
+                    'addtorulewindow > form textfield' : { 
+                        specialkey  : this.onSpecialKey
+                    },
+                    'addtorulewindow > form button[text="Auftrag per Mail senden"]' : {
+                        click : this.onSendAddToRuleTaskAsMail
                     },
                     'searchwindow > panel button[toggleGroup="navGrp"]': {
                         click  : this.onNavButtonClick
@@ -255,6 +273,45 @@ Ext.define(
         onDeleteUserClick : function () {
             del_user_window = Ext.create('PolicyWeb.view.window.DeleteUser');
             del_user_window.show();
+        },
+
+        onAddObjectToRule : function (view, rowIndex, colIndex, item, e,
+                                      record, row, action) {
+            add_to_rule_window = Ext.create('PolicyWeb.view.window.AddToRule');
+            var grid = add_to_rule_window.down('servicerules');
+            var store = grid.getStore();
+            store.on(
+                'load',
+                function () {
+                    if ( rowIndex > 0 ) {
+                        var count = store.getTotalCount();
+                        store.removeAt( 0, rowIndex );
+                        store.removeAt( 1, count - rowIndex );
+                    }
+                    var rec, what, radio;
+                    var field2label = {
+                        'src'   : 'Quelle',
+                        'dst'   : 'Ziel'
+                    };
+                    rec = store.getAt(0);
+                    what = rec.raw.has_user === 'both' ?
+                        [ 'src', 'dst' ]  :  [ rec.raw.has_user ];
+                    for ( i=0; i<what.length; i++) {
+                        var selector = 'radio[boxLabel="' + field2label[what[i]] + '"]';
+                        radio = add_to_rule_window.down( selector );
+                        radio.disable();
+                    }
+                }
+            );
+            store.load(
+                {
+                    params : {
+                        service : this.getSelectedServiceName()
+                    }
+                }
+            );
+            add_to_rule_window.show();
+            grid.down('actioncolumn').hide();
         },
 
         onPrintRules : function () {
@@ -595,13 +652,52 @@ Ext.define(
             }
         },
 
+        onSendAddToRuleTaskAsMail : function() {
+            var panel = this.getAddToRuleFormPanel();
+            var form  = panel.getForm();
+            var store, record, data;
+            if ( form.isValid() ) {
+                store = panel.down('grid').getStore();
+                record = store.getAt(0);
+                data = Ext.encode(
+                    {
+                        action : record.get('action'),
+                        src    : record.get('src'),
+                        dst    : record.get('dst'),
+                        prt    : record.get('prt')
+                    }
+                );
+
+                var new_object = panel.query('textfield')[0].getValue();
+
+                Ext.Ajax.request(
+                    {
+                        url      : 'backend/send_add_to_rule_task_mail',
+                        method   : 'POST',
+                        jsonData : data,
+                        params   : {
+                            service      : this.getSelectedServiceName(),
+                            history      : appstate.getHistory(),
+                            active_owner : appstate.getOwner(),
+                            add_what     : panel.down('radio').getGroupValue(),
+                            new_object   : new_object
+                        },
+                        success : function ( response ) {
+                            add_to_rule_window.close();
+                        },
+                        failure : function ( response ) {
+                        }
+                    }
+                );
+            } 
+        },
+
         onAfterDelUserWindowRender : function( window ) {
             var service = this.getSelectedServiceName();
             var params = {
                 service : service
             };
             var combo = window.down('combo');
-            //debugger;
             var store = combo.getStore();
             store.on(
                 'beforeload',
@@ -743,6 +839,11 @@ Ext.define(
 
         onAddUserWindowShow : function( au_window ) {
             var tf = au_window.query( 'textfield:first' );
+            tf[0].focus( true, 20 );
+        },
+
+        onAddToRuleWindowShow : function( a2r_window ) {
+            var tf = a2r_window.query( 'textfield:first' );
             tf[0].focus( true, 20 );
         },
 

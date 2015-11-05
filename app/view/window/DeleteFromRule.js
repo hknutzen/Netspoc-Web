@@ -17,29 +17,29 @@ along with this program. If not, see <http://www.gnu.org/licenses/>.
 */
 
 Ext.define(
-    'PolicyWeb.view.window.AddUser',
+    'PolicyWeb.view.window.DeleteUser',
     {
         extend  : 'Ext.window.Window',
-        alias   : 'widget.adduserwindow',
+        alias   : 'widget.deluserwindow',
 
         initComponent : function() {
             // Force defaults
             Ext.apply(
                 this,
                 {
-                    title       : 'Objekt zu Benutzern("User") hinzufügen',
-                    width       : 500,
-                    height      : 221,
+                    title       : 'Objekt von Benutzern("User") entfernen',
+                    width       : 500, 
+                    height      : 182,
                     resizable   : false,
                     items       : [
-                        this.buildAddUserForm()
+                        this.buildDeleteUserForm()
                     ]
                 }
             );
             this.callParent(arguments);
         },
         
-        buildAddUserForm : function () {
+        buildDeleteUserForm : function () {
             var datatip = new Ext.ux.DataTip();
             var form = Ext.widget(
                 {
@@ -63,24 +63,21 @@ Ext.define(
 	},
 
         buildFieldset : function () {
+            var store = Ext.create(
+                'PolicyWeb.store.ServiceUsers'
+            );
             var fieldset = 
                 {
                     xtype       : 'fieldset',
-                    title       : 'Name und IP-Adresse',
-                    defaultType : 'textfield',
+                    title       : 'Zu entfernendes Objekt auswählen',
+                    defaultType : 'combo',
                     defaults    : {anchor: '100%'},
                     layout      : 'anchor',
                     items       : [
                         {
-                            fieldLabel : 'IP-Adresse (erforderlich)',
-                            name       : 'add_user_ip',
-                            allowBlank : false,
-                            vtype      : 'IPAddress'
-                        },
-                        {
-                            fieldLabel : 'Name (optional)',
-                            name       : 'add_user_string',
-                            labelWidth : 100
+                            displayField : 'name',
+                            valueField   : 'name',
+                            store        : store
                         }
                     ]
                 };
