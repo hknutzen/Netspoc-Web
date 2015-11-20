@@ -1100,42 +1100,58 @@ sub service_users {
 
 sub send_add_to_rule_task_mail {
     my ($req, $session) = @_;
+    my $template = 'task_add_object_to_rule.tmpl';
+    if ( $req->method eq "POST" ) {
+        my $hash = generate_hash_from_json( $req );
+        send_template_mail( $req, $session, $template, $hash );
+    }
+}
+
+sub send_del_from_rule_task_mail {
+    my ($req, $session) = @_;
+    my $service = $req->param('service');
+    my $template = 'task_delete_from_rule.tmpl';
+    if ( $req->method eq "POST" ) {
+        my $hash = generate_hash_from_json( $req );
+        send_template_mail( $req, $session, $template, $hash );
+    }
+}
+
+sub generate_hash_from_json {
+    my ($req ) = @_;
+    my ( @actions, @sources, @dests, @protos );
     my $service = $req->param('service');
     my $services = load_json("services");
     my $srv_owners = $services->{$service}->{'details'}->{'owner'};
-    my $template = 'task_add_object_to_rule.tmpl';
-    my $new_object = $req->param('new_object');
-    my $add_what = $req->param('add_what');
-    my ( @actions, @sources, @dests, @protos );
+    my $object = $req->param('object');
+    my $what = $req->param('what');
 
     use List::Util qw( max );
     use HTML::Strip;
+
     my $hs = HTML::Strip->new();
-    if ( $req->method eq "POST" ) {
-        my $json = decode_json( $req->content );
-        my $stripped_src = trim( $hs->parse( $json->{src} ) );
-        my $stripped_dst = trim( $hs->parse( $json->{dst} ) );
-        @actions = split /\s*<br>\s*/, $json->{action};
-        @sources = split /\s+/, $stripped_src;
-        @dests   = split /\s+/, $stripped_dst;
-        @protos  = split /\s*<br>\s*/, $json->{prt};
-
-        # Determine maximum of entries in src, dst and proto of rule
-        my $max  = max( scalar @sources, scalar @dests, scalar @protos );
-
-        my $hash = {
-            service    => $service,
-            srv_owners => $srv_owners,
-            add_what   => $add_what,
-            actions    => \@actions,
-            sources    => \@sources,
-            dests      => \@dests,
-            protos     => \@protos,
-            max        => $max,
-            new_object => $new_object
-        };
-        send_template_mail( $req, $session, $template, $hash );
-    }
+    my $json = decode_json( $req->content );
+    my $stripped_src = trim( $hs->parse( $json->{src} ) );
+    my $stripped_dst = trim( $hs->parse( $json->{dst} ) );
+    @actions = split /\s*<br>\s*/, $json->{action};
+    @sources = split /\s+/, $stripped_src;
+    @dests   = split /\s+/, $stripped_dst;
+    @protos  = split /\s*<br>\s*/, $json->{prt};
+    
+    # Determine maximum of entries in src, dst and proto of rule
+    my $max  = max( scalar @sources, scalar @dests, scalar @protos );
+    
+    my $hash = {
+        service    => $service,
+        srv_owners => $srv_owners,
+        what       => $what,
+        actions    => \@actions,
+        sources    => \@sources,
+        dests      => \@dests,
+        protos     => \@protos,
+        max        => $max,
+        object     => $object
+    };
 }
 
 sub  trim { my $s = shift; $s =~ s/^\s+|\s+$//g; return $s };
@@ -1676,6 +1692,7 @@ my %path2sub =
      send_add_user_task_mail => [ \&send_add_user_task_mail, { owner => 1, add_success => 1, } ],
      send_delete_user_task_mail => [ \&send_delete_user_task_mail, { owner => 1, add_success => 1, } ],
      send_add_to_rule_task_mail => [ \&send_add_to_rule_task_mail, { owner => 1, add_success => 1, } ],
+     send_del_from_rule_task_mail => [ \&send_del_from_rule_task_mail, { owner => 1, add_success => 1, } ],
       ); 
 
 # Change 'param' method of Plack::Request.

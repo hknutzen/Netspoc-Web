@@ -17,19 +17,18 @@ along with this program. If not, see <http://www.gnu.org/licenses/>.
 */
 
 Ext.define(
-    'PolicyWeb.view.window.DeleteUser',
+    'PolicyWeb.view.window.DeleteFromRule',
     {
         extend  : 'Ext.window.Window',
-        alias   : 'widget.deluserwindow',
+        alias   : 'widget.delfromrulewindow',
 
         initComponent : function() {
-            // Force defaults
             Ext.apply(
                 this,
                 {
-                    title       : 'Objekt von Benutzern("User") entfernen',
+                    title       : 'Quelle/Ziel/Protokoll aus Regel entfernen',
                     width       : 500, 
-                    height      : 182,
+                    height      : 254,
                     resizable   : false,
                     items       : [
                         this.buildDeleteUserForm()
@@ -44,7 +43,11 @@ Ext.define(
             var form = Ext.widget(
                 {
                     xtype       : 'form',
-                    plugins     : datatip,
+/*
+                    method      : 'POST',
+                    jsonSubmit  : true,
+                    url         : 'backend/remove_object_from_rule',
+*/
                     buttonAlign : 'center',
                     bodyPadding : 5,
                     width       : '100%',
@@ -63,25 +66,42 @@ Ext.define(
 	},
 
         buildFieldset : function () {
-            var store = Ext.create(
-                'PolicyWeb.store.ServiceUsers'
-            );
             var fieldset = 
                 {
                     xtype       : 'fieldset',
                     title       : 'Zu entfernendes Objekt auswählen',
-                    defaultType : 'combo',
                     defaults    : {anchor: '100%'},
                     layout      : 'anchor',
                     items       : [
-                        {
-                            displayField : 'name',
-                            valueField   : 'name',
-                            store        : store
-                        }
+                        this.createRadioGroup(),
+                        this.createComboBox()
                     ]
                 };
             return fieldset;
+        },
+
+        createComboBox : function() {
+            return {
+                xtype        : 'combo',
+                displayField : 'item',
+                valueField   : 'item',
+                queryMode    : 'local',
+                allowBlank   : false
+            };
+        },
+
+        createRadioGroup : function() {
+            return {
+                xtype      : 'radiogroup',
+                fieldLabel : 'Entfernen aus',
+                columns    : 1,
+                vertical   : true,
+                items      : [
+                    { boxLabel : 'Quelle',    name : 'rb', inputValue : 'Quelle'    },
+                    { boxLabel : 'Ziel',      name : 'rb', inputValue : 'Ziel'      },
+                    { boxLabel : 'Protokoll', name : 'rb', inputValue : 'Protokoll' }
+                ]
+            };
         },
 
         buildInfoTextPanel : function() {

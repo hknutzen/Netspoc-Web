@@ -1,5 +1,5 @@
 To: {$email}
-Subject: Auftrag: Hinzufügen eines Objekts zu Regel des Dienstes "{$service}"
+Subject: Auftrag: Löschen eines Objekts aus einer Regel des Dienstes "{$service}"
 MIME-Version: 1.0
 Content-Type: text/enriched; charset=UTF-8
 <fontfamily><param>courier</param><fixed><nofill>
@@ -9,7 +9,7 @@ Dataport, damit nach dortiger Prüfung und Einholung eventuell erforderlicher Ge
 ein Auftrag für die gewünschte Änderung des Regelwerks in Netspoc erteilt wird.
 
 ------------------------------------------------------------------------------------------------------
-Auftrag: Objekt zu Regel hinzufügen
+Auftrag: Objekt aus Regel löschen
 ------------------------------------------------------------------------------------------------------
 
 Dienst: {$service}
@@ -17,7 +17,7 @@ Dienst: {$service}
 Owner des Dienstes: { foreach $o (@srv_owners) { $OUT .= $o . ',' } }
 
 
-Es soll bei unten stehender Regel zu "{$what}" hinzugefügt werden:	{$object}
+Es soll bei unten stehender Regel aus "{$what}" gelöscht werden:	{$object}
 
 
 ------------------------------------------------------------------------------------------------------

@@ -100,6 +100,8 @@ Ext.require( [
                  'PolicyWeb.view.tree.Diff',
                  'PolicyWeb.view.window.ExpandedServices',
                  'PolicyWeb.view.window.About',
+                 'PolicyWeb.view.window.DeleteUser',
+                 'PolicyWeb.view.window.DeleteFromRule',
                  'PolicyWeb.view.window.Search'
              ]
            );
@@ -109,7 +111,7 @@ Ext.application(
 	name               : 'PolicyWeb',
         appFolder          : './app',
 	autoCreateViewport : true,
-	models             : [ 'Netspoc', 'Service', 'Rule', 'Owner' ],
+	models             : [ 'Netspoc', 'Service', 'Rule', 'Owner', 'Item' ],
 	stores             : [ 'Netspoc', 'NetspocState', 'Service',
                                'Rules', 'Users', 'Emails', 'Owner',
                                'AllOwners', 'AllServices', 'History',
