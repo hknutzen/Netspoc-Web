@@ -314,7 +314,7 @@ Ext.define(
                         function () {
                             var selected = radio.getGroupValue();
                             var field = label2field[selected];
-                            var re = /\s*\<br\>\s*/;
+                            var re = /\s*<br>\s*/;
                             var raw_data = rec.get( field ).split(re);
                             var to_array_of_hashes = function(item) {
                                 return {
