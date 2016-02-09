@@ -76,6 +76,10 @@ Ext.define(
                 ref      : 'ownerField'
             },
             {
+                selector : 'serviceview  button[iconCls="icon-delete"]',
+                ref      : 'deleteFromUserButton'
+            },
+            {
                 selector : '#ownerEmails',
                 ref      : 'ownerEmails'
             },
@@ -250,11 +254,43 @@ Ext.define(
 
             var userstore = this.getUsersStore();
             userstore.on( 'load',
-                      function () {
+                      function ( ustore ) {
+                          // Always select first user object.
                           this.getServiceUsersView().select0();
+                          
+                          /* Delete object from user only makes sense
+                           * if there are more than one elements present.
+                           * Disable button, if there is only one user object.
+                           */
+                          var tc = ustore.getTotalCount();
+                          var button = this.getDeleteFromUserButton();
+                          if ( tc < 2 ) {
+                              button.disable();
+                          }
+                          else {
+                              button.enable();
+                          }
                       },
                       this
                     );
+
+            var rulesstore = this.getRulesStore();
+            rulesstore.on( 'load',
+                          function ( rstore ) {
+                              // Only show buttons to change rule for own services
+                              var grid = this.getRulesGrid();
+                              var relation = this.getCurrentRelation();
+                              var ac = grid.down('actioncolumn');
+                              if ( relation === 'owner' ) {
+                                  ac.show();
+                              }
+                              else {
+                                  ac.hide();
+                              }
+                          },
+                           this
+                        );
+            
             appstate.addListener(
                 'changed', 
                 function () {
@@ -713,7 +749,7 @@ Ext.define(
                     user_object_ip   : user_object_ip
                 };
                 store.load( { params : params  } );
-                del_from_rule_window.close();
+                del_user_window.close();
             }
         },
 
