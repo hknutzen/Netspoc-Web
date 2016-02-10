@@ -47,6 +47,26 @@ Ext.define(
                 header    : 'Protokoll',
                 flex      : 2,
                 dataIndex : 'prt'
+            },
+            {
+                xtype : 'actioncolumn',
+                width : 36,
+                items : [
+                    {
+                        icon    : '/silk-icons/add.png',
+                        tooltip : 'Objekt zu Regel hinzufügen',
+                        handler: function(view, rowIndex, colIndex, item, e, record, row) {
+                            this.fireEvent('addobjecttorule', view, rowIndex, colIndex, item, e, record, row, 'add');
+                        }
+                    },
+                    {
+                        icon    : '/silk-icons/delete.png',
+                        tooltip : 'Objekt aus Regel entfernen',
+                        handler: function(view, rowIndex, colIndex, item, e, record, row) {
+                            this.fireEvent('deleteobjectfromrule', view, rowIndex, colIndex, item, e, record, row, 'delete');
+                        }
+                    }
+                ]
             }
         ],
         defaults : {

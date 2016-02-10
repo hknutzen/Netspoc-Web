@@ -1,0 +1,30 @@
+To: {$email}
+Subject: Auftrag:  Löschen eines Objekts aus den Benutzern("User") des Dienstes "{$service}"
+Content-Type: text/plain; charset=UTF-8
+
+Senden Sie diese Mail nach eingehender Prüfung bitte weiter an das Kommunikationsmanagement
+Dataport, damit nach dortiger Prüfung und Einholung eventuell erforderlicher Genehmigungen
+ein Auftrag für die gewünschte Änderung des Regelwerks in Netspoc erteilt wird.
+
+----------------------------------------------------------------------------------------------------
+Objekt aus Benutzern("User") eines bestehenden Dienstes entfernen
+----------------------------------------------------------------------------------------------------
+
+Dienst: {$service}
+
+Owner des Dienstes: { foreach $o (@srv_owners) { $OUT .= $o . ',' } }
+
+
+Dieses Objekt soll aus den Benutzern("User") gelöscht werden:
+  - Name	: {$user_object_name}
+  - IP-Adresse	: {$user_object_ip}
+
+
+Benutzer("User") des Dienstes aktuell:
+
+{ foreach $user (@users) {
+    $OUT .= "\t" . $user->{ip} . "\t(" . $user->{name} . ")\n";
+  }    
+}
+
+

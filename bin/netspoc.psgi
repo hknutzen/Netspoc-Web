@@ -45,6 +45,7 @@ use lib $FindBin::Bin;
 use Load_Config;
 use User_Store;
 use Template;
+use Text::Template 'fill_in_file';
 use JSON_Cache;
 use Policy_Diff;
 
@@ -1029,6 +1030,133 @@ sub get_services_and_rules {
     return \@result;
 }
 
+
+################################################################################
+#
+# Task Email Workflow
+#
+################################################################################
+
+sub send_template_mail {
+    my ($req, $session, $template, $hash) = @_;
+    my $filename = $config->{template_path} . '/' . $template;
+    my $email = session_email( $req, $session );
+    $hash->{email} = $email;
+    my $text = fill_in_file( $filename, HASH => $hash );
+
+    my $sendmail = $config->{sendmail_command};
+
+    # -t: read recipient address from mail text
+    # -f: set sender address
+    # -F: don't use sender full name
+    open(my $mail, '|-', "$sendmail -t -F '' -f $config->{noreply_address}") or 
+	internal_err "Can't open $sendmail: $!";
+    print $mail $text;
+    #print $mail Encode::encode('UTF-8', $text);
+    close $mail or warn "Can't close $sendmail: $!\n";
+    return [];
+}
+
+sub send_user_task_mail {
+    my ($req, $session, $template) = @_;
+    my $service = $req->param('service');
+    my $user_object_name = $req->param('user_object_name')
+        || '<< Name wird ggf. vom Netzbetrieb oder ' .
+        'Dienstanbieter vergeben >>';
+    my $user_object_ip = $req->param('user_object_ip')
+        || 'Error: empty IP! (form validation failed!?';
+    my $users = get_users($req, $session);
+    my $services = load_json("services");
+    my $srv_owners = $services->{$service}->{'details'}->{'owner'};
+
+    # Hash to fill template with data to send via sendmail.
+    my $hash = {
+        service          => $service,
+        srv_owners       => $srv_owners,
+        user_object_name => $user_object_name,
+        user_object_ip   => $user_object_ip,
+        users            => $users
+    };
+    send_template_mail( $req, $session, $template, $hash );
+}
+
+sub send_delete_user_task_mail {
+    my ($req, $session) = @_;
+    my $template = 'task_delete_object_from_user.tmpl';
+    send_user_task_mail( $req, $session, $template );
+}
+
+sub send_add_user_task_mail {
+    my ($req, $session) = @_;
+    my $template = 'task_add_object_to_user.tmpl';
+    send_user_task_mail( $req, $session, $template );
+}
+
+sub service_users {
+    my ($req, $session) = @_;
+    my $users = get_users($req, $session);
+    return [ map { { name => $_->{ip} . "\t" . $_->{name} } } @{$users} ];
+}
+
+sub send_add_to_rule_task_mail {
+    my ($req, $session) = @_;
+    my $template = 'task_add_object_to_rule.tmpl';
+    if ( $req->method eq "POST" ) {
+        my $hash = generate_hash_from_json( $req );
+        send_template_mail( $req, $session, $template, $hash );
+    }
+}
+
+sub send_del_from_rule_task_mail {
+    my ($req, $session) = @_;
+    my $service = $req->param('service');
+    my $template = 'task_delete_from_rule.tmpl';
+    if ( $req->method eq "POST" ) {
+        my $hash = generate_hash_from_json( $req );
+        send_template_mail( $req, $session, $template, $hash );
+    }
+}
+
+sub generate_hash_from_json {
+    my ($req ) = @_;
+    my ( @actions, @sources, @dests, @protos );
+    my $service = $req->param('service');
+    my $services = load_json("services");
+    my $srv_owners = $services->{$service}->{'details'}->{'owner'};
+    my $object = $req->param('object');
+    my $what = $req->param('what');
+
+    use List::Util qw( max );
+    use HTML::Strip;
+
+    my $hs = HTML::Strip->new();
+    my $json = decode_json( $req->content );
+    my $stripped_src = trim( $hs->parse( $json->{src} ) );
+    my $stripped_dst = trim( $hs->parse( $json->{dst} ) );
+    @actions = split /\s*<br>\s*/, $json->{action};
+    @sources = split /\s+/, $stripped_src;
+    @dests   = split /\s+/, $stripped_dst;
+    @protos  = split /\s*<br>\s*/, $json->{prt};
+    
+    # Determine maximum of entries in src, dst and proto of rule
+    my $max  = max( scalar @sources, scalar @dests, scalar @protos );
+    
+    my $hash = {
+        service    => $service,
+        srv_owners => $srv_owners,
+        what       => $what,
+        actions    => \@actions,
+        sources    => \@sources,
+        dests      => \@dests,
+        protos     => \@protos,
+        max        => $max,
+        object     => $object
+    };
+}
+
+sub  trim { my $s = shift; $s =~ s/^\s+|\s+$//g; return $s };
+
+
 ####################################################################
 # Diff
 ####################################################################
@@ -1560,6 +1688,11 @@ my %path2sub =
      get_diff      => [ \&get_diff,      { owner => 1, } ],
      get_diff_mail => [ \&get_diff_mail, { owner => 1, add_success => 1, } ],
      set_diff_mail => [ \&set_diff_mail, { owner => 1, add_success => 1, } ],
+     service_users => [ \&service_users, { owner => 1, add_success => 1, } ],
+     send_add_user_task_mail => [ \&send_add_user_task_mail, { owner => 1, add_success => 1, } ],
+     send_delete_user_task_mail => [ \&send_delete_user_task_mail, { owner => 1, add_success => 1, } ],
+     send_add_to_rule_task_mail => [ \&send_add_to_rule_task_mail, { owner => 1, add_success => 1, } ],
+     send_del_from_rule_task_mail => [ \&send_del_from_rule_task_mail, { owner => 1, add_success => 1, } ],
       ); 
 
 # Change 'param' method of Plack::Request.

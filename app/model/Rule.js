@@ -18,7 +18,7 @@ along with this program. If not, see <http://www.gnu.org/licenses/>.
 
 var bold_user = function ( node, what ) {
     if ( node.has_user === what || node.has_user === 'both' ) {
-        return '<span style="font-weight:bold;"> User </span>';
+        return '<span style="font-weight:bold;">User</span>';
     }
     else {
         return what === 'src' ?  node.src.join( '<br>' ) :

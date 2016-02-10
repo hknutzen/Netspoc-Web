@@ -130,7 +130,6 @@ Ext.define(
                 this.setOwnerState({ name  : owner, 
                                      alias : alias });
                 // Get theme from session.
-                // FOO
             }
             // Owner was never selected, 
             // check number of available owners.
@@ -318,11 +317,39 @@ Ext.define(
         closeOpenWindows : function() {
             this.closeSearchWindow();
             this.closePrintWindow();
+            this.closeAddUserObjectWindow();
+            this.closeAddToRuleWindow();
+            this.closeDeleteUserObjectWindow();
+            this.closeDeleteFromRuleWindow();
         },
 
         closeSearchWindow : function() {
             if ( Ext.isObject( search_window ) ) {
                 search_window.close();
+            }
+        },
+
+        closeAddUserObjectWindow : function() {
+            if ( Ext.isObject( add_user_window ) ) {
+                add_user_window.close();
+            }
+        },
+
+        closeDeleteUserObjectWindow : function() {
+            if ( Ext.isObject( del_user_window ) ) {
+                del_user_window.close();
+            }
+        },
+
+        closeDeleteFromRuleWindow : function() {
+            if ( Ext.isObject( del_from_rule_window ) ) {
+                del_from_rule_window.close();
+            }
+        },
+
+        closeAddToRuleWindow : function() {
+            if ( Ext.isObject( add_to_rule_window ) ) {
+                add_to_rule_window.close();
             }
         },
 

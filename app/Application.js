@@ -69,6 +69,8 @@ Ext.require( [
                  'PolicyWeb.store.DiffSetMail',
                  'PolicyWeb.store.DiffGetMail',
                  'PolicyWeb.store.DiffTree',
+                 'PolicyWeb.store.SendNewUserTaskMail',
+                 'PolicyWeb.store.SendDeleteUserTaskMail',
                  'PolicyWeb.store.Supervisors',
                  'PolicyWeb.store.SupervisorEmails',
                  'PolicyWeb.store.Watchers',
@@ -81,6 +83,7 @@ Ext.require( [
                  'PolicyWeb.view.button.PrintAllButton',
                  'PolicyWeb.view.combo.OwnerCombo',
                  'PolicyWeb.view.combo.HistoryCombo',
+                 'PolicyWeb.view.container.TaskEmailInfo',
                  'PolicyWeb.view.panel.grid.AllServices',
                  'PolicyWeb.view.panel.grid.Emails',
                  'PolicyWeb.view.panel.grid.NetworkResources',
@@ -93,9 +96,12 @@ Ext.require( [
                  'PolicyWeb.view.panel.grid.SupervisorEmails',
                  'PolicyWeb.view.panel.card.PrintActive',
                  'PolicyWeb.view.panel.form.ServiceDetails',
+                 'PolicyWeb.view.container.TaskEmailInfo',
                  'PolicyWeb.view.tree.Diff',
                  'PolicyWeb.view.window.ExpandedServices',
                  'PolicyWeb.view.window.About',
+                 'PolicyWeb.view.window.DeleteUser',
+                 'PolicyWeb.view.window.DeleteFromRule',
                  'PolicyWeb.view.window.Search'
              ]
            );
@@ -105,7 +111,7 @@ Ext.application(
 	name               : 'PolicyWeb',
         appFolder          : './app',
 	autoCreateViewport : true,
-	models             : [ 'Netspoc', 'Service', 'Rule', 'Owner' ],
+	models             : [ 'Netspoc', 'Service', 'Rule', 'Owner', 'Item' ],
 	stores             : [ 'Netspoc', 'NetspocState', 'Service',
                                'Rules', 'Users', 'Emails', 'Owner',
                                'AllOwners', 'AllServices', 'History',
@@ -128,6 +134,21 @@ Ext.application(
                     }
                 }
             );
+
+            // Custom Vtype for textfields in forms (vtype:'IPAddress')
+            Ext.apply(
+                Ext.form.field.VTypes,
+                {
+                    IPAddress :  function(v) {
+                        return (/^(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}|\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3} \d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}|\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}\/\d{1,2}|\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}-\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}|\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}\/\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})$/).test(v);
+                    },
+                    IPAddressText : "IP-Adresse (mit Maske) oder Range. (Beispiele:" +
+                        "  10.1.2.3 oder 10.1.2.0/24 oder 10.1.2.0 255.255.255.0 " +
+                        "oder 10.1.2.0/255.255.255.0 oder 10.1.2.50-10.2.2.52)",
+                    IPAddressMask : /[\d\.\/-\s]/i
+                }
+            );
+
             // Initialize tooltips manager. Now a tooltip tag
             // "just works" for most components.
             Ext.tip.QuickTipManager.init();
