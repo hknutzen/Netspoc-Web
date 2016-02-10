@@ -1,5 +1,7 @@
 {{$NEXT}}
 
+ - Moved program bin/export.pl to package 'Netspoc' as bin/export-netspoc.
+
 1.004     2015-05-13 11:16:50+02:00 Europe/Berlin
 
  - Fix: minor errors reported by jshint.
