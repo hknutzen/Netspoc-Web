@@ -1425,6 +1425,16 @@ sub get_admins_watchers {
                  @{ load_json("owner/$owner/watchers") }) ];
 }
 
+# Return if current user is an admin or watcher for current owner.
+sub admin_or_watcher {
+    my ($req, $session) = @_;
+    my $admins = get_admins( $req, $session );
+    my %hash;
+    map { $hash{$_->{email}} = 1; } @$admins;
+    my $email = session_email( $req, $session );
+    return $hash{$email} ?  'admin'  :  'watcher';
+}
+
 ####################################################################
 # Register / reset password
 ####################################################################
@@ -1689,6 +1699,7 @@ my %path2sub =
      get_diff_mail => [ \&get_diff_mail, { owner => 1, add_success => 1, } ],
      set_diff_mail => [ \&set_diff_mail, { owner => 1, add_success => 1, } ],
      service_users => [ \&service_users, { owner => 1, add_success => 1, } ],
+     admin_or_watcher => [ \&admin_or_watcher, { owner => 1, add_success => 1, } ],
      send_add_user_task_mail => [ \&send_add_user_task_mail, { owner => 1, add_success => 1, } ],
      send_delete_user_task_mail => [ \&send_delete_user_task_mail, { owner => 1, add_success => 1, } ],
      send_add_to_rule_task_mail => [ \&send_add_to_rule_task_mail, { owner => 1, add_success => 1, } ],

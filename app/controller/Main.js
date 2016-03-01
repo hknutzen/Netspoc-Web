@@ -250,6 +250,28 @@ Ext.define(
             
             appstate.setInitPhase( false );
 
+            // Determine and remember if an admin or a watcher
+            // is logged in.
+            Ext.Ajax.request(
+                {
+                    url      : 'backend/admin_or_watcher',
+                    //method   : 'POST',
+                    params   : {
+                        history      : appstate.getHistory(),
+                        active_owner : appstate.getOwner()
+                    },
+                    success : function ( response ) {
+                        var obj = Ext.decode( response.responseText );
+                        if ( obj.data === 'admin' ) {
+                            appstate.setAdmin( true );
+                        }
+                    },
+                    failure : function ( response ) {
+                    }
+                }
+            );
+            
+
             // Set combo without loading the store.
             var ownercombo = this.getOwnerCombo();
             ownercombo.setValue( appstate.getOwnerAlias() );

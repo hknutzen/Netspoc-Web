@@ -257,19 +257,6 @@ Ext.define(
                       function ( ustore ) {
                           // Always select first user object.
                           this.getServiceUsersView().select0();
-                          
-                          /* Delete object from user only makes sense
-                           * if there are more than one elements present.
-                           * Disable button, if there is only one user object.
-                           */
-                          var tc = ustore.getTotalCount();
-                          var button = this.getDeleteFromUserButton();
-                          if ( tc < 2 ) {
-                              button.disable();
-                          }
-                          else {
-                              button.enable();
-                          }
                       },
                       this
                     );
@@ -277,11 +264,14 @@ Ext.define(
             var rulesstore = this.getRulesStore();
             rulesstore.on( 'load',
                           function ( rstore ) {
-                              // Only show buttons to change rule for own services
+                              
+                              // Only show buttons to change rule if user is admin
+                              // and not watcher for current owner. And
+                              // only show buttons for own services.
                               var grid = this.getRulesGrid();
                               var relation = this.getCurrentRelation();
                               var ac = grid.down('actioncolumn');
-                              if ( relation === 'owner' ) {
+                              if ( relation === 'owner' && appstate.isAdmin() ) {
                                   ac.show();
                               }
                               else {
@@ -295,6 +285,7 @@ Ext.define(
                 'changed', 
                 function () {
                     if ( appstate.getInitPhase() ) { return; }
+                    appstate.setAdmin( false );
                     var cardpanel = this.getMainCardPanel();
                     var index = cardpanel.getLayout().getActiveItemIndex();
                     if ( index === 1 ) {
