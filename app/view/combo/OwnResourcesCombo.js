@@ -17,29 +17,19 @@ along with this program. If not, see <http://www.gnu.org/licenses/>.
 */
 
 Ext.define(
-    'PolicyWeb.model.User',
-    {
-        extend : 'PolicyWeb.model.Netspoc',
-        fields : [
-            { name     : 'name'  , 
-              header   : 'Name'
-            },
-            { name     : 'ip',
-              header   : 'IP-Adressen',
-              width    : 0.25,
-              sortType : 'asIP'
-            },
-            // Not shown, but needed to select the corresponding
-            // email addresses.
-            { name    : 'owner' },
-            { name    : 'owner_alias', 
-              header  : 'Verantwortungsbereich',
-              width   : 0.25,
-              mapping : function (node) { 
-                  return node.owner_alias || node.owner;
-              }
-            }
-        ]
+    'PolicyWeb.view.combo.OwnResourcesCombo', {
+        extend         : 'Ext.form.field.ComboBox',
+        alias          : 'widget.ownresourcescombo',
+        store          : 'OverviewOwnResources',
+        forceSelection : true, 
+        autoselect     : true,
+        selectOnFocus  : true,
+        multiSelect    : true,
+        displayField   : 'resource',
+        valueField     : 'resource',
+        width          : 200,
+        listConfig     : {
+            minWidth   : 300
+        }
     }
 );
-

@@ -9,10 +9,7 @@ Ext.define(
                 header   : 'IP-Adresse',  
                 width    : 0.25,
                 mapping  : 'ip',
-                sortType : function ( value ) {
-                    var array = value.split('/');
-                    return ip2numeric( array[0] );
-                }
+                sortType : 'asIP'
             },
             { name      : 'name', header : 'Name' },
             { name      : 'owner',  

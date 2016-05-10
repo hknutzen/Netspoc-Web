@@ -47,7 +47,19 @@ Ext.define(
                 menuDisabled : true
             }
         },
-        tbar : [ { xtype : 'printbutton' } ]
+        tbar : [
+            { xtype : 'printbutton' },
+            '->',
+            {
+                iconCls  : 'icon-table',
+                disabled : true
+            },
+            {
+                iconCls  : 'icon-map',
+                disabled : true
+            },
+            { xtype : 'ownresourcescombo' }
+        ]
     }
 );
 

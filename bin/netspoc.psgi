@@ -418,7 +418,6 @@ sub search_string {
     my $services = load_json('services');
     my $result   = [];
     my $regex = gen_search_regex($req, $search);
-
     for my $sname ( @$service_list ) {
 
         # Check if service name itself contains $search.
@@ -724,7 +723,13 @@ sub gen_search_req {
     my $ip2_hash     = build_search_hash($req, 'search_ip2');
     my $search_proto = $req->param('search_proto');
     my $proto_regex;
-    $proto_regex = qr/ \Q$search_proto\E /ix if $search_proto;
+    if ( $search_proto ) {
+        $proto_regex = qr/ \Q$search_proto\E /ix;
+        # Exact matches only?
+        if ( $req->param('search_exact') ) {
+            $proto_regex = qr/^$search_proto$/;
+        }
+    }
 
     $ip1_hash or $ip2_hash or $search_proto or return;
     return ($ip1_hash, $ip2_hash, $proto_regex);
@@ -981,9 +986,10 @@ sub get_matching_rules_and_users {
 }
 
 sub get_users {
-    my ($req, $session) = @_;
+    my ($req, $session, $sname) = @_;
     my $owner = $req->param('active_owner');
-    my $sname = $req->param('service') or abort "Missing parameter 'service'";
+    $sname ||= $req->param('service');
+    $sname or abort "Missing parameter 'service'";
     my ($rules, $users) = get_matching_rules_and_users($req, $sname);
     return get_nat_obj_list($users, $owner);
 }
@@ -1028,6 +1034,87 @@ sub get_services_and_rules {
         }
     }
     return \@result;
+}
+
+sub get_own_resources {
+    my ($req, $session) = @_;
+    my $relation = $req->param('relation');
+    my $services = service_list( $req, $session );
+    my %result;
+    for my $sname (map { $_->{name} } @$services) {
+	my $rules = expand_rules($req, $sname);
+        for my $rule (@$rules) {
+            if ( $relation eq 'owner' ) {
+                map { $result{$_} = { resource => $_ } } @{$rule->{src}};
+            }
+            elsif ( $relation eq 'user' ) {
+                #my @bar = grep { $_ eq '10.3.57.61' } ;
+                map { $result{$_} = { resource => $_ } } @{$rule->{dst}};
+            }
+            else {
+                last;
+            }
+        }
+    }
+    return [ values %result ];
+}
+
+sub get_connection_overview {
+    my ($req, $session) = @_;
+    my $json = decode_json( $req->content );
+    my $services = service_list( $req, $session );
+    my $result = [];
+    for my $resource ( @{$json->{data}} ) {
+        for my $sname (map { $_->{name} } @$services) {
+            my $rules = expand_rules($req, $sname);
+            my $users = get_users( $req, $session, $sname );
+            for my $rule (@$rules) {
+
+                my @ports = map { s/,/ \&/gr } @{$rule->{prt}};
+
+                if ( has_user( $rule, 'both' ) ) {
+                    push @$result,
+                    {
+                        res => $resource,
+                        src => $resource,
+                        dst => $resource,
+                        prt => join( ',', @ports )
+                    };
+                }
+                else {
+                    if ( has_user( $rule, 'src' ) ) {
+                        if ( grep { $_ eq $resource } @{$rule->{dst}} ) {
+                            for my $user ( @$users ) {
+                                push @$result,
+                                {
+                                    res  => $resource,
+                                    what => 'DST',
+                                    src  => $user->{ip},
+                                    dst  => $resource,
+                                    prt  => join( ',',  @ports )
+                                };
+                            }
+                        }
+                    }
+                    else {
+                        if ( grep { $_ eq $resource } @{$rule->{src}} ) {
+                            for my $user ( @$users ) {
+                                push @$result,
+                                {
+                                    res  => $resource,
+                                    what => 'SRC',
+                                    src  => $resource,
+                                    dst  => $user->{ip},
+                                    prt  => join( ',', @ports )
+                                };
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+    return $result;
 }
 
 
@@ -1685,6 +1772,10 @@ my %path2sub =
 	 \&get_services_and_rules,       { owner => 1, add_success => 1, } ],
      get_network_resources => [
 	 \&get_network_resources,       { owner => 1, add_success => 1, } ],
+     get_own_resources => [
+	 \&get_own_resources,       { owner => 1, add_success => 1, } ],
+     get_connection_overview => [
+	 \&get_connection_overview,       { owner => 1, add_success => 1, } ],
      get_diff      => [ \&get_diff,      { owner => 1, } ],
      get_diff_mail => [ \&get_diff_mail, { owner => 1, add_success => 1, } ],
      set_diff_mail => [ \&set_diff_mail, { owner => 1, add_success => 1, } ],

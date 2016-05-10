@@ -16,29 +16,17 @@ You should have received a copy of the GNU General Public License
 along with this program. If not, see <http://www.gnu.org/licenses/>.
 */
 
+
 Ext.define(
-    'PolicyWeb.model.User',
+    'PolicyWeb.model.Overview',
     {
         extend : 'PolicyWeb.model.Netspoc',
         fields : [
-            { name     : 'name'  , 
-              header   : 'Name'
-            },
-            { name     : 'ip',
-              header   : 'IP-Adressen',
-              width    : 0.25,
-              sortType : 'asIP'
-            },
-            // Not shown, but needed to select the corresponding
-            // email addresses.
-            { name    : 'owner' },
-            { name    : 'owner_alias', 
-              header  : 'Verantwortungsbereich',
-              width   : 0.25,
-              mapping : function (node) { 
-                  return node.owner_alias || node.owner;
-              }
-            }
+            { name : 'res'  },
+            { name : 'what' },
+            { name : 'src'  },
+            { name : 'dst'  },
+            { name : 'prt'  }
         ]
     }
 );

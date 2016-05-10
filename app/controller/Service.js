@@ -23,6 +23,7 @@ var add_user_window;
 var del_user_window;
 var add_to_rule_window;
 var del_from_rule_window;
+var overview_window;
 var cb_params_key2val = {
     'display_property' : {
         'true'  : 'name',
@@ -42,7 +43,7 @@ Ext.define(
     'PolicyWeb.controller.Service', {
         extend : 'Ext.app.Controller',
         views  : [ 'panel.form.ServiceDetails' ],
-        models : [ 'Service' ],
+        models : [ 'Service', 'Overview' ],
         stores : [ 'Service', 'AllServices', 'Rules', 'Users',
                    'SendNewUserTaskMail'
                  ],
@@ -184,6 +185,12 @@ Ext.define(
                     },
                     'expandedservices' : {
                         beforeshow : this.onShowAllServices
+                    },
+                    'expandedservices ownresourcescombo' : {
+                        select : this.activateOverviewButtons
+                    },
+                    'expandedservices button[iconCls="icon-table"]' : {
+                        click : this.onClickTableOverviewButton
                     },
                     'adduserwindow > form button[text="Auftrag per Mail senden"]' : {
                         click : this.onSendAddUserTaskAsMail
@@ -559,6 +566,18 @@ Ext.define(
                     'PolicyWeb.view.window.ExpandedServices'
                 );
             }
+            var store = print_window.down('combo').getStore();
+            var params = {
+                relation     : this.getCurrentRelation(),
+                history      : appstate.getHistory(),
+                active_owner : appstate.getOwner()
+            };
+            store.on(
+                'beforeload',
+                function(store, operation, eOpts) {
+                    operation.params = params;
+                }
+            );
             print_window.show();
         },
         
@@ -573,6 +592,94 @@ Ext.define(
                 }
             }
             return {};
+        },
+
+        onClickTableOverviewButton : function( button ) {
+            this.getOverviewData( button, 'list' );
+        },
+
+        onClickMapOverviewButton : function( button ) {
+            this.getOverviewData( button, 'graph' );
+        },
+
+        getOverviewData : function( button, display_as ) {
+            var combo = button.up('window').down('ownresourcescombo');
+            var params = this.getServiceStore().getProxy().extraParams;
+            params.relation = this.getCurrentRelation();
+            params = Ext.merge(
+                params,
+                this.getSearchParams()
+            );
+            var value = combo.getValue();
+            var data = Ext.encode(
+                {
+                    data : value
+                }
+            );
+
+            Ext.Ajax.request(
+                {
+                    url      : 'backend/get_connection_overview',
+                    method   : 'POST',
+                    jsonData : data,
+                    params   : params,
+                    success  : function ( response ) {
+                        var controller = PolicyWeb.getApplication().getController('Service');
+                        var response_data = Ext.decode(response.responseText);
+                        if ( display_as === 'list' ) {
+                            controller.displayOverviewList(response_data);
+                        }
+                        else {
+                            controller.displayOverviewGraph(response_data);
+                        }
+                    },
+                    failure  : function ( response ) {
+                        console.log('server-side failure with status code '
+                                    + response.status);
+                    }
+                }
+            );
+        },
+
+        activateOverviewButtons : function ( combo, records ) {
+            var table_button = combo.up('window').down('button[iconCls="icon-table"]');
+            var map_button = combo.up('window').down('button[iconCls="icon-map"]');
+            table_button.enable();
+            map_button.enable();
+        },        
+        
+        displayOverviewGraph : function ( data ) {
+            
+        },
+
+        displayOverviewList : function ( data ) {
+            var grid;
+            if ( Ext.isObject( overview_window ) ) {
+                overview_window.close();
+            }
+            grid = Ext.create(
+                'PolicyWeb.view.panel.grid.ConnectionOverview'
+            );
+            // FOO
+            overview_window = Ext.create(
+                'Ext.window.Window',
+                {
+                    title  : 'Überblick über Verbindungen',
+                    height : 400,
+                    width  : 600,
+                    layout : 'fit',
+                    items  : [ grid ]
+                }
+            );
+            overview_window.on(
+                'show',
+                function () {
+                    var store, rec;
+                    store = grid.getStore();
+                    store.loadRawData( data.records );
+                }
+            );
+            overview_window.show();
         },
 
         onShowAllServices : function( win ) {
