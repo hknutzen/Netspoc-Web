@@ -143,7 +143,8 @@ Ext.application(
             // a numerical value which makes them sortable.
             Ext.apply(
                 Ext.data.SortTypes, {
-                    asIP : function(person){
+                    asIP : function(value){
+                        alert("SORT asIP!");
                         // Sort IP address numerically.
                         var m1 = /-/;
                         var m2 = /\//;

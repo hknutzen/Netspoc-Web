@@ -6,7 +6,7 @@ Ext.define(
         fields : [
             {
                 name     : 'resource',
-                sortType : 'asUCString'
+                sortType : 'asIP'
             }
         ]
     }

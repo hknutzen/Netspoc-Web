@@ -24,6 +24,8 @@ var del_user_window;
 var add_to_rule_window;
 var del_from_rule_window;
 var overview_window;
+var graph_window;
+var network_graph;
 var cb_params_key2val = {
     'display_property' : {
         'true'  : 'name',
@@ -191,6 +193,9 @@ Ext.define(
                     },
                     'expandedservices button[iconCls="icon-table"]' : {
                         click : this.onClickTableOverviewButton
+                    },
+                    'expandedservices button[iconCls="icon-map"]' : {
+                        click : this.onClickMapOverviewButton
                     },
                     'adduserwindow > form button[text="Auftrag per Mail senden"]' : {
                         click : this.onSendAddUserTaskAsMail
@@ -606,6 +611,7 @@ Ext.define(
             var combo = button.up('window').down('ownresourcescombo');
             var params = this.getServiceStore().getProxy().extraParams;
             params.relation = this.getCurrentRelation();
+            params.display_as = display_as;
             params = Ext.merge(
                 params,
                 this.getSearchParams()
@@ -648,8 +654,63 @@ Ext.define(
             map_button.enable();
         },        
         
-        displayOverviewGraph : function ( data ) {
+        drawGraph : function ( dataset ) {
             
+            if ( Ext.isObject( graph_window ) ) {
+                graph_window.close();
+            }
+
+            graph_window = Ext.create(
+                'Ext.window.Window',
+                {
+                    title  : 'Überblick über Verbindungen',
+                    id     : 'graph',
+                    height : 410,
+                    width  : 910
+                }
+            );
+
+            // FOO
+            graph_window.on(
+                'show',
+                function () {
+
+                    // create a network
+                    var container = document.getElementById('graph-innerCt');
+                    var data = {
+                        nodes: dataset.data.nodes,
+                        edges: dataset.data.edges
+                    };
+                    var options = {};
+                    network_graph = new vis.Network(container, data, options);
+                    
+                }
+            );
+
+
+            graph_window.show();
+
+        },
+
+        displayOverviewGraph : function ( data ) {
+            try {
+                if ( Ext.isObject( vis ) ) {
+                    this.drawGraph( data );
+                }
+            } catch (err) {
+                //console.log( "Caught ERROR: " + err );
+                Ext.Loader.loadScript(
+                    {
+                        url    : "resources/vis.min.js",
+                        onLoad : function () {
+                            PolicyWeb.getApplication().getController('Service').drawGraph(data);
+                        },
+                        onError : function () {
+                            alert("Unable to load external graphical library 'vis.min.js'!");
+                        }
+                    }
+                );
+            }
         },
 
         displayOverviewList : function ( data ) {
@@ -660,7 +721,6 @@ Ext.define(
             grid = Ext.create(
                 'PolicyWeb.view.panel.grid.ConnectionOverview'
             );
-            // FOO
             overview_window = Ext.create(
                 'Ext.window.Window',
                 {
@@ -671,6 +731,7 @@ Ext.define(
                     items  : [ grid ]
                 }
             );
+            console.dir( data );
             overview_window.on(
                 'show',
                 function () {

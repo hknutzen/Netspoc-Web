@@ -1048,7 +1048,10 @@ sub get_own_resources {
                 map { $result{$_} = { resource => $_ } } @{$rule->{src}};
             }
             elsif ( $relation eq 'user' ) {
-                #my @bar = grep { $_ eq '10.3.57.61' } ;
+                #FOO
+                #my @bar = grep { ($_ eq '10.61.0.41') ||
+                #($_ =~ /192.168.0.0/) } @{$rule->{dst}};
+                #map { $result{$_} = { resource => $_ } } @bar;
                 map { $result{$_} = { resource => $_ } } @{$rule->{dst}};
             }
             else {
@@ -1061,10 +1064,27 @@ sub get_own_resources {
 
 sub get_connection_overview {
     my ($req, $session) = @_;
+    my $display_as = $req->param('display_as');
     my $json = decode_json( $req->content );
     my $services = service_list( $req, $session );
-    my $result = [];
+    my $result;
+    my %res2index = ();  # Hash with indices for added resources
+    my $res_index = 0;   # Index of current resource in nodes-array
+    my $index;           # Index of source or target in nodes-array
+    my @nodes;
+    my @edges;
     for my $resource ( @{$json->{data}} ) {
+        if ( $res2index{$resource} ) {
+            $res_index = $res2index{$resource};
+        }
+        else {
+            $res_index = scalar @nodes;
+            push @nodes, {
+                id    => $res_index,
+                label => $resource
+            };
+            $res2index{$resource} = $res_index;
+        }
         for my $sname (map { $_->{name} } @$services) {
             my $rules = expand_rules($req, $sname);
             my $users = get_users( $req, $session, $sname );
@@ -1072,13 +1092,17 @@ sub get_connection_overview {
 
                 my @ports = map { s/,/ \&/gr } @{$rule->{prt}};
 
+                #
+                # Generate list data
+                #
                 if ( has_user( $rule, 'both' ) ) {
                     push @$result,
                     {
-                        res => $resource,
-                        src => $resource,
-                        dst => $resource,
-                        prt => join( ',', @ports )
+                        res  => $resource,
+                        what => 'BOTH',
+                        src  => $resource,
+                        dst  => $resource,
+                        prt  => join( ',', @ports )
                     };
                 }
                 else {
@@ -1092,6 +1116,22 @@ sub get_connection_overview {
                                     src  => $user->{ip},
                                     dst  => $resource,
                                     prt  => join( ',',  @ports )
+                                };
+                                if ( $res2index{$user->{ip}} ) {
+                                    $index = $res2index{$user->{ip}};
+                                }
+                                else {
+                                    $index = scalar @nodes;
+                                    push @nodes, {
+                                        id    => $index,
+                                        label => $user->{ip}
+                                    };
+                                    $res2index{$user->{ip}} = $index;
+                                }
+                                push @edges, {
+                                    from   => $res_index,
+                                    to     => $index,
+                                    arrows => 'from'
                                 };
                             }
                         }
@@ -1107,6 +1147,22 @@ sub get_connection_overview {
                                     dst  => $user->{ip},
                                     prt  => join( ',', @ports )
                                 };
+                                if ( $res2index{$user->{ip}} ) {
+                                    $index = $res2index{$user->{ip}};
+                                }
+                                else {
+                                    $index = scalar @nodes;
+                                    push @nodes, {
+                                        id    => $index,
+                                        label => $user->{ip}
+                                    };
+                                    $res2index{$user->{ip}} = $index;
+                                }
+                                push @edges, {
+                                    from   => $index,
+                                    to     => $res_index,
+                                    arrows => 'from'
+                                };
                             }
                         }
                     }
@@ -1114,7 +1170,16 @@ sub get_connection_overview {
             }
         }
     }
-    return $result;
+
+    if ( $display_as eq 'graph' ) {
+        return {
+            nodes => \@nodes,
+            edges => \@edges
+        };
+    }
+    else {
+        return $result;
+    }
 }
 
 
