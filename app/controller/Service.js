@@ -245,11 +245,19 @@ Ext.define(
                       function () {
                           var count = store.getCount();
                           var grid = this.getServicesGrid();
+                          var sv = this.getServiceView();
+                          var cardpanel = sv.down('cardprintactive');
+                          var add_button = cardpanel.query('button[iconCls=icon-add]')[0];
+                          var del_button = cardpanel.query('button[iconCls=icon-delete]')[0];
                           if ( count === 0 ) {
                               this.clearDetails();
+                              add_button.disable();
+                              del_button.disable();
                           }
                           else {
                               this.getServicesGrid().select0();
+                              add_button.enable();
+                              del_button.enable();
                           }
                           // Display nr of services in header.
                           grid.getView().getHeaderCt().getHeaderAtIndex(0).setText(
@@ -922,7 +930,7 @@ Ext.define(
                             }
                             else {
                                 // Valid CIDR mask, now check if it fits IP.
-                                mask = cidr2mask( orig_mask );
+                                mask = cidr2mask( mask );
                                 num_mask = ip2numeric( mask );
                                 res_ip = num_ip & num_mask;
                                 if ( res_ip !== num_ip ) {
