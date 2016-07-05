@@ -91,6 +91,7 @@ Ext.require( [
                  'PolicyWeb.view.panel.grid.Emails',
                  'PolicyWeb.view.panel.grid.NetworkResources',
                  'PolicyWeb.view.panel.grid.Networks',
+                 'PolicyWeb.view.panel.grid.OwnCurrentResources',
                  'PolicyWeb.view.panel.grid.Rules',
                  'PolicyWeb.view.panel.grid.Services',
                  'PolicyWeb.view.panel.grid.Supervisors',
@@ -126,25 +127,12 @@ Ext.application(
 	controllers        : [ 'Main', 'Service', 'Network',
                                'Diff', 'Account' ],
 
-	launch : function() {
-            Ext.Ajax.on( 'requestexception', this.onJsonException );
-
-            Ext.override(
-                Ext.layout.CardLayout,
-                {
-                    getActiveItemIndex: function() {
-                        return this.owner.items.indexOf(
-                            this.getActiveItem() );
-                    }
-                }
-            );
-
+	init : function() {
             // Add sortType "asIP" that converts IP addresses to
             // a numerical value which makes them sortable.
             Ext.apply(
                 Ext.data.SortTypes, {
                     asIP : function(value){
-                        alert("SORT asIP!");
                         // Sort IP address numerically.
                         var m1 = /-/;
                         var m2 = /\//;
@@ -160,6 +148,20 @@ Ext.application(
                         else {
                             return ip2numeric( value );
                         }
+                    }
+                }
+            );
+        },
+
+	launch : function() {
+            Ext.Ajax.on( 'requestexception', this.onJsonException );
+
+            Ext.override(
+                Ext.layout.CardLayout,
+                {
+                    getActiveItemIndex: function() {
+                        return this.owner.items.indexOf(
+                            this.getActiveItem() );
                     }
                 }
             );

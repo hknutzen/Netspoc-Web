@@ -1216,18 +1216,22 @@ sub send_user_task_mail {
         || '<< Name wird ggf. vom Netzbetrieb oder ' .
         'Dienstanbieter vergeben >>';
     my $user_object_ip = $req->param('user_object_ip')
-        || 'Error: empty IP! (form validation failed!?';
+        || 'Error: empty IP! (form validation failed!?)';
+    my $business_unit = $req->param('business_unit')
+        || 'Error: no business_unit defined.';
     my $users = get_users($req, $session);
     my $services = load_json("services");
     my $srv_owners = $services->{$service}->{'details'}->{'owner'};
 
     # Hash to fill template with data to send via sendmail.
+    # FOO: TODO: send business_unit, too (and change template accordingly!)
     my $hash = {
         service          => $service,
         srv_owners       => $srv_owners,
         user_object_name => $user_object_name,
         user_object_ip   => $user_object_ip,
-        users            => $users
+        users            => $users,
+        business_unit    => $business_unit
     };
     send_template_mail( $req, $session, $template, $hash );
 }
@@ -1457,6 +1461,23 @@ sub get_about_info {
         policy_web_version => $version
     };
     return Template::get($config->{about_info_template}, $vars);
+}
+
+sub get_business_units {
+    my ($req, $session) = @_;
+
+    my $file = $config->{business_units};
+    open(my $fh, '<', $file) or abort "Can't open $file: $!";
+    my @lines = <$fh>;
+    close $fh;
+    my $result;
+    for my $item ( @lines ) {
+        chomp $item;
+        push @$result, {
+            name => $item
+        };
+    }
+    return $result;
 }
 
 # Get theme from session or set it to default.
@@ -1821,6 +1842,7 @@ my %path2sub =
      get_owners       => [ \&get_owners,    { add_success => 1, } ],
      set              => [ \&set_session_data, { add_success => 1, } ],
      get_about_info   => [ \&get_about_info,{ owner => 1, html => 1 } ],
+     get_business_units => [ \&get_business_units,{ owner => 1, add_success => 1 } ],
      get_history      => [ \&get_history,   { owner => 1, add_success => 1, } ],
      service_list     => [ \&service_list,  { owner => 1, add_success => 1, } ],
      get_admins       => [ \&get_admins,    { owner => 1, add_success => 1, } ],

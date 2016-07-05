@@ -188,14 +188,8 @@ Ext.define(
                     'expandedservices' : {
                         beforeshow : this.onShowAllServices
                     },
-                    'expandedservices ownresourcescombo' : {
-                        select : this.activateOverviewButtons
-                    },
-                    'expandedservices button[iconCls="icon-table"]' : {
-                        click : this.onClickTableOverviewButton
-                    },
-                    'expandedservices button[iconCls="icon-map"]' : {
-                        click : this.onClickMapOverviewButton
+                    'serviceview > grid button[iconCls="icon-map"]' : {
+                        click : this.onClickOverviewButton
                     },
                     'adduserwindow > form button[text="Auftrag per Mail senden"]' : {
                         click : this.onSendAddUserTaskAsMail
@@ -269,11 +263,11 @@ Ext.define(
                       function ( ustore ) {
                           // Always select first user object.
                           this.getServiceUsersView().select0();
-                          
+
+/*                          
                           /* Delete object from user only makes sense
-                           * if there are more than one elements present.
+                           * if there is more than one element present.
                            * Disable button, if there is only one user object.
-                           */
                           var tc = ustore.getTotalCount();
                           var button = this.getDeleteFromUserButton();
                           if ( tc < 2 ) {
@@ -282,6 +276,7 @@ Ext.define(
                           else {
                               button.enable();
                           }
+*/
                       },
                       this
                     );
@@ -428,12 +423,14 @@ Ext.define(
                 'dst'   : 'Ziel'
             };
             var radio;
-            var what = rec.raw.has_user === 'both' ?
-                [ 'src', 'dst' ]  :  [ rec.raw.has_user ];
-            for ( var i=0; i<what.length; i++) {
-                var selector = 'radio[boxLabel="' + field2label[what[i]] + '"]';
-                radio = window.down( selector );
-                radio.disable();
+            if ( rec.raw.has_user ) {
+                var what = rec.raw.has_user === 'both' ?
+                    [ 'src', 'dst' ]  :  [ rec.raw.has_user ];
+                for ( var i=0; i<what.length; i++) {
+                    var selector = 'radio[boxLabel="' + field2label[what[i]] + '"]';
+                    radio = window.down( selector );
+                    radio.disable();
+                }
             }
         },
 
@@ -571,18 +568,6 @@ Ext.define(
                     'PolicyWeb.view.window.ExpandedServices'
                 );
             }
-            var store = print_window.down('combo').getStore();
-            var params = {
-                relation     : this.getCurrentRelation(),
-                history      : appstate.getHistory(),
-                active_owner : appstate.getOwner()
-            };
-            store.on(
-                'beforeload',
-                function(store, operation, eOpts) {
-                    operation.params = params;
-                }
-            );
             print_window.show();
         },
         
@@ -599,27 +584,58 @@ Ext.define(
             return {};
         },
 
-        onClickTableOverviewButton : function( button ) {
-            this.getOverviewData( button, 'list' );
-        },
-
-        onClickMapOverviewButton : function( button ) {
+        onClickOverviewButton : function( button ) {
             this.getOverviewData( button, 'graph' );
         },
 
         getOverviewData : function( button, display_as ) {
-            var combo = button.up('window').down('ownresourcescombo');
-            var params = this.getServiceStore().getProxy().extraParams;
-            params.relation = this.getCurrentRelation();
+
+            if ( Ext.isObject( graph_window ) ) {
+                graph_window.close();
+            }
+
+            graph_window = Ext.create(
+                'Ext.window.Window',
+                {
+                    title  : 'Überblick über Verbindungen',
+                    id     : 'graph',
+                    height : 410,
+                    width  : 910,
+                    items  : [ { xtype : 'owncurrentresources' } ]
+                }
+            );
+
+            var res_panel = graph_window.down('owncurrentresources');
+            var store = res_panel.getStore();
+            var sc = PolicyWeb.getApplication().getController('Service');
+            var params = sc.getServiceStore().getProxy().extraParams;
+            params.relation = sc.getCurrentRelation();
             params.display_as = display_as;
             params = Ext.merge(
                 params,
-                this.getSearchParams()
+                sc.getSearchParams()
             );
-            var value = combo.getValue();
+
+            // FOO
+            graph_window.on(
+                'beforeshow',
+                function () {
+                    store.on( 'load',
+                              function () {
+                                  //console.dir( store.getRange() );
+                              }
+                            );
+                    
+                    store.load( { params : params } );
+                }
+            );            
+
+            graph_window.show();
+
+/*
             var data = Ext.encode(
                 {
-                    data : value
+                    data : store.getRange()
                 }
             );
 
@@ -645,15 +661,9 @@ Ext.define(
                     }
                 }
             );
+*/
         },
 
-        activateOverviewButtons : function ( combo, records ) {
-            var table_button = combo.up('window').down('button[iconCls="icon-table"]');
-            var map_button = combo.up('window').down('button[iconCls="icon-map"]');
-            table_button.enable();
-            map_button.enable();
-        },        
-        
         drawGraph : function ( dataset ) {
             
             if ( Ext.isObject( graph_window ) ) {
@@ -887,16 +897,80 @@ Ext.define(
             var panel   = this.getAddUserFormPanel();
             var form    = panel.getForm();
             if ( form.isValid() ) {
+                // FOO
+                // get business unit from combo box
+                var bu_combo = panel.down('combo');
+                var business_unit = bu_combo.getRawValue() || 'Unbekannt';
                 var tfs = panel.query('textfield');
                 var user_object_ip   = tfs[0].getValue();
-                var user_object_name = tfs[1].getValue();
+                var user_object_name = tfs[2].getValue();
                 var params = {
                     service          : service,
                     user_object_name : user_object_name,
-                    user_object_ip   : user_object_ip
+                    user_object_ip   : user_object_ip,
+                    business_unit    : business_unit
                 };
-                store.load( { params : params  } );
-                add_user_window.close();
+
+                // Further evaluate form data. Check for valid IP address.
+                var array = user_object_ip.split('/');
+                var ip = array[0];
+                var mask = array[1];
+                var rex = /\./;
+                var valid_mask = true;
+                var valid_ip = isIPv4Address( ip );
+                var num_mask;
+                var num_ip = ip2numeric( ip );
+                var msg;
+                var res_ip;
+                if ( valid_ip ) {
+                    if ( mask ) {
+                        if ( !rex.test( mask ) ) {
+                            if ( mask < 1 || mask > 32 ) {
+                                valid_mask = false;
+                                msg = "CIDR Maske \"" + mask +
+                                    "\" außerhalb des gültigen Bereichs: 0 <= Maske <= 32!";
+                            }
+                            else {
+                                // Valid CIDR mask, now check if it fits IP.
+                                mask = cidr2mask( orig_mask );
+                                num_mask = ip2numeric( mask );
+                                res_ip = num_ip & num_mask;
+                                if ( res_ip !== num_ip ) {
+                                    valid_mask = false;
+                                    msg = "IP passt nicht zur Maske! Falls Maske richtig " +
+                                        "sollte die IP lauten: " + numeric2ip( res_ip );
+                                }
+                            }
+                        }
+                        else {
+                            if ( isIPv4Address( mask ) ) {
+                                // mask is in dot notation
+                                num_mask = ip2numeric( mask );
+                                res_ip = num_ip & num_mask;
+                                if ( res_ip !== num_ip) {
+                                    valid_mask = false;
+                                    msg = "IP passt nicht zur Maske! Falls Maske richtig " +
+                                        "sollte die IP lauten: " + numeric2ip( res_ip );
+                                }
+                            }
+                            else {
+                                valid_mask = false;
+                                msg = "Ungültige Maske: " + mask;
+                            }
+                        }
+                    }
+                }
+                else {
+                    msg = "Bei \"" + ip + "\" handelt es sich nicht um eine gültige IP-Adresse!";
+                }
+
+                if ( valid_ip && valid_mask ) {
+                    store.load( { params : params  } );
+                    add_user_window.close();
+                }
+                else {
+                    Ext.MessageBox.alert( 'Netzmaske passt nicht zu IP', msg );
+                }
             }
         },
 
