@@ -18,7 +18,7 @@ sub prepare_export {
     print $in_fh $input;
     close $in_fh;
 
-    my $cmd = "perl bin/export.pl -quiet $filename $export_dir/$policy";
+    my $cmd = "perl /home/knutzehe/Netspoc/bin/export-netspoc -quiet $filename $export_dir/$policy";
     my ($stdout, $stderr);
     run3($cmd, \undef, \$stdout, \$stderr);
     my $status = $?;
@@ -45,6 +45,8 @@ my $conf_data = <<END;
  "verify_ok_template"   : "",
  "expire_logged_in"     : "",
  "about_info_template"  : "",
+ "business_units"       : "",
+ "template_path"        : "",
 }    
 END
 
