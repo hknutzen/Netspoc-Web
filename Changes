@@ -1,5 +1,10 @@
 {{$NEXT}}
 
+ - Add: generate task emails to add/remove stuff to/from "User" or to a rule
+        of currently selected service.
+ - Add: delete obsolete users (that are no longer known as watchers or admins).
+ - Add: delete session files older than a year.
+ - Fix: various small bugs.
  - Moved program bin/export.pl to package 'Netspoc' as bin/export-netspoc.
 
 1.004     2015-05-13 11:16:50+02:00 Europe/Berlin
