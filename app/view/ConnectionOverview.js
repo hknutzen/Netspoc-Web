@@ -17,29 +17,29 @@ along with this program. If not, see <http://www.gnu.org/licenses/>.
 */
 
 Ext.define(
-    'PolicyWeb.model.User',
+    'PolicyWeb.view.ConnectionOverview',
     {
-        extend : 'PolicyWeb.model.Netspoc',
-        fields : [
-            { name     : 'name'  , 
-              header   : 'Name'
-            },
-            { name     : 'ip',
-              header   : 'IP-Adressen',
-              width    : 0.25,
-              sortType : 'asIP'
-            },
-            // Not shown, but needed to select the corresponding
-            // email addresses.
-            { name    : 'owner' },
-            { name    : 'owner_alias', 
-              header  : 'Verantwortungsbereich',
-              width   : 0.25,
-              mapping : function (node) { 
-                  return node.owner_alias || node.owner;
-              }
-            }
-        ]
+        extend  : 'Ext.container.Container',
+        alias   : 'widget.connectionoverview',
+        border  : false,
+        layout  : {
+            type  : 'hbox',
+            align : 'stretch'
+        },
+
+        initComponent : function() {
+            this.items =  [
+                this.buildComboPanel(),
+                this.buildDisplayPanel()
+            ];
+            this.callParent(arguments);
+        },
+        
+        buildComboPanel : function() {
+        },
+
+        buildDisplayPanel : function() {
+        }
     }
 );
 

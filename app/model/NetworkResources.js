@@ -25,16 +25,7 @@ Ext.define(
             { name     : 'child_ip',
               header   : 'IP-Adresse',
               width    : 0.25,
-              sortType : function ( value ) {
-                  var m = /-/;
-                  if ( value.match(m) ) {
-                      var array = value.split('-');
-                      return ip2numeric( array[0] );
-                  }
-                  else {
-                      return ip2numeric( value );
-                  }
-              }
+              sortType : 'asIP'
             },
             { name    : 'child_name',
               header  : 'Name' },

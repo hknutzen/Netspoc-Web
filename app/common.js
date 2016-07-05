@@ -146,4 +146,57 @@ function get_store_feature( grid, featureFType ) {
     return undefined;
 }
 
+function isIPv4Address (ip) {
+    var blocks = ip.split(".");
+    if ( blocks.length === 4 ) {
+        return blocks.every(
+            function ( block ) {
+                const value = parseInt(block, 10);
+                if ( value >= 0 && value <= 255) {
+                    var i = block.length;
+                    while (i--) {
+                        if ( block[i] < '0' || block[i] > '9' ) {
+                            return false;
+                        }
+                    }
+                    return true;
+                }
+                return false;
+            }
+        );
+    }
+    return false;
+}
 
+/**
+ * Turn a Subnet Mask into a CIDR prefix
+ */
+function mask2cidr( subnet_mask ) {
+    var cidr_bits = 0;
+    
+    subnet_mask.split('.').forEach(
+        function(octet) {
+            cidr_bits+=((octet >>> 0).toString(2).match(/1/g) || []).length;
+        }
+    );
+    return cidr_bits;
+}
+
+/**
+ * Turn a CIDR prefix into a Subnet Mask
+ */
+function cidr2mask( cidr ) {
+    var bits = [];
+    
+    while ( bits.length < cidr ) { bits.push(1); }
+    while ( bits.length < 32 ) { bits.push(0); }
+    
+    var octets = [];
+    
+    octets.push(parseInt(bits.slice(0,8).join(''),2 ));
+    octets.push(parseInt(bits.slice(8,16).join(''), 2));
+    octets.push(parseInt(bits.slice(16,24).join(''), 2));
+    octets.push(parseInt(bits.slice(24,32).join(''), 2));
+    
+    return octets.join('.');
+}

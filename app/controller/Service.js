@@ -23,6 +23,9 @@ var add_user_window;
 var del_user_window;
 var add_to_rule_window;
 var del_from_rule_window;
+var overview_window;
+var graph_window;
+var network_graph;
 var cb_params_key2val = {
     'display_property' : {
         'true'  : 'name',
@@ -42,7 +45,7 @@ Ext.define(
     'PolicyWeb.controller.Service', {
         extend : 'Ext.app.Controller',
         views  : [ 'panel.form.ServiceDetails' ],
-        models : [ 'Service' ],
+        models : [ 'Service', 'Overview' ],
         stores : [ 'Service', 'AllServices', 'Rules', 'Users',
                    'SendNewUserTaskMail'
                  ],
@@ -184,6 +187,9 @@ Ext.define(
                     },
                     'expandedservices' : {
                         beforeshow : this.onShowAllServices
+                    },
+                    'serviceview > grid button[iconCls="icon-map"]' : {
+                        click : this.onClickOverviewButton
                     },
                     'adduserwindow > form button[text="Auftrag per Mail senden"]' : {
                         click : this.onSendAddUserTaskAsMail
@@ -407,12 +413,14 @@ Ext.define(
                 'dst'   : 'Ziel'
             };
             var radio;
-            var what = rec.raw.has_user === 'both' ?
-                [ 'src', 'dst' ]  :  [ rec.raw.has_user ];
-            for ( var i=0; i<what.length; i++) {
-                var selector = 'radio[boxLabel="' + field2label[what[i]] + '"]';
-                radio = window.down( selector );
-                radio.disable();
+            if ( rec.raw.has_user ) {
+                var what = rec.raw.has_user === 'both' ?
+                    [ 'src', 'dst' ]  :  [ rec.raw.has_user ];
+                for ( var i=0; i<what.length; i++) {
+                    var selector = 'radio[boxLabel="' + field2label[what[i]] + '"]';
+                    radio = window.down( selector );
+                    radio.disable();
+                }
             }
         },
 
@@ -566,6 +574,175 @@ Ext.define(
             return {};
         },
 
+        onClickOverviewButton : function( button ) {
+            this.getOverviewData( button, 'graph' );
+        },
+
+        getOverviewData : function( button, display_as ) {
+
+            if ( Ext.isObject( graph_window ) ) {
+                graph_window.close();
+            }
+
+            graph_window = Ext.create(
+                'Ext.window.Window',
+                {
+                    title  : 'Überblick über Verbindungen',
+                    id     : 'graph',
+                    height : 410,
+                    width  : 910,
+                    items  : [ { xtype : 'owncurrentresources' } ]
+                }
+            );
+
+            var res_panel = graph_window.down('owncurrentresources');
+            var store = res_panel.getStore();
+            var sc = PolicyWeb.getApplication().getController('Service');
+            var params = sc.getServiceStore().getProxy().extraParams;
+            params.relation = sc.getCurrentRelation();
+            params.display_as = display_as;
+            params = Ext.merge(
+                params,
+                sc.getSearchParams()
+            );
+
+            // FOO
+            graph_window.on(
+                'beforeshow',
+                function () {
+                    store.on( 'load',
+                              function () {
+                                  //console.dir( store.getRange() );
+                              }
+                            );
+                    
+                    store.load( { params : params } );
+                }
+            );            
+
+            graph_window.show();
+
+/*
+            var data = Ext.encode(
+                {
+                    data : store.getRange()
+                }
+            );
+
+            Ext.Ajax.request(
+                {
+                    url      : 'backend/get_connection_overview',
+                    method   : 'POST',
+                    jsonData : data,
+                    params   : params,
+                    success  : function ( response ) {
+                        var controller = PolicyWeb.getApplication().getController('Service');
+                        var response_data = Ext.decode(response.responseText);
+                        if ( display_as === 'list' ) {
+                            controller.displayOverviewList(response_data);
+                        }
+                        else {
+                            controller.displayOverviewGraph(response_data);
+                        }
+                    },
+                    failure  : function ( response ) {
+                        console.log('server-side failure with status code '
+                                    + response.status);
+                    }
+                }
+            );
+*/
+        },
+
+        drawGraph : function ( dataset ) {
+            
+            if ( Ext.isObject( graph_window ) ) {
+                graph_window.close();
+            }
+
+            graph_window = Ext.create(
+                'Ext.window.Window',
+                {
+                    title  : 'Überblick über Verbindungen',
+                    id     : 'graph',
+                    height : 410,
+                    width  : 910
+                }
+            );
+
+            // FOO
+            graph_window.on(
+                'show',
+                function () {
+
+                    // create a network
+                    var container = document.getElementById('graph-innerCt');
+                    var data = {
+                        nodes: dataset.data.nodes,
+                        edges: dataset.data.edges
+                    };
+                    var options = {};
+                    network_graph = new vis.Network(container, data, options);
+                    
+                }
+            );
+
+
+            graph_window.show();
+
+        },
+
+        displayOverviewGraph : function ( data ) {
+            try {
+                if ( Ext.isObject( vis ) ) {
+                    this.drawGraph( data );
+                }
+            } catch (err) {
+                //console.log( "Caught ERROR: " + err );
+                Ext.Loader.loadScript(
+                    {
+                        url    : "resources/vis.min.js",
+                        onLoad : function () {
+                            PolicyWeb.getApplication().getController('Service').drawGraph(data);
+                        },
+                        onError : function () {
+                            alert("Unable to load external graphical library 'vis.min.js'!");
+                        }
+                    }
+                );
+            }
+        },
+
+        displayOverviewList : function ( data ) {
+            var grid;
+            if ( Ext.isObject( overview_window ) ) {
+                overview_window.close();
+            }
+            grid = Ext.create(
+                'PolicyWeb.view.panel.grid.ConnectionOverview'
+            );
+            overview_window = Ext.create(
+                'Ext.window.Window',
+                {
+                    title  : 'Überblick über Verbindungen',
+                    height : 400,
+                    width  : 600,
+                    layout : 'fit',
+                    items  : [ grid ]
+                }
+            );
+            console.dir( data );
+            overview_window.on(
+                'show',
+                function () {
+                    var store, rec;
+                    store = grid.getStore();
+                    store.loadRawData( data.records );
+                }
+            );
+            overview_window.show();
+        },
+
         onShowAllServices : function( win ) {
             var srv_store     = this.getServiceStore();
             var grid          = win.down( 'grid' );
@@ -710,16 +887,80 @@ Ext.define(
             var panel   = this.getAddUserFormPanel();
             var form    = panel.getForm();
             if ( form.isValid() ) {
+                // FOO
+                // get business unit from combo box
+                var bu_combo = panel.down('combo');
+                var business_unit = bu_combo.getRawValue() || 'Unbekannt';
                 var tfs = panel.query('textfield');
                 var user_object_ip   = tfs[0].getValue();
-                var user_object_name = tfs[1].getValue();
+                var user_object_name = tfs[2].getValue();
                 var params = {
                     service          : service,
                     user_object_name : user_object_name,
-                    user_object_ip   : user_object_ip
+                    user_object_ip   : user_object_ip,
+                    business_unit    : business_unit
                 };
-                store.load( { params : params  } );
-                add_user_window.close();
+
+                // Further evaluate form data. Check for valid IP address.
+                var array = user_object_ip.split('/');
+                var ip = array[0];
+                var mask = array[1];
+                var rex = /\./;
+                var valid_mask = true;
+                var valid_ip = isIPv4Address( ip );
+                var num_mask;
+                var num_ip = ip2numeric( ip );
+                var msg;
+                var res_ip;
+                if ( valid_ip ) {
+                    if ( mask ) {
+                        if ( !rex.test( mask ) ) {
+                            if ( mask < 1 || mask > 32 ) {
+                                valid_mask = false;
+                                msg = "CIDR Maske \"" + mask +
+                                    "\" außerhalb des gültigen Bereichs: 0 <= Maske <= 32!";
+                            }
+                            else {
+                                // Valid CIDR mask, now check if it fits IP.
+                                mask = cidr2mask( orig_mask );
+                                num_mask = ip2numeric( mask );
+                                res_ip = num_ip & num_mask;
+                                if ( res_ip !== num_ip ) {
+                                    valid_mask = false;
+                                    msg = "IP passt nicht zur Maske! Falls Maske richtig " +
+                                        "sollte die IP lauten: " + numeric2ip( res_ip );
+                                }
+                            }
+                        }
+                        else {
+                            if ( isIPv4Address( mask ) ) {
+                                // mask is in dot notation
+                                num_mask = ip2numeric( mask );
+                                res_ip = num_ip & num_mask;
+                                if ( res_ip !== num_ip) {
+                                    valid_mask = false;
+                                    msg = "IP passt nicht zur Maske! Falls Maske richtig " +
+                                        "sollte die IP lauten: " + numeric2ip( res_ip );
+                                }
+                            }
+                            else {
+                                valid_mask = false;
+                                msg = "Ungültige Maske: " + mask;
+                            }
+                        }
+                    }
+                }
+                else {
+                    msg = "Bei \"" + ip + "\" handelt es sich nicht um eine gültige IP-Adresse!";
+                }
+
+                if ( valid_ip && valid_mask ) {
+                    store.load( { params : params  } );
+                    add_user_window.close();
+                }
+                else {
+                    Ext.MessageBox.alert( 'Netzmaske passt nicht zu IP', msg );
+                }
             }
         },
 

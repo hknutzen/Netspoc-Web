@@ -418,7 +418,6 @@ sub search_string {
     my $services = load_json('services');
     my $result   = [];
     my $regex = gen_search_regex($req, $search);
-
     for my $sname ( @$service_list ) {
 
         # Check if service name itself contains $search.
@@ -724,7 +723,13 @@ sub gen_search_req {
     my $ip2_hash     = build_search_hash($req, 'search_ip2');
     my $search_proto = $req->param('search_proto');
     my $proto_regex;
-    $proto_regex = qr/ \Q$search_proto\E /ix if $search_proto;
+    if ( $search_proto ) {
+        $proto_regex = qr/ \Q$search_proto\E /ix;
+        # Exact matches only?
+        if ( $req->param('search_exact') ) {
+            $proto_regex = qr/^$search_proto$/;
+        }
+    }
 
     $ip1_hash or $ip2_hash or $search_proto or return;
     return ($ip1_hash, $ip2_hash, $proto_regex);
@@ -981,9 +986,10 @@ sub get_matching_rules_and_users {
 }
 
 sub get_users {
-    my ($req, $session) = @_;
+    my ($req, $session, $sname) = @_;
     my $owner = $req->param('active_owner');
-    my $sname = $req->param('service') or abort "Missing parameter 'service'";
+    $sname ||= $req->param('service');
+    $sname or abort "Missing parameter 'service'";
     my ($rules, $users) = get_matching_rules_and_users($req, $sname);
     return get_nat_obj_list($users, $owner);
 }
@@ -1030,6 +1036,152 @@ sub get_services_and_rules {
     return \@result;
 }
 
+sub get_own_resources {
+    my ($req, $session) = @_;
+    my $relation = $req->param('relation');
+    my $services = service_list( $req, $session );
+    my %result;
+    for my $sname (map { $_->{name} } @$services) {
+	my $rules = expand_rules($req, $sname);
+        for my $rule (@$rules) {
+            if ( $relation eq 'owner' ) {
+                map { $result{$_} = { resource => $_ } } @{$rule->{src}};
+            }
+            elsif ( $relation eq 'user' ) {
+                #FOO
+                #my @bar = grep { ($_ eq '10.61.0.41') ||
+                #($_ =~ /192.168.0.0/) } @{$rule->{dst}};
+                #map { $result{$_} = { resource => $_ } } @bar;
+                map { $result{$_} = { resource => $_ } } @{$rule->{dst}};
+            }
+            else {
+                last;
+            }
+        }
+    }
+    return [ values %result ];
+}
+
+sub get_connection_overview {
+    my ($req, $session) = @_;
+    my $display_as = $req->param('display_as');
+    my $json = decode_json( $req->content );
+    my $services = service_list( $req, $session );
+    my $result;
+    my %res2index = ();  # Hash with indices for added resources
+    my $res_index = 0;   # Index of current resource in nodes-array
+    my $index;           # Index of source or target in nodes-array
+    my @nodes;
+    my @edges;
+    for my $resource ( @{$json->{data}} ) {
+        if ( $res2index{$resource} ) {
+            $res_index = $res2index{$resource};
+        }
+        else {
+            $res_index = scalar @nodes;
+            push @nodes, {
+                id    => $res_index,
+                label => $resource
+            };
+            $res2index{$resource} = $res_index;
+        }
+        for my $sname (map { $_->{name} } @$services) {
+            my $rules = expand_rules($req, $sname);
+            my $users = get_users( $req, $session, $sname );
+            for my $rule (@$rules) {
+
+                my @ports = map { s/,/ \&/gr } @{$rule->{prt}};
+
+                #
+                # Generate list data
+                #
+                if ( has_user( $rule, 'both' ) ) {
+                    push @$result,
+                    {
+                        res  => $resource,
+                        what => 'BOTH',
+                        src  => $resource,
+                        dst  => $resource,
+                        prt  => join( ',', @ports )
+                    };
+                }
+                else {
+                    if ( has_user( $rule, 'src' ) ) {
+                        if ( grep { $_ eq $resource } @{$rule->{dst}} ) {
+                            for my $user ( @$users ) {
+                                push @$result,
+                                {
+                                    res  => $resource,
+                                    what => 'DST',
+                                    src  => $user->{ip},
+                                    dst  => $resource,
+                                    prt  => join( ',',  @ports )
+                                };
+                                if ( $res2index{$user->{ip}} ) {
+                                    $index = $res2index{$user->{ip}};
+                                }
+                                else {
+                                    $index = scalar @nodes;
+                                    push @nodes, {
+                                        id    => $index,
+                                        label => $user->{ip}
+                                    };
+                                    $res2index{$user->{ip}} = $index;
+                                }
+                                push @edges, {
+                                    from   => $res_index,
+                                    to     => $index,
+                                    arrows => 'from'
+                                };
+                            }
+                        }
+                    }
+                    else {
+                        if ( grep { $_ eq $resource } @{$rule->{src}} ) {
+                            for my $user ( @$users ) {
+                                push @$result,
+                                {
+                                    res  => $resource,
+                                    what => 'SRC',
+                                    src  => $resource,
+                                    dst  => $user->{ip},
+                                    prt  => join( ',', @ports )
+                                };
+                                if ( $res2index{$user->{ip}} ) {
+                                    $index = $res2index{$user->{ip}};
+                                }
+                                else {
+                                    $index = scalar @nodes;
+                                    push @nodes, {
+                                        id    => $index,
+                                        label => $user->{ip}
+                                    };
+                                    $res2index{$user->{ip}} = $index;
+                                }
+                                push @edges, {
+                                    from   => $index,
+                                    to     => $res_index,
+                                    arrows => 'from'
+                                };
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    if ( $display_as eq 'graph' ) {
+        return {
+            nodes => \@nodes,
+            edges => \@edges
+        };
+    }
+    else {
+        return $result;
+    }
+}
+
 
 ################################################################################
 #
@@ -1064,18 +1216,22 @@ sub send_user_task_mail {
         || '<< Name wird ggf. vom Netzbetrieb oder ' .
         'Dienstanbieter vergeben >>';
     my $user_object_ip = $req->param('user_object_ip')
-        || 'Error: empty IP! (form validation failed!?';
+        || 'Error: empty IP! (form validation failed!?)';
+    my $business_unit = $req->param('business_unit')
+        || 'Error: no business_unit defined.';
     my $users = get_users($req, $session);
     my $services = load_json("services");
     my $srv_owners = $services->{$service}->{'details'}->{'owner'};
 
     # Hash to fill template with data to send via sendmail.
+    # FOO: TODO: send business_unit, too (and change template accordingly!)
     my $hash = {
         service          => $service,
         srv_owners       => $srv_owners,
         user_object_name => $user_object_name,
         user_object_ip   => $user_object_ip,
-        users            => $users
+        users            => $users,
+        business_unit    => $business_unit
     };
     send_template_mail( $req, $session, $template, $hash );
 }
@@ -1305,6 +1461,23 @@ sub get_about_info {
         policy_web_version => $version
     };
     return Template::get($config->{about_info_template}, $vars);
+}
+
+sub get_business_units {
+    my ($req, $session) = @_;
+
+    my $file = $config->{business_units};
+    open(my $fh, '<', $file) or abort "Can't open $file: $!";
+    my @lines = <$fh>;
+    close $fh;
+    my $result;
+    for my $item ( @lines ) {
+        chomp $item;
+        push @$result, {
+            name => $item
+        };
+    }
+    return $result;
 }
 
 # Get theme from session or set it to default.
@@ -1679,6 +1852,7 @@ my %path2sub =
      get_owners       => [ \&get_owners,    { add_success => 1, } ],
      set              => [ \&set_session_data, { add_success => 1, } ],
      get_about_info   => [ \&get_about_info,{ owner => 1, html => 1 } ],
+     get_business_units => [ \&get_business_units,{ owner => 1, add_success => 1 } ],
      get_history      => [ \&get_history,   { owner => 1, add_success => 1, } ],
      service_list     => [ \&service_list,  { owner => 1, add_success => 1, } ],
      get_admins       => [ \&get_admins,    { owner => 1, add_success => 1, } ],
@@ -1695,6 +1869,10 @@ my %path2sub =
 	 \&get_services_and_rules,       { owner => 1, add_success => 1, } ],
      get_network_resources => [
 	 \&get_network_resources,       { owner => 1, add_success => 1, } ],
+     get_own_resources => [
+	 \&get_own_resources,       { owner => 1, add_success => 1, } ],
+     get_connection_overview => [
+	 \&get_connection_overview,       { owner => 1, add_success => 1, } ],
      get_diff      => [ \&get_diff,      { owner => 1, } ],
      get_diff_mail => [ \&get_diff_mail, { owner => 1, add_success => 1, } ],
      set_diff_mail => [ \&set_diff_mail, { owner => 1, add_success => 1, } ],

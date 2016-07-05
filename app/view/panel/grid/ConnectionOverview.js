@@ -17,39 +17,35 @@ along with this program. If not, see <http://www.gnu.org/licenses/>.
 */
 
 Ext.define(
-    'PolicyWeb.view.panel.grid.AllServices',
+    'PolicyWeb.view.panel.grid.ConnectionOverview',
     {
         extend      : 'PolicyWeb.view.panel.grid.Abstract',
-        alias       : 'widget.allservices',
+        alias       : 'widget.connectionoverview',
         controllers : [ 'Service' ],
-        store       : 'AllServices',
+        store       : 'Connections',
         forceFit    : true,
         border      : false,
         features    : [
             {
-                groupHeaderTpl    : 'Dienst: {name} ({[values.children.length]} Regel{[(values.children.length) > 1 ? "n" : ""]})',
+                groupHeaderTpl    : 'Ausgewählte Resource : {name}  ({[values.children.length]} Verbindung{[(values.children.length) > 1 ? "en" : ""]})',
                 ftype             : 'grouping',
                 hideGroupedHeader : true
             }
         ],
-        columns     : {
-            items : [
-                { text            : 'Dienstname',
-                  dataIndex       : 'service'
-                },
-                { text : 'Aktion',     dataIndex : 'action', flex : 1 },
-                { text : 'Quelle',     dataIndex : 'src'     },
-                { text : 'Ziel',       dataIndex : 'dst'     },
-                { text : 'Protokoll',  dataIndex : 'proto'   }
-            ],
-            defaults : {
-                flex         : 2,
-                menuDisabled : true
-            }
-        },
+        columns     : [
+            {                        dataIndex : 'res'            },
+            { header : 'Ist',        dataIndex : 'what', flex : 1 },
+            { header : 'Quelle',     dataIndex : 'src',  flex : 7 },
+            { header : 'Ziel',       dataIndex : 'dst',  flex : 7 },
+            { header : 'Protokolle', dataIndex : 'prt',  flex : 7 }
+        ],
         tbar : [
             { xtype : 'printbutton' }
-        ]
+        ],
+        defaults : {
+            flex         : 2,
+            menuDisabled : true
+        }
     }
 );
 

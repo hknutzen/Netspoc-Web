@@ -63,6 +63,11 @@ Ext.define(
                 allowDepress : false
             },
             '->',
+/*
+            {
+                iconCls  : 'icon-map'
+            },
+*/
             {
                 xtype : 'print-all-button'
             },

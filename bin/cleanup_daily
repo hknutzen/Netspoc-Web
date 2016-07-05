@@ -75,3 +75,15 @@ if [ -n "$prev_date" ] ; then
     # Send diff per mail
     ~/NetspocWeb/bin/send_diff.pl $prev_date $curr_date
 fi
+
+
+# Remove users from /home/netspocweb/users if they are no longer known
+# as admins or watchers in Netspoc.
+# Deletes user-file only if it is older than a week in order to make it possible
+# to revert errorneous recent changes to admins or watchers without anybody noticing.
+~/NetspocWeb/bin/del_obsolete_users.pl
+
+
+# Remove session files older than a year.
+find ~/sessions -type f -mtime +365 -exec rm {} \;
+

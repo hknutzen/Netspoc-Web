@@ -29,7 +29,7 @@ Ext.define(
                 {
                     title       : 'Objekt zu Benutzern("User") hinzufügen',
                     width       : 500,
-                    height      : 221,
+                    height      : 248,
                     resizable   : false,
                     items       : [
                         this.buildAddUserForm()
@@ -63,6 +63,33 @@ Ext.define(
 	},
 
         buildFieldset : function () {
+            Ext.define(
+                'BU', {
+                    extend: 'Ext.data.Model',
+                    fields: [
+                        {name: 'name',  type: 'string'}
+                    ]
+                }
+            );
+            var myStore = Ext.create(
+                'PolicyWeb.store.NetspocState', {
+                    model    : 'BU',
+                    proxy    : {
+                        type     : 'policyweb',
+                        proxyurl : 'get_business_units'
+                    },
+                    autoLoad : true
+                }
+            );
+            var combo = Ext.create(
+                'Ext.form.ComboBox', {
+                    fieldLabel   : 'Mandant',
+                    store        : myStore,
+                    editable     : false,
+                    displayField : 'name',
+                    valueField   : 'name'
+                }
+            );
             var fieldset = 
                 {
                     xtype       : 'fieldset',
@@ -77,6 +104,7 @@ Ext.define(
                             allowBlank : false,
                             vtype      : 'IPAddress'
                         },
+                        combo,
                         {
                             fieldLabel : 'Name (optional)',
                             name       : 'add_user_string',

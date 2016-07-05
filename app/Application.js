@@ -65,10 +65,12 @@ Ext.require( [
                  'PolicyWeb.store.Owner',
                  'PolicyWeb.store.AllOwners',
                  'PolicyWeb.store.AllServices',
+                 'PolicyWeb.store.Connections',
                  'PolicyWeb.store.CurrentPolicy',
                  'PolicyWeb.store.DiffSetMail',
                  'PolicyWeb.store.DiffGetMail',
                  'PolicyWeb.store.DiffTree',
+                 'PolicyWeb.store.OverviewOwnResources',
                  'PolicyWeb.store.SendNewUserTaskMail',
                  'PolicyWeb.store.SendDeleteUserTaskMail',
                  'PolicyWeb.store.Supervisors',
@@ -82,12 +84,14 @@ Ext.require( [
                  'PolicyWeb.view.button.PrintButton',
                  'PolicyWeb.view.button.PrintAllButton',
                  'PolicyWeb.view.combo.OwnerCombo',
+                 'PolicyWeb.view.combo.OwnResourcesCombo',
                  'PolicyWeb.view.combo.HistoryCombo',
                  'PolicyWeb.view.container.TaskEmailInfo',
                  'PolicyWeb.view.panel.grid.AllServices',
                  'PolicyWeb.view.panel.grid.Emails',
                  'PolicyWeb.view.panel.grid.NetworkResources',
                  'PolicyWeb.view.panel.grid.Networks',
+                 'PolicyWeb.view.panel.grid.OwnCurrentResources',
                  'PolicyWeb.view.panel.grid.Rules',
                  'PolicyWeb.view.panel.grid.Services',
                  'PolicyWeb.view.panel.grid.Supervisors',
@@ -111,16 +115,43 @@ Ext.application(
 	name               : 'PolicyWeb',
         appFolder          : './app',
 	autoCreateViewport : true,
-	models             : [ 'Netspoc', 'Service', 'Rule', 'Owner', 'Item' ],
+	models             : [ 'Netspoc', 'Service', 'Rule', 'Owner', 'Item', 'Overview' ],
 	stores             : [ 'Netspoc', 'NetspocState', 'Service',
                                'Rules', 'Users', 'Emails', 'Owner',
                                'AllOwners', 'AllServices', 'History',
                                'CurrentPolicy', 'Networks', 'NetworkResources',
                                'DiffGetMail', 'DiffSetMail', 'DiffTree',
-                               'Watchers', 'Supervisors', 'SupervisorEmails'
+                               'Watchers', 'Supervisors', 'SupervisorEmails',
+                               'OverviewOwnResources', 'Connections'
                              ],
 	controllers        : [ 'Main', 'Service', 'Network',
                                'Diff', 'Account' ],
+
+	init : function() {
+            // Add sortType "asIP" that converts IP addresses to
+            // a numerical value which makes them sortable.
+            Ext.apply(
+                Ext.data.SortTypes, {
+                    asIP : function(value){
+                        // Sort IP address numerically.
+                        var m1 = /-/;
+                        var m2 = /\//;
+                        var array;
+                        if ( value.match(m1) ) {
+                            array = value.split('-');
+                            return ip2numeric( array[0] );
+                        }
+                        else if ( value.match(m2) ) {
+                            array = value.split('/');
+                            return ip2numeric( array[0] );
+                        }
+                        else {
+                            return ip2numeric( value );
+                        }
+                    }
+                }
+            );
+        },
 
 	launch : function() {
             Ext.Ajax.on( 'requestexception', this.onJsonException );
