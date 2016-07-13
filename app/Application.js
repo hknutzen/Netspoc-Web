@@ -18,6 +18,7 @@ You should have received a copy of the GNU General Public License
 along with this program. If not, see <http://www.gnu.org/licenses/>.
 */
 
+
 /* This overrides the sorttypes (code taken from
  *  data\SortTypes.js File )*/
 Ext.apply(
@@ -175,8 +176,8 @@ Ext.application(
                     },
                     IPAddressText : "IP-Adresse (mit Maske) oder Range. (Beispiele:" +
                         "  10.1.2.3 oder 10.1.2.0/24 oder 10.1.2.0 255.255.255.0 " +
-                        "oder 10.1.2.0/255.255.255.0 oder 10.1.2.50-10.2.2.52)",
-                    IPAddressMask : /[\d\.\/-\s]/i
+                        "oder 10.1.2.0/255.255.255.0 oder 10.1.2.50-10.2.2.52)"
+                    //IPAddressMask : /[\d\.\/-\s]/i
                 }
             );
 
