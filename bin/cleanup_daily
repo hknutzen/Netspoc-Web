@@ -1,6 +1,6 @@
 #!/bin/sh
 
-# (C) 2014 by Heinz Knutzen     <heinz.knutzen@gmail.com>
+# (C) 2016 by Heinz Knutzen     <heinz.knutzen@gmail.com>
 # 
 # https://github.com/hknutzen/Netspoc-Web
 # 
@@ -35,6 +35,12 @@ current=$(readlink $link) || abort "Can't read link $dir/current"
 version=$current
 mkdir -p RCS
 
+# Mark newly created owners as changed.
+for opath in $current/owner/* ; do
+    [ -f $opath/POLICY ] || cp -p $current/POLICY $opath
+done
+
+# Find and mark changed owners.
 if [ -f RCS/POLICY,v ] ; then
 
     # Nothing to do, if current version has already been processed.
@@ -52,11 +58,6 @@ if [ -f RCS/POLICY,v ] ; then
         # Copy current POLICY file to owner, if diff was found. 
         # Preserve date of file for RCS.
         cp -p $current/POLICY $current/owner/$owner
-    done
-else
-    # Mark all owner as changed on initial checkin.
-    for opath in $current/owner/* ; do
-        cp -p $current/POLICY $opath
     done
 fi
 
