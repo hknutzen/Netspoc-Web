@@ -8,42 +8,42 @@ use strict;
 use warnings;
 use FindBin;
 use lib $FindBin::Bin;
-use JSON_Cache;
+use JSON;
+use Load_Config;
 
-my $users_dir  = '/home/netspocweb/users';
-my $current_dir = '/home/netspocweb/export/current';
-my $export_dir = '/home/netspocweb/export';
-my $policy_path = $current_dir . '/' . 'POLICY';
-my $cache  = JSON_Cache->new(
-    netspoc_data => $export_dir,
-    max_versions => 8
-    );
+my $config      = Load_Config::load();
+my $users_dir   = $config->{user_dir};
+my $export_dir  = $config->{netspoc_data};
+my $current_dir = $export_dir . '/current';
 
-my $policy = qx(cat $policy_path);
-$policy =~ m/^# (\S+)/ or die "Can't find policy name in $policy_path";
-$policy = $1;
+my $policy = readlink( $current_dir ) || die "Can't read link $current_dir";
 
-opendir(my $dh, $users_dir) || die $!;
-
-my @users = grep { /^.*\@.*\.\w+$/ && -f "$users_dir/$_" } readdir($dh);
-
-my $data = load_json( 'email' );
-
-if ( scalar keys %$data ) {
+if ( opendir(my $dh, $users_dir) ) {
+    
+    my @users = grep { /^.*\@.*\.\w+$/ && -f "$users_dir/$_" } readdir($dh);
+    
+    my $netspoc_users_file = "$export_dir/$policy/email";
+    my $data;
+    open( my $fh, '<', $netspoc_users_file ) or warn("Can't open $netspoc_users_file: $!");
+    {
+        local $/ = undef;
+        $data = from_json(  <$fh>, { relaxed  => 1 } );
+    }
+    close( $fh );
+    
+    if ( scalar keys %$data ) {
         my @unseen = map { $users_dir . '/' . $_ } grep { !$data->{$_} } @users;
         for my $file ( @unseen ) {
-                if ( int(-M $file) > 7 ) {
-                        unlink $file or warn "Could not unlink $file: $!";
-                }
+            if ( int(-M $file) > 7 ) {
+                #print "Would unlink $file \n";
+                unlink $file or warn "Could not unlink $file: $!";
+            }
         }
+    }
+    else {
+        print STDERR "No owner export data found!\n";
+    }
 }
 else {
-        print STDERR "No owner export data found!\n";
+    print STDERR "Couldn't open dir $users_dir";
 }
-
-sub load_json {
-    my ($key) = @_;
-    return $cache->load_json_version($policy, $key);
-}
-
-
