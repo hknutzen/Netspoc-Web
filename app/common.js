@@ -191,3 +191,59 @@ function cidr2mask( cidr ) {
     return octets.join('.');
 }
 
+function IE_version() {
+    // Set defaults
+    var value = {
+        is_IE              : false,
+        true_version       : 0,
+        acting_version     : 0,
+        compatibility_mode : false,
+        compatible_string  : false
+    };
+
+    // Try to find the Trident version number
+    var trident = navigator.userAgent.match(/Trident\/(\d+)/);
+    if (trident) {
+        value.is_IE = true;
+        // Convert from the Trident version number to the IE version number
+        value.true_version = parseInt(trident[1], 10) + 4;
+    }
+
+    // Try to find the MSIE number
+    var msie = navigator.userAgent.match(/MSIE (\d+)/);
+    if ( msie ) {
+        value.is_IE = true;
+        // Find the IE version number from the user agent string
+        value.acting_version = parseInt(msie[1]);
+    } else {
+        // Must be IE 11 in "edge" mode
+        value.acting_version = value.true_version;
+    }
+
+    //console.dir( navigator.userAgent );
+    // If we have both a Trident and MSIE version number, see if they're different
+    if (value.is_IE && value.true_version > 0 && value.acting_version > 0) {
+        // In compatibility mode if the trident number doesn't match
+        // up with the MSIE number
+        if ( value.true_version !== value.acting_version ) {
+            value.compatibility_mode = true;
+        }
+        else {
+            // Sometimes true_version and acting_version are equal
+            // although compatibility mode is activated.
+            // In those cases, sometimes the string "compatible;"
+            // can be found in the user agent line.
+            var compat_string = navigator.userAgent.match(/(compatible;)/);
+            if ( compat_string ) {
+                value.compatibility_mode = true;
+            }
+        }
+    }
+    
+    return value;
+}
+
+function ie_compat_mode() {
+    var ie_version = IE_version();
+    return ie_version.compatibility_mode;
+}
