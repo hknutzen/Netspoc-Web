@@ -35,11 +35,6 @@ current=$(readlink $link) || abort "Can't read link $dir/current"
 version=$current
 mkdir -p RCS
 
-# Mark newly created owners as changed.
-for opath in $current/owner/* ; do
-    [ -f $opath/POLICY ] || cp -p $current/POLICY $opath
-done
-
 # Find and mark changed owners.
 if [ -f RCS/POLICY,v ] ; then
 
@@ -50,13 +45,19 @@ if [ -f RCS/POLICY,v ] ; then
     # Compare current version with latest checked in version.
     prev_date=$(rlog -zLT RCS/POLICY,v |grep date:|head -1|cut -d ' ' -f 2)
 
-    # Mark each changed owner by copying the topelevel POLICY file
-    # into the owners directory.
+    # Mark each changed or newly created owner by copying the
+    # topelevel POLICY file into the owners directory.
     changed=$(~/NetspocWeb/bin/diff.pl . $prev_date $current)
     for owner in $changed; do
 
-        # Copy current POLICY file to owner, if diff was found. 
+        # Copy current POLICY file to owner directory to mark change.
         # Preserve date of file for RCS.
+        cp -p $current/POLICY $current/owner/$owner
+    done
+else
+    
+    # Mark all owners as changed on initial checkin.
+    for owner in $(cd $current/owner/ && ls) ; do
         cp -p $current/POLICY $current/owner/$owner
     done
 fi
@@ -68,7 +69,7 @@ fi
 ~/NetspocWeb/bin/cleanup_old_rcs $dir
 
 # Remove all policies older than current one.
-find . -name 'p*' ! -name $current ! -newer $current | xargs rm -rf
+find . -maxdepth 1 -name 'p*' ! -name $current ! -newer $current | xargs rm -rf
 
 if [ -n "$prev_date" ] ; then
     curr_date=$(rlog -zLT RCS/POLICY,v |grep date:|head -1|cut -d ' ' -f 2)
@@ -86,5 +87,8 @@ fi
 
 
 # Remove session files older than a year.
-find ~/sessions -type f -mtime +365 -exec rm {} \;
+session_dir=$(read_conf session_dir)
+if [ -n "$session_dir" -a -d $session_dir ] ; then
+    find $session_dir -type f -mtime +365 -exec rm {} \;
+fi
 

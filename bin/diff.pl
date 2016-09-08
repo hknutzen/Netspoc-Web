@@ -43,11 +43,10 @@ my $old_ver = shift @ARGV or usage();
 my $new_ver = shift @ARGV or usage();
 @ARGV and usage();
 
-
 # Cache holding JSON data.
 my $cache = JSON_Cache->new(netspoc_data => $path, max_versions => 8);
 
-# Bestimme alle aktiven owner.
+# Find active owners.
 my $email2owners = $cache->load_json_version($new_ver, 'email');
 my %owners;
 for my $aref (values %$email2owners) {
@@ -56,10 +55,15 @@ for my $aref (values %$email2owners) {
     }
 }
 
-# Vergleiche Dateien für jeden Owner.
+# Compare files for each owner.
 for my $owner (sort keys %owners) {
-    my $changes = Policy_Diff::compare($cache, $old_ver, $new_ver, $owner);
-    if ($changes) {
-        print "$owner\n";
+
+    # Compare only, if history is available.
+    if (-d "$path/RCS/owner/$owner") {
+        Policy_Diff::compare($cache, $old_ver, $new_ver, $owner)
+            or next;
     }
+
+    # Mark new or changed owner as changed.
+    print "$owner\n";
 }
