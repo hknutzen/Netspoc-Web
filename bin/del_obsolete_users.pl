@@ -1,4 +1,4 @@
-#!/usr/local/bin/perl
+#!/usr/bin/env perl
 
 # Compare users found in /home/netspocweb/users to list of admins and watchers
 # found in json export data (/home/netspocweb/export/current) from netspoc.
