@@ -18,7 +18,7 @@ sub prepare_export {
     print $in_fh $input;
     close $in_fh;
 
-    my $cmd = "perl /home/knutzehe/Netspoc/bin/export-netspoc -quiet $filename $export_dir/$policy";
+    my $cmd = "export-netspoc -quiet $filename $export_dir/$policy";
     my ($stdout, $stderr);
     run3($cmd, \undef, \$stdout, \$stderr);
     my $status = $?;

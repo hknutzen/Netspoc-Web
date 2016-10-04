@@ -64,6 +64,9 @@ Ext.define(
                     'ownercombo' : {
                         select       : this.onOwnerSelected
                     },
+                    'compatinfowindow button' : {
+                        click : this.setCompatMsgMode
+                    },
                     'mainview > panel > toolbar > historycombo' : {
                         select       : this.onPolicySelected,
                         beforequery  : function(qe){
@@ -119,6 +122,75 @@ Ext.define(
                       },
                       this
                     );
+
+            if ( ie_compat_mode() === true ) {  // see common.js
+                this.getCompatInfoMsgMode();
+            }
+        },
+
+        getCompatInfoMsgMode : function() {
+            var store = Ext.create(
+                'PolicyWeb.store.Netspoc',
+                {
+                    proxy : {
+                        type     : 'policyweb',
+                        proxyurl : 'get_compat_msg_mode'
+                    },
+                    fields      : [],
+                    autoDestroy : true
+                }
+            );
+            store.load(
+                {
+                    callback : this.showCompatInfoWindow,
+                    scope    : this
+                }
+            );
+        },
+
+        showCompatInfoWindow : function( records ) {
+            if ( records ) {
+                var value = records[0];
+                if ( value ) {
+                    if ( value.raw.ignore_compat_msg == 'true' ) {
+                        return false;
+                    }
+                }
+            }
+            this.displayCompatInfoWindow();
+            return true;
+        },
+
+        displayCompatInfoWindow : function() {
+            Ext.create(
+                'PolicyWeb.view.window.CompatInfo'
+            ).show();
+        },
+
+        setCompatMsgMode : function(button) {
+            var window = button.up('window');
+            var checkbox = window.down('checkboxfield');
+            var value = checkbox.getValue();
+            var store = Ext.create(
+                'PolicyWeb.store.Netspoc',
+                {
+                    proxy       : {
+                        type     : 'policyweb',
+                        proxyurl : 'set'
+                    },
+                    fields      : [],
+                    autoDestroy : true
+                }
+            );
+            store.load(
+                {
+                    params   : { ignore_compat_msg : value },
+                    callback : function () {
+                        window.close();
+                    },
+                    scope    : this
+                }
+            );
         },
 
         onOwnerLoaded : function(store, records, success) {

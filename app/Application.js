@@ -157,17 +157,6 @@ Ext.application(
 
 	launch : function() {
 
-            if ( ie_compat_mode() === true ) {  // see common.js
-                Ext.Msg.show(
-                    {
-                        title   : 'Kompatibilitätsmodus ist aktiviert',
-                        msg     : 'Im Kompatibilitätsmodus können nicht alle Features von Policy-Web genutzt werden. Möglicherweise werden Elemente nicht korrekt dargestellt. Bitte deaktivieren Sie für diese Webseite den Kompatibilitätsmodus.',
-                        buttons : Ext.Msg.OK,
-                        icon    : Ext.Msg.INFO
-                    }
-                );
-            }
-            
             Ext.Ajax.on( 'requestexception', this.onJsonException );
 
             Ext.override(

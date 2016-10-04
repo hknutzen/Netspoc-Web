@@ -1422,6 +1422,23 @@ sub set_diff_mail {
 }
 
 ####################################################################
+# Deal with IE compatibility mode
+####################################################################
+
+# Get compat_msg from session if present.
+sub get_compat_msg_mode {
+    my ($req, $session) = @_;
+    my $value = $session->param('ignore_compat_msg');
+    if ($value) {
+	return [ { ignore_compat_msg => $value } ];
+    }
+    else {
+	return [];
+    }
+}
+
+
+####################################################################
 # Data for about dialog 
 ####################################################################
 
@@ -1497,7 +1514,11 @@ sub get_theme {
 # Save session data
 ####################################################################
 
-my %saveparam = ( owner => 1, theme => 1 );
+my %saveparam = (
+    owner             => 1,
+    theme             => 1,
+    ignore_compat_msg => 1
+    );
 
 sub set_session_data {
     my ($req, $session) = @_;
@@ -1852,6 +1873,7 @@ my %path2sub =
      get_owners       => [ \&get_owners,    { add_success => 1, } ],
      set              => [ \&set_session_data, { add_success => 1, } ],
      get_about_info   => [ \&get_about_info,{ owner => 1, html => 1 } ],
+     get_compat_msg_mode => [ \&get_compat_msg_mode,{ add_success => 1, } ],
      get_business_units => [ \&get_business_units,{ owner => 1, add_success => 1 } ],
      get_history      => [ \&get_history,   { owner => 1, add_success => 1, } ],
      service_list     => [ \&service_list,  { owner => 1, add_success => 1, } ],
