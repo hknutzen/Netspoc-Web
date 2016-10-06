@@ -1,5 +1,7 @@
 {{$NEXT}}
 
+1.006     2016-10-06 14:10:23+02:00 Europe/Berlin
+
  - Compatibility check with checkbox to get rid of message
  - Prepare test search-ip.t to be run outside dev environment
    (integrate with TravisCI, for example).
