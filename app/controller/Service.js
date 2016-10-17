@@ -302,9 +302,7 @@ Ext.define(
                     appstate.setAdmin( false );
                     var cardpanel = this.getMainCardPanel();
                     var index = cardpanel.getLayout().getActiveItemIndex();
-                    if ( index === 1 ) {
-                        this.onBeforeActivate();
-                    }
+                    this.onBeforeActivate();
                 },
                 this
             );
@@ -456,7 +454,6 @@ Ext.define(
             var params        = Ext.merge( cb_params, extra_params );
             params            = Ext.merge( params, search_params );
             params.relation   = relation;
-            
             store.load( { params : params } );
         },
         
