@@ -300,8 +300,6 @@ Ext.define(
                 function () {
                     if ( appstate.getInitPhase() ) { return; }
                     appstate.setAdmin( false );
-                    var cardpanel = this.getMainCardPanel();
-                    var index = cardpanel.getLayout().getActiveItemIndex();
                     this.onBeforeActivate();
                 },
                 this
