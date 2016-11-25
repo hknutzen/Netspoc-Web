@@ -81,6 +81,7 @@ Ext.define(
                                 '->',
                                 {
                                     xtype   : 'printbutton',
+                                    id      : 'btn_print_rules',
                                     tooltip : 'Druckansicht für Regeln oder User des aktuell ausgewählten Dienstes'
                                 }
                             ]

@@ -19,6 +19,7 @@ along with this program. If not, see <http://www.gnu.org/licenses/>.
 Ext.define(
     'PolicyWeb.view.panel.grid.Services',
     {
+        id          : 'grid_services',
         extend      : 'PolicyWeb.view.panel.grid.Abstract',
         alias       : 'widget.servicelist',
         controllers : [ 'Service' ],
@@ -36,6 +37,7 @@ Ext.define(
         },
         tbar        : [
             {
+                id           : 'btn_own_services',
                 xtype        : 'chooseservice',
                 text         : 'Eigene',
                 toggleGroup  : 'polNavBtnGrp',

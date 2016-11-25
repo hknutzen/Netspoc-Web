@@ -228,7 +228,7 @@ Ext.define(
             var win = Ext.create(
                 'Ext.window.Window',
                 {
-                    id          : 'ownerWindow',
+                    id          : 'win_owner',
                     title       : 'Verantwortungsbereich ausw&auml;hlen',
                     width       : 400, 
                     height      : 80,
