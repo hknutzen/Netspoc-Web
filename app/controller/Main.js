@@ -64,6 +64,9 @@ Ext.define(
                     'ownercombo' : {
                         select       : this.onOwnerSelected
                     },
+                    'initialownercombo' : {
+                        select       : this.onOwnerSelected
+                    },
                     'compatinfowindow button' : {
                         click : this.setCompatMsgMode
                     },
@@ -223,7 +226,7 @@ Ext.define(
 
         showSelectOwnerWindow : function() {
             var combo = Ext.create(
-                'PolicyWeb.view.combo.OwnerCombo'
+                'PolicyWeb.view.combo.InitialOwnerCombo'
             );
             var win = Ext.create(
                 'Ext.window.Window',
@@ -263,8 +266,9 @@ Ext.define(
         },
         onSetOwnerSuccess : function(records, options, success) {
             var owner_obj = options.owner;
-            var window = Ext.getCmp( 'ownerWindow' );
-
+            var window = Ext.getCmp( 'win_owner' );
+            
+            debugger;
             // Close window late, otherwise we get some extjs error.
             if (window) {
                 window.close();

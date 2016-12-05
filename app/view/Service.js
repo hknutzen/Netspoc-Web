@@ -99,6 +99,7 @@ Ext.define(
                                 '-',
                                 {
                                     xtype    : 'checkbox',
+                                    id       : 'cb_expand_users',
                                     name     : 'expand_users',
                                     boxLabel : 'User expandieren'
                                 },
@@ -182,6 +183,7 @@ Ext.define(
             return Ext.create(
                 'PolicyWeb.view.panel.grid.Rules',
                 {
+                    id        : 'grid_rules',
                     region    : 'center',
                     printview : function () {
                         this.fireEvent( 'printrules' );

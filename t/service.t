@@ -13,40 +13,11 @@ use PolicyWeb::BackendTest;
 use JSON;
 
 
-
-#my $div = wait_until { $d->find_element('div', css') };
-
-=head
-{totalCount: 2, success: true, records: [{owner: [{name: "y"}], name: "FromKunde2HostInBigNet",…},…]}
-records : [{owner: [{name: "y"}], name: "FromKunde2HostInBigNet",…},…]
-success : true
-totalCount : 2
-
-=cut
-    
-#GET /daniel4/backend/service_list?active_owner=guest_owner&history=p1&chosen_networks=&expand_users=0&display_property=ip&filter_rules=1&relation=user
-
-my %params = (
-    active_owner     => 'guest_owner',
-    history          => 'p1',
-    chosen_networks  => '',
-    expand_users     => 0,
-    display_property => 'ip',
-    filter_rules     => 1,
-    relation         => 'user'
-    );    
-
-#%merged = (%A, %B);
-
-my $SERVER   = "10.3.28.111";
-my $base_url = "http://$SERVER/daniel4/";
-my $app_url = "$base_url/app.html";
 my $driver = PolicyWeb::FrontendTest->new(
     browser_name   => 'chrome',
     proxy => {
         proxyType => 'direct',
     },
-    base_url       => $base_url,
     default_finder => 'id',
     javascript     => 1,
     extra_capabilities => {
@@ -54,78 +25,83 @@ my $driver = PolicyWeb::FrontendTest->new(
     }
 );
 
-#$driver->debug_on();
-
 prepare_export();
 prepare_runtime_no_login();
 
-$driver->login_as_guest();
+##############################################################################
+#
+# - Login as guest.
+# - Find combobox with all owners (by its id), open it by clicking
+#   on its trigger and select owner "x" from the list of owners.
+#
+##############################################################################
 
-my $EXTCOMBOBOX = "Ext.ComponentQuery.query(\"combobox[displayField='alias']\")[1]";
-my $COMBOBOXTRIGGERID = "return " . $EXTCOMBOBOX . ".triggerEl.elements[0].id" . ";";
-my $OPTIONTOSELECT = "x";
-my $DROPDOWNID = "return " . $EXTCOMBOBOX . ".picker.id;";
-
-my $id_string = $driver->execute_script( $COMBOBOXTRIGGERID );
-
-my $el = $driver->find_element( $id_string );
-
-$driver->click_element_ok( $id_string, 'id', "Clicked on owner combo open trigger" );
+$driver->login_as_guest_and_choose_owner( 'x' );
 
 
-#Create a relative xpath to the boundlist item
-my $li = "//div[contains(\@id,'" . $id_string . "')]//li[contains(text(),'" . $OPTIONTOSELECT . "')]";
-
-#Select the dropdown item
-$driver->click_element_ok( $li, 'xpath', "Selected item $OPTIONTOSELECT from combo box" );
-
-
-# Waith for button "Eigene Dienste" to show up, then click on that button.
-#$el = wait_until { $driver->find_element('btn_own_services', 'id') };
-
-ok( $driver->find_element('btn_own_services' ), "Found button \"Eigene Dienste\"" );
+##############################################################################
+#
+# Find button "Eigene Dienste" and click on it.
+# Find service with name "Test4" and click on that list item.
+#
+##############################################################################
 
 $driver->click_element_ok( 'btn_own_services', 'id', 'Click on button "Eigene Dienste" ' );
 
+my $service_grid = wait_until { $driver->find_element('grid_services' ) };
+
+my $elements = $driver->find_child_elements( $service_grid, 'x-grid-cell', 'class' );
+
+my @array = grep { $_->get_text() eq 'Test4' } @$elements;
+
+$driver->move_to( element => $array[0] );
+ok( $driver->click(), 'Select service "Test4"' );
 
 
-my $action_chains = Selenium::ActionChains->new(driver => $driver);
-#$action_chains->move_to_element($other_element);
-#$action_chains->click();
-#$action_chains->perform;
+
+##############################################################################
+#
+# Expand users by clicking on the appropriate checkbox (checkbox is found by
+# its id).
+# 
+# Find rules grid and get content of first element of first column. These
+# are IP addresses of the source which we want to check for being sorted.
+#
+##############################################################################
+
+#my $cb = $driver->find_element( '//label[text()="User expandieren"]/preceding-sibling::input[@type="checkbox"]', 'xpath' );
+
+
+$driver->click_element_ok( 'cb_expand_users', 'id', 'Click on checkbox "User expandieren"' );
+
+my $value = $driver->get_grid_cell_value( 'grid_rules', 0, 'src' );
+
+like( $value, qr/\d+/, "Got a grid value that seems to contain valid data" );
 
 
 
-my $service_grid = wait_until { $driver->find_element('grid_services', 'id') };
+##############################################################################
+#
+# Check if data from grid is sorted. We only look at the first IP, so
+# network mask and end of IP ranges are ignored for simplicity.
+#
+##############################################################################
 
-my $elements = $driver->find_child_elements( $service_grid, 'div[@class="x-grid-cell-inner"]', 'xpath' );
+# Data from grid cell should look like this (here yet unsorted):
+#$VAR1 = '10.1.0.10<br>10.1.0.90-10.1.0.99<br>10.2.2.2<br>10.1.0.2<br>10.9.9.0/255.255.255.0';
+my @values = split( '<br>', $value );
+my @ips = map { s/^(\d+\.\d+\.\d+\.\d+)(.*)/$1/r } @values;
+my @num_ips = map { ip2numeric($_) } @ips;
+my @sorted_ips = sort { $a<=>$b } @num_ips;
 
-die Dumper( $elements );
 
-map { error $_->get_text(); } @$elements;
+is_deeply( \@num_ips, \@sorted_ips, "IP addresses in correct sort order." );
 
-    
+
+
+
 done_testing();
 
 
 
 
-=head
-        //Trigger the ext combobox dropdown button for options to load
-        click(buttonComboboxTrigger);
-        //Once the dropdown is selected get the id of the boundlist
-    }
-
-    /**
-     * Click the desired WebElement.
-     *
-     * @param element - expects the WebElement to be selected.
-     */
-    public static void click(WebElement element) {
-        Actions action = new Actions(driver);
-        action.click(element).build().perform();
-    }
-}
-
-=cut
-    
