@@ -317,6 +317,20 @@ sub get_hosts {
 # Services, rules, users
 ####################################################################
 
+# Algorithm found here:
+# http://www.perlmonks.org/?node=Sorting%20IP%20Addresses%20Quickly
+sub sort_by_ip {
+    my ( $unsorted ) = @_;
+    
+    my @sorted = map { $_->[0] }
+    sort { $a->[1] <=> $b->[1] }
+    map {      my ($x,$y)=(0,$_);
+               $x=$_ + $x * 256 for split(/\./, $y);
+               [$y,$x]}
+    @$unsorted;
+    return \@sorted;
+}
+
 sub has_user {
     my ( $rule, $what ) = @_;
     return $rule->{has_user} eq $what || $rule->{has_user} eq 'both' ;
@@ -352,8 +366,8 @@ sub adapt_name_ip_user {
     for my $rule ( @$rules ) {
         my ($src, $dst) = @{$rule}{qw(src dst)};
         if ($disp_prop eq 'ip') {
-            $src = [ map { name2ip($_, $no_nat_set) } @$src ];
-            $dst = [ map { name2ip($_, $no_nat_set) } @$dst ];
+            $src = sort_by_ip( [ map { name2ip($_, $no_nat_set) } @$src ] );
+            $dst = sort_by_ip( [ map { name2ip($_, $no_nat_set) } @$dst ] );
         }
         if ($expand_users) {
             has_user($rule, 'src') and $src = $user_props;
@@ -1000,46 +1014,6 @@ sub expand_rules {
     return adapt_name_ip_user($req, $rules, $users);
 }
 
-sub ip2numeric {
-    # Convert IP address to numerical value.
-   
-    $_ = shift;
-
-    if ( m/\G(\d+)\.(\d+)\.(\d+)\.(\d+)/gc ) {
-        if ( $1 > 255 or $2 > 255 or $3 > 255 or $4 > 255 ) {
-            error( "Invalid IP address" );
-        }
-        return unpack 'N', pack 'C4',$1,$2,$3,$4;
-    } else {
-        error( "Expected IP address" );
-    }
-}
-
-sub numeric2ip {
-    my $ip = shift;
-    return sprintf "%vd", pack 'N', $ip;
-}
-
-sub sort_src_and_dst_by_ip {
-    my ( $rules ) = @_;
-    for my $rule ( @$rules ) {
-        my %numeric2orig;
-        for my $what ( 'src', 'dst' ) {
-            my $index = 0;
-            for my $ip ( @{$rule->{$what} } ) {
-                my $num_ip = ip2numeric( $ip =~ s/^(\d+\.\d+\.\d+\.\d+)(.*)/$1/r );
-                $numeric2orig{$what}->{$num_ip} = $ip;
-            }
-            my @sorted;
-            for my $num_ip ( sort { $a <=> $b } keys %{$numeric2orig{$what}} ) {
-                push @sorted, $numeric2orig{$what}->{$num_ip};
-            }
-            $rule->{$what} = \@sorted;
-        }
-    }
-    return $rules;
-}
-
 sub get_rules {
     my ($req, $session) = @_;
     my $owner = $req->param('active_owner');
@@ -1049,7 +1023,7 @@ sub get_rules {
     # Check if owner is allowed to access this service.
     $lists->{hash}->{$sname} or abort "Unknown service '$sname'";
 
-    return sort_src_and_dst_by_ip( expand_rules($req, $sname) );
+    return expand_rules($req, $sname);
 }
 
 sub get_services_and_rules {
