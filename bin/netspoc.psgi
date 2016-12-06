@@ -1000,6 +1000,46 @@ sub expand_rules {
     return adapt_name_ip_user($req, $rules, $users);
 }
 
+sub ip2numeric {
+    # Convert IP address to numerical value.
+   
+    $_ = shift;
+
+    if ( m/\G(\d+)\.(\d+)\.(\d+)\.(\d+)/gc ) {
+        if ( $1 > 255 or $2 > 255 or $3 > 255 or $4 > 255 ) {
+            error( "Invalid IP address" );
+        }
+        return unpack 'N', pack 'C4',$1,$2,$3,$4;
+    } else {
+        error( "Expected IP address" );
+    }
+}
+
+sub numeric2ip {
+    my $ip = shift;
+    return sprintf "%vd", pack 'N', $ip;
+}
+
+sub sort_src_and_dst_by_ip {
+    my ( $rules ) = @_;
+    for my $rule ( @$rules ) {
+        my %numeric2orig;
+        for my $what ( 'src', 'dst' ) {
+            my $index = 0;
+            for my $ip ( @{$rule->{$what} } ) {
+                my $num_ip = ip2numeric( $ip =~ s/^(\d+\.\d+\.\d+\.\d+)(.*)/$1/r );
+                $numeric2orig{$what}->{$num_ip} = $ip;
+            }
+            my @sorted;
+            for my $num_ip ( sort { $a <=> $b } keys %{$numeric2orig{$what}} ) {
+                push @sorted, $numeric2orig{$what}->{$num_ip};
+            }
+            $rule->{$what} = \@sorted;
+        }
+    }
+    return $rules;
+}
+
 sub get_rules {
     my ($req, $session) = @_;
     my $owner = $req->param('active_owner');
@@ -1009,7 +1049,7 @@ sub get_rules {
     # Check if owner is allowed to access this service.
     $lists->{hash}->{$sname} or abort "Unknown service '$sname'";
 
-    return expand_rules($req, $sname);
+    return sort_src_and_dst_by_ip( expand_rules($req, $sname) );
 }
 
 sub get_services_and_rules {

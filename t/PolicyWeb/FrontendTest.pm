@@ -87,11 +87,11 @@ sub ip2numeric {
 
     if ( m/\G(\d+)\.(\d+)\.(\d+)\.(\d+)/gc ) {
         if ( $1 > 255 or $2 > 255 or $3 > 255 or $4 > 255 ) {
-            Netspoc::syntax_err( "Invalid IP address" );
+            error( "Invalid IP address" );
         }
         return unpack 'N', pack 'C4',$1,$2,$3,$4;
     } else {
-        Netspoc::syntax_err( "Expected IP address" );
+        error( "Expected IP address" );
     }
 }
 
