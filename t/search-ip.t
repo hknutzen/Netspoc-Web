@@ -2,16 +2,11 @@
 
 use strict;
 use Test::More;
-use Test::Differences;
-use lib 'bin';
 use lib 't';
-use IPC::Run3;
-use File::Temp qw/ tempfile tempdir /;
-use Plack::Test;
-use JSON;
-use HTTP::Request::Common;
 
+use PolicyWeb::Init;
 use PolicyWeb::BackendTest;
+
 
 prepare_export();
 prepare_runtime();

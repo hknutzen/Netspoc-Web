@@ -2,15 +2,14 @@
 use strict;
 use warnings;
 
+use Time::HiRes qw( sleep );
 use Data::Dumper;
 use lib 't';
 use Test::More;
 use Selenium::Remote::WDKeys;
 use Selenium::Waiter qw/wait_until/;
-use Selenium::ActionChains;
+use PolicyWeb::Init;
 use PolicyWeb::FrontendTest;
-use PolicyWeb::BackendTest;
-use JSON;
 
 
 my $driver = PolicyWeb::FrontendTest->new(
@@ -26,7 +25,8 @@ my $driver = PolicyWeb::FrontendTest->new(
 );
 
 prepare_export();
-prepare_runtime_no_login();
+prepare_runtime();
+
 
 ##############################################################################
 #
@@ -36,6 +36,7 @@ prepare_runtime_no_login();
 #
 ##############################################################################
 
+$driver->set_implicit_wait_timeout(100);
 $driver->login_as_guest_and_choose_owner( 'x' );
 
 
@@ -46,13 +47,17 @@ $driver->login_as_guest_and_choose_owner( 'x' );
 #
 ##############################################################################
 
-$driver->click_element_ok( 'btn_own_services', 'id', 'Click on button "Eigene Dienste" ' );
-
 my $service_grid = wait_until { $driver->find_element('grid_services' ) };
-
+sleep(0.2);
+$driver->click_element_ok( 'btn_own_services', 'id', 'Click on button "Eigene Dienste" ' );
+          
 my $elements = $driver->find_child_elements( $service_grid, 'x-grid-cell', 'class' );
 
 my @array = grep { $_->get_text() eq 'Test4' } @$elements;
+
+if ( !scalar @array ) {
+    die "No element Test4 found!\n";
+}
 
 $driver->move_to( element => $array[0] );
 ok( $driver->click(), 'Select service "Test4"' );
@@ -71,13 +76,17 @@ ok( $driver->click(), 'Select service "Test4"' );
 
 #my $cb = $driver->find_element( '//label[text()="User expandieren"]/preceding-sibling::input[@type="checkbox"]', 'xpath' );
 
-
+sleep(0.2);
 $driver->click_element_ok( 'cb_expand_users', 'id', 'Click on checkbox "User expandieren"' );
 
-my $value = $driver->get_grid_cell_value( 'grid_rules', 0, 'src' );
+sleep(0.2);
+my $value = $driver->get_grid_cell_value_by_field_name( 'grid_rules', 0, 'src' );
+#die Dumper( $value );
+#my $value = $driver->get_grid_cell_value_by_row_and_column_index( 'grid_rules', 0, 1 );
 
 like( $value, qr/\d+/, "Got a grid value that seems to contain valid data" );
 
+#my $foo = wait_until { $driver->find_element('foo' ) };
 
 
 ##############################################################################
@@ -93,7 +102,6 @@ my @values = split( '<br>', $value );
 my @ips = map { s/^(\d+\.\d+\.\d+\.\d+)(.*)/$1/r } @values;
 my @num_ips = map { ip2numeric($_) } @ips;
 my @sorted_ips = sort { $a<=>$b } @num_ips;
-
 
 is_deeply( \@num_ips, \@sorted_ips, "IP addresses in correct sort order." );
 

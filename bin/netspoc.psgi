@@ -49,7 +49,6 @@ use Text::Template 'fill_in_file';
 use JSON_Cache;
 use Policy_Diff;
 
-
 # VERSION: inserted by DZP::OurPkgVersion
 my $version = __PACKAGE__->VERSION || 'devel';
 
@@ -317,17 +316,16 @@ sub get_hosts {
 # Services, rules, users
 ####################################################################
 
-# Algorithm found here:
-# http://www.perlmonks.org/?node=Sorting%20IP%20Addresses%20Quickly
 sub sort_by_ip {
     my ( $unsorted ) = @_;
-    
-    my @sorted = map { $_->[0] }
-    sort { $a->[1] <=> $b->[1] }
-    map {      my ($x,$y)=(0,$_);
-               $x=$_ + $x * 256 for split(/\./, $y);
-               [$y,$x]}
-    @$unsorted;
+    my %orig2int;
+
+    map {
+        /^(\d+\.\d+\.\d+\.\d+)/;
+        $orig2int{$_} = ip2int($1);
+    } @$unsorted;
+
+    my @sorted = sort { $orig2int{$a} <=> $orig2int{$b} } keys %orig2int;
     return \@sorted;
 }
 
@@ -357,7 +355,8 @@ sub adapt_name_ip_user {
     my $user_props;
     if ( $expand_users ) {
         if ($disp_prop eq 'ip') {
-            $user_props = [ map { name2ip($_, $no_nat_set) } @$user_names ];
+            my @unsorted = map { name2ip($_, $no_nat_set) } @$user_names;
+            $user_props = sort_by_ip( [ map { name2ip($_, $no_nat_set) } @$user_names ] );
         }
         else {
             $user_props = $user_names;

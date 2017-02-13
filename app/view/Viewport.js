@@ -46,6 +46,7 @@ Ext.define(
                 ],
                 tbar   : [
                     {
+                        id           : 'btn_services_tab',
                         text         : 'Dienste, Freischaltungen',
                         iconCls      : 'icon-chart_curve',
                         toggleGroup  : 'navGrp',
@@ -53,18 +54,21 @@ Ext.define(
                         pressed      : true
                     },
                     {
+                        id           : 'btn_own_networks_tab',
                         text         : 'Eigene Netze',
                         iconCls      : 'icon-computer_connect',
                         toggleGroup  : 'navGrp',
                         enableToggle : true
                     },
                     {
+                        id           : 'btn_diff_tab',
                         text         : 'Diff',
                         iconCls      : 'icon-chart_curve_edit',
                         toggleGroup  : 'navGrp',
                         enableToggle : true
                     },
                     {
+                        id           : 'btn_entitlement_tab',
                         text         : 'Berechtigungen',
                         iconCls      : 'icon-group',
                         toggleGroup  : 'navGrp',

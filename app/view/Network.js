@@ -37,7 +37,10 @@ Ext.define(
         
         buildNetworkListPanel : function() {
             var networklist = Ext.create(
-                'PolicyWeb.view.panel.grid.Networks'
+                'PolicyWeb.view.panel.grid.Networks',
+                {
+                    id : 'grid_own_networks'
+                }
             );
             return {
                 xtype          : 'cardprintactive',
@@ -47,12 +50,14 @@ Ext.define(
                 tbar : [
                     'Netzauswahl',
                     {
+                        id           : 'btn_confirm_network_selection',
                         text         : 'Bestätigen',
                         iconCls      : 'icon-accept',
                         disabled     : true,
                         enableToggle : false
                     },
                     {
+                        id           : 'btn_cancel_network_selection',
                         text         : 'Aufheben',
                         iconCls      : 'icon-cancel',
                         disabled     : true,

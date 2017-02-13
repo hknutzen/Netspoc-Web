@@ -268,7 +268,6 @@ Ext.define(
             var owner_obj = options.owner;
             var window = Ext.getCmp( 'win_owner' );
             
-            debugger;
             // Close window late, otherwise we get some extjs error.
             if (window) {
                 window.close();

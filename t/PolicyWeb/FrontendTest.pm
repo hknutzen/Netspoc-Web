@@ -7,11 +7,15 @@ package PolicyWeb::FrontendTest;
 
 use base ( "Test::Selenium::Remote::Driver" );
 use parent 'Exporter'; # imports and subclasses Exporter
-
+use Selenium::Waiter qw/wait_until/;
+use File::Temp qw/ tempfile tempdir /;
+use Plack::Builder;
+use HTTP::Request::Common;
+use Plack::Test;
+use PolicyWeb::Init qw( $port );
 use Data::Dumper;
 
-my $SERVER   = "10.3.28.111";
-my $base_url = "http://$SERVER/daniel4/";
+my $SERVER = "127.0.0.1";
 
 our @EXPORT = qw(
  login_as_guest
@@ -19,22 +23,12 @@ our @EXPORT = qw(
  get_grid_cell_value
  ip2numeric
  numeric2ip
- default_params
  error
  );
 
-my %params = (
-    active_owner     => 'guest_owner',
-    history          => 'p1',
-    chosen_networks  => '',
-    expand_users     => 0,
-    display_property => 'ip',
-    filter_rules     => 1,
-    relation         => 'user'
-    );    
-
 sub login_as_guest {
     my $driver = shift;
+    my $base_url = "http://$SERVER:$port/index.html";
     $driver->get( $base_url );
     
     $driver->find_element( '//input[@id="email"]', "xpath" );
@@ -51,19 +45,40 @@ sub login_as_guest {
 sub login_as_guest_and_choose_owner {
     my ( $driver, $owner ) = @_;
     $driver->login_as_guest();
+    # The two waits below are necessary to avoid a race condition.
+    # Without them, sometimes the combo box has not been rendered
+    # yet and an error that "triggerEl of undefined cannot be found"
+    # is raised.
+    my $window = wait_until { $driver->find_element( 'win_owner' ) };
+    wait_until { $driver->find_child_element( $window, 'combo_initial_owner' ) };
     $driver->select_combobox_item( 'combo_initial_owner', $owner );
 }
 
-sub get_grid_cell_value {
+sub get_grid_cell_value_by_field_name {
     my ( $driver, $grid_id, $row, $field_name ) = @_;
     my $script = "return Ext.getCmp(\"$grid_id\").getStore().getAt($row).get('$field_name');";
     return $driver->execute_script( $script );
 }
 
+sub get_grid_cell_value_by_row_and_column_index {
+    my ( $driver, $grid_id, $row, $col ) = @_;
+    my $script = "return Ext.getCmp(\"$grid_id\").headerCt.columnManager.columns[$col].dataIndex;";
+    my $field_name = $driver->execute_script( $script );
+    return $driver->get_grid_cell_value_by_field_name( $grid_id, $row, $field_name );
+}
+
+sub select_grid_row_by_index {
+    my ( $driver, $id, $row_index ) = @_;
+}
+
+sub select_grid_row_by_content {
+    my ( $driver, $id, $to_match ) = @_;
+}
+
 sub select_combobox_item {
     my ( $driver, $combo_id, $item ) = @_;
     
-    my $combo_query = "Ext.ComponentQuery.query(\"combobox[id='combo_initial_owner']\")[0]";
+    my $combo_query = "Ext.ComponentQuery.query(\"combobox[id='$combo_id']\")[0]";
     my $combo_trigger_id = "return " . $combo_query . ".triggerEl.first().id";
     my $dropdown_id = "return " . $combo_query . ".picker.id";
     
@@ -107,11 +122,6 @@ sub numeric2ip {
 sub error {
     print STDERR @_, "\n";
 }
-
-sub default_params {
-    return \%params;
-}
-
 
 
 1;
