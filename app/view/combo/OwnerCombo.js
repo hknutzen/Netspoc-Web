@@ -28,7 +28,7 @@ Ext.define(
         selectOnFocus  : true,
         typeAhead      : true,
         minChars       : 1,
-        displayField   : 'alias',
+        displayField   : 'name',
         valueField     : 'name',
         queryMode      : 'local',
         triggerAction  : 'all',

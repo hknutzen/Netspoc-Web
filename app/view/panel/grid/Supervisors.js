@@ -38,7 +38,7 @@ Ext.define(
         ],
         columns     : {
             items : [
-                { dataIndex : 'alias'    }
+                { dataIndex : 'name' }
             ]
         }
     }

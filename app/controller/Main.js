@@ -197,13 +197,11 @@ Ext.define(
         },
 
         onOwnerLoaded : function(store, records, success) {
-            var owner, alias;
+            var owner;
             // Keep already selected owner.
             if (success && records.length) {
                 owner = records[0].get('name');
-                alias = records[0].get('alias');
-                this.setOwnerState({ name  : owner, 
-                                     alias : alias });
+                this.setOwnerState({ name  : owner });
                 // Get theme from session.
             }
             // Owner was never selected, 
@@ -214,8 +212,7 @@ Ext.define(
                 // Automatically select owner if only one is available.
                 if ( all_owners.length === 1 ) {
                     owner = all_owners[0].get('name');
-                    alias = all_owners[0].get('alias');
-                    this.setOwner( owner, alias );
+                    this.setOwner( owner );
                 }
                 // Ask user to select one owner.
                 else {
@@ -242,7 +239,7 @@ Ext.define(
             ).show();
         },
 
-        setOwner : function(owner, alias) {
+        setOwner : function(owner) {
             var store = Ext.create(
                 'PolicyWeb.store.Netspoc',
                 {
@@ -260,7 +257,7 @@ Ext.define(
                   scope    : this,
                   
                   // private option
-                  owner    : {  name : owner, alias : alias }
+                  owner    : {  name : owner }
                 }
             );
         },
@@ -301,16 +298,10 @@ Ext.define(
 
         onOwnerSelected : function(  combo, records, eOpts ) {
             var owner = combo.getValue();
-            var store, alias;
             if ( appstate.getOwner() === owner ) {
                 return;
             }
-
-            // Get alias name as well
-            store = combo.store;
-            alias = 
-                store.getAt(store.findExact('name', owner)).get('alias');
-            this.setOwner(owner, alias);
+            this.setOwner(owner);
         },
         
         onPolicyLoaded : function( records, options, success ) {
@@ -321,7 +312,7 @@ Ext.define(
                     true   // Don't fire change event.
                 );
             }
-            appstate.changeOwner(owner_ob.name, owner_ob.alias);
+            appstate.changeOwner(owner_ob.name);
             
             appstate.setInitPhase( false );
 
@@ -349,7 +340,7 @@ Ext.define(
 
             // Set combo without loading the store.
             var ownercombo = this.getOwnerCombo();
-            ownercombo.setValue( appstate.getOwnerAlias() );
+            ownercombo.setValue( appstate.getOwner() );
             var historycombo = this.getMainHistoryCombo();
             historycombo.setValue( appstate.showHistory() );
 

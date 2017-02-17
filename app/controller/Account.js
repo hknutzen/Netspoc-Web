@@ -88,8 +88,7 @@ Ext.define(
         onSupervisorSelected : function( rowmodel, supervisor, index, eOpts ) {
             var email_panel = this.getSupervisorEmailGrid();
             if ( supervisor ) {
-                email_panel.show( supervisor.get('name'),
-                                  supervisor.get('alias') );
+                email_panel.show( supervisor.get('name') );
             }
             return true;
         }

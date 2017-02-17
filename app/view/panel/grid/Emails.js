@@ -50,7 +50,7 @@ Ext.define(
         viewConfig : {
             selectedRowClass : 'x-grid3-row-over'
         },
-        show : function(owner, alias) {
+        show : function(owner) {
             if (! owner) {
                 this.clear();
                 return;
@@ -70,7 +70,7 @@ Ext.define(
                 return;
             }
             store.load ({ params : { owner : owner } });
-            this.setTitle(this.title_prefix + ' f&uuml;r ' + alias);
+            this.setTitle(this.title_prefix + ' f&uuml;r ' + owner);
         },
 
         clear : function() {

@@ -6,7 +6,6 @@ Ext.define(
         extend   : 'PolicyWeb.store.Netspoc',
         model    : 'PolicyWeb.model.AllOwners',
         autoLoad : true,
-        sorters  : 'alias',
         proxy    : {
             type          : 'policyweb',
             actionMethods : { read : 'POST' },
