@@ -216,7 +216,6 @@ sub name2ip {
 sub get_nat_obj {
     my ($obj_name, $no_nat_set) = @_;
     my $objects = load_json('objects');
-    my $owner2alias = load_json('owner2alias');
     my $obj = $objects->{$obj_name};
     if (my $href = $obj->{nat} and $no_nat_set) {
 	for my $tag (keys %$href) {
@@ -225,11 +224,6 @@ sub get_nat_obj {
 	    $obj = { %$obj, ip => $nat_ip };
             last;
 	}
-    }
-    if ( $obj->{owner} ) {
-        if (my $alias = $owner2alias->{$obj->{owner}}) {
-            $obj = { %$obj, owner_alias => $alias };
-        }
     }
     return $obj;
 }
@@ -275,7 +269,6 @@ sub get_network_resources {
     my $owner       = $req->param('active_owner');
     my $selected    = $req->param('selected_networks');
     my $assets      = load_json("owner/$owner/assets");
-    my $owner2alias = load_json('owner2alias');
     my $data        = [];
 
     if ( $selected ) {
@@ -293,8 +286,7 @@ sub get_network_resources {
                     child_ip    => $child->{ip},
                     child_name  => $child->{name},
                     child_owner => {
-                        owner       => $child->{owner},
-                        owner_alias => $owner2alias->{$child->{owner}}
+                        owner => $child->{owner},
                     }
                 };
             }
@@ -892,24 +884,13 @@ sub service_list {
     }
     $result = search_string($req, $result);
 
-    my $owner2alias = load_json('owner2alias');
-    my $add_alias = sub {
-        my ($owner) = @_;
-        my $v = { name => $owner }; 
-        if (my $a = $owner2alias->{$owner}) {
-            $v->{alias} = $a;
-        }
-        return $v
-    };
     return [ map {
 	my $hash = { name => $_, %{ $services->{$_}->{details}} };
 
-	# Add alias name to 
-        # 1. list of owners, 
-        # 2. optional single sub_owner (= service owner)
-	$hash->{owner} = [ map { $add_alias->($_) } @{ $hash->{owner} } ];
+	# Create hash { name => .. } for each owner and sub_owner.
+	$hash->{owner} = [ map { { name => $_} } @{ $hash->{owner} } ];
 	$hash->{sub_owner} and 
-            $hash->{sub_owner} = $add_alias->($hash->{sub_owner});
+            $hash->{sub_owner} = { name => $hash->{sub_owner} };
 	$hash;
     } @$result ];
 }
@@ -1558,14 +1539,9 @@ sub can_access_owner {
 # Get currently selected owner.
 sub get_owner {
     my ($req, $session) = @_;
-    my $owner2alias = load_json('owner2alias');
     my $owner = $session->param('owner');
     if ($owner && can_access_owner($session, $owner)) {
-        my $v = { name => $owner };
-        if (my $a = $owner2alias->{$owner}) { 
-            $v->{alias} = $a; 
-        }
-	return [ $v ];
+	return [ { name => $owner } ];
     }
     else {
 	return [];
@@ -1573,18 +1549,12 @@ sub get_owner {
 }
 
 # Get list of all owners available for current email.
-# Return array of hashes { name => $name, [ alias => $alias ] }
+# Return array of hashes { name => $name }
 sub get_owners {
     my ($req, $session) = @_;
     my $email = $session->param('email');
     my $email2owners = load_json('email');
-    my $owner2alias = load_json('owner2alias');
-    return [ map({ my $v = { name => $_ }; 
-                   if (my $a = $owner2alias->{$_}) { 
-                       $v->{alias} = $a; 
-                   } $v 
-                 }
-                 @{ $email2owners->{$email} }) ];
+    return [ map({ { name => $_ } } @{ $email2owners->{$email} }) ];
 }
 
 # Get list of admin emails for given owner.
@@ -1612,14 +1582,7 @@ sub get_supervisors {
     my ($req, $session) = @_;
     my $owner = $req->param('active_owner') 
         or abort "Missing param 'active_owner'";
-    my $supervisors = load_json("owner/$owner/extended_by");
-    my $owner2alias = load_json('owner2alias');
-    return [ map({ if (my $a = $owner2alias->{$_->{name}}) { 
-                       { %$_, alias => $a } 
-                   } else { 
-                       $_ 
-                   }
-                 } @$supervisors) ];
+    return load_json("owner/$owner/extended_by");
 }
 
 # Get sorted list of combined admin and watcher emails

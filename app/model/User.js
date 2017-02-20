@@ -31,13 +31,9 @@ Ext.define(
             },
             // Not shown, but needed to select the corresponding
             // email addresses.
-            { name    : 'owner' },
-            { name    : 'owner_alias', 
+            { name    : 'owner', 
               header  : 'Verantwortungsbereich',
-              width   : 0.25,
-              mapping : function (node) { 
-                  return node.owner_alias || node.owner;
-              }
+              width   : 0.25
             }
         ]
     }

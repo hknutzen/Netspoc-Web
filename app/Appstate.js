@@ -21,7 +21,6 @@ along with this program. If not, see <http://www.gnu.org/licenses/>.
 var appstate = (
     function () {
         var owner       = '';
-        var owner_alias = '';
         var history     = '';
         var networks    = '';
         var init_phase  = true;
@@ -42,8 +41,7 @@ var appstate = (
         state.getInitPhase = function () {
             return init_phase;
         };
-        state.changeOwner = function (name, alias, silent) {
-            owner_alias = alias;
+        state.changeOwner = function (name, silent) {
             if (name !== owner) {
                 owner = name;
                 if (! silent) {
@@ -78,9 +76,6 @@ var appstate = (
         };
         state.getOwner = function () {
             return owner;
-        };
-        state.getOwnerAlias = function () {
-            return owner_alias;
         };
         state.getPolicy = function () {
             return history.policy;

@@ -532,13 +532,12 @@ Ext.define(
                 var array  = record.get( 'all_owners' );
                 var owner1 = array.shift();
                 var name   = owner1.name;
-                var alias  = owner1.alias || name;
                 array.push(owner1);
                 owner_field.setFieldLabel(
                     owner1.sub_owner ? 'Verwalter:' : 'Verantwortung:');
-                owner_text.setValue( alias );
+                owner_text.setValue( name );
                 var emails = this.getOwnerEmails();
-                emails.show( name, alias );
+                emails.show( name );
             }
         },
 
@@ -1198,14 +1197,12 @@ Ext.define(
 
         onUserDetailsSelected : function( rowmodel, user_item ) {
             var owner = '';
-            var owner_alias = '';
             var email_panel = this.getUserDetailEmails();
             if ( user_item ) {
                 owner       = user_item.get('owner');
-                owner_alias = user_item.get('owner_alias');
             }
             // Email-Panel gets cleared on empty owner.
-            email_panel.show( owner, owner_alias );
+            email_panel.show( owner );
         },
 
         onSearchWindowSpecialKey : function( field, e ) {
