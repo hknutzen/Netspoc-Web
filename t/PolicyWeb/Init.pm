@@ -9,24 +9,28 @@ use lib 'bin';
 use IPC::Run3;
 use File::Temp qw/tempfile tempdir/;
 use Plack::Test::Server;
+use Plack::App::File;
 use JSON;
 use HTTP::Request::Common;
 use Plack::Builder;
-use Data::Dumper;
  
 require Exporter;
 our @ISA = qw(Exporter);
 our @EXPORT = qw(
  prepare_export
  prepare_runtime
- prepare_runtime_no_login
 );
 
 our @EXPORT_OK = qw(
+ $app
  $port
+ $policy
+ $SERVER
 );
 
+our $SERVER = "127.0.0.1";
 our $port;
+our $policy = 'p1';
 
 ############################################################
 # Shared Netspoc configuration
@@ -153,7 +157,6 @@ END
 my $server;
 
 my $export_dir = tempdir( CLEANUP => 1 );
-our $policy = 'p1';
 sub prepare_export {
     my ($input) = @_;
     $input ||= $netspoc;
@@ -218,7 +221,7 @@ sub prepare_runtime_base {
         mount "/backend" => $netspoc_psgi;
     };
 
-    $server   = Plack::Test::Server->new( $app );
+    $server = Plack::Test::Server->new( $app );
     $port = $server->port();
 }
 

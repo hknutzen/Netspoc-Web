@@ -9,7 +9,7 @@ use PolicyWeb::BackendTest;
 
 
 prepare_export();
-prepare_runtime();
+PolicyWeb::BackendTest::prepare_runtime();
 
 my ($path, $params, $owner, $out, $title);
 $path = 'service_list';

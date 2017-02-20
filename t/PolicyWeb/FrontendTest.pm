@@ -12,10 +12,8 @@ use File::Temp qw/ tempfile tempdir /;
 use Plack::Builder;
 use HTTP::Request::Common;
 use Plack::Test;
-use PolicyWeb::Init qw( $port );
+use PolicyWeb::Init qw( $port $SERVER);
 use Data::Dumper;
-
-my $SERVER = "127.0.0.1";
 
 our @EXPORT = qw(
  login_as_guest
