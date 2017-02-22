@@ -9,7 +9,7 @@ use Selenium::Remote::WDKeys;
 use Selenium::Waiter qw/wait_until/;
 use Selenium::ActionChains;
 use PolicyWeb::FrontendTest;
-use PolicyWeb::BackendTest;
+use PolicyWeb::Init;
 use JSON;
 
 
@@ -42,8 +42,9 @@ my $driver = PolicyWeb::FrontendTest->new(
     }
 );
 
-prepare_export();
-prepare_runtime_no_login();
+
+PolicyWeb::Init::prepare_export();
+PolicyWeb::Init::prepare_runtime_no_login();
 
 
 $driver->login_as_guest_and_choose_owner( 'x' );
@@ -68,6 +69,9 @@ my $elements = $driver->find_child_elements( $networks_grid, 'x-grid-cell', 'cla
 
 my $checkboxes = $driver->find_child_elements( $networks_grid, 'input[type="checkbox"]' , 'css' );
 #my $checkboxes = $driver->find_child_elements( $networks_grid, 'x-grid-row-checker', 'class' , 'class' );
+
+done_testing();
+exit 0;
 
 die Dumper( $checkboxes );
 

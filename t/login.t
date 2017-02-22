@@ -2,15 +2,17 @@
 use strict;
 use warnings;
 
+use lib 't';
 use Test::More;
 use Selenium::Remote::Driver;
 use Selenium::Firefox::Profile;
 use Selenium::Remote::WDKeys;
 use Selenium::Waiter;
 use Test::Selenium::Remote::Driver;
+use PolicyWeb::Init qw/$SERVER $port/;
+use PolicyWeb::FrontendTest;
+use Data::Dumper;
 
-my $SERVER   = "10.3.28.111";
-my $base_url = "http://$SERVER/daniel4/";
 
 =head
 my $profile = Selenium::Firefox::Profile->new();
@@ -23,11 +25,13 @@ my $driver = Selenium::Remote::Driver->new(
     base_url        => $base_url,
     default_finder  => 'id'
     );
-
-
 =cut
 
-#$driver->debug_on();
+PolicyWeb::Init::prepare_export();
+PolicyWeb::Init::prepare_runtime_no_login();
+
+my $base_url = "http://$SERVER:$port";
+
 
 my $driver = Test::Selenium::Remote::Driver->new(
     browser_name   => 'chrome',
@@ -39,8 +43,10 @@ my $driver = Test::Selenium::Remote::Driver->new(
     javascript     => 1,
     );
 
+#$driver->debug_on();
 
-$driver->get( $base_url );
+
+$driver->get( 'index.html' );
 
     
 $driver->find_element_ok( '//input[@id="email"]', "xpath",
