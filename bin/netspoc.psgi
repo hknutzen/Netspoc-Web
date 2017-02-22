@@ -604,7 +604,7 @@ sub build_ip_search_hash {
 
         # Ignore hosts, interfaces, but not loopback interfaces.
         if (my $zone = $obj->{zone}) {
-            $matching_zones{$zone} = 1 if $super;
+            $matching_zones{$zone} = 1;
         }
     };
 
