@@ -9,6 +9,8 @@ Ext.define(
             },
             { name     : 'desc',
               mapping  : 'description' },
+            { name : 'disabled'   },
+            { name : 'disable_at'},
             { name : 'owner'      },
             { name : 'all_owners' },
             { name : 'sub_owner'  }

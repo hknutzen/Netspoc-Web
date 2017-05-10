@@ -482,6 +482,9 @@ Ext.define(
             // Load details form with values from selected record.
             var form = this.getServiceDetailsForm();
             form.loadRecord( service );
+            var name  = service.get( 'name' );
+            var disabled   = service.get( 'disabled' );
+            var disable_at = service.get( 'disable_at' );
 
             // Handle multiple owners.
             var trigger = this.getOwnerTrigger();
@@ -498,8 +501,44 @@ Ext.define(
             // displayed as owner, too.
             this.onTriggerClick(); // manually call event handler
 
+            // Show additional line if disabled and/or disable_at
+            // attributes are present.
+            var disabled_textfield = form.getForm().findField('disabled');
+            if ( (typeof disabled !== 'undefined' || typeof disable_at !== 'undefined')
+                && ( disabled !== '' || disable_at !== '' ) ) {
+                    var disabled_text = disable_at;
+                    if ( typeof disabled !== 'undefined' && disabled !== '' ) {
+                        disabled_text = disabled_text + ' DEAKTIVIERT!';
+                    }
+                    if ( !disabled_textfield ) {
+                        disabled_textfield = {
+                            xtype      : 'textfield',
+                            name       : 'disabled',
+                            fieldLabel : 'Gültig bis',
+                            allowBlank : false,  // requires a non-empty value
+                            readOnly   : true
+                        };
+                        form.addListener(
+                            'add',
+                            function ( my_form, item_added ) {
+                                //debugger;
+                                item_added.setRawValue( disabled_text );
+                            } );
+                        form.add( disabled_textfield );
+                    }
+                    else {
+                        disabled_textfield.setRawValue( disabled_text );
+                    }
+                }
+            else {
+                // Textfield left over from previously selected service?
+                // --> remove it.
+                if ( disabled_textfield ) {
+                    form.remove(disabled_textfield.getId());
+                }
+            }
+
             // Load rules.
-            var name  = service.get( 'name' );
             var rules_store = this.getRulesStore();
             rules_store.getProxy().extraParams.service = name;
             var params = this.getCheckboxParams();
