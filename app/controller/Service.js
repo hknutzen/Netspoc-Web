@@ -504,8 +504,8 @@ Ext.define(
             // Show additional line if disabled and/or disable_at
             // attributes are present.
             var disabled_textfield = form.getForm().findField('disabled');
-            if ( (typeof disabled !== 'undefined' || typeof disable_at !== 'undefined')
-                && ( disabled !== '' || disable_at !== '' ) ) {
+            if ( (typeof disabled !== 'undefined' || typeof disable_at !== 'undefined') &&
+                ( disabled !== '' || disable_at !== '' ) ) {
                     var disabled_text = disable_at;
                     if ( typeof disabled !== 'undefined' && disabled !== '' ) {
                         disabled_text = disabled_text + ' DEAKTIVIERT!';
