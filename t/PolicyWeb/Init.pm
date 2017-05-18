@@ -13,7 +13,7 @@ use Plack::App::File;
 use JSON;
 use HTTP::Request::Common;
 use Plack::Builder;
- 
+
 require Exporter;
 our @ISA = qw(Exporter);
 our @EXPORT = qw(
@@ -46,12 +46,12 @@ any:Sub1 = { ip = 10.1.0.0/23; link = network:Big; }
 any:Sub2 = { ip = 10.1.1.0/25; link = network:Big; }
 
 network:Sub = { ip = 10.1.1.0/24; owner = z; subnet_of = network:Big; }
-router:u = { 
+router:u = {
  interface:Sub;
  interface:L = { ip = 10.3.3.3; loopback; }
- interface:Big = { ip = 10.1.0.2; } 
+ interface:Big = { ip = 10.1.0.2; }
 }
-network:Big = { 
+network:Big = {
  ip = 10.1.0.0/16;
  host:B10 = { ip = 10.1.0.10; owner = z; }
  host:Range = { range = 10.1.0.90-10.1.0.99; }
@@ -78,7 +78,7 @@ any:DMZ10 = { ip = 10.0.0.0/8; link = network:DMZ; }
 
 router:inet = {
  interface:DMZ;
- interface:Internet; 
+ interface:Internet;
 }
 
 network:Internet = { ip = 0.0.0.0/0; }
@@ -160,10 +160,10 @@ my $export_dir = tempdir( CLEANUP => 1 );
 sub prepare_export {
     my ($input) = @_;
     $input ||= $netspoc;
-    my ($in_fh, $filename) = tempfile(UNLINK => 0);
+    my ($in_fh, $filename) = tempfile(UNLINK => 1);
     print $in_fh $input;
     close $in_fh;
-    
+
     my $cmd = "~/Netspoc/bin/export-netspoc -quiet $filename $export_dir/$policy";
     my ($stdout, $stderr);
     run3($cmd, \undef, \$stdout, \$stderr);
@@ -193,7 +193,7 @@ my $conf_data = <<END;
  "about_info_template"  : "",
  "business_units"       : "",
  "template_path"        : "",
-}    
+}
 END
 
 
@@ -201,7 +201,7 @@ our $cookie;
 our $app;
 sub prepare_runtime_base {
     my $opts = shift;
-    
+
     # Prepare config file for netspoc.psgi
     open(my $fh, '>', $conf_file) or die "Can't open $conf_file";
     print $fh $conf_data;
@@ -210,7 +210,7 @@ sub prepare_runtime_base {
     # netspoc.psgi searches config file in $HOME directory.
     $ENV{HOME} = $home_dir;
     my $netspoc_psgi = do 'bin/netspoc.psgi' or die "Couldn't parse PSGI file: $@";
-    
+
     $app = builder {
         mount "/extjs4"     =>
             Plack::App::File->new(root => "/home/brunkhda/htdocs/extjs4")->to_app;
@@ -233,9 +233,9 @@ sub prepare_runtime_no_login {
     prepare_runtime_base( { login => 0 } );
 }
 
-    
 
-    
+
+
 #__PACKAGE__::init();
 
 
