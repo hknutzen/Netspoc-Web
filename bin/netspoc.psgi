@@ -1769,14 +1769,13 @@ sub login {
         clear_attack($email);
     }
 
-    # Validate session timeout config param.
-    my $expire = $config->{expire_logged_in} || "480";
-    ($expire > 14 && $expire < 601 ) or
-        abort "Session timeout needs to be between 15min and 10h.";
-    $expire .= 'm';
+    # Set session timeout in minutes.
+    # Sanitize config value.
+    my $expire = $config->{expire_logged_in} || 480;
+    ($expire >= 15 && $expire <= 7*24*60 ) or $expire = 15;
 
     $session->param('email', $email);
-    $session->expire('logged_in', $expire);
+    $session->expire('logged_in', "${expire}m");
     $session->param('logged_in', 1);
     $session->flush();
     return $app_url;
