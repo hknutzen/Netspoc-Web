@@ -1776,7 +1776,6 @@ sub login {
     $expire .= 'm';
 
     $session->param('email', $email);
-    $session->clear('user');		# Remove old, now unused param.
     $session->expire('logged_in', $expire);
     $session->param('logged_in', 1);
     $session->flush();
