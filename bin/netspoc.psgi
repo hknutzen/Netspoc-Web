@@ -1439,14 +1439,6 @@ sub get_compat_msg_mode {
 sub get_about_info {
     my ($req, $session) = @_;
 
-    # Get version number of Netspoc.pm
-    my $netspoc_pm = `perldoc -l Netspoc`;
-    my $line = `grep '\$VERSION' $netspoc_pm`;
-    $line =~ /'(\d\.\d+)'/;
-    my $netspoc_version = $1;
-
-    # Get version of ExtJs used in frontend with Ext.getVersion(); .
-
     my $vars = {
         policy_web_version => $version
     };
