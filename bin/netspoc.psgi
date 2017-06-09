@@ -1436,27 +1436,6 @@ sub get_compat_msg_mode {
 # Data for about dialog
 ####################################################################
 
-sub get_session_timeout {
-    my ($req, $session) = @_;
-    my $email = $session->param('email');
-    return([{ user_timeout => '60m' }]) if $email eq 'guest';
-    my $owner = $req->param('active_owner');
-    my $store = User_Store::new($config, $email);
-    return $store->param('user_timeout') || '60m';
-}
-
-sub set_session_timeout {
-    my ($req, $session) = @_;
-    my $email = $session->param('email');
-    abort("Can't set timeout for user 'guest'") if $email eq 'guest';
-    validate_owner($req, $session, 1);
-    my $owner = $req->param('active_owner');
-    my $timeout = $req->param('user_timeout')
-        || abort "Parameter 'user_timeout' not found!";
-    my $store = User_Store::new($config, $email);
-    $store->param('user_timeout', $timeout);
-}
-
 sub get_about_info {
     my ($req, $session) = @_;
 
@@ -1491,26 +1470,12 @@ sub get_business_units {
     return $result;
 }
 
-# Get theme from session or set it to default.
-sub get_theme {
-    my ($req, $session) = @_;
-    my $theme = $session->param('theme');
-    if ($theme) {
-        my $v = { name => $theme };
-	return [ $v ];
-    }
-    else {
-	return [];
-    }
-}
-
 ####################################################################
 # Save session data
 ####################################################################
 
 my %saveparam = (
     owner             => 1,
-    theme             => 1,
     ignore_compat_msg => 1
     );
 
