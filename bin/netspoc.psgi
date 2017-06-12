@@ -1042,10 +1042,6 @@ sub get_own_resources {
                 map { $result{$_} = { resource => $_ } } @{$rule->{src}};
             }
             elsif ( $relation eq 'user' ) {
-                #FOO
-                #my @bar = grep { ($_ eq '10.61.0.41') ||
-                #($_ =~ /192.168.0.0/) } @{$rule->{dst}};
-                #map { $result{$_} = { resource => $_ } } @bar;
                 map { $result{$_} = { resource => $_ } } @{$rule->{dst}};
             }
             else {
@@ -1218,7 +1214,6 @@ sub send_user_task_mail {
     my $srv_owners = $services->{$service}->{'details'}->{'owner'};
 
     # Hash to fill template with data to send via sendmail.
-    # FOO: TODO: send business_unit, too (and change template accordingly!)
     my $hash = {
         service          => $service,
         srv_owners       => $srv_owners,
