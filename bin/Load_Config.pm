@@ -6,7 +6,7 @@ use Carp;
 use JSON;
 
 # Valid config options.
-my %conf_keys = map { ($_ => 1) } 
+my %conf_keys = map { ($_ => 1) }
 qw(
    diff_mail_template
    error_page
@@ -34,14 +34,14 @@ sub load {
     {
 	local $/ = undef;
 	$result = from_json(  <$fh>, { relaxed  => 1 } );
-    }    
+    }
     my %required;
     for my $key (keys %conf_keys) {
         next if $conf_keys{$key} eq 'optional';
         defined $result->{$key} or croak("Missing key '$key' in $conf_file");
     }
     for my $key (keys %$result) {
-        $conf_keys{$key} or croak("Invalid key '$key' in $conf_file");
+        $conf_keys{$key} or carp("Unexpected key '$key' in $conf_file");
     }
     return($result);
 }
