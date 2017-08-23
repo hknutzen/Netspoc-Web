@@ -1,9 +1,10 @@
 <head>
 <title>Netspoc</title>
 <style type="text/css">
- body {font-family:sans-serif;} 
- #links {width:21em;float:left;}
+ body {font-family:sans-serif;}
  fieldset {background-color:AliceBlue;border:2px solid steelblue;}
+ .small {font-size:small;}
+ #links {float:left;}
  #rechts {float:right;}
  #unten {clear:both}
 </style>
@@ -11,10 +12,27 @@
 </head>
 
 <body onload="document.getElementById('email').focus();">
-<h1>Policy-Web</h1>
+<div id="links"><h1>Policy-Web</h1></div>
 
-<div id="rechts">
-<p>
+<form action="backend/login" method="post" id="rechts">
+  <fieldset>
+    <legend class="small">Anmelden</legend>
+    <input name="app" type="hidden" value="../app.html"/>
+    <label for="email">Email:
+      <input name="email" type="text" size="30"/></label>
+    <label for="pass">Kennwort:
+      <input name="pass" type="password" size="15"/></label>
+    <input type="submit" value="Login"/>
+    <p>
+      <div id="rechts" class="small">
+        Neues <a href="passwd.html">Kennwort anfordern</a></div>
+      <div class="small">
+        Für Dataport Mitarbeiter<br>
+        <a href="ldap-login.html">Anmeldung über Verzeichnisdienst</a></div>
+  </fieldset>
+</form>
+
+<p id="unten">
 Dokumentation finden Sie
 <a href="/dokuwiki/">
 im Wiki
@@ -24,37 +42,10 @@ im Wiki
 Lesen Sie unten die neuesten Neuigkeiten
 oder
 <a href="/dokuwiki/doku.php?id=neuigkeiten">alle Neuigkeiten im Wiki</a>.
-</div>
 
-<form action="backend/login" method="post" id="links">
-  <fieldset>
-   <legend>Anmelden</legend>
-    <input name="app" type="hidden" value="../app.html"/>
-    <table>
-      <tr>
-       <td><label for="email">Email:</label></td>
-       <td><input id="email" name="email" type="text" size="30"/></td>
-      </tr>
-      <tr>
-       <td><label for="pass">Kennwort:</label></td>
-       <td><input id="pass" name="pass" type="password" size="30"/></td>
-      </tr>
-      <tr>
-       <td colspan=2 align=right><input type="submit" value="Login"/></td>
-      </tr>
-      <tr>
-       <td colspan=2>Neues <a href="passwd.html">Kennwort anfordern</a></td>
-      </tr>
-    </table>
-  </fieldset>
-</form>
-
-<div id="unten">
 <p>
 <iframe src="/dokuwiki/doku.php?id=neuigkeiten&do=export_html" width="100%"
-height="70%" frameborder=0 >
+height="71%" frameborder=0 >
 <a href="/dokuwiki/doku.php?id=neuigkeiten">Neuigkeiten</a>
 </iframe>
-</div>
-
 </body>

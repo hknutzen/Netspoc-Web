@@ -6,7 +6,8 @@ use Carp;
 use JSON;
 
 # Valid config options.
-my %conf_keys = map { ($_ => 1) }
+my %conf_keys = (
+    map({ ($_ => 1) }
 qw(
    diff_mail_template
    error_page
@@ -23,7 +24,16 @@ qw(
    template_path
    about_info_template
    business_units
-   );
+  )),
+    map({ ($_ => 'optional') }
+qw(
+   ldap_uri
+   ldap_dn_template
+   ldap_base_dn
+   ldap_filter_template
+   ldap_email_attr
+  ))
+);
 
 sub load {
     my $conf_file = glob( $ENV{'PW_FRONTEND_TEST'} ?

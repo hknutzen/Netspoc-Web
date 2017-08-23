@@ -38,6 +38,7 @@ use Digest::MD5 qw/md5_hex/;
 use Digest::SHA qw/sha256_hex/;
 use String::MkPasswd qw(mkpasswd);
 use Crypt::SaltedHash;
+use Net::LDAP;
 use Encode;
 
 use FindBin;
@@ -1668,7 +1669,7 @@ sub verify {
 # Login
 ####################################################################
 
-# Wait for 10, 20, .., 300 seconds after submitting wrong password.
+# Wait for 10, 20, 40, .., 300 seconds after submitting wrong password.
 sub set_attack {
     my ($email) = @_;
     my $store = User_Store::new($config, $email);
@@ -1701,25 +1702,8 @@ sub clear_attack {
     return;
 }
 
-sub login {
-    my ($req, $session) = @_;
-    logout($req, $session);
-    my $email = $req->param('email') or abort "Missing param 'email'";
-    $email = lc $email;
-    my $email2owners = load_json("email");
-    $email2owners->{$email} or abort "Email address is not authorized";
-    my $app_url = $req->param('app') or abort "Missing param 'app'";
-
-    # User 'guest' needs no password.
-    if ($email ne 'guest') {
-        my $pass = $req->param('pass') or abort "Missing param 'pass'";
-        check_attack($email);
-        if (not check_password($email, $pass)) {
-            set_attack($email);
-            abort "Login failed";
-        }
-        clear_attack($email);
-    }
+sub set_login {
+    my ($session, $email) = @_;
 
     # Set session timeout in minutes.
     # Sanitize config value.
@@ -1730,7 +1714,81 @@ sub login {
     $session->expire('logged_in', "${expire}m");
     $session->param('logged_in', 1);
     $session->flush();
+}
+
+sub login {
+    my ($req, $session) = @_;
+    logout($req, $session);
+    my $email = $req->param('email') or abort "Missing param 'email'";
+    $email = lc $email;
+    my $email2owners = load_json('email');
+    $email2owners->{$email} or abort('Email address is not authorized');
+
+    # User 'guest' needs no password.
+    if ($email ne 'guest') {
+        my $pass = $req->param('pass') or abort("Missing param 'pass'");
+        check_attack($email);
+        if (not check_password($email, $pass)) {
+            set_attack($email);
+            abort('Login failed');
+        }
+        clear_attack($email);
+    }
+
+    set_login($session, $email);
+    my $app_url = $req->param('app') or abort "Missing param 'app'";
     return $app_url;
+}
+
+sub ldap_login {
+    my ($req, $session) = @_;
+    logout($req, $session);
+    my $user = $req->param('user') or abort "Missing param 'user'";
+    my $pass = $req->param('pass') or abort "Missing param 'pass'";
+    my $email = ldap_check_pass_get_email($user, $pass);
+    my $email2owners = load_json('email');
+    $email2owners->{$email} or
+        abort("Email address '$email' is not authorized");
+    set_login($session, $email);
+    my $app_url = $req->param('app') or abort "Missing param 'app'";
+    return $app_url;
+}
+
+sub ldap_check_pass_get_email {
+    my ($user, $pass) = @_;
+    check_attack($user);
+    my $ldap_uri = $config->{ldap_uri} or
+        abort('No LDAP server has been configured');
+    if ($user =~ /[@]/) {
+        abort('Must not use email address as username');
+    }
+
+    # Connect to server, abort on any error.
+    my $ldap = Net::LDAP->new($ldap_uri, onerror => 'undef') or
+        abort "LDAP connect failed: $@";
+
+    # Bind with user account to authenticate.
+    my $dn = sprintf($config->{ldap_dn_template}, $user);
+    if (not $ldap->bind($dn, password => $pass)) {
+        set_attack($user);
+        abort('Authentication failed');
+    }
+    clear_attack($user);
+
+    # Search users email address.
+    my $email_attr = $config->{ldap_email_attr};
+    my $filter = sprintf($config->{ldap_filter_template}, $user);
+    my $result = $ldap->search(
+        base => $config->{ldap_base_dn},
+        filter => $filter,
+        attr => [ $email_attr ]);
+
+    # Get email from first entry.
+    my $entry = ($result->entries)[0] or
+        abort("Can't find email address for '$filter'");
+    my $email = $entry->get_value($email_attr);
+    $ldap->unbind;
+    return $email
 }
 
 sub logged_in {
@@ -1781,6 +1839,8 @@ my %path2sub =
      # - redir: send redirect
      # - owner: valid owner and history must be given as CGI parameter
      # - create_cookie: create cookie if no cookie is available
+     ldap_login       => [ \&ldap_login,    { anon => 1, redir => 1,
+                                              create_cookie => 1, } ],
      login            => [ \&login,         { anon => 1, redir => 1,
                                               create_cookie => 1, } ],
      register         => [ \&register,      { anon => 1, html  => 1,
