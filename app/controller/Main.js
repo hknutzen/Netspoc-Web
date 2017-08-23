@@ -30,19 +30,19 @@ Ext.define(
         refs   : [
             {
                 selector : 'mainview',
-                ref      : 'mainView'   
+                ref      : 'mainView'
             },
             {
                 selector : 'mainview > panel',
-                ref      : 'mainCardPanel'   
+                ref      : 'mainCardPanel'
             },
             {
                 selector : 'mainview historycombo',
-                ref      : 'mainHistoryCombo'   
+                ref      : 'mainHistoryCombo'
             },
             {
                 selector : 'ownercombo',
-                ref      : 'ownerCombo'   
+                ref      : 'ownerCombo'
             }
         ],
 
@@ -100,7 +100,7 @@ Ext.define(
             }
         },
 
-	onLaunch : function() {   
+	onLaunch : function() {
              appstate.setInitPhase( true );
 
             // Determine owner.
@@ -204,7 +204,7 @@ Ext.define(
                 this.setOwnerState({ name  : owner });
                 // Get theme from session.
             }
-            // Owner was never selected, 
+            // Owner was never selected,
             // check number of available owners.
             else {
                 var all_owners_store = this.getAllOwnersStore();
@@ -230,7 +230,7 @@ Ext.define(
                 {
                     id          : 'win_owner',
                     title       : 'Verantwortungsbereich ausw&auml;hlen',
-                    width       : 400, 
+                    width       : 400,
                     height      : 80,
                     layout      : 'fit',
                     bodyPadding : 10,
@@ -255,7 +255,7 @@ Ext.define(
                 { params   : { owner : owner },
                   callback : this.onSetOwnerSuccess,
                   scope    : this,
-                  
+
                   // private option
                   owner    : {  name : owner }
                 }
@@ -264,7 +264,7 @@ Ext.define(
         onSetOwnerSuccess : function(records, options, success) {
             var owner_obj = options.owner;
             var window = Ext.getCmp( 'win_owner' );
-            
+
             // Close window late, otherwise we get some extjs error.
             if (window) {
                 window.close();
@@ -290,7 +290,7 @@ Ext.define(
                 }
             );
         },
-        
+
         onPolicySelected : function(  combo, records, eOpts ) {
             appstate.changeHistory(records[0]);
             combo.setValue(appstate.showHistory());
@@ -303,7 +303,7 @@ Ext.define(
             }
             this.setOwner(owner);
         },
-        
+
         onPolicyLoaded : function( records, options, success ) {
             var owner_ob = options.owner;
             if (success && records.length) {
@@ -313,7 +313,7 @@ Ext.define(
                 );
             }
             appstate.changeOwner(owner_ob.name);
-            
+
             appstate.setInitPhase( false );
 
             // Determine and remember if an admin or a watcher
@@ -336,7 +336,7 @@ Ext.define(
                     }
                 }
             );
-            
+
 
             // Set combo without loading the store.
             var ownercombo = this.getOwnerCombo();
@@ -349,7 +349,7 @@ Ext.define(
             var service_controller = this.getController( 'Service' );
             service_controller.loadServiceStoreWithParams();
         },
-            
+
         onLogout : function() {
             var store = Ext.create(
                 'PolicyWeb.store.Netspoc',
@@ -390,9 +390,8 @@ Ext.define(
 
         onAfterLogout : function() {
 
-            // Jump to login page,
-            // which is assumed to be the default page in current directory.
-            window.location.href = '.';
+            // Jump to login page.
+            window.location.href = document.referrer;
         },
 
         onNavButtonClick : function( button, event, eOpts ) {
