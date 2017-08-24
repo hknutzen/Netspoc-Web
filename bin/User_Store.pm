@@ -1,7 +1,7 @@
 
 =head1 COPYRIGHT AND DISCLAIMER
 
-(C) 2014 by Heinz Knutzen     <heinz.knutzen@gmail.com>
+(C) 2017 by Heinz Knutzen     <heinz.knutzen@gmail.com>
 
 https://github.com/hknutzen/Netspoc-Web
 
