@@ -29,16 +29,20 @@ use CGI::Session::Driver::file;
 sub new {
     my ($config, $email) = @_;
     $CGI::Session::Driver::file::FileName = "%s";
-    return(CGI::Session->new ('driver:file;id:static', $email, 
-                              { Directory=> $config->{user_dir} }) 
+    return(CGI::Session->new ('driver:file;id:static', $email,
+                              { Directory=> $config->{user_dir} })
            or abort(CGI::Session->errstr()));
 }
 
 sub load {
     my ($config, $email) = @_;
     $CGI::Session::Driver::file::FileName = "%s";
-    return CGI::Session->load ('driver:file;id:static', $email, 
-                               { Directory=> $config->{user_dir} });
+    return CGI::Session->load ('driver:file;id:static', $email,
+                               { Directory=> $config->{user_dir} },
+
+                               # Set undocumented parameter 'read_only',
+                               # to not update atime when reading.
+                               1);
 }
 
 1;
