@@ -6,7 +6,7 @@ netspoc.psgi - A web frontend for Netspoc
 
 =head1 COPYRIGHT AND DISCLAIMER
 
-(C) 2014 by Heinz Knutzen     <heinz.knutzen@gmail.com>
+(C) 2017 by Heinz Knutzen     <heinz.knutzen@gmail.com>
             Daniel Brunkhorst <daniel.brunkhorst@web.de>
 
 https://github.com/hknutzen/Netspoc-Web
@@ -85,7 +85,7 @@ sub intersect {
     }
     return [ keys %$result ];
 }
-  
+
 # Delete an element from an array reference.
 # Return 1 if found, 0 otherwise.
 sub aref_delete {
@@ -98,12 +98,12 @@ sub aref_delete {
     }
     return 0;
 }
-  
+
 my $config;
 
 sub get_policy {
 
-    # Read modification date of and policy number from file current/POLICY 
+    # Read modification date of and policy number from file current/POLICY
     # Content is: # pnnnnn #...
     my $policy_path = "$config->{netspoc_data}/current/POLICY";
     my ($date, $time) = split(' ', qx(date -r $policy_path '+%F %R'));
@@ -123,7 +123,7 @@ sub get_history {
     my $current = get_policy()->[0];
     my $current_policy = $current->{policy};
     my @result = ($current);
-    
+
 
     # Add data from RCS rlog output.
     # Parse lines of this format:
@@ -186,7 +186,7 @@ sub load_json {
 
 sub store_cache {
     my ($key, $data, $context) = @_;
-    return 
+    return
         $cache->store_cache_version($selected_history, $key, $data, $context);
 }
 
@@ -227,7 +227,7 @@ sub get_nat_obj {
     }
     return $obj;
 }
-    
+
 sub get_nat_obj_list {
     my ($obj_names, $owner) = @_;
     my $no_nat_set = get_no_nat_set($owner);
@@ -280,7 +280,7 @@ sub get_network_resources {
         for my $net_name ( @{$network_names} ) {
             my $child_names = $assets->{net2childs}->{$net_name};
             for my $child ( @{ get_nat_obj_list($child_names, $owner) } ) {
-                
+
                 push @$data, {
                     name        => $net_name,
                     child_ip    => $child->{ip},
@@ -336,11 +336,11 @@ sub adapt_name_ip_user {
     my $no_nat_set   = get_no_nat_set($owner);
 
     # Untaint user input.
-    $disp_prop =~ /^(?:name|ip)$/ or 
+    $disp_prop =~ /^(?:name|ip)$/ or
         abort "Unknown display property '$disp_prop'";
 
     # Rules reference objects by name.
-    # Build copy with 
+    # Build copy with
     # - names substituted by objects
     # - IP addresses in object with NAT applied.
     my @result;
@@ -383,8 +383,8 @@ sub check_chosen_networks {
     my $owner  = $req->param('active_owner');
     my $assets = load_json("owner/$owner/assets");
     my $network_names = untaint_networks($chosen, $assets);
-    my %relevant_objects = 
-        map({ $_ => 1 } (@$network_names, 
+    my %relevant_objects =
+        map({ $_ => 1 } (@$network_names,
                          map({ @{ $assets->{net2childs}->{$_} } }
                              @$network_names)));
     return \%relevant_objects;
@@ -445,7 +445,7 @@ sub search_string {
 # Convert from IP address in dotted notation into integer.
 sub ip2int {
     my ($string) = @_;
-    $string =~ m/^(\d+)\.(\d+)\.(\d+)\.(\d+)$/ or 
+    $string =~ m/^(\d+)\.(\d+)\.(\d+)\.(\d+)$/ or
         abort("Expected IP address: '$string'");
     if ($1 > 255 or $2 > 255 or $3 > 255 or $4 > 255) {
         abort("Invalid IP address: '$string'");
@@ -500,7 +500,7 @@ sub build_ip_hash {
     }
     my $no_nat_set = get_no_nat_set($owner);
 
-    my %ip_hash; 
+    my %ip_hash;
     my $objects = load_json('objects');
     for my $name (keys %$objects) {
         my $obj = $objects->{$name};
@@ -535,7 +535,7 @@ sub build_ip_hash {
                 my ($ip1, $ip2) = split /-/, $obj_ip;
                 my $i1 = ip2int($ip1);
                 my $i2 = ip2int($ip2);
-                $ip_hash{$name} = { ip1 => $i1, 
+                $ip_hash{$name} = { ip1 => $i1,
                                     ip2 => $i2,
                                     mask => 0xffffffff };
             }
@@ -568,7 +568,7 @@ sub build_ip_search_hash {
         $len = 32;
     }
     elsif ($mask =~ /\D/) {
-        $len = mask2prefix(ip2int($mask)) or 
+        $len = mask2prefix(ip2int($mask)) or
             abort "Invalid netmask '$mask'";
     }
     elsif ($mask > 32) {
@@ -577,17 +577,17 @@ sub build_ip_search_hash {
     else {
         $len = $mask;
     }
-    
+
     # Check for valid ip.
     my $i = ip2int($ip);
     my $m = prefix2mask($len);
-    
+
     # Mask 0 matches all.
     return if !$m && $sub;
-    
+
     # Adapt ip to mask.
     $i = $i & $m;
-    
+
     # Collect names of matching objects into %hash.
     my $objects = load_json('objects');
     my %hash;
@@ -614,9 +614,9 @@ sub build_ip_search_hash {
 
         # Range
         if ($i2) {
-            if ($sub && 
+            if ($sub &&
                 (match_ip($i1, $i, $m) || match_ip($i2, $i, $m))
-                || ($i1 <= $i && $i <= $i2)) 
+                || ($i1 <= $i && $i <= $i2))
             {
                 $hash{$name} = 1;
             }
@@ -674,7 +674,7 @@ sub build_text_search_hash {
     my $objects = load_json('objects');
     return { map { $_ => 1 } grep { $_ =~ $regex } keys %$objects };
 }
-    
+
 # Chreate hash having those object names as key which match
 # search request in $search, $sub, $super.
 sub build_search_hash {
@@ -707,7 +707,7 @@ sub build_search_hash {
 }
 
 # Search for search_ip1, search_ip2 in rules and users.
-# If both are given, 
+# If both are given,
 # 1. search for ip1 in rules and ip2 in users
 # 2. search for ip2 in rules and ip1 in users
 # ip1 and ip2 can have an ip or (later) string value.
@@ -795,7 +795,7 @@ sub select_services {
 
         my $users = $sname2users->{$sname} || [];
         my $rules = $services->{$sname}->{rules};
-        
+
         my $match_users = sub {
             my ($obj_hash) = @_;
             return 1 if !$obj_hash;
@@ -875,11 +875,11 @@ sub service_list {
     }
 
     if (my ($obj1_hash, $obj2_hash, $proto_regex) = gen_search_chosen($req)) {
-        $result = select_services($req, $result, 
+        $result = select_services($req, $result,
                                   $obj1_hash, $obj2_hash, $proto_regex);
     }
     if (my ($obj1_hash, $obj2_hash, $proto_regex) = gen_search_req($req)) {
-        $result = select_services($req, $result, 
+        $result = select_services($req, $result,
                                   $obj1_hash, $obj2_hash, $proto_regex);
     }
     $result = search_string($req, $result);
@@ -889,7 +889,7 @@ sub service_list {
 
 	# Create hash { name => .. } for each owner and sub_owner.
 	$hash->{owner} = [ map { { name => $_} } @{ $hash->{owner} } ];
-	$hash->{sub_owner} and 
+	$hash->{sub_owner} and
             $hash->{sub_owner} = { name => $hash->{sub_owner} };
 	$hash;
     } @$result ];
@@ -930,7 +930,7 @@ sub select_rules_and_users {
             else {
                 $rules = [];
                 $users = [];
-            }                    
+            }
         }
         elsif (@$users1) {
             $rules = select_rules($rules, 0, $obj2_hash, $proto_regex);
@@ -967,13 +967,13 @@ sub get_matching_rules_and_users {
     my $rules       = $services->{$sname}->{rules};
     my $users       = $sname2users->{$sname} || [];
     if (my ($obj1_hash, $obj2_hash, $proto_regex) = gen_search_chosen($req)) {
-        ($rules, $users) = select_rules_and_users($rules, $users, 
-                                                  $obj1_hash, $obj2_hash, 
+        ($rules, $users) = select_rules_and_users($rules, $users,
+                                                  $obj1_hash, $obj2_hash,
                                                   $proto_regex);
     }
     if (my ($obj1_hash, $obj2_hash, $proto_regex) = gen_search_req($req)) {
-        ($rules, $users) = select_rules_and_users($rules, $users, 
-                                                  $obj1_hash, $obj2_hash, 
+        ($rules, $users) = select_rules_and_users($rules, $users,
+                                                  $obj1_hash, $obj2_hash,
                                                   $proto_regex);
     }
     return ($rules, $users);
@@ -1042,10 +1042,6 @@ sub get_own_resources {
                 map { $result{$_} = { resource => $_ } } @{$rule->{src}};
             }
             elsif ( $relation eq 'user' ) {
-                #FOO
-                #my @bar = grep { ($_ eq '10.61.0.41') ||
-                #($_ =~ /192.168.0.0/) } @{$rule->{dst}};
-                #map { $result{$_} = { resource => $_ } } @bar;
                 map { $result{$_} = { resource => $_ } } @{$rule->{dst}};
             }
             else {
@@ -1195,7 +1191,7 @@ sub send_template_mail {
     # -t: read recipient address from mail text
     # -f: set sender address
     # -F: don't use sender full name
-    open(my $mail, '|-', "$sendmail -t -F '' -f $config->{noreply_address}") or 
+    open(my $mail, '|-', "$sendmail -t -F '' -f $config->{noreply_address}") or
 	internal_err "Can't open $sendmail: $!";
     print $mail $text;
     #print $mail Encode::encode('UTF-8', $text);
@@ -1218,7 +1214,6 @@ sub send_user_task_mail {
     my $srv_owners = $services->{$service}->{'details'}->{'owner'};
 
     # Hash to fill template with data to send via sendmail.
-    # FOO: TODO: send business_unit, too (and change template accordingly!)
     my $hash = {
         service          => $service,
         srv_owners       => $srv_owners,
@@ -1287,10 +1282,10 @@ sub generate_hash_from_json {
     @sources = split /\s+/, $stripped_src;
     @dests   = split /\s+/, $stripped_dst;
     @protos  = split /\s*<br>\s*/, $json->{prt};
-    
+
     # Determine maximum of entries in src, dst and proto of rule
     my $max  = max( scalar @sources, scalar @dests, scalar @protos );
-    
+
     my $hash = {
         service    => $service,
         srv_owners => $srv_owners,
@@ -1321,15 +1316,15 @@ my %toplevel_sort = (objects => 1, services => 2, );
 sub get_diff {
     my ($req, $session) = @_;
     my $owner = $req->param('active_owner');
-    my $version = $req->param('version') or 
+    my $version = $req->param('version') or
         abort "Missing parameter 'version'";
     return [] if $version eq 'none';
-    my $changed = 
+    my $changed =
         Policy_Diff::compare($cache, $version, $selected_history, $owner);
     return [] if not $changed;
 
     # Convert to ExtJS tree.
-    # Node: Hash with attributes "text" and 
+    # Node: Hash with attributes "text" and
     # - either "leaf: true"
     # - or "children: [ .. ]"
     # Add css class to special +,-,! nodes.
@@ -1362,7 +1357,7 @@ sub get_diff {
             my @result;
             for my $key (sort keys %$in) {
                 my $val = $convert->($in->{$key});
-                push @result, $node->($key, 
+                push @result, $node->($key,
                                       ref($val) eq 'ARRAY' ? $val : [$val]);
             }
             return \@result;
@@ -1383,9 +1378,9 @@ sub get_diff_mail {
     my $owner = $req->param('active_owner');
     my $store = User_Store::new($config, $email);
     my $aref  = $store->param('send_diff') || [];
-    return([{ send => 
-                     (grep { $_ eq $owner } @$aref) 
-                   ? JSON::true 
+    return([{ send =>
+                     (grep { $_ eq $owner } @$aref)
+                   ? JSON::true
                    : JSON::false }]);
 }
 
@@ -1433,41 +1428,12 @@ sub get_compat_msg_mode {
 
 
 ####################################################################
-# Data for about dialog 
+# Data for about dialog
 ####################################################################
-
-sub get_session_timeout {
-    my ($req, $session) = @_;
-    my $email = $session->param('email');
-    return([{ user_timeout => '60m' }]) if $email eq 'guest';
-    my $owner = $req->param('active_owner');
-    my $store = User_Store::new($config, $email);
-    return $store->param('user_timeout') || '60m';
-}
-
-sub set_session_timeout {
-    my ($req, $session) = @_;
-    my $email = $session->param('email');
-    abort("Can't set timeout for user 'guest'") if $email eq 'guest';
-    validate_owner($req, $session, 1);
-    my $owner = $req->param('active_owner');
-    my $timeout = $req->param('user_timeout')
-        || abort "Parameter 'user_timeout' not found!";
-    my $store = User_Store::new($config, $email);
-    $store->param('user_timeout', $timeout);
-}
 
 sub get_about_info {
     my ($req, $session) = @_;
 
-    # Get version number of Netspoc.pm
-    my $netspoc_pm = `perldoc -l Netspoc`;
-    my $line = `grep '\$VERSION' $netspoc_pm`;
-    $line =~ /'(\d\.\d+)'/;
-    my $netspoc_version = $1;
-    
-    # Get version of ExtJs used in frontend with Ext.getVersion(); .
-    
     my $vars = {
         policy_web_version => $version
     };
@@ -1491,26 +1457,12 @@ sub get_business_units {
     return $result;
 }
 
-# Get theme from session or set it to default.
-sub get_theme {
-    my ($req, $session) = @_;
-    my $theme = $session->param('theme');
-    if ($theme) {
-        my $v = { name => $theme };
-	return [ $v ];
-    }
-    else {
-	return [];
-    }
-}
-
 ####################################################################
 # Save session data
 ####################################################################
 
 my %saveparam = (
     owner             => 1,
-    theme             => 1,
     ignore_compat_msg => 1
     );
 
@@ -1561,7 +1513,7 @@ sub get_owners {
 # If parameter 'owner' is missing, take 'active_owner'.
 sub get_admins {
     my ($req, $session) = @_;
-    my $owner = $req->param('owner') || $req->param('active_owner') 
+    my $owner = $req->param('owner') || $req->param('active_owner')
         or abort "Missing param 'owner'";
     if ($owner eq ':unknown') {
 	return [];
@@ -1572,7 +1524,7 @@ sub get_admins {
 # Get list of watcher emails for active owner.
 sub get_watchers {
     my ($req, $session) = @_;
-    my $owner = $req->param('active_owner') 
+    my $owner = $req->param('active_owner')
         or abort "Missing param 'active_owner'";
     return load_json("owner/$owner/watchers");
 }
@@ -1580,7 +1532,7 @@ sub get_watchers {
 # Get list of supervisor owners for active owner.
 sub get_supervisors {
     my ($req, $session) = @_;
-    my $owner = $req->param('active_owner') 
+    my $owner = $req->param('active_owner')
         or abort "Missing param 'active_owner'";
     return load_json("owner/$owner/extended_by");
 }
@@ -1612,15 +1564,15 @@ sub admin_or_watcher {
 sub send_verification_mail {
     my ($email, $url, $ip) = @_;
     my $text = Template::get($config->{verify_mail_template},
-                             { email => $email, 
-                               url => $url, 
+                             { email => $email,
+                               url => $url,
                                ip => $ip });
     my $sendmail = $config->{sendmail_command};
 
     # -t: read recipient address from mail text
     # -f: set sender address
     # -F: don't use sender full name
-    open(my $mail, '|-', "$sendmail -t -F '' -f $config->{noreply_address}") or 
+    open(my $mail, '|-', "$sendmail -t -F '' -f $config->{noreply_address}") or
 	internal_err "Can't open $sendmail: $!";
     print $mail Encode::encode('UTF-8', $text);
     close $mail or warn "Can't close $sendmail: $!\n";
@@ -1653,11 +1605,6 @@ sub check_password  {
         return $csh->validate($salted_old_hash, md5_hex($pass));
     }
 
-    # Check against old unsalted hashed password
-    elsif (my $old_hash = $store->param('pass')) {
-        return ($old_hash eq md5_hex($pass));
-    }
-
     # No password known.
     else {
         return;
@@ -1671,7 +1618,7 @@ sub register {
     $email = lc $email;
     my $email2owners = load_json("email");
     $email2owners->{$email} or abort "Email address is not authorized";
-    my $base_url = $req->param('base_url') 
+    my $base_url = $req->param('base_url')
 	or abort "Missing param 'base_url' (Activate JavaScript)";
     check_attack($email);
     my $token = md5_hex(localtime, $email);
@@ -1704,7 +1651,7 @@ sub verify {
     my $reg_data =  $session->param('register');
     if ($reg_data and
 	$reg_data->{user} eq $email and
-	$reg_data->{token} eq $token) 
+	$reg_data->{token} eq $token)
     {
 	store_password($email, $reg_data->{hash});
 	$session->clear('register');
@@ -1774,15 +1721,13 @@ sub login {
         clear_attack($email);
     }
 
-    # Validate session timeout config param.
-    my $expire = $config->{expire_logged_in} || "480";
-    ($expire > 14 && $expire < 601 ) or
-        abort "Session timeout needs to be between 15min and 10h.";
-    $expire .= 'm';
+    # Set session timeout in minutes.
+    # Sanitize config value.
+    my $expire = $config->{expire_logged_in} || 480;
+    ($expire >= 15 && $expire <= 7*24*60 ) or $expire = 15;
 
     $session->param('email', $email);
-    $session->clear('user');		# Remove old, now unused param.
-    $session->expire('logged_in', $expire);
+    $session->expire('logged_in', "${expire}m");
     $session->param('logged_in', 1);
     $session->flush();
     return $app_url;
@@ -1793,7 +1738,7 @@ sub logged_in {
     return $session->param('logged_in');
 }
 
-# Validate active owner. 
+# Validate active owner.
 # Email could be removed from any owner role at any time in netspoc data.
 sub validate_owner {
     my ($req, $session, $owner_needed) = @_;
@@ -1801,7 +1746,7 @@ sub validate_owner {
 	$owner_needed or abort "Must not send parameter 'active_owner'";
         can_access_owner($session, $active_owner) or
 	    abort "Not authorized to access owner '$active_owner'";
-    } 
+    }
     else {
 	$owner_needed and abort "Missing parameter 'active_owner'";
     }
@@ -1832,16 +1777,16 @@ my %path2sub =
 
      # Default: user must be logged in, JSON data is sent.
      # - anon: anonymous user is allowed
-     # - html: send html 
+     # - html: send html
      # - redir: send redirect
      # - owner: valid owner and history must be given as CGI parameter
      # - create_cookie: create cookie if no cookie is available
-     login            => [ \&login,         { anon => 1, redir => 1, 
+     login            => [ \&login,         { anon => 1, redir => 1,
                                               create_cookie => 1, } ],
-     register         => [ \&register,      { anon => 1, html  => 1, 
+     register         => [ \&register,      { anon => 1, html  => 1,
                                               create_cookie => 1, } ],
      verify           => [ \&verify,        { anon => 1, html  => 1, } ],
-     session_email    => [ \&session_email, { anon => 1, html => 1, 
+     session_email    => [ \&session_email, { anon => 1, html => 1,
                                               err_status => 500} ],
      get_policy       => [ \&get_policy,    { anon => 1, add_success => 1, } ],
      logout           => [ \&logout,        { add_success => 1, } ],
@@ -1855,7 +1800,7 @@ my %path2sub =
      service_list     => [ \&service_list,  { owner => 1, add_success => 1, } ],
      get_admins       => [ \&get_admins,    { owner => 1, add_success => 1, } ],
      get_watchers     => [ \&get_watchers,  { owner => 1, add_success => 1, } ],
-     get_supervisors  => [ 
+     get_supervisors  => [
          \&get_supervisors, { owner => 1, add_success => 1, } ],
      get_admins_watchers => [
          \&get_admins_watchers, { owner => 1, add_success => 1, } ],
@@ -1880,7 +1825,7 @@ my %path2sub =
      send_delete_user_task_mail => [ \&send_delete_user_task_mail, { owner => 1, add_success => 1, } ],
      send_add_to_rule_task_mail => [ \&send_add_to_rule_task_mail, { owner => 1, add_success => 1, } ],
      send_del_from_rule_task_mail => [ \&send_del_from_rule_task_mail, { owner => 1, add_success => 1, } ],
-      ); 
+      );
 
 # Change 'param' method of Plack::Request.
 # Convert UTF-8 bytes to Perl characters in values.
@@ -1906,7 +1851,7 @@ sub handle_request {
         my $cookie = $req->cookies->{CGISESSID};
         $CGI::Session::Driver::file::FileName = "%s";
 	my $session = CGI::Session->load("driver:file", $cookie,
-					 { Directory => 
+					 { Directory =>
 					       $config->{session_dir} }
             );
 	my $path = $req->path_info();
@@ -1931,7 +1876,7 @@ sub handle_request {
 	select_history($req, $flags->{owner});
 	validate_owner($req, $session, $flags->{owner});
 	$flags->{anon} or logged_in($session) or abort "Login required";
-        $res->cookies->{$session->name} = { value => $session->id, 
+        $res->cookies->{$session->name} = { value => $session->id,
                                             path => '/',
                                             expires => time + 365*24*60*60 };
 	my $data = $sub->($req, $session);
@@ -1968,7 +1913,7 @@ sub handle_request {
 	$msg =~ s/\n$//;
 	if ($flags->{html} or $flags->{redir}) {
 
-	    # Don't use status 500 on all errors, because IE 
+	    # Don't use status 500 on all errors, because IE
 	    # doesn't show error page.
 	    my $status = $flags->{err_status} || 200;
             $res->status($status);
