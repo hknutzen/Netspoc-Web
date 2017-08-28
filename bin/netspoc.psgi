@@ -1621,7 +1621,7 @@ sub register {
     $email2owners->{$email} or abort "Email address is not authorized";
     my $base_url = $req->param('base_url')
 	or abort "Missing param 'base_url' (Activate JavaScript)";
-    check_attack($email);
+    check_attack($req);
     my $token = md5_hex(localtime, $email);
     my $pass = mkpasswd() or internal_err "Can't generate password";
 
@@ -1639,7 +1639,7 @@ sub register {
 
     # Send remote address to the recipient to allow tracking of abuse.
     my $ip = $req->address;
-    set_attack($email);
+    set_attack($req);
     send_verification_mail ($email, $url, $ip);
     return Template::get($config->{show_passwd_template},
 				{ pass => Plack::Util::encode_html($pass) });
@@ -1657,7 +1657,7 @@ sub verify {
 	store_password($email, $reg_data->{hash});
 	$session->clear('register');
         $session->flush();
-        clear_attack($email);
+        clear_attack($req);
 	return Template::get($config->{verify_ok_template}, {})
     }
     else {
@@ -1666,41 +1666,68 @@ sub verify {
 }
 
 ####################################################################
-# Login
+# Enforce wait time for IP address submitting wrong password
 ####################################################################
-
 # Wait for 10, 20, 40, .., 300 seconds after submitting wrong password.
+
+sub read_attack_file {
+    my ($req) = @_;
+    my $ip = $req->address;
+    my $dir = $config->{session_dir};
+    return "$dir/attack-$ip";
+}
+
+sub read_attack_count {
+    my ($req) = @_;
+    my $file = read_attack_file($req);
+    open(my $fh, '<', $file) or return 0;
+    my $count = <$fh>;
+    close $fh;
+    return int($count);
+}
+
+sub store_attack_count {
+    my ($req, $count) = @_;
+    my $file = read_attack_file($req);
+    open(my $fh, '>', $file) or return 0;
+    printf $fh $count;
+    close $fh;
+}
+
+sub read_attack_modified {
+    my ($req) = @_;
+    my $file = read_attack_file($req);
+    return (stat($file))[9];
+}
+
 sub set_attack {
-    my ($email) = @_;
-    my $store = User_Store::new($config, $email);
-    my $wait = $store->param('login_wait') || 5;
-    $wait *= 2;
-    $wait = 300 if $wait > 300;
-    $store->param('login_wait', $wait);
-    $store->param('failed_time', time());
-    $store->flush();
-    return $wait;
+    my ($req) = @_;
+    my $count = read_attack_count($req);
+    $count++;
+    store_attack_count($req, $count);
 }
 
 sub check_attack {
-    my ($email) = @_;
-    my $store = User_Store::new($config, $email);
-    my $wait = $store->param('login_wait');
-    return if not $wait;
-    my $remain = $store->param('failed_time') + $wait - time();
+    my ($req) = @_;
+    my $count = read_attack_count($req) or return;
+    my $modified = read_attack_modified($req);
+    my $wait = $count * 10;
+    $wait = 120 if $wait > 120;
+    my $remain = $modified + $wait - time();
     if ($remain > 0) {
 	abort("Wait for $remain seconds after wrong password" );
     }
-    return;
 }
 
 sub clear_attack {
-    my ($email) = @_;
-    my $store = User_Store::new($config, $email);
-    $store->clear('login_wait');
-    $store->flush();
-    return;
+    my ($req) = @_;
+    my $file = read_attack_file($req);
+    unlink $file;
 }
+
+####################################################################
+# Login
+####################################################################
 
 sub set_login {
     my ($session, $email) = @_;
@@ -1727,12 +1754,12 @@ sub login {
     # User 'guest' needs no password.
     if ($email ne 'guest') {
         my $pass = $req->param('pass') or abort("Missing param 'pass'");
-        check_attack($email);
+        check_attack($req);
         if (not check_password($email, $pass)) {
-            set_attack($email);
+            set_attack($req);
             abort('Login failed');
         }
-        clear_attack($email);
+        clear_attack($req);
     }
 
     set_login($session, $email);
@@ -1743,9 +1770,7 @@ sub login {
 sub ldap_login {
     my ($req, $session) = @_;
     logout($req, $session);
-    my $user = $req->param('user') or abort "Missing param 'user'";
-    my $pass = $req->param('pass') or abort "Missing param 'pass'";
-    my $email = ldap_check_pass_get_email($user, $pass);
+    my $email = ldap_check_pass_get_email($req);
     my $email2owners = load_json('email');
     $email2owners->{$email} or
         abort("Email address '$email' is not authorized");
@@ -1755,8 +1780,10 @@ sub ldap_login {
 }
 
 sub ldap_check_pass_get_email {
-    my ($user, $pass) = @_;
-    check_attack($user);
+    my ($req) = @_;
+    my $user = $req->param('user') or abort "Missing param 'user'";
+    my $pass = $req->param('pass') or abort "Missing param 'pass'";
+    check_attack($req);
     my $ldap_uri = $config->{ldap_uri} or
         abort('No LDAP server has been configured');
     if ($user =~ /[@]/) {
@@ -1770,10 +1797,10 @@ sub ldap_check_pass_get_email {
     # Bind with user account to authenticate.
     my $dn = sprintf($config->{ldap_dn_template}, $user);
     if (not $ldap->bind($dn, password => $pass)) {
-        set_attack($user);
+        set_attack($req);
         abort('Authentication failed');
     }
-    clear_attack($user);
+    clear_attack($req);
 
     # Search users email address.
     my $email_attr = $config->{ldap_email_attr};
