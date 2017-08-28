@@ -411,9 +411,14 @@ Ext.define(
             this.closeDeleteFromRuleWindow();
         },
 
-        closeSearchWindow : function() {
+        closeSearchWindow : function( keep_open ) {
             if ( Ext.isObject( search_window ) ) {
-                search_window.close();
+                var service_controller = this.getController( 'Service' );
+                var form = service_controller.getSearchFormPanel().getForm();
+                var values = form.getValues();
+                if ( values.keep_front !== 'on' ) {
+                    search_window.close();
+                }
             }
         },
 
