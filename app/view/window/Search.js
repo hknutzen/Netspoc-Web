@@ -219,9 +219,6 @@ Ext.define(
                 columns    : 1,
                 vertical   : true,
                 flex       : 1,
-                defaults   : {
-                    checked    : true
-                },
                 items      : [
                     {
                         boxLabel   : 'Übergeordnete Netze einbeziehen',
@@ -229,7 +226,8 @@ Ext.define(
                     },
                     {
                         boxLabel   : 'Enthaltene Netze einbeziehen',
-                        name       : 'search_subnet'
+                        name       : 'search_subnet',
+                        checked    : true
                     }
                 ]
             };
