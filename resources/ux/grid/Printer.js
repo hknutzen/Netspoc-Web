@@ -288,7 +288,7 @@ Ext.define("Ext.ux.grid.Printer", {
                                   'style'            : '',
                                   'tdAttr'           : '',
                                   'tdCls'            : '',
-                                  'unselectableAttr' : 'unselectable="on"',
+                                  //'unselectableAttr' : 'unselectable="on"',
                                   'value'            : value
                            	  };
                     	if (column.xtype == 'templatecolumn')
@@ -418,7 +418,7 @@ Ext.define("Ext.ux.grid.Printer", {
                    			      style            : '',
                    			      tdAttr           : '',
                    			      tdCls            : '',
-                   			      unselectableAttr : 'unselectable="on"',
+                   			      //unselectableAttr : 'unselectable="on"',
                    			      'value'          : value
                    			   };
                    },
@@ -687,7 +687,7 @@ Ext.define("Ext.ux.grid.Printer", {
                        			         'style'            : '',
                        			         'tdAttr'           : '',
                        			         'tdCls'            : '',
-                       			         'unselectableAttr' : 'unselectable="on"',
+                       			         //'unselectableAttr' : 'unselectable="on"',
                        			         'value'            : value
                                		   };
                         	if (column.renderer)
@@ -793,7 +793,7 @@ Ext.define("Ext.ux.grid.Printer", {
                   			             'style'            : '',
                   			             'tdAttr'           : '',
                   			             'tdCls'            : '',
-                  			             'unselectableAttr' : 'unselectable="on"',
+                  			             //'unselectableAttr' : 'unselectable="on"',
                   			             'value'            : rcd.name
                           		   };
 
@@ -856,7 +856,7 @@ Ext.define("Ext.ux.grid.Printer", {
                         			   style            : '',
                         			   tdAttr           : '',
                         			   tdCls            : '',
-                        			   unselectableAttr : 'unselectable="on"',
+                        			   //unselectableAttr : 'unselectable="on"',
                         			   value            : '&#160;'
                         		    };
                         },
