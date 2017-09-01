@@ -1482,11 +1482,33 @@ sub set_session_data {
 # Email -> Admin -> Owner
 ####################################################################
 
+# Find owners for user@domain or
+# for wildcard [all]@domain which authorizes all users of domain.
+sub find_authorized_owners {
+    my ($email) = @_;
+    my $email2owners = $cache->load_json_current('email');
+    if (my $owners = $email2owners->{$email}) {
+        return @$owners;
+    }
+    else {
+        my $wildcard = $email =~ s/^.*@/[all]@/r;
+        if (my $owners = $email2owners->{$wildcard}) {
+            return @$owners;
+        }
+    }
+    return ();
+}
+
+sub check_email_authorization {
+    my ($email) = @_;
+    find_authorized_owners($email) or
+        abort("Email address '$email' is not authorized");
+}
+
 sub can_access_owner {
     my ($session, $owner) = @_;
     my $email = $session->param('email');
-    my $email2owners = $cache->load_json_current('email');
-    return grep { $owner eq $_ } @{ $email2owners->{$email} }
+    return grep { $owner eq $_ } find_authorized_owners($email);
 }
 
 # Get currently selected owner.
@@ -1506,8 +1528,7 @@ sub get_owner {
 sub get_owners {
     my ($req, $session) = @_;
     my $email = $session->param('email');
-    my $email2owners = load_json('email');
-    return [ map({ { name => $_ } } @{ $email2owners->{$email} }) ];
+    return [ map({ { name => $_ } } find_authorized_owners($email)) ];
 }
 
 # Get list of admin emails for given owner.
@@ -1617,8 +1638,7 @@ sub register {
     my $email = $req->param('email') or abort "Missing param 'email'";
     abort("Can't set password for 'guest'") if $email eq 'guest';
     $email = lc $email;
-    my $email2owners = load_json("email");
-    $email2owners->{$email} or abort "Email address is not authorized";
+    check_email_authorization($email);
     my $base_url = $req->param('base_url')
 	or abort "Missing param 'base_url' (Activate JavaScript)";
     check_attack($req);
@@ -1748,8 +1768,7 @@ sub login {
     logout($req, $session);
     my $email = $req->param('email') or abort "Missing param 'email'";
     $email = lc $email;
-    my $email2owners = load_json('email');
-    $email2owners->{$email} or abort('Email address is not authorized');
+    check_email_authorization($email);
 
     # User 'guest' needs no password.
     if ($email ne 'guest') {
@@ -1771,9 +1790,7 @@ sub ldap_login {
     my ($req, $session) = @_;
     logout($req, $session);
     my $email = ldap_check_pass_get_email($req);
-    my $email2owners = load_json('email');
-    $email2owners->{$email} or
-        abort("Email address '$email' is not authorized");
+    check_email_authorization($email);
     set_login($session, $email);
     my $app_url = $req->param('app') or abort "Missing param 'app'";
     return $app_url;
