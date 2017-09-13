@@ -1,5 +1,7 @@
 {{$NEXT}}
 
+1.008     2017-09-13 15:04:12+02:00 Europe/Berlin
+
  - Fix: keep search window visible with checkbox
  - Fix: print view not selectable in IE
  - Change: no longer search in super nets as default
