@@ -48,10 +48,11 @@ my $driver = Test::Selenium::Remote::Driver->new(
 
 $driver->get( 'index.html' );
 
-    
-$driver->find_element_ok( '//input[@id="email"]', "xpath",
-                     "Eingabefeld für Email vorhanden" );
-$driver->find_element_ok( "pass", "Eingabefeld für Passwort vorhanden" );
+
+$driver->find_element_ok( '//input[@name="email"]', "xpath",
+                          "Eingabefeld für Email vorhanden" );
+$driver->find_element_ok( '//input[@name="pass"]', "xpath",
+                          "Eingabefeld für Passwort vorhanden" );
 
 $driver->send_keys_to_active_element('guest');
 
