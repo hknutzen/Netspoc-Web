@@ -1,5 +1,12 @@
 {{$NEXT}}
 
+ - Fix: keep search window visible with checkbox
+ - Fix: print view not selectable in IE
+ - Change: no longer search in super nets as default
+ - Add: LDAP login for Dataport employees
+
+1.007     2017-15-05 14:10:23+02:00 Europe/Berlin
+
  - Add: "disabled" and "disable_at" for services
 
 1.006     2016-10-06 14:10:23+02:00 Europe/Berlin
