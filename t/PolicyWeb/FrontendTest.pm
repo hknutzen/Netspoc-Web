@@ -28,16 +28,16 @@ sub login_as_guest {
     my $driver = shift;
     my $base_url = "http://$SERVER:$port/index.html";
     $driver->get( $base_url );
-    
-    $driver->find_element( '//input[@id="email"]', "xpath" );
-    $driver->find_element( "pass" );
-    
+
+    $driver->find_element( '//input[@name="email"]', "xpath" );
+    $driver->find_element( '//input[@name="pass"]' , "xpath" );
+
     $driver->send_keys_to_active_element('guest');
-    
+
     my $login_button = $driver->find_element( '//input[@value="Login"]', "xpath" );
-    
+
     $login_button->click();
-    
+
 }
 
 sub login_as_guest_and_choose_owner {
@@ -75,27 +75,27 @@ sub select_grid_row_by_content {
 
 sub select_combobox_item {
     my ( $driver, $combo_id, $item ) = @_;
-    
+
     my $combo_query = "Ext.ComponentQuery.query(\"combobox[id='$combo_id']\")[0]";
     my $combo_trigger_id = "return " . $combo_query . ".triggerEl.first().id";
     my $dropdown_id = "return " . $combo_query . ".picker.id";
-    
+
     my $id_string = $driver->execute_script( $combo_trigger_id );
-    
+
     $driver->click_element_ok( $id_string, 'id', "Clicked on owner combo open trigger" );
-    
+
     my $list_id = $driver->execute_script($dropdown_id);
-    
+
     #Create a relative xpath to the boundlist item
     my $li = "//div[contains(\@id,'" . $list_id . "')]//li[contains(text(),'" . $item . "')]";
-    
+
     #Select the dropdown item
     $driver->click_element_ok( $li, 'xpath', "Selected item $item from combo box" );
 }
 
 sub ip2numeric {
     # Convert IP address to numerical value.
-   
+
     $_ = shift;
 
     if ( m/\G(\d+)\.(\d+)\.(\d+)\.(\d+)/gc ) {
@@ -123,4 +123,3 @@ sub error {
 
 
 1;
-
