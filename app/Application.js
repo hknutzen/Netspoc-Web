@@ -153,6 +153,34 @@ Ext.application(
                     }
                 }
             );
+            /*
+             * Credit for the following fix goes to "rixo" on stackoverflow:
+             * https://stackoverflow.com/questions/20636777/ext-js-tabpanel-rendering-infinite-grid-too-quickly#answer-20654251
+             * 
+             * This workaround is necessary because we use card panels and set
+             * active item from code. ExtJs does not realize it needs to refresh
+             * its BufferedRenderer view.
+             * The follwing fixes that:
+             */
+            Ext.define(
+                'Ext.ux.Ext.grid.plugin.BufferedRenderer.HiddenRenderingSupport', {
+                    override: 'Ext.grid.plugin.BufferedRenderer'
+                    
+                    /**
+                     * Refreshes the view and row size caches if they have a value of 0
+                     * (meaning they have probably been cached when the view was not visible).
+                     */
+                    ,onViewResize: function() {
+                        if (this.rowHeight === 0) {
+                            if (this.view.body.getHeight() > 0) {
+                                this.view.refresh();
+                            }
+                        } else {
+                            this.callParent(arguments);
+                        }
+                    }
+                }
+            );
         },
 
 	launch : function() {
