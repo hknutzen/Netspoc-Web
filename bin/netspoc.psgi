@@ -1488,12 +1488,12 @@ sub find_authorized_owners {
     my ($email) = @_;
     my $email2owners = $cache->load_json_current('email');
     if (my $owners = $email2owners->{$email}) {
-        return @$owners;
+        return sort { lc($a) cmp lc($b) } @$owners;
     }
     else {
         my $wildcard = $email =~ s/^.*@/[all]@/r;
         if (my $owners = $email2owners->{$wildcard}) {
-            return @$owners;
+            return sort { lc($a) cmp lc($b) } @$owners;
         }
     }
     return ();
