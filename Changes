@@ -1,5 +1,7 @@
 {{$NEXT}}
 
+1.009     2017-12-12 14:09:22+01:00 Europe/Berlin
+
  - Fix: bug with buffered renderer sometimes truncating lists.
  - Fix: list of owners is now sorted correctly (ignoring case)
  - Add: ability to search only terminable services (with
