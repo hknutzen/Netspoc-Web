@@ -1,5 +1,10 @@
 {{$NEXT}}
 
+ - Fix: bug with buffered renderer sometimes truncating lists.
+ - Fix: list of owners is now sorted correctly (ignoring case)
+ - Add: ability to search only terminable services (with
+        attribute "disable_at")
+
 1.008     2017-09-13 15:04:12+02:00 Europe/Berlin
 
  - Fix: keep search window visible with checkbox
