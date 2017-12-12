@@ -873,6 +873,14 @@ sub service_list {
             push @search_in, 'visible';
         }
         $result = [ sort map { @$_ } @{$service_lists}{ @search_in } ];
+
+        # If only terminable services are to be displayed, determine
+        # intersection of @$result and services with attribute
+        # "disable_at".
+        if ( $req->param('search_disable_at') ) {
+            push @search_in, 'visible';
+            $result = [ grep { $services->{$_}->{details}->{disable_at} } @$result ];
+        }
     }
 
     if (my ($obj1_hash, $obj2_hash, $proto_regex) = gen_search_chosen($req)) {
@@ -1488,12 +1496,12 @@ sub find_authorized_owners {
     my ($email) = @_;
     my $email2owners = $cache->load_json_current('email');
     if (my $owners = $email2owners->{$email}) {
-        return sort { lc($a) cmp lc($b) } @$owners;
+        return (sort { lc($a) cmp lc($b) } @$owners);
     }
     else {
         my $wildcard = $email =~ s/^.*@/[all]@/r;
         if (my $owners = $email2owners->{$wildcard}) {
-            return sort { lc($a) cmp lc($b) } @$owners;
+            return (sort { lc($a) cmp lc($b) } @$owners);
         }
     }
     return ();

@@ -29,7 +29,7 @@ Ext.define(
                 {
                     title       : 'IP-Adresse oder Zeichenkette suchen',
                     width       : 350, 
-                    height      : 430,
+                    height      : 448,
                     resizable   : false,
                     closeAction : 'hide',
                     items       : [
@@ -73,7 +73,7 @@ Ext.define(
                 xtype     : 'tabpanel',
                 plain     : true,
                 activeTab : 0,
-                height    : 200,
+                height    : 220,
                 defaults  : {
                     bodyPadding : 10
                 },
@@ -228,6 +228,10 @@ Ext.define(
                         boxLabel   : 'Enthaltene Netze einbeziehen',
                         name       : 'search_subnet',
                         checked    : true
+                    },
+                    {
+                        boxLabel   : 'Nur befristete Dienste suchen',
+                        name       : 'search_disable_at'
                     }
                 ]
             };
