@@ -312,10 +312,13 @@ sub get_hosts {
 sub sort_by_ip {
     my ( $unsorted ) = @_;
     my %orig2int;
-
     map {
         /^(\d+\.\d+\.\d+\.\d+)/;
-        $orig2int{$_} = ip2int($1);
+        my $ip = $1;
+        # If ip contains something other than an IP, initialize it with
+        # 255.255.255.255, so that it is sorted to the end.
+        $ip ||= '255.255.255.255';
+        $orig2int{$_} = $ip;
     } @$unsorted;
 
     my @sorted = sort { $orig2int{$a} <=> $orig2int{$b} } keys %orig2int;
