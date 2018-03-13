@@ -22,12 +22,12 @@ any:Sub1 = { ip = 10.1.0.0/23; link = network:Big; }
 any:Sub2 = { ip = 10.1.1.0/25; link = network:Big; }
 
 network:Sub = { ip = 10.1.1.0/24; owner = z; subnet_of = network:Big; }
-router:u = { 
+router:u = {
  interface:Sub;
  interface:L = { ip = 10.3.3.3; loopback; }
- interface:Big = { ip = 10.1.0.2; } 
+ interface:Big = { ip = 10.1.0.2; }
 }
-network:Big = { 
+network:Big = {
  ip = 10.1.0.0/16;
  host:B10 = { ip = 10.1.0.10; owner = z; }
  host:Range = { range = 10.1.0.90-10.1.0.99; }
@@ -54,7 +54,7 @@ any:DMZ10 = { ip = 10.0.0.0/8; link = network:DMZ; }
 
 router:inet = {
  interface:DMZ;
- interface:Internet; 
+ interface:Internet;
 }
 
 network:Internet = { ip = 0.0.0.0/0; }
@@ -97,7 +97,7 @@ service:Test5 = {
 
 service:Test6 = {
  user = host:B10;
- permit src = user; dst = any:Kunde; prt = udp 82;
+ permit src = user; dst = any:Kunde; prt = udp 69:82; # Source port 69
 }
 
 service:Test7 = {
@@ -118,17 +118,18 @@ service:Test9 = {
 
 service:Test10 = {
  user = network:Sub;
- permit src = user; dst = network:KUNDE; prt = tcp 84;
+ permit src = user; dst = network:KUNDE; prt = tcp 84, icmp 82, icmp 83;
 }
 
 service:Test11 = {
  user = network:Sub;
- permit src = user; dst = network:KUNDE1; prt = tcp 84;
+ permit src = user; dst = network:KUNDE1; prt = tcp 84, proto 82, icmp 4/13;
 }
 
+protocol:tftp = udp 69, oneway;
 service:Test12 = {
  user = network:Sub;
- permit src = user; dst = network:KUNDE1; prt = tcp 85;
+ permit src = user; dst = network:KUNDE1; prt = tcp 80-85, protocol:tftp, icmp 3/13;
 }
 
 END
@@ -145,7 +146,7 @@ $path = 'service_list';
 $title = 'Exact IP search in used services';
 ############################################################
 
-$owner = 'z'; 
+$owner = 'z';
 $params = {
     search_ip1   => '10.1.1.0/255.255.255.0',
     search_ip2   => '10.2.2.0/24',
@@ -160,7 +161,7 @@ test_run($title, $path, $params, $owner, $out, \&extract_names);
 $title = 'Exact IP search in own services';
 ############################################################
 
-$owner = 'y'; 
+$owner = 'y';
 $params = {
     search_ip1   => '10.1.0.0/255.255.0.0',
     search_ip2   => '10.2.2.2/32',
@@ -175,7 +176,7 @@ test_run($title, $path, $params, $owner, $out, \&extract_names);
 $title = 'Exact IP search for host';
 ############################################################
 
-$owner = 'x'; 
+$owner = 'x';
 $params = {
     search_ip1   => '10.1.0.10/32',
     search_ip2   => '10.2.2.2',
@@ -247,16 +248,146 @@ $out = [ qw(Test1 Test3 Test3a) ];
 test_run($title, $path, $params, $owner, $out, \&extract_names);
 
 ############################################################
-$title = 'Search for protocol';
+$title = 'Search for tcp protocol';
 ############################################################
 
 $params = {
-    search_proto => 'TCP',
+    search_proto => 'tcp',
     search_own   => 1,
     search_used  => 1,
 };
 
 $out = [ qw(Test1 Test10 Test11 Test12 Test3 Test3a Test4 Test5) ];
+
+test_run($title, $path, $params, $owner, $out, \&extract_names);
+
+############################################################
+$title = 'Search for tcp port';
+############################################################
+
+$params = {
+    search_proto => 'tcp 82',
+    search_own   => 1,
+    search_used  => 1,
+};
+
+$out = [ qw(Test4 Test5) ];
+
+test_run($title, $path, $params, $owner, $out, \&extract_names);
+
+############################################################
+$title = 'Only find whole number';
+############################################################
+
+$params = {
+    search_proto => 'tcp 8',
+    search_own   => 1,
+    search_used  => 1,
+};
+
+$out = [ qw() ];
+
+test_run($title, $path, $params, $owner, $out, \&extract_names);
+
+############################################################
+$title = 'Search port/protocol number';
+############################################################
+
+# Also match icmp and protocol numbers
+$params = {
+    search_proto => '82',
+    search_own   => 1,
+    search_used  => 1,
+};
+
+$out = [ qw(Test10 Test11 Test4 Test5 Test6 Test7 Test8) ];
+
+test_run($title, $path, $params, $owner, $out, \&extract_names);
+
+############################################################
+$title = 'Search port number in range';
+############################################################
+
+# Only match tcp and udp ports, no icmp or protocol numbers.
+$params = {
+    search_proto => '83',
+    search_range => 1,
+    search_own   => 1,
+    search_used  => 1,
+};
+
+$out = [ qw(Test12 Test9) ];
+
+test_run($title, $path, $params, $owner, $out, \&extract_names);
+
+############################################################
+$title = 'Search port with modifier and source port';
+############################################################
+
+$params = {
+    search_proto => '69',
+    search_own   => 1,
+    search_used  => 1,
+};
+
+$out = [ qw(Test12 Test6) ];
+
+test_run($title, $path, $params, $owner, $out, \&extract_names);
+
+############################################################
+$title = 'Search port and not source port';
+############################################################
+
+$params = {
+    search_proto => '69',
+    search_range => 1,
+    search_own   => 1,
+    search_used  => 1,
+};
+
+$out = [ qw(Test12) ];
+
+test_run($title, $path, $params, $owner, $out, \&extract_names);
+
+############################################################
+$title = 'Search protocol modifier, ignore case';
+############################################################
+
+$params = {
+    search_proto => 'OneWay',
+    search_own   => 1,
+    search_used  => 1,
+};
+
+$out = [ qw(Test12) ];
+
+test_run($title, $path, $params, $owner, $out, \&extract_names);
+
+############################################################
+$title = 'Find icmp code when searching for number';
+############################################################
+
+$params = {
+    search_proto => '3',
+    search_own   => 1,
+    search_used  => 1,
+};
+
+$out = [ qw(Test12) ];
+
+test_run($title, $path, $params, $owner, $out, \&extract_names);
+
+############################################################
+$title = 'Find icmp type when searching for number';
+############################################################
+
+$params = {
+    search_proto => '13',
+    search_own   => 1,
+    search_used  => 1,
+};
+
+$out = [ qw(Test11 Test12) ];
 
 test_run($title, $path, $params, $owner, $out, \&extract_names);
 
@@ -537,7 +668,7 @@ $params = {
     display_property => 'name',
 };
 
-$out = [ {                           
+$out = [ {
     action => 'permit',
     dst => [ 'host:k' ],
     prt => [ 'tcp 81' ],
@@ -559,7 +690,7 @@ $params = {
     display_property => 'name',
 };
 
-$out = [ {                           
+$out = [ {
     action => 'permit',
     dst => [ 'host:k' ],
     prt => [ 'tcp 81' ],
@@ -585,7 +716,7 @@ $params = {
     search_ip2   => '10.1.0.10',
 };
 
-$out = [ {                           
+$out = [ {
     action => 'permit',
     dst => [],
     has_user => 'both',
@@ -623,22 +754,22 @@ $params = {
     search_used  => 1,
 };
 
-$out = [ {                     
-    action => 'permit', 
-    dst => [ '0.0.0.0/0.0.0.0' ],                  
-    has_user => 'src',  
-    proto => [ 'udp 82' ],                  
-    service => 'Test7', 
-    src => [ 'User' ]                   
-  },                    
-  {                     
-    action => 'permit', 
-    dst => [ '10.0.0.0/255.0.0.0' ],                  
-    has_user => 'src',  
-    proto => [ 'udp 82' ],                  
-    service => 'Test8', 
-    src => [ 'User' ]                   
-  }                     
+$out = [ {
+    action => 'permit',
+    dst => [ '0.0.0.0/0.0.0.0' ],
+    has_user => 'src',
+    proto => [ 'udp 82' ],
+    service => 'Test7',
+    src => [ 'User' ]
+  },
+  {
+    action => 'permit',
+    dst => [ '10.0.0.0/255.0.0.0' ],
+    has_user => 'src',
+    proto => [ 'udp 82' ],
+    service => 'Test8',
+    src => [ 'User' ]
+  }
 ];
 
 test_run($title, $path, $params, $owner, $out, \&extract_records);
