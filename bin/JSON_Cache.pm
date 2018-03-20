@@ -1,7 +1,7 @@
 
 =head1 COPYRIGHT AND DISCLAIMER
 
-(C) 2014 by Heinz Knutzen     <heinz.knutzen@gmail.com>
+(C) 2018 by Heinz Knutzen     <heinz.knutzen@gmail.com>
             Daniel Brunkhorst <daniel.brunkhorst@web.de>
 
 https://github.com/hknutzen/Netspoc-Web
@@ -177,32 +177,33 @@ sub load_json_version {
         my $fh;
         my $dir = $self->{netspoc_data};
 
-        # Catch errors rcs/file/JSON errors, if old or new version
-        # doesn't exist or JSON file is empty.
-        eval {
+        # Check out from RCS revision of some date.
+        if ($version =~ /^\d\d\d\d-\d\d-\d\d$/) {
+            my $cmd = "co -q -p -d'$version 23:59' -zLT $dir/RCS/$path,v";
+            my $u8_cmd = Encode::encode('UTF-8', $cmd);
 
-            # Check out from RCS revision of some date.
-            if ($version =~ /^\d\d\d\d-\d\d-\d\d$/) {
-                my $cmd = "co -q -p -d'$version 23:59' -zLT $dir/RCS/$path,v";
-                my $u8_cmd = Encode::encode('UTF-8', $cmd);
+            # Ignore error on access to unknown version, use empty data.
+            eval {
                 open ($fh, '-|', $u8_cmd) or die "Can't open $cmd: $!\n";
-            }
+            };
+        }
 
-            # Get selected policy from today.
-            elsif ($version =~ /^p\d{1,8}$/) {
-                my $real_path = "$dir/$version/$path";
-                my $u8_real_path = Encode::encode('UTF-8', $real_path);
-                open ($fh, '<', $u8_real_path) or die "Can't open $real_path\n";
-            }
-            else {
-                die "Internal: Invalid version requested";
-            }
-            {
-                local $/ = undef;
-                $data = from_json( <$fh> );
-            }
-            close($fh);
-        };
+        # Get selected policy from today.
+        elsif ($version =~ /^p\d{1,8}$/) {
+            my $real_path = "$dir/$version/$path";
+            my $u8_real_path = Encode::encode('UTF-8', $real_path);
+            open ($fh, '<', $u8_real_path) or die "Can't open $real_path\n";
+        }
+        else {
+            die "Internal: Invalid version requested";
+        }
+        {
+            local $/ = undef;
+
+            # Ignore JSON error if input was empty.
+            $data = eval { from_json( <$fh> ) };
+        }
+        close($fh);
         $data = $self->postprocess_json($path, $data);
         $self->{cache}->{$version}->{$path} = $data;
     }
