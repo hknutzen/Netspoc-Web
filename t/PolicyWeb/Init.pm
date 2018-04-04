@@ -9,6 +9,8 @@ use lib 'bin';
 use IPC::Run3;
 use File::Temp qw/tempfile tempdir/;
 use Plack::Test::Server;
+use File::Spec::Functions qw/ file_name_is_absolute splitpath catdir catfile /;
+use File::Path 'make_path';
 use Plack::App::File;
 use JSON;
 use HTTP::Request::Common;
@@ -157,14 +159,52 @@ END
 my $server;
 
 my $export_dir = tempdir( CLEANUP => 1 );
+
+sub prepare_in_dir {
+    my($input) = @_;
+
+    # Prepare input directory and file(s).
+    # Input is optionally preceeded by single lines of dashes
+    # followed by a filename.
+    # If no filenames are given, a single file named STDIN is used.
+    my $delim  = qr/^-+[ ]*(\S+)[ ]*\n/m;
+    my @input = split($delim, $input);
+    my $first = shift @input;
+
+    # Input does't start with filename.
+    # No further delimiters are allowed.
+    if ($first) {
+        if (@input) {
+            BAIL_OUT("Only a single input block expected");
+            return;
+        }
+        @input = ('STDIN', $first);
+    }
+    my $in_dir = tempdir( CLEANUP => 1 );
+    while (@input) {
+        my $path = shift @input;
+        my $data = shift @input;
+        if (file_name_is_absolute $path) {
+            BAIL_OUT("Unexpected absolute path '$path'");
+            return;
+        }
+        my (undef, $dir, $file) = splitpath($path);
+        my $full_dir = catdir($in_dir, $dir);
+        make_path($full_dir);
+        my $full_path = catfile($full_dir, $file);
+        open(my $in_fh, '>', $full_path) or die "Can't open $path: $!\n";
+        print $in_fh $data;
+        close $in_fh;
+    }
+    return $in_dir;
+}
+
 sub prepare_export {
     my ($input) = @_;
     $input ||= $netspoc;
-    my ($in_fh, $filename) = tempfile(UNLINK => 1);
-    print $in_fh $input;
-    close $in_fh;
+    my $in_dir = prepare_in_dir($input);
 
-    my $cmd = "~/Netspoc/bin/export-netspoc -quiet $filename $export_dir/$policy";
+    my $cmd = "~/Netspoc/bin/export-netspoc -quiet $in_dir $export_dir/$policy";
     my ($stdout, $stderr);
     run3($cmd, \undef, \$stdout, \$stderr);
     my $status = $?;
