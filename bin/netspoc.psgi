@@ -523,8 +523,9 @@ sub build_ip_hash {
             $obj_ip = $obj->{ip};
         }
 
-        # Ignore interface without IP address.
-        $obj_ip =~ /^\d/ or next;
+        # Ignore object without IP address.
+        # Also currently ignore IPv6 address.
+        $obj_ip =~ /\d[.]/ or next;
 
         # Missing mask (at most hosts and interfaces).
         if ($obj_ip !~ m'/') {

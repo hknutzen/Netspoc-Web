@@ -12,6 +12,7 @@ use PolicyWeb::BackendTest;
 # Netspoc configuration
 ############################################################
 my $data = <<'END';
+--ipv4
 owner:x = { admins = guest; show_all; }
 owner:y = { admins = guest; }
 owner:z = { admins = guest; }
@@ -131,7 +132,21 @@ service:Test12 = {
  user = network:Sub;
  permit src = user; dst = network:KUNDE1; prt = tcp 80-85, protocol:tftp, icmp 3/13;
 }
+--ipv6
+area:all-ipv6 = { owner = x; anchor = network:n3; }
+network:n3 = { ip = 1000::abcd:0001:0/112;}
+network:n4 = { ip = 1000::abcd:0002:0/112;}
 
+router:r1 = {
+ managed;
+ model = ASA;
+ interface:n3 = {ip = 1000::abcd:0001:0001; hardware = n1;}
+ interface:n4 = {ip = 1000::abcd:0002:0001; hardware = n2;}
+}
+service:T6_1 = {
+ user = network:n3;
+ permit src = user; dst = network:n4; prt = tcp 83-84;
+}
 END
 ############################################################
 
@@ -257,7 +272,7 @@ $params = {
     search_used  => 1,
 };
 
-$out = [ qw(Test1 Test10 Test11 Test12 Test3 Test3a Test4 Test5) ];
+$out = [ qw(T6_1 Test1 Test10 Test11 Test12 Test3 Test3a Test4 Test5) ];
 
 test_run($title, $path, $params, $owner, $out, \&extract_names);
 
@@ -316,7 +331,7 @@ $params = {
     search_used  => 1,
 };
 
-$out = [ qw(Test12 Test9) ];
+$out = [ qw(T6_1 Test12 Test9) ];
 
 test_run($title, $path, $params, $owner, $out, \&extract_names);
 

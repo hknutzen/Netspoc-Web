@@ -1,7 +1,7 @@
 
 =head1 COPYRIGHT AND DISCLAIMER
 
-(C) 2014 by Heinz Knutzen     <heinz.knutzen@gmail.com>
+(C) 2018 by Heinz Knutzen     <heinz.knutzen@gmail.com>
             Daniel Brunkhorst <daniel.brunkhorst@web.de>
 
 https://github.com/hknutzen/Netspoc-Web
@@ -54,10 +54,10 @@ sub clean_cache {
     my ($self) = @_;
     my $cache = $self->{cache};
     return if keys %$cache <= $self->{max_versions};
-    
+
     # Sort version keys, least use comes first.
     my $atime = $self->{atime};
-    my @versions_by_atime = 
+    my @versions_by_atime =
 	sort { $atime->{$a} <=> $atime->{$b} } keys %$cache;
     my $delete_to = @versions_by_atime - $self->{max_versions} - 1;
     delete @{$cache}{ @versions_by_atime[0..$delete_to] };
@@ -93,7 +93,7 @@ sub postprocess_json {
     elsif ($path =~/services$/) {
 
 	# Input: Hash mapping service names to details and rules.
-	# { s1 => { 
+	# { s1 => {
 	#      details => {
 	#           description => "Text",
 	#           owner => [owner1, .. ] | [":unknown"],
@@ -107,8 +107,8 @@ sub postprocess_json {
 	#        ..]},
 	#   ..}
 
-        # Sort protocols again. 
-        # Protocols are sorted already by export.pl, 
+        # Sort protocols again.
+        # Protocols are sorted already by export.pl,
         # but some old history files are still sorted lexicographically.
         # 1. by protocol type icmp, ip, proto, tcp, udp
         # 2. by first number (port or type)
@@ -118,7 +118,7 @@ sub postprocess_json {
             for my $rule (@{ $service->{rules} }) {
                 $rule->{prt} = [
                     map  { $_->[0] }
-                    sort { $a->[1] cmp $b->[1] || 
+                    sort { $a->[1] cmp $b->[1] ||
                            $a->[2] <=> $b->[2] ||
                            $a->[3] cmp $b->[3] }
                     map  { my($p, $n, $r) = m/^(\w+) ?(\d*)(.*)/;
@@ -128,7 +128,7 @@ sub postprocess_json {
                     # but delete it to not confuse Policy_Diff.
                     @{ $rule->{prt} || delete($rule->{srv}) } ];
             }
-        }        
+        }
     }
 
     # elsif ($path =~ m/users$/) {
@@ -146,7 +146,7 @@ sub postprocess_json {
 	#            ..},
 	######   routers => {r1 => [i1, ..],
 	#               ..}}
-	# Add attribute 'net2childs' with flattened networks hashes 
+	# Add attribute 'net2childs' with flattened networks hashes
 	# of all any objects.
 	my $anys = $data->{anys};
 	$data->{net2childs} = { map { %{ $_->{networks} } } values %$anys };
@@ -161,7 +161,7 @@ sub postprocess_json {
 }
 
 # Parameters
-# - version, 
+# - version,
 #   - a date YYYY-MM-DD to retrieve files of given date from RCS.
 #   - a policy pxxxx to retrive files from this sub directory
 # - path, pathname of file to retrieve.
@@ -173,38 +173,39 @@ sub load_json_version {
     my $data;
 
     if (not exists $self->{cache}->{$version}->{$path}) {
-	$self->clean_cache();
-	my $fh;
-	my $dir = $self->{netspoc_data};
+        $self->clean_cache();
+        my $fh;
+        my $dir = $self->{netspoc_data};
 
-        # Catch errors rcs/file/JSON errors, if old or new version
-        # doesn't exist or JSON file is empty.
-        eval {
+        # Check out from RCS revision of some date.
+        if ($version =~ /^\d\d\d\d-\d\d-\d\d$/) {
+            my $cmd = "co -q -p -d'$version 23:59' -zLT $dir/RCS/$path,v";
+            my $u8_cmd = Encode::encode('UTF-8', $cmd);
 
-            # Check out from RCS revision of some date.
-            if ($version =~ /^\d\d\d\d-\d\d-\d\d$/) {
-                my $cmd = "co -q -p -d'$version 23:59' -zLT $dir/RCS/$path,v";
-                my $u8_cmd = Encode::encode('UTF-8', $cmd);
+            # Ignore error on access to unknown version, use empty data.
+            eval {
                 open ($fh, '-|', $u8_cmd) or die "Can't open $cmd: $!\n";
-            }
+            };
+        }
 
-            # Get selected policy from today.
-            elsif ($version =~ /^p\d{1,8}$/) {
-                my $real_path = "$dir/$version/$path";
-                my $u8_real_path = Encode::encode('UTF-8', $real_path);
-                open ($fh, '<', $u8_real_path) or die "Can't open $real_path\n";
-            }
-            else {
-                die "Internal: Invalid version requested";
-            }
-            {
-                local $/ = undef;
-                $data = from_json( <$fh> );
-            }
-            close($fh);
-        };
-	$data = $self->postprocess_json($path, $data);
-	$self->{cache}->{$version}->{$path} = $data;
+        # Get selected policy from today.
+        elsif ($version =~ /^p\d{1,8}$/) {
+            my $real_path = "$dir/$version/$path";
+            my $u8_real_path = Encode::encode('UTF-8', $real_path);
+            open ($fh, '<', $u8_real_path) or die "Can't open $real_path\n";
+        }
+        else {
+            die "Internal: Invalid version requested";
+        }
+        {
+            local $/ = undef;
+
+            # Ignore JSON error if input was empty.
+            $data = eval { from_json( <$fh> ) };
+        }
+        close($fh);
+        $data = $self->postprocess_json($path, $data);
+        $self->{cache}->{$version}->{$path} = $data;
     }
     else {
         $data = $self->{cache}->{$version}->{$path};
@@ -216,7 +217,7 @@ sub load_json_current {
     my ($self, $path) = @_;
     my $policy_path = "$self->{netspoc_data}/current/POLICY";
     my $policy = qx(cat $policy_path);
-    $policy =~ m/^# (\S+)/ or 
+    $policy =~ m/^# (\S+)/ or
         die "Internal: Can't find policy name in $policy_path";
     $policy = $1;
     return $self->load_json_version($policy, $path);
