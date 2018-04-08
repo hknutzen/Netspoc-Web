@@ -29,7 +29,7 @@ Ext.define(
                 {
                     title       : 'IP-Adresse oder Zeichenkette suchen',
                     width       : 350, 
-                    height      : 448,
+                    height      : 475,
                     resizable   : false,
                     closeAction : 'hide',
                     items       : [
@@ -169,11 +169,13 @@ Ext.define(
         buildOptionsFieldSet : function() {
             var sf_srv_cbg = {
                 xtype      : 'checkboxgroup',
-                columns    : 3,
+                layout     : 'hbox',
+                //columns    : 3,
                 vertical   : true,
-                flex       : 1,
+                //flex       : 1,
                 defaults   : {
-                    checked    : true
+                    checked    : true,
+                    width      : 100
                 },
                 items      : [
                     {
@@ -192,6 +194,22 @@ Ext.define(
                 ]
             };
 
+            var cb = {
+                xtype      : 'checkboxgroup',
+                layout     : 'hbox',
+                defaults   : {
+                    checked    : false
+                },
+                items      : [
+                    {
+                        boxLabel   : 'Nur befristete Dienste suchen',
+                        name       : 'search_disable_at',
+                        id         : 'checkbox_FOO',
+                        width      : 200
+                    }
+                ]
+            };          
+
             return {
                 // Fieldset with checkboxgroup to select
                 // in which services should be searched.
@@ -199,7 +217,8 @@ Ext.define(
                 title       : 'In welchen Diensten suchen?',
                 defaults    : { anchor : '100%' },
                 items       : [
-                    sf_srv_cbg
+                    sf_srv_cbg,
+                    cb
                 ]
             };
         },
@@ -230,8 +249,8 @@ Ext.define(
                         checked    : true
                     },
                     {
-                        boxLabel   : 'Nur befristete Dienste suchen',
-                        name       : 'search_disable_at'
+                        boxLabel   : 'IP-Ranges durchsuchen',
+                        name       : 'search_range'
                     }
                 ]
             };
