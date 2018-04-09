@@ -249,7 +249,7 @@ Ext.define(
                         checked    : true
                     },
                     {
-                        boxLabel   : 'IP-Ranges durchsuchen',
+                        boxLabel   : 'Port-Ranges einbeziehen',
                         name       : 'search_range'
                     }
                 ]
