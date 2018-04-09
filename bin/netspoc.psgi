@@ -318,7 +318,7 @@ sub sort_by_ip {
         # If ip contains something other than an IP, initialize it with
         # 255.255.255.255, so that it is sorted to the end.
         $ip ||= '255.255.255.255';
-        $orig2int{$_} = $ip;
+        $orig2int{$_} = ip2int($ip);
     } @$unsorted;
 
     my @sorted = sort { $orig2int{$a} <=> $orig2int{$b} } keys %orig2int;
