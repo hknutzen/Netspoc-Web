@@ -59,29 +59,29 @@ sub intersect {
     my @arrays = @_;
     my $result;
     for my $element (@{pop @arrays}) {
-	$result->{$element} = $element;
+        $result->{$element} = $element;
     }
     for my $set (@arrays) {
-	my $intersection;
-	for my $element (@$set) {
-	    if($result->{$element}) {
-		$intersection->{$element} = $element;
-	    }
-	}
-	$result = $intersection;
+        my $intersection;
+        for my $element (@$set) {
+            if($result->{$element}) {
+                $intersection->{$element} = $element;
+            }
+        }
+        $result = $intersection;
     }
     return [ keys %$result ];
 }
-   
+
 for my $email (keys %$email2owners) {
     my $owner_aref = $email2owners->{$email};
     for my $owner (@$owner_aref) {
-	$owners{$owner} = $owner;
+        $owners{$owner} = $owner;
     }
 
-    # Bestimme für jeden Benutzer die Owner, 
+    # Bestimme für jeden Benutzer die Owner,
     # über die er bei Änderungen informiert werden möchte.
-    # Wir müssen alte, ungültige Owner herausnehmen, 
+    # Wir müssen alte, ungültige Owner herausnehmen,
     # da der Benutzer inzwischen weniger Rechte haben könnte.
     my $store = User_Store::load($config, $email);
     next if not $store;
@@ -89,7 +89,7 @@ for my $email (keys %$email2owners) {
     next if not $send_aref;
     for my $owner (@{ intersect($owner_aref, $send_aref) }) {
         push(@{ $owner2send{$owner} }, $email);
-    }        
+    }
 }
 
 my %replace = (
@@ -112,7 +112,7 @@ sub convert {
     }
     elsif ($type eq 'HASH') {
         return(map { convert($_, $level+1) }
-                   map { ($_, $in->{$_}) } sort keys %$in);
+               map { ($_, $in->{$_}) } sort keys %$in);
     }
     elsif ($type eq 'ARRAY') {
         return(map { convert($_, $level+1) } @$in);
@@ -131,17 +131,18 @@ for my $owner (sort keys %owners) {
     my $changes = Policy_Diff::compare($cache, $old_ver, $new_ver, $owner);
     next if not $changes;
     my $diff = join("\n", map( { convert({ $_, $changes->{$_} }, -1) }
-                              (sort { ($toplevel_sort{$a} || 999) <=> 
-                                          ($toplevel_sort{$b} || 999) }
-                               keys %$changes)));
-    
+                               (sort { ($toplevel_sort{$a} || 999)
+                                       <=>
+                                       ($toplevel_sort{$b} || 999) }
+                                keys %$changes)));
+
     my $sendmail = $config->{sendmail_command};
     for my $email (@$aref) {
-        my $text = Template::get($config->{diff_mail_template}, 
-                                 { email   => $email, 
+        my $text = Template::get($config->{diff_mail_template},
+                                 { email   => $email,
                                    owner   => $owner,
                                    old_ver => $old_ver,
-                                   new_ver => $new_ver, 
+                                   new_ver => $new_ver,
                                    diff    => $diff
                                  });
 
@@ -151,6 +152,6 @@ for my $owner (sort keys %owners) {
         open(my $mail, '|-', "$sendmail -t -F '' -f $config->{noreply_address}")
           or die "Can't open $sendmail: $!";
         print $mail Encode::encode('UTF-8', $text);
-        close $mail or warn "Can't close $sendmail: $!"; 
+        close $mail or warn "Can't close $sendmail: $!";
     }
 }
