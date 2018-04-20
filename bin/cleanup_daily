@@ -1,9 +1,9 @@
 #!/bin/sh
 
-# (C) 2016 by Heinz Knutzen     <heinz.knutzen@gmail.com>
-# 
+# (C) 2018 by Heinz Knutzen     <heinz.knutzen@gmail.com>
+#
 # https://github.com/hknutzen/Netspoc-Web
-# 
+#
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation, either version 3 of the License, or
@@ -23,7 +23,7 @@ set -e
 
 abort () { [ "$1" ] && echo "Error: $1" >&2; exit 1; }
 
-read_conf () { 
+read_conf () {
     grep "\"$1\"" $config|cut -d: -f2|cut -d'"' -f 2
 }
 
@@ -55,7 +55,7 @@ if [ -f RCS/POLICY,v ] ; then
         cp -p $current/POLICY $current/owner/$owner
     done
 else
-    
+
     # Mark all owners as changed on initial checkin.
     for owner in $(cd $current/owner/ && ls) ; do
         cp -p $current/POLICY $current/owner/$owner
@@ -65,19 +65,17 @@ fi
 # Add current version to RCS.
 ~/NetspocWeb/bin/add_to_rcs $current RCS $version
 
+# Send diff per mail
+if [ -n "$prev_date" ] ; then
+    curr_date=$(rlog -zLT RCS/POLICY,v |grep date:|head -1|cut -d ' ' -f 2)
+    ~/NetspocWeb/bin/send_diff.pl $prev_date $curr_date
+fi
+
 # Remove history from RCS.
 ~/NetspocWeb/bin/cleanup_old_rcs $dir
 
 # Remove all policies older than current one.
 find . -maxdepth 1 -name 'p*' ! -name $current ! -newer $current | xargs rm -rf
-
-if [ -n "$prev_date" ] ; then
-    curr_date=$(rlog -zLT RCS/POLICY,v |grep date:|head -1|cut -d ' ' -f 2)
-
-    # Send diff per mail
-    ~/NetspocWeb/bin/send_diff.pl $prev_date $curr_date
-fi
-
 
 # Remove users from /home/netspocweb/users if they are no longer known
 # as admins or watchers in Netspoc.
@@ -91,4 +89,3 @@ session_dir=$(read_conf session_dir)
 if [ -n "$session_dir" -a -d $session_dir ] ; then
     find $session_dir -type f -mtime +365 -exec rm {} \;
 fi
-
