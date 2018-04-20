@@ -179,13 +179,12 @@ sub load_json_version {
 
         # Check out from RCS revision of some date.
         if ($version =~ /^\d\d\d\d-\d\d-\d\d$/) {
-            my $cmd = "co -q -p -d'$version 23:59' -zLT $dir/RCS/$path,v";
+            my $cmd =
+                "co -q -p -d'$version 23:59' -zLT $dir/RCS/$path,v 2>/dev/null";
             my $u8_cmd = Encode::encode('UTF-8', $cmd);
 
             # Ignore error on access to unknown version, use empty data.
-            eval {
-                open ($fh, '-|', $u8_cmd) or die "Can't open $cmd: $!\n";
-            };
+            open($fh, '-|', $u8_cmd);
         }
 
         # Get selected policy from today.
