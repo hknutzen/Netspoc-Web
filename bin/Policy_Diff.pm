@@ -33,7 +33,7 @@ use Algorithm::Diff;
 my %lookup = ( src => 'objects', dst => 'objects', );
 
 # Die Werte der angegebenen Keys nicht untersuchen.
-my %ignore = map { $_ => 1 } 
+my %ignore = map { $_ => 1 }
 qw(hash has_user name nat is_supernet sub_owners zone);
 
 sub compare_global {
@@ -77,8 +77,8 @@ sub diff {
 		$result->{$key} = '-';
 		next;
 	    }
-	    my $n_val = $new->{$key} || '';
-	    my $o_val = $old->{$key} || '';
+	    my $n_val = $new->{$key} || "''";
+	    my $o_val = $old->{$key} || "''";
 	    my $global = $lookup{$key};
 	    if (my $sub_diff = diff($state, $o_val, $n_val, $global)) {
 		$result->{$key} = $sub_diff;
@@ -93,10 +93,10 @@ sub diff {
     }
     elsif ($type eq 'ARRAY') {
 	if (@$old or @$new) {
-	    my $is_ref = @$old 
-		       ? ref($old->[0]) 
-		       : @$new 
-		       ? ref($new->[0]) 
+	    my $is_ref = @$old
+		       ? ref($old->[0])
+		       : @$new
+		       ? ref($new->[0])
 		       : 0;
 	    if ($is_ref) {
 		if (@$new - @$old) {
@@ -199,7 +199,7 @@ sub diff_service_lists {
     return $result;
 }
 
-my %path2diff = 
+my %path2diff =
     ( 'users' => \&diff_users,
       'service_lists' => \&diff_service_lists,
       );
@@ -208,7 +208,7 @@ my %path2diff =
 sub compare {
     my ($cache, $v1, $v2, $owner) = @_;
     my $result;
-    
+
     # Put data needed in compare_global into one hash.
     # Cache results in diff_cache.
     my $state = {
