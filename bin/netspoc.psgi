@@ -6,7 +6,7 @@ netspoc.psgi - A web frontend for Netspoc
 
 =head1 COPYRIGHT AND DISCLAIMER
 
-(C) 2017 by Heinz Knutzen     <heinz.knutzen@gmail.com>
+(C) 2018 by Heinz Knutzen     <heinz.knutzen@gmail.com>
             Daniel Brunkhorst <daniel.brunkhorst@web.de>
 
 https://github.com/hknutzen/Netspoc-Web
@@ -1629,7 +1629,7 @@ sub admin_or_watcher {
 
 sub send_verification_mail {
     my ($email, $url, $ip) = @_;
-    my $text = Template::get($config->{verify_mail_template},
+    my $text = Template::get("$config->{mail_template}/verify",
                              { email => $email,
                                url => $url,
                                ip => $ip });
@@ -1705,8 +1705,8 @@ sub register {
     my $ip = $req->address;
     set_attack($req);
     send_verification_mail ($email, $url, $ip);
-    return Template::get($config->{show_passwd_template},
-				{ pass => Plack::Util::encode_html($pass) });
+    return Template::get("$config->{html_template}/show_passwd",
+                         { pass => Plack::Util::encode_html($pass) });
 }
 
 sub verify {
@@ -1722,10 +1722,10 @@ sub verify {
 	$session->clear('register');
         $session->flush();
         clear_attack($req);
-	return Template::get($config->{verify_ok_template}, {})
+	return Template::get("$config->{html_template}/verify_ok", {})
     }
     else {
-	return Template::get($config->{verify_fail_template}, {});
+	return Template::get("$config->{html_template}verify_fail", {});
     }
 }
 
@@ -1798,7 +1798,7 @@ sub set_login {
 
     # Set session timeout in minutes.
     # Sanitize config value.
-    my $expire = $config->{expire_logged_in} || 480;
+    my $expire = $config->{expire_logged_in};
     ($expire >= 15 && $expire <= 7*24*60 ) or $expire = 15;
 
     $session->param('email', $email);
@@ -2067,7 +2067,7 @@ sub handle_request {
             $res->status($status);
             $res->content_type('text/html; charset=utf-8');
             my $body = $msg;
-            if (my $page = $config->{error_page}) {
+            if (my $page = "$config->{html_template}/error") {
                 $body = Template::get($page, {msg => $msg});
             }
 	    $res->body($body);

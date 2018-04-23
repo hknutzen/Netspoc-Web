@@ -220,19 +220,9 @@ my $conf_data = <<END;
 {
  "netspoc_data"         : "$export_dir",
  "session_dir"          : "$home_dir/sessions",
- "diff_mail_template"   : "",
- "error_page"           : "",
  "noreply_address"      : "",
- "sendmail_command"     : "",
- "show_passwd_template" : "",
  "user_dir"             : "",
- "verify_fail_template" : "",
- "verify_mail_template" : "",
- "verify_ok_template"   : "",
- "expire_logged_in"     : "",
- "about_info_template"  : "",
  "business_units"       : "",
- "template_path"        : "",
 }
 END
 

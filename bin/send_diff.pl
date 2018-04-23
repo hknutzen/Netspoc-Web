@@ -79,18 +79,13 @@ for my $email (sort keys %$email2owners) {
     # Den Empfänger per Mail über entfernte Owner informieren.
     next if @send_ok == @$send_aref;
     for my $invalid (grep { not $valid{$_} } @$send_aref) {
-        my $reason
+        my $template
             = -d "$path/current/owner/$invalid"
-            ? "Keine Berechtigung für Zugriff auf Owner '$invalid'."
-            : "Owner '$invalid' existiert nicht mehr.";
+            ? "$config->{mail_template}/diff_owner_invisible"
+            : "$config->{mail_template}/diff_owner_unknown";
 
-        my $text = <<"END";
-To: $email
-Subject: Policy-Web: Diff für $invalid wird nicht mehr versandt
-Content-Type: text/plain; charset=UTF-8
-
-$reason
-END
+        my $text = Template::get($template,
+                                 {email => $email, owner => $invalid});
         sendmail($text);
     }
     $store->param('send_diff', \@send_ok)
@@ -140,8 +135,7 @@ for my $owner (sort keys %owners) {
                                        ($toplevel_sort{$b} || 999) }
                                 keys %$changes)));
 
-    my $template = $config->{diff_mail_template} or
-        die "Missing config for: diff_mail_template\n";
+    my $template = "$config->{mail_template}/diff";
     for my $email (@$aref) {
         my $text = Template::get($template,
                                  { email   => $email,

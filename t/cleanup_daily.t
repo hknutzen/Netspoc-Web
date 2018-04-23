@@ -24,18 +24,9 @@ my $conf_data = <<"END";
  "netspoc_data"  : "$export_dir",
  "user_dir"           : "$user_dir",
  "session_dir"        : "$home_dir/sessions",
- "diff_mail_template" : "$home_dir/NetspocWeb/mail/diff",
- "error_page"         : "",
- "noreply_address"    : "",
+ "noreply_address"    : "noreply",
  "sendmail_command"   : "$home_dir/sendmail",
- "show_passwd_template" : "",
- "verify_fail_template" : "",
- "verify_mail_template" : "",
- "verify_ok_template"   : "",
- "expire_logged_in"     : "",
- "about_info_template"  : "",
  "business_units"       : "",
- "template_path"        : "",
 }
 END
 

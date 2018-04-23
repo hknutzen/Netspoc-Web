@@ -1,0 +1,5 @@
+To: [% email %]
+Subject: Policy-Web: Diff für [% owner %] wird nicht mehr versandt
+Content-Type: text/plain; charset=UTF-8
+
+Owner '[% owner %]' existiert nicht mehr.
