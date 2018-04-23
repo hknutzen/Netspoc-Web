@@ -6,7 +6,7 @@ send_diff.pl - Send email about changes to owner of Netspoc-Web
 
 =head1 COPYRIGHT AND DISCLAIMER
 
-(C) 2016 by Heinz Knutzen     <heinz.knutzen@gmail.com>
+(C) 2018 by Heinz Knutzen     <heinz.knutzen@gmail.com>
 
 https://github.com/hknutzen/Netspoc-Web
 
@@ -55,25 +55,7 @@ my $email2owners = $cache->load_json_version($new_ver, 'email');
 my %owners;
 my %owner2send;
 
-sub intersect {
-    my @arrays = @_;
-    my $result;
-    for my $element (@{pop @arrays}) {
-        $result->{$element} = $element;
-    }
-    for my $set (@arrays) {
-        my $intersection;
-        for my $element (@$set) {
-            if($result->{$element}) {
-                $intersection->{$element} = $element;
-            }
-        }
-        $result = $intersection;
-    }
-    return [ keys %$result ];
-}
-
-for my $email (keys %$email2owners) {
+for my $email (sort keys %$email2owners) {
     my $owner_aref = $email2owners->{$email};
     for my $owner (@$owner_aref) {
         $owners{$owner} = $owner;
@@ -81,15 +63,37 @@ for my $email (keys %$email2owners) {
 
     # Bestimme für jeden Benutzer die Owner,
     # über die er bei Änderungen informiert werden möchte.
-    # Wir müssen alte, ungültige Owner herausnehmen,
-    # da der Benutzer inzwischen weniger Rechte haben könnte.
     my $store = User_Store::load($config, $email);
     next if not $store;
     my $send_aref = $store->param('send_diff');
     next if not $send_aref;
-    for my $owner (@{ intersect($owner_aref, $send_aref) }) {
+    my %valid = map { $_ => 1 } @$owner_aref;
+    my @send_ok = grep { $valid{$_} } @$send_aref;
+    for my $owner (@send_ok) {
         push(@{ $owner2send{$owner} }, $email);
     }
+
+    # Alte, ungültige Owner herausnehmen,
+    # da der Benutzer inzwischen weniger Rechte haben könnte
+    # oder der Owner nicht mehr existiert.
+    # Den Empfänger per Mail über entfernte Owner informieren.
+    next if @send_ok == @$send_aref;
+    for my $invalid (grep { not $valid{$_} } @$send_aref) {
+        my $reason
+            = -d "$path/current/owner/$invalid"
+            ? "Keine Berechtigung für Zugriff auf Owner '$invalid'."
+            : "Owner '$invalid' existiert nicht mehr.";
+
+        my $text = <<"END";
+To: $email
+Subject: Policy-Web: Diff für $invalid wird nicht mehr versandt
+Content-Type: text/plain; charset=UTF-8
+
+$reason
+END
+        sendmail($text);
+    }
+    $store->param('send_diff', \@send_ok)
 }
 
 my %replace = (
@@ -136,22 +140,32 @@ for my $owner (sort keys %owners) {
                                        ($toplevel_sort{$b} || 999) }
                                 keys %$changes)));
 
-    my $sendmail = $config->{sendmail_command};
+    my $template = $config->{diff_mail_template} or
+        die "Missing config for: diff_mail_template\n";
     for my $email (@$aref) {
-        my $text = Template::get($config->{diff_mail_template},
+        my $text = Template::get($template,
                                  { email   => $email,
                                    owner   => $owner,
                                    old_ver => $old_ver,
                                    new_ver => $new_ver,
                                    diff    => $diff
                                  });
+        sendmail($text);
 
-        # -t: read recipient address from mail text
-        # -f: set sender address
-        # -F: don't use sender full name
-        open(my $mail, '|-', "$sendmail -t -F '' -f $config->{noreply_address}")
-          or die "Can't open $sendmail: $!";
-        print $mail Encode::encode('UTF-8', $text);
-        close $mail or warn "Can't close $sendmail: $!";
     }
+}
+
+sub sendmail {
+    my ($text) = @_;
+    my $sendmail = $config->{sendmail_command} or
+        die "Missing config for: sendmail_command\n";
+    my $from = $config->{noreply_address};
+
+    # -t: read recipient address from mail text
+    # -f: set sender address
+    # -F: do not use sender full name
+    open(my $mail, '|-', "$sendmail -t -F '' -f $from")
+        or die "Can't open $sendmail: $!";
+    print $mail Encode::encode('UTF-8', $text);
+    close $mail or warn "Can't close $sendmail: $!";
 }
