@@ -1,5 +1,9 @@
 {{$NEXT}}
 
+ - If user U has requested diff mails for some owner O
+   and if O no longer exists or if U no longer is allowed to access O,
+   then inform U once by mail, that he will no longer receive diff mails for O.
+
 1.009     2017-12-12 14:09:22+01:00 Europe/Berlin
 
  - Fix: bug with buffered renderer sometimes truncating lists.
@@ -67,13 +71,13 @@
 0.930     2014-11-19 11:06:38+01:00 Europe/Berlin
 
  - Fixed accidental removal of new history files.
-   If an owner was  set up less than a year ago, 
+   If an owner was  set up less than a year ago,
    all but the last history files had been removed by daily cronjob.
 
 0.929     2014-11-07 13:03:39 Europe/Berlin
 
  - Again fixed bug in new cleanup script for history older than 1 year.
- - No longer export artificial owner ":unknown". 
+ - No longer export artificial owner ":unknown".
 
 0.928     2014-11-06 16:18:31 Europe/Berlin
 
@@ -83,7 +87,7 @@
    - daily policy files were not deleted and
    - mail about policy diffs were not sent.
  - Fixed a bug in end-to-end search.
-   If only a protocol and no IP address was given, 
+   If only a protocol and no IP address was given,
    not only the rules with matching protocol, but all rules were shown.
 
 0.927     2014-11-03 12:42:17 Europe/Berlin
@@ -112,31 +116,31 @@
  - Die "watchers" eines Owner mit Attribut "extend" oder "extend_only"
    sind nun berechtigt, die Rolle der Owner von enthaltenen Netzen anzunehmen.
    Vorher galt dies nur für die "admins".
- - "watcher" und "admins" werden nun zusammen angezeigt 
+ - "watcher" und "admins" werden nun zusammen angezeigt
    in der Liste der Berechtigten eines übergeordneten Owners.
- - In der Historie werden nun alte Stände gelöscht. 
+ - In der Historie werden nun alte Stände gelöscht.
    Dabei wird gewährleistet, dass noch der Stand von vor einem Jahr
    angezeigt werden kann. Das gilt auch dann, wenn dieser alte Stand
    beispielsweise seit 2 Jahren unverändert ist.
-   Wenn ein Owner vor mehr als einem Jahr gelöscht wurde, 
+   Wenn ein Owner vor mehr als einem Jahr gelöscht wurde,
    dann wird dessen komplette Historie entfernt.
  - Wenn Dienste keinem Owner zugeordnet werden können,
    dann werden diese nun unter dem Namen ':unknown' verfügbar gemacht.
- - Die Combo-Box für "vergleiche mit" unter "Diff" zeigt nun beim 
+ - Die Combo-Box für "vergleiche mit" unter "Diff" zeigt nun beim
    ersten Anzeigen nicht mehr alle, sondern nur die älteren Stände an.
- - Beim Export von Zonen, die durch Pathrestrictions in einen Zone-Cluster 
-   aufgeteilt wurden, war der Name bisher nichtdeterministisch. 
+ - Beim Export von Zonen, die durch Pathrestrictions in einen Zone-Cluster
+   aufgeteilt wurden, war der Name bisher nichtdeterministisch.
    Das wurde behoben.
  - Für Loopback-Interfaces wird keine Zone mehr exportiert.
  - Wenn die Adresse eines Interface "hidden" ist, dann wird diese
    nicht ausgegeben.
- - Bei aktiver Suche wurde eine Regel mehrfach ausgegeben, 
-   wenn in Quelle/Ziel das Suchobjekt mehrfach gefunden wurde. 
+ - Bei aktiver Suche wurde eine Regel mehrfach ausgegeben,
+   wenn in Quelle/Ziel das Suchobjekt mehrfach gefunden wurde.
    Das ist nun behoben.
 
 0.926
 0.925
 0.924
 
- - Regeln für ein Aggregat / Supernetz werden auch dem Owner 
+ - Regeln für ein Aggregat / Supernetz werden auch dem Owner
    der darin enthaltenen Subnetze angezeigt.
