@@ -204,7 +204,7 @@ sub prepare_export {
     $input ||= $netspoc;
     my $in_dir = prepare_in_dir($input);
 
-    my $cmd = "~/Netspoc/bin/export-netspoc -quiet $in_dir $export_dir/$policy";
+    my $cmd = "~/Netspoc/bin/export-netspoc -quiet -export_ipv6 $in_dir $export_dir/$policy";
     my ($stdout, $stderr);
     run3($cmd, \undef, \$stdout, \$stderr);
     my $status = $?;
