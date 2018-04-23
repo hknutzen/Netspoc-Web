@@ -1,8 +1,31 @@
 {{$NEXT}}
 
- - If user U has requested diff mails for some owner O
-   and if O no longer exists or if U no longer is allowed to access O,
-   then inform U once by mail, that he will no longer receive diff mails for O.
+ - If a user has requested diff mails for some owner
+   and if this owner no longer exists or
+   if user no longer is allowed to access  this owner,
+   then inform this user once by mail, that diff mails for this owner
+   will no longer be sent.
+ - Simplified config options:
+   Only these options are required:
+     netspoc_data noreply_address session_dir user_dir business_units
+   All other options are optional now.
+   Without default value:
+      ldap_uri ldap_dn_template ldap_base_dn
+      ldap_filter_template ldap_email_attr
+   With default value: ($base_dir is installation directory of NetspocWeb)
+      about_info_template: "$base_dir/html/about_info"
+      expire_logged_in   : 480
+      sendmail_command   : '/usr/lib/sendmail'
+      template_path      : "$base_dir/templates"
+   New options with default values:
+      html_template : "$base_dir/html"
+      mail_template : "$base_dir/mail"
+   Old, now ignored options:
+      error_page show_passwd_template
+      verify_mail_template verify_ok_template verify_fail_template
+      diff_mail_template
+   These templates are read from directories html_template or mail_template
+   instead.
 
 1.009     2017-12-12 14:09:22+01:00 Europe/Berlin
 
