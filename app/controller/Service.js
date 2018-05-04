@@ -514,7 +514,7 @@ Ext.define(
                         disabled_textfield = {
                             xtype      : 'textfield',
                             name       : 'disabled',
-                            fieldLabel : 'Gültig bis',
+                            fieldLabel : 'Deaktiviert ab',
                             allowBlank : false,  // requires a non-empty value
                             readOnly   : true
                         };
