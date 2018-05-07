@@ -1,5 +1,7 @@
 {{$NEXT}}
 
+1.010     2018-05-07 14:19:06+02:00 Europe/Berlin
+
  - If a user has requested diff mails for some owner
    and if this owner no longer exists or
    if user no longer is allowed to access  this owner,
