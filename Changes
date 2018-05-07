@@ -27,6 +27,11 @@
    These templates are read from directories html_template or mail_template
    instead.
 
+ - Add: Search IP ranges
+ - Change: label for "disabled_at" services from "Gültig bis" to
+           "Deaktiviert ab", to be more concise.
+ - Fix: internal server error (500) on hidden services
+
 1.009     2017-12-12 14:09:22+01:00 Europe/Berlin
 
  - Fix: bug with buffered renderer sometimes truncating lists.
