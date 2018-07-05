@@ -164,13 +164,13 @@ Ext.application(
              */
             Ext.define(
                 'Ext.ux.Ext.grid.plugin.BufferedRenderer.HiddenRenderingSupport', {
-                    override: 'Ext.grid.plugin.BufferedRenderer'
+                    override : 'Ext.grid.plugin.BufferedRenderer',
                     
                     /**
                      * Refreshes the view and row size caches if they have a value of 0
                      * (meaning they have probably been cached when the view was not visible).
                      */
-                    ,onViewResize: function() {
+                    onViewResize: function() {
                         if (this.rowHeight === 0) {
                             if (this.view.body.getHeight() > 0) {
                                 this.view.refresh();

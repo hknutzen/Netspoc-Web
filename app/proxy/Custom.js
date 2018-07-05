@@ -18,12 +18,13 @@ along with this program. If not, see <http://www.gnu.org/licenses/>.
 
 Ext.define(
     'PolicyWeb.proxy.Custom', { 
-        alias       : 'proxy.policyweb', 
-        extend      : 'Ext.data.proxy.Ajax', 
-        pageParam   : false, //to remove param "page"
-        startParam  : false, //to remove param "start"
-        limitParam  : false, //to remove param "limit"
-        noCache     : true,  //allow param "_dc<xyz>" to disable caching
+        alias         : 'proxy.policyweb', 
+        extend        : 'Ext.data.proxy.Ajax', 
+        pageParam     : false, //to remove param "page"
+        startParam    : false, //to remove param "start"
+        limitParam    : false, //to remove param "limit"
+        actionMethods : { read: 'POST' },
+        noCache       : true,  //allow param "_dc<xyz>" to disable caching
 
         constructor : function() { 
             this.reader = { 

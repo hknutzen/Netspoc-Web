@@ -9,7 +9,6 @@ Ext.define(
         needLoad : true, // own config param, not ExtJs
         proxy    : {
             type          : 'policyweb',
-            actionMethods : { read: 'POST' },
             proxyurl      : 'get_history'
         }
     }

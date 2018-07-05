@@ -333,6 +333,13 @@ Ext.define(
                         }
                     },
                     failure : function ( response ) {
+                        var msg = "Admin oder Watcher Status konnte nicht ermittelt werden. Bitte wenden Sie sich an die Administratoren von Policy-Web.";
+                        Ext.MessageBox.show(
+                            { title   : 'Fehler', 
+                              msg     : msg,
+                              buttons : Ext.MessageBox.OK,
+                              icon    : Ext.MessageBox.ERROR
+                            });
                     }
                 }
             );

@@ -8,7 +8,6 @@ Ext.define(
         autoLoad : true,
         proxy    : {
             type          : 'policyweb',
-            actionMethods : { read : 'POST' },
             proxyurl      : 'get_owners'
         }
     }

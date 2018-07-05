@@ -1,4 +1,9 @@
 {{$NEXT}}
+ - Changed HTTP-method from GET to POST for all backend-URLs.
+ - Removed parameter "-export_ipv6" from export-netspoc-command
+   in t/PolicyWeb/Init.pm
+ - Add: error message in case of failure to determine adim or watcher.
+
 
 1.010     2018-05-07 14:19:06+02:00 Europe/Berlin
 
