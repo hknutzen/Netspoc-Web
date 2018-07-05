@@ -1725,7 +1725,7 @@ sub verify {
 	return Template::get("$config->{html_template}/verify_ok", {})
     }
     else {
-	return Template::get("$config->{html_template}verify_fail", {});
+	return Template::get("$config->{html_template}/verify_fail", {});
     }
 }
 
