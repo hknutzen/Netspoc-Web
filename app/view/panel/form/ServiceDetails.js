@@ -18,7 +18,8 @@ along with this program. If not, see <http://www.gnu.org/licenses/>.
 
 Ext.define(
     'PolicyWeb.view.panel.form.ServiceDetails',
-    {
+    {   
+        id          : 'pnl_service_details_inner',
         extend      : 'Ext.form.Panel',
         alias       : 'widget.servicedetails',
         defaultType : 'textfield',
@@ -42,7 +43,8 @@ Ext.define(
                 fieldLabel : 'Verantwortung',
                 layout     : 'hbox',
                 items      : [
-                    { xtype   : 'button',
+                    { id      : 'btn_switch_service_responsibility',
+                      xtype   : 'button',
                       hidden  : true,
                       flex    : 0,
                       iconCls : 'icon-group'
