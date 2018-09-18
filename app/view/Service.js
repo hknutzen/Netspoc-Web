@@ -51,6 +51,7 @@ Ext.define(
             var srv_props = Ext.create(
                 'PolicyWeb.view.panel.card.PrintActive', 
                 {
+                    id           : "pnl_service_details",
                     flex         : 7,
                     activeItem   : 0,
                     layoutConfig : {
@@ -66,22 +67,24 @@ Ext.define(
                             xtype : 'toolbar',
                             dock  : 'top',
                             items : [
-                                {
+                                {   
+                                    id            : 'btn_service_details',
                                     text          : 'Details zum Dienst',
                                     toggleGroup   : 'polDVGrp',
                                     enableToggle  : true,
                                     pressed       : true
                                 },
                                 '-',
-                                {
+                                {   
+                                    id           : 'btn_service_user',
                                     text         : 'Benutzer (User) des Dienstes',
                                     toggleGroup  : 'polDVGrp',
                                     enableToggle : true
                                 },
                                 '->',
                                 {
-                                    xtype   : 'printbutton',
                                     id      : 'btn_print_rules',
+                                    xtype   : 'printbutton',
                                     tooltip : 'Druckansicht für Regeln oder User des aktuell ausgewählten Dienstes'
                                 }
                             ]
@@ -90,10 +93,12 @@ Ext.define(
                             xtype : 'toolbar',
                             dock  : 'top',
                             items : [
-                                {
+                                {   
+                                    id           : 'btn_service_user_add',
                                     iconCls      : 'icon-add'
                                 },
-                                {
+                                {   
+                                    id           : 'btn_service_user_del',
                                     iconCls      : 'icon-delete'
                                 },
                                 '-',
@@ -104,11 +109,13 @@ Ext.define(
                                     boxLabel : 'User expandieren'
                                 },
                                 {
+                                    id       : 'cb_show_names',
                                     xtype    : 'checkbox',
                                     name     : 'display_property',
                                     boxLabel : 'Namen statt IPs'
                                 },
-                                {
+                                {   
+                                    id        : 'cb_filter_search',
                                     xtype     : 'checkbox',
                                     name      : 'filter_rules',
                                     boxLabel  : 'Filtern nach Suche',

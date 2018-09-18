@@ -64,7 +64,8 @@ Ext.define(
                         enableToggle : false
                     },
                     '->',
-                    {
+                    {   
+                        id      : 'btn_print_own_networks',
                         xtype   : 'printbutton',
                         tooltip : 'Druckansicht für die Liste der eigenen Netze'
                     }
@@ -82,17 +83,22 @@ Ext.define(
                 activeItem     : 0,
                 layoutConfig   : { deferredRender : false },
                 tbar : [
-                    {
-                        text          : 'Enthaltene Ressourcen',
-                        toggleGroup   : 'containedResourcesGrp',
-                        scope         : this,
-                        handler       : function ( button ) {
-                            var cardPanel = button.findParentByType( 'panel' );
-                            cardPanel.layout.setActiveItem( 0 );
-                        }
-                    },
+                        'Enthaltene Ressourcen',
+
+                    // commented because it was a button without a function
+                    //{   
+                    //    text          : 'Enthaltene Ressourcen',
+                    //  toggleGroup   : 'containedResourcesGrp',
+                    //    scope         : this,
+                    //    handler       : function ( button ) {
+                    //       var cardPanel = button.findParentByType( 'panel' );
+                    //        cardPanel.layout.setActiveItem( 0 );
+                    //    }
+                    //},
+
                     '->',
-                    {
+                    {   
+                        id      : 'btn_print_network_resources',
                         xtype   : 'printbutton',
                         tooltip : 'Druckansicht für die Ressourcen der aktuell selektierten Netze'
                     }

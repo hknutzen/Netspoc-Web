@@ -44,7 +44,7 @@ owner:z = { admins = guest; }
 
 area:all = { owner = x; anchor = network:Big; }
 any:Big  = { link = network:Big; }
-any:Sub1 = { ip = 10.1.0.0/23; link = network:Big; }
+any:Sub1 = { ip = 10.1.2.0/23; link = network:Big; }
 any:Sub2 = { ip = 10.1.1.0/25; link = network:Big; }
 
 network:Sub = { ip = 10.1.1.0/24; owner = z; subnet_of = network:Big; }
@@ -243,11 +243,11 @@ sub prepare_runtime_base {
 
     $app = builder {
         mount "/extjs4"     =>
-            Plack::App::File->new(root => "/home/brunkhda/htdocs/extjs4")->to_app;
+            Plack::App::File->new(root => "/home/$ENV{USER}/htdocs/extjs4")->to_app;
         mount "/silk-icons" =>
-            Plack::App::File->new(root => "/home/knutzehe/htdocs/silk-icons-1.3")->to_app;
+            Plack::App::File->new(root => "/home/$ENV{USER}/htdocs/silk-icons")->to_app;
         mount "/"           =>
-            Plack::App::File->new(root => "/home/brunkhda/NetspocWeb")->to_app;
+            Plack::App::File->new(root => "/home/$ENV{USER}/Netspoc-Web")->to_app;
         mount "/backend" => $netspoc_psgi;
     };
 

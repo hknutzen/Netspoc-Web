@@ -113,7 +113,7 @@ sub export_netspoc {
     close $in_fh;
 
     my $policy_path = "$export_dir/$policy";
-    my $cmd = "perl /home/knutzehe/Netspoc/bin/export-netspoc -quiet $filename $policy_path";
+    my $cmd = "perl /home/$ENV{USER}/Netspoc/bin/export-netspoc -quiet $filename $policy_path";
     my ($stdout, $stderr);
     run3($cmd, \undef, \$stdout, \$stderr);
     my $status = $?;
