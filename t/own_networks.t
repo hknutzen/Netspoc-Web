@@ -51,7 +51,7 @@ eval {
     # test own networks grid
     my @grid_cells = test_own_networks_grid();
 
-		###############
+
 
     $driver->find_element_ok(
         '//div[text()="Enthaltene Ressourcen"]',
@@ -236,14 +236,6 @@ eval {
 
     ok( ( scalar @service_grid == 12 ), "found services:\tall 12" );
 
-		#$driver->move_to_element($driver->find_element('//*[@id="gridcolumn-1071-triggerEl"]', 'xpath'));
-		#sleep 5;
-		#$driver->click_element_ok('//*[@id="gridcolumn-1071-triggerEl"]', 'class', 'ok');
-		#sleep 10;
-
-    #for (my $i = 0; $i < @resources_grid; $i++) {
-    #	print "res($i): " . $resources_grid[$i]->get_text . "\n";
-    #}
 
     done_testing();
 };
