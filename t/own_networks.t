@@ -12,7 +12,6 @@ use PolicyWeb::FrontendTest;
 use PolicyWeb::Init;
 use JSON;
 
-
 ##############################################################################
 #
 # Test description:
@@ -28,52 +27,45 @@ use JSON;
 #
 ##############################################################################
 
-
-
 my $driver = PolicyWeb::FrontendTest->new(
-    browser_name   => 'chrome',
-    proxy => {
-        proxyType => 'direct',
-    },
-    default_finder => 'id',
-    javascript     => 1,
-    extra_capabilities => {
-        nativeEvents => 'false'
-    }
+    browser_name       => 'chrome',
+    proxy              => { proxyType => 'direct', },
+    default_finder     => 'id',
+    javascript         => 1,
+    extra_capabilities => { nativeEvents => 'false' }
 );
-
 
 PolicyWeb::Init::prepare_export();
 PolicyWeb::Init::prepare_runtime_no_login();
 
-
-$driver->login_as_guest_and_choose_owner( 'x' );
-
+$driver->login_as_guest_and_choose_owner('x');
 
 #
 # Needed navigation elements
 #
-my $confirm_button      = $driver->find_element( 'btn_confirm_network_selection' );
-my $cancel_button       = $driver->find_element( 'btn_cancel_network_selection' );
-my $services_tab_button = $driver->find_element( 'btn_services_tab' );
-my $networks_tab_button = $driver->find_element( 'btn_own_networks_tab' );
-
-
+my $confirm_button = $driver->find_element('btn_confirm_network_selection');
+my $cancel_button  = $driver->find_element('btn_cancel_network_selection');
+my $services_tab_button = $driver->find_element('btn_services_tab');
+my $networks_tab_button = $driver->find_element('btn_own_networks_tab');
 
 $driver->click_element_ok( 'btn_own_networks_tab', 'id',
-                           'Click on button "Eigene Netze" ' );
+    'Click on button "Eigene Netze" ' );
 
-my $networks_grid = wait_until { $driver->find_element('grid_own_networks' ) };
+my $networks_grid = wait_until { $driver->find_element('grid_own_networks') };
 
-my $elements = $driver->find_child_elements( $networks_grid, 'x-grid-cell', 'class' );
+my $elements
+    = $driver->find_child_elements( $networks_grid, 'x-grid-cell', 'class' );
 
-my $checkboxes = $driver->find_child_elements( $networks_grid, 'input[type="checkbox"]' , 'css' );
+my $checkboxes
+    = $driver->find_child_elements( $networks_grid, 'input[type="checkbox"]',
+    'css' );
+
 #my $checkboxes = $driver->find_child_elements( $networks_grid, 'x-grid-row-checker', 'class' , 'class' );
 
 done_testing();
 exit 0;
 
-die Dumper( $checkboxes );
+die Dumper($checkboxes);
 
 my @enabled = grep { $_->is_selected() } @$checkboxes;
 
@@ -84,57 +76,57 @@ is( scalar(@enabled), 0, 'No network selected initially' );
 $driver->move_to( element => $array[0] );
 ok( $driver->click(), 'Select "network:DMZ"' );
 
-
-$checkboxes = $driver->find_child_elements( $networks_grid, 'x-grid-row-checker', 'class' ); #THIS IS BROKEN! HOW TO FIND SELECTED GRID ELEMENTS?
+$checkboxes
+    = $driver->find_child_elements( $networks_grid, 'x-grid-row-checker',
+    'class' );    #THIS IS BROKEN! HOW TO FIND SELECTED GRID ELEMENTS?
 
 @enabled = grep { $_->is_selected() } @$checkboxes;
-error scalar( @enabled );
+error scalar(@enabled);
 
 #my $foo = wait_until { $driver->find_element('foo' ) };
 
 is( scalar(@enabled), 1, 'One network selected' );
 
+for my $el (@$elements) {
 
-    
-for my $el ( @$elements ) {
     #error Dumper( $el->get_text() );
     #error "------------------------------";
 }
 
 my $label = $networks_tab_button->get_text();
-like( $label, qr/Eigene Netze/,
-    'Button for own networks has default label' );
+like( $label, qr/Eigene Netze/, 'Button for own networks has default label' );
 $driver->move_to( element => $confirm_button );
 ok( $driver->click(), 'Confirm selection of network "network:DMZ"' );
 
 $label = $networks_tab_button->get_text();
 chomp($label);
-like( $label, qr/Ausgew\whlte Netze/,
-    'Button for own networks changed to selection mode label "Ausgewählte Netze"' );
-
+like(
+    $label,
+    qr/Ausgew\whlte Netze/,
+    'Button for own networks changed to selection mode label "Ausgewählte Netze"'
+);
 
 my $expected = [ 'Test3a', 'Test4', 'Test9' ];
 
 $driver->move_to( element => $services_tab_button );
 ok( $driver->click(), 'Select tab "Dienste, Freischaltungen"' );
 
+$driver->click_element_ok( 'btn_own_services', 'id',
+    'Click on button "Eigene Dienste" ' );
 
-$driver->click_element_ok( 'btn_own_services', 'id', 'Click on button "Eigene Dienste" ' );
-
-
-my $service_grid = wait_until { $driver->find_element('grid_services' ) };
-$elements = $driver->find_child_elements( $service_grid, 'x-grid-cell', 'class' );
+my $service_grid = wait_until { $driver->find_element('grid_services') };
+$elements
+    = $driver->find_child_elements( $service_grid, 'x-grid-cell', 'class' );
 
 my $got = [ map { $_->get_text } @$elements ];
 
-is_deeply( $expected, $got, 'Three expected services remained for "network:DMZ"' );
-
+is_deeply( $expected, $got,
+    'Three expected services remained for "network:DMZ"' );
 
 #my $foo = wait_until { $driver->find_element('foo' ) };
 
-
 =head
-IP-Adresse	       Name	      Verantwortungsbereich
+IP-Adresse         Name       Verantwortungsbereich
 0.0.0.0/0.0.0.0        network:Internet x
 10.1.0.0/255.255.0.0   network:Big      x
 10.1.1.0/255.255.255.0 network:Sub      z
@@ -145,7 +137,4 @@ IP-Adresse	       Name	      Verantwortungsbereich
 =cut
 
 done_testing();
-
-
-
 
