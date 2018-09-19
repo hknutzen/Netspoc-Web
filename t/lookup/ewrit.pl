@@ -16,14 +16,14 @@ my $driver = Test::Selenium::Remote::Driver->new(
 $driver->get('index.html');
 
 print "enter 'q' to exit\n";
-eval { 
-	my $input;
-	while (chomp ($input = <>) ne "quit"){ 
-  	eval $input;   
-		if ($@){print $@ . "\n";}
-		print "\n>"
-	} 
+eval {
+    my $input;
+    while ( chomp( $input = <> ) ne "quit" ) {
+        eval $input;
+        if ($@) { print $@ . "\n"; }
+        print "\n>";
+    }
 };
-if ($@){print $@ . "\n";}
+if ($@) { print $@ . "\n"; }
 
 $driver->quit();
