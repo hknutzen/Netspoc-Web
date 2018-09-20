@@ -15,8 +15,8 @@ use JSON;
 use Load_Config;
 use User_Store;
 
-my $export_dir = tempdir( CLEANUP => 1 );
-my $home_dir   = tempdir( CLEANUP => 1 );
+my $export_dir = tempdir(CLEANUP => 1);
+my $home_dir   = tempdir(CLEANUP => 1);
 my $user_dir   = "$home_dir/users";
 my $conf_file  = "$home_dir/policyweb.conf";
 my $conf_data  = <<"END";
@@ -39,8 +39,8 @@ END
 my $config;
 
 sub write_file {
-    my ( $path, $content ) = @_;
-    open( my $fh, '>', $path ) or die "Can't open $path";
+    my ($path, $content) = @_;
+    open(my $fh, '>', $path) or die "Can't open $path";
     print $fh $content;
     close $fh;
 }
@@ -55,7 +55,7 @@ sub make_visible {
 sub prepare {
 
     # Prepare config file used by cleanup_daily.
-    write_file( $conf_file, $conf_data );
+    write_file($conf_file, $conf_data);
 
     # Config file is searched in $HOME directory.
     $ENV{HOME} = $home_dir;
@@ -72,15 +72,15 @@ sub prepare {
     mkdir $user_dir or die $!;
 
     # Create dummy sendmail command.
-    write_file( "$home_dir/sendmail", $sendmail_dummy );
-    chmod( 0755, "$home_dir/sendmail" );
+    write_file("$home_dir/sendmail", $sendmail_dummy);
+    chmod(0755, "$home_dir/sendmail");
 
 }
 
 sub set_send_diff {
-    my ( $email, $owner_list ) = @_;
-    my $store = User_Store::new( $config, $email );
-    $store->param( 'send_diff', $owner_list );
+    my ($email, $owner_list) = @_;
+    my $store = User_Store::new($config, $email);
+    $store->param('send_diff', $owner_list);
     $store->flush();
 }
 
@@ -101,22 +101,22 @@ sub inc_time_by_days {
 
 sub set_timestamp_of_files {
     my ($path) = @_;
-    find( sub { -f and utime( $timestamp, $timestamp, $_ ) }, $path );
+    find(sub { -f and utime($timestamp, $timestamp, $_) }, $path);
 }
 
 sub export_netspoc {
     my ($input) = @_;
     my $policy = "p$policy_num";
     $policy_num++;
-    my ( $in_fh, $filename ) = tempfile( UNLINK => 1 );
+    my ($in_fh, $filename) = tempfile(UNLINK => 1);
     print $in_fh $input;
     close $in_fh;
 
     my $policy_path = "$export_dir/$policy";
-    my $cmd
-        = "perl /home/$ENV{USER}/Netspoc/bin/export-netspoc -quiet $filename $policy_path";
-    my ( $stdout, $stderr );
-    run3( $cmd, \undef, \$stdout, \$stderr );
+    my $cmd =
+"perl /home/$ENV{USER}/Netspoc/bin/export-netspoc -quiet $filename $policy_path";
+    my ($stdout, $stderr);
+    run3($cmd, \undef, \$stdout, \$stderr);
     my $status = $?;
     $status == 0 or die "Export failed:\n$stderr\n";
     $stderr and die "Unexpected output during export:\n$stderr\n";
@@ -127,25 +127,24 @@ sub export_netspoc {
 
 sub cleanup_daily {
     my $cmd = "bin/cleanup_daily";
-    my ( $stdout, $stderr );
-    run3( $cmd, \undef, \$stdout, \$stderr );
+    my ($stdout, $stderr);
+    run3($cmd, \undef, \$stdout, \$stderr);
     my $status = $?;
     $status == 0 or die "cleanup_daily failed:\n$stderr\n";
     $stderr
-        and
-        die "Unexpected output on STDERR during cleanup_daily:\n$stderr\n";
+      and die "Unexpected output on STDERR during cleanup_daily:\n$stderr\n";
     return $stdout;
 }
 
 sub test_removed {
-    my ( $title, $path ) = @_;
-    ok( not( -e "$export_dir/$path" ), "$title: removed $path" );
+    my ($title, $path) = @_;
+    ok(not(-e "$export_dir/$path"), "$title: removed $path");
 }
 
 sub test_rlog {
-    my ( $title, $path, $expected ) = @_;
-    my ( $stdout, $stderr );
-    run3( "rlog $export_dir/$path", \undef, \$stdout, \$stderr );
+    my ($title, $path, $expected) = @_;
+    my ($stdout, $stderr);
+    run3("rlog $export_dir/$path", \undef, \$stdout, \$stderr);
     my $status = $?;
     $status == 0 or die "rlog failed:\n$stderr\n";
     $stderr and die "Unexpected output during rlog:\n$stderr\n";
@@ -159,14 +158,14 @@ sub test_rlog {
     # Ignore trailing line.
     $stdout =~ s/ \n ====+ //x;
 
-    eq_or_diff( $stdout, $expected, "$title: rlog $path" );
+    eq_or_diff($stdout, $expected, "$title: rlog $path");
 }
 
 # Prepare one for all tests.
 prepare();
 $config = Load_Config::load();
 
-my ( $title, $netspoc, $mail );
+my ($title, $netspoc, $mail);
 
 ############################################################
 $title = 'Initial policy';
@@ -184,15 +183,15 @@ set_old_time();
 export_netspoc($netspoc);
 $mail = cleanup_daily();
 
-test_rlog( $title, 'RCS/POLICY,v', <<"END");
+test_rlog($title, 'RCS/POLICY,v', <<"END");
 revision 1.1
 p1
 END
-test_rlog( $title, 'RCS/owner/x/POLICY,v', <<"END");
+test_rlog($title, 'RCS/owner/x/POLICY,v', <<"END");
 revision 1.1
 p1
 END
-eq_or_diff( $mail, '', "$title: mail" );
+eq_or_diff($mail, '', "$title: mail");
 
 ############################################################
 $title = 'p2 add another owner';
@@ -211,28 +210,28 @@ router:r1 = {
 END
 
 inc_time_by_days(1);
-set_send_diff( 'x@example.com', [ 'x', 'y' ] );
-set_send_diff( 'y@example.com', [ 'x', 'y' ] );
+set_send_diff('x@example.com', [ 'x', 'y' ]);
+set_send_diff('y@example.com', [ 'x', 'y' ]);
 export_netspoc($netspoc);
 $mail = cleanup_daily();
 
-test_rlog( $title, 'RCS/POLICY,v', <<END);
+test_rlog($title, 'RCS/POLICY,v', <<END);
 revision 1.2
 p2
 ----------------------------
 revision 1.1
 p1
 END
-test_rlog( $title, 'RCS/owner/x/POLICY,v', <<END);
+test_rlog($title, 'RCS/owner/x/POLICY,v', <<END);
 revision 1.1
 p1
 END
-test_rlog( $title, 'RCS/owner/y/POLICY,v', <<END);
+test_rlog($title, 'RCS/owner/y/POLICY,v', <<END);
 revision 1.1
 p2
 END
-test_removed( $title, 'p1' );
-eq_or_diff( $mail, <<'END', "$title: mail" );
+test_removed($title, 'p1');
+eq_or_diff($mail, <<'END', "$title: mail");
 To: x@example.com
 Subject: Policy-Web: Diff für y wird nicht mehr versandt
 Content-Type: text/plain; charset=UTF-8
@@ -255,36 +254,36 @@ inc_time_by_days(1);
 export_netspoc($netspoc);
 $mail = cleanup_daily();
 
-test_rlog( $title, 'RCS/POLICY,v', <<END);
+test_rlog($title, 'RCS/POLICY,v', <<END);
 revision 1.3
 p3
 END
-test_rlog( $title, 'RCS/services,v', <<END);
+test_rlog($title, 'RCS/services,v', <<END);
 revision 1.2
 p3
 END
-test_rlog( $title, 'RCS/objects,v', <<END);
+test_rlog($title, 'RCS/objects,v', <<END);
 revision 1.2
 p2
 END
-test_rlog( $title, 'RCS/owner/x/POLICY,v', <<END);
+test_rlog($title, 'RCS/owner/x/POLICY,v', <<END);
 revision 1.2
 p3
 END
-test_rlog( $title, 'RCS/owner/x/assets,v', <<END);
+test_rlog($title, 'RCS/owner/x/assets,v', <<END);
 revision 1.2
 p2
 END
-test_rlog( $title, 'RCS/owner/y/POLICY,v', <<END);
+test_rlog($title, 'RCS/owner/y/POLICY,v', <<END);
 revision 1.2
 p3
 END
-test_rlog( $title, 'RCS/owner/y/service_lists,v', <<END);
+test_rlog($title, 'RCS/owner/y/service_lists,v', <<END);
 revision 1.2
 p3
 END
-test_removed( $title, 'p2' );
-eq_or_diff( $mail, <<"END", "$title: mail" );
+test_removed($title, 'p2');
+eq_or_diff($mail, <<"END", "$title: mail");
 To: x\@example.com
 Subject: Policy-Web: Diff für x, 1970-01-03
 Content-Type: text/plain; charset=UTF-8
@@ -339,11 +338,11 @@ $title = 'p4 remove owner';
 $netspoc =~ s/^owner:y =/#/m;
 $netspoc =~ s/owner = y;//;
 inc_time_by_days(1);
-set_send_diff( 'x@example.com', [ 'x', 'y' ] );
-set_send_diff( 'y@example.com', [ 'x', 'y' ] );
+set_send_diff('x@example.com', [ 'x', 'y' ]);
+set_send_diff('y@example.com', [ 'x', 'y' ]);
 export_netspoc($netspoc);
 $mail = cleanup_daily();
-eq_or_diff( $mail, <<"END", "$title: mail" );
+eq_or_diff($mail, <<"END", "$title: mail");
 To: x\@example.com
 Subject: Policy-Web: Diff für y wird nicht mehr versandt
 Content-Type: text/plain; charset=UTF-8
