@@ -126,6 +126,7 @@ sub select_combobox_item {
 
 #Select the dropdown item
 #$driver->click_element_ok($li, 'xpath', "Selected item $item from combo box");
+
     $driver->find_element($li, 'xpath')->click;
 }
 
