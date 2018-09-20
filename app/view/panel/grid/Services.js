@@ -19,7 +19,7 @@ along with this program. If not, see <http://www.gnu.org/licenses/>.
 Ext.define(
     'PolicyWeb.view.panel.grid.Services',
     {
-        id          : 'grid_services',
+        id          : 'pnl_services',
         extend      : 'PolicyWeb.view.panel.grid.Abstract',
         alias       : 'widget.servicelist',
         controllers : [ 'Service' ],
@@ -44,7 +44,8 @@ Ext.define(
                 enableToggle : true,
                 relation     : 'owner'
             },
-            {
+            {   
+                id           : 'btn_used_services',
                 xtype        : 'chooseservice',
                 text         : 'Genutzte',
                 toggleGroup  : 'polNavBtnGrp',
@@ -53,13 +54,15 @@ Ext.define(
                 relation     : 'user'
             },
             {
+                id           : 'btn_usable_services',
                 xtype        : 'chooseservice',
                 text         : 'Nutzbare',
                 toggleGroup  : 'polNavBtnGrp',
                 enableToggle : true,
                 relation     : 'visible'
             },
-            {
+            {   
+                id           : 'btn_search_services',
                 text         : 'Suche',
                 enableToggle : false,
                 allowDepress : false
@@ -71,9 +74,11 @@ Ext.define(
             },
 */
             {
+                id    : 'btn_services_print_all',
                 xtype : 'print-all-button'
             },
             {
+                id    : 'btn_services_print',
                 xtype : 'printbutton'
             }
         ]

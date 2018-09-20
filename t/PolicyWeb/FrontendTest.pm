@@ -23,21 +23,47 @@ our @EXPORT = qw(
     error
 );
 
-sub login_as_guest {
-    my $driver   = shift;
+sub find_top_buttons {
+    my ($driver) = @_;
+    $driver->find_element_ok( 'btn_services_tab',
+        "found button:\tservices tab" );
+    $driver->find_element_ok( 'btn_own_networks_tab',
+        "found button:\town networks tab" );
+    $driver->find_element_ok( 'btn_diff_tab', "found button:\tdiff tab" );
+    $driver->find_element_ok( 'btn_entitlement_tab',
+        "found button:\tentitlement tab" );
+    $driver->find_element_ok( '//div[text()="Stand"]', 'xpath',
+        "found text:\t'Stand'" );
+
+    # historycombo...
+    # -> button zum auswaehlen usw
+    # "Verantwortungsbereich"
+    # ownercombo
+    # "Abmelden"
+}
+
+# tries to login with given username and password
+sub login {
+    my ( $driver, $name, $pass ) = @_;
+    return if !$name;
+
     my $base_url = "http://$SERVER:$port/index.html";
     $driver->get($base_url);
 
-    $driver->find_element( '//input[@name="email"]', "xpath" );
-    $driver->find_element( '//input[@name="pass"]',  "xpath" );
+    $driver->find_element('txtf_email');
+    $driver->send_keys_to_active_element($name);
 
-    $driver->send_keys_to_active_element('guest');
+    if ($pass) {
+        $driver->find_element('txtf_password')->click;
+        $driver->send_keys_to_active_element($pass);
+    }
 
-    my $login_button
-        = $driver->find_element( '//input[@value="Login"]', "xpath" );
+    $driver->find_element('btn_login')->click;
+}
 
-    $login_button->click();
-
+sub login_as_guest {
+    my $driver = shift;
+    $driver->login('guest');
 }
 
 sub login_as_guest_and_choose_owner {
@@ -89,8 +115,8 @@ sub select_combobox_item {
 
     my $id_string = $driver->execute_script($combo_trigger_id);
 
-    $driver->click_element_ok( $id_string, 'id',
-        "Clicked on owner combo open trigger" );
+    #$driver->click_element_ok($id_string, 'id', "Clicked on owner combo open trigger");
+    $driver->find_element( $id_string, 'id' )->click;
 
     my $list_id = $driver->execute_script($dropdown_id);
 
@@ -102,14 +128,12 @@ sub select_combobox_item {
         . $item . "')]";
 
     #Select the dropdown item
-    $driver->click_element_ok( $li, 'xpath',
-        "Selected item $item from combo box" );
+    #$driver->click_element_ok($li, 'xpath', "Selected item $item from combo box");
+    $driver->find_element( $li, 'xpath' )->click;
 }
 
+# Convert IP address to numerical value.
 sub ip2numeric {
-
-    # Convert IP address to numerical value.
-
     $_ = shift;
 
     if (m/\G(\d+)\.(\d+)\.(\d+)\.(\d+)/gc) {
@@ -123,9 +147,7 @@ sub ip2numeric {
     }
 }
 
-#
 # Convert numerical value into an IP-address.
-#
 sub numeric2ip {
     my $ip = shift;
     return sprintf "%vd", pack 'N', $ip;
@@ -133,6 +155,178 @@ sub numeric2ip {
 
 sub error {
     print STDERR @_, "\n";
+}
+
+sub select_by_name {
+    my $driver     = shift;
+    my @grid_cells = @{ (shift) };
+    my $row        = ${ (shift) };
+    my $offset     = ${ (shift) };
+    my $name       = ${ (shift) };
+
+    for ( my $i = $row; $i < @grid_cells; $i += $row ) {
+        my $a = $grid_cells[ $i + $offset ]->get_text;
+        if ( $a eq $name ) {
+            $grid_cells[$i]->click;
+            return;
+        }
+    }
+    BAIL_OUT("$name not found");
+}
+
+sub grid_contains {
+    my $driver      = shift;
+    my $grid_parent = ${ (shift) };
+    my $row         = ${ (shift) };
+    my $offset      = ${ (shift) };
+    my @search      = @{ (shift) };
+
+    my @grid_cells
+        = $driver->find_child_elements( $grid_parent, 'x-grid-cell',
+        'class' );
+
+    if ( !scalar @grid_cells ) {
+        print "grid is empty\n";
+        return 0;
+    }
+
+    for ( my $i = 0; $i < @search; $i++ ) {
+        my $ok = 0;
+        for ( my $j = 0; $j < @grid_cells; $j += $row ) {
+            if ( $grid_cells[ $j + $offset ]->get_text eq $search[$i] ) {
+                $ok = 1;
+            }
+        }
+        if ( !$ok ) {
+            print "------------\n"
+                . $search[ $i + $offset ]->get_text
+                . "\n is not equal to any item"
+                . "\n------------\n";
+            return 0;
+        }
+    }
+    return 1;
+}
+
+sub is_grid_in_order {
+    my $driver     = shift;
+    my @grid_cells = @{ (shift) };
+    my $row        = ${ (shift) };
+    my $offset     = ${ (shift) };
+    my $order      = ${ (shift) };
+    my $column     = ${ (shift) };
+
+    for ( my $i = $offset; $i < @grid_cells; $i += $row ) {
+
+        #print "i: ".$i."\n";
+        my $a = $grid_cells[ $i + $column ]->get_text;
+        my $b = $grid_cells[ $i + $column - $row ]->get_text;
+        if ( ( $a cmp $b ) eq $order ) {
+            print "('$a' cmp '$b') ne '$order'\n";
+            return 0;
+        }
+    }
+    return 1;
+}
+
+sub check_sytax_grid {
+    my $driver     = shift;
+    my @grid_cells = @{ (shift) };
+    my $row        = ${ (shift) };
+    my $offset     = ${ (shift) };
+    my @regex      = @{ (shift) };
+
+    if ( !scalar @grid_cells ) {
+        print "grid is empty\n";
+        return 0;
+    }
+
+    for ( my $i = $offset; $i < @grid_cells; $i += $row ) {
+        for ( my $j = 0; $j < scalar @regex; $j++ ) {
+            if ( !eval { $grid_cells[ $i + $j ]->get_text =~ /$regex[$j]/ } )
+            {
+                return 0;
+            }
+        }
+    }
+    return 1;
+}
+
+# check if order is correct after sorting them
+sub is_order_after_change {
+    my $driver     = shift;
+    my $grid       = ${ (shift) };
+    my $row        = ${ (shift) };
+    my $column     = ${ (shift) };
+    my @grid_heads = @{ (shift) };
+    my $offset     = ${ (shift) };
+
+    # check if order is correct
+    # first column
+    my @grid_cells
+        = $driver->find_child_elements( $grid, 'x-grid-cell', 'class' );
+    $driver->is_grid_in_order( \@grid_cells, \$row, \$row, \-1, \$column )
+        || ( return 0 );
+    $grid_heads[ $column + $offset ]->click;
+
+    # grid has to be reloaded
+    @grid_cells
+        = $driver->find_child_elements( $grid, 'x-grid-cell', 'class' );
+    $driver->is_grid_in_order( \@grid_cells, \$row, \$row, \1, \$column )
+        || ( return 0 );
+
+    for ( my $i = $column + 1; $i < $row; $i++ ) {
+        $grid_heads[ $i + $offset ]->click;
+        @grid_cells
+            = $driver->find_child_elements( $grid, 'x-grid-cell', 'class' );
+        $driver->is_grid_in_order( \@grid_cells, \$row, \$row, \-1, \$i )
+            || ( return 0 );
+
+        $grid_heads[ $i + $offset ]->click;
+        @grid_cells
+            = $driver->find_child_elements( $grid, 'x-grid-cell', 'class' );
+        $driver->is_grid_in_order( \@grid_cells, \$row, \$row, \1, \$i )
+            || ( return 0 );
+    }
+    return 1;
+}
+
+# if element position is out of view, but the window is scollable
+# move_click will scroll to the element and click it
+sub move_click {
+    my ( $driver, $e ) = @_;
+    $driver->mouse_move_to_location( element => $e );
+    $driver->click;
+}
+
+# return 1 if the given arrays are identically
+sub comp_array {
+    my $driver = shift;
+    my @a      = @{ (shift) };
+    my @b      = @{ (shift) };
+
+    if ( scalar @a != scalar @b ) { return 0; }
+    for ( my $i = 0; $i < @a; $i++ ) {
+        if ( $a[$i] ne $b[$i]->get_text ) { return 0; }
+    }
+    return 1;
+}
+
+# nur zum gucken
+sub print_table {
+    my ( $driver, $origin, $empty ) = @_;
+
+    my @table = $driver->find_child_elements( $origin, './/*', 'xpath' );
+
+    if ( !$empty ) {
+        @table = grep { $_->get_text =~ /(.|\s)*\S(.|\s)*/ } @table;
+    }
+    print "-----\ntable size: " . scalar @table . "\n";
+    for ( my $i = 0; $i < @table; $i++ ) {
+        print "->\t$i: $table[$i]\n";
+        print $table[$i]->get_text . "\n";
+    }
+    print "\n-----\n";
 }
 
 1;
