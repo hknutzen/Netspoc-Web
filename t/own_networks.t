@@ -1,151 +1,302 @@
 
 use strict;
 use warnings;
-
-use Data::Dumper;
 use lib 't';
-use Test::More;
-use Selenium::Remote::WDKeys;
-use Selenium::Waiter qw/wait_until/;
-use Selenium::ActionChains;
+use Test::More;    # tests => 28;
+use Test::Selenium::Remote::Driver;
+use Selenium::Remote::WebElement;
+use PolicyWeb::Init qw/$SERVER $port/;
 use PolicyWeb::FrontendTest;
-use PolicyWeb::Init;
-use JSON;
 
+#use Selenium::Remote::Driver;
+#use Selenium::ActionChains;
+#use Selenium::Waiter;
+#use Data::Dumper;
+#use Try::Tiny;
 
 ##############################################################################
 #
 # Test description:
 # -----------------
-# - Go to tab "Eigene Netze"
-# - Select a network and confirm network selection (by pressing appropriate button)
-# - Check for change of button label from "Eigene Netze" to "Ausgewählte Netze"
-# - Change to tab "Dienste, Freischaltungen" and check that own services
-#   left are the ones we expected for the selected network
-# - Go back to tab "Eigene Netze"
-# - Cancel network selection
-# - Check that button label changed back to "Eigene Netze"
+#
+# - go to tab "Eigene Netze"
+# - check buttons and grid header beeing present
+# - check sytax of grids
+#	- check correct resources are displayed after selecting networks
+# - check selection and cancel mechanic is functioning properly
+#			button changes and
+#			services are correctly displayed in services tab
 #
 ##############################################################################
-
-
-
-my $driver = PolicyWeb::FrontendTest->new(
-    browser_name   => 'chrome',
-    proxy => {
-        proxyType => 'direct',
-    },
-    default_finder => 'id',
-    javascript     => 1,
-    extra_capabilities => {
-        nativeEvents => 'false'
-    }
-);
-
 
 PolicyWeb::Init::prepare_export();
 PolicyWeb::Init::prepare_runtime_no_login();
 
+my $driver = PolicyWeb::FrontendTest->new(
+    browser_name       => 'chrome',
+    proxy              => { proxyType => 'direct', },
+    default_finder     => 'id',
+    javascript         => 1,
+    extra_capabilities => { nativeEvents => 'false' },
+);
 
-$driver->login_as_guest_and_choose_owner( 'x' );
+$driver->set_implicit_wait_timeout(200);
+$driver->login_as_guest_and_choose_owner('x');
 
+eval {
 
-#
-# Needed navigation elements
-#
-my $confirm_button      = $driver->find_element( 'btn_confirm_network_selection' );
-my $cancel_button       = $driver->find_element( 'btn_cancel_network_selection' );
-my $services_tab_button = $driver->find_element( 'btn_services_tab' );
-my $networks_tab_button = $driver->find_element( 'btn_own_networks_tab' );
+    $driver->find_element('btn_own_networks_tab')->click;
 
+    $driver->find_element_ok( '//div[text()="Netzauswahl"]', 'xpath',
+        "found text:\t'Netzauswahl'" );
+    $driver->find_element_ok( 'btn_confirm_network_selection',
+        "found button:\tconfirm selection" );
+    $driver->find_element_ok( 'btn_cancel_network_selection',
+        "found button:\tcancel selection" );
 
+    # test own networks grid
+    my @grid_cells = test_own_networks_grid();
 
-$driver->click_element_ok( 'btn_own_networks_tab', 'id',
-                           'Click on button "Eigene Netze" ' );
+###############
 
-my $networks_grid = wait_until { $driver->find_element('grid_own_networks' ) };
+    $driver->find_element_ok(
+        '//div[text()="Enthaltene Ressourcen"]',
+        'xpath',
+        "found text:\t'Enthaltene Ressourcen'"
+    );
 
-my $elements = $driver->find_child_elements( $networks_grid, 'x-grid-cell', 'class' );
+    my $resources_grid = $driver->find_element('grid_network_resources');
 
-my $checkboxes = $driver->find_child_elements( $networks_grid, 'input[type="checkbox"]' , 'css' );
-#my $checkboxes = $driver->find_child_elements( $networks_grid, 'x-grid-row-checker', 'class' , 'class' );
+    ok( $resources_grid, "found grid:\tnetworkresources" );
 
-done_testing();
-exit 0;
+    my @grid_head_right = $driver->find_child_elements( $resources_grid,
+        'x-column-header', 'class' );
+    ok( @grid_head_right, "found header:\tright grid" );
 
-die Dumper( $checkboxes );
+    # grid should be empty, if no own network is selected
+    my @resources_grid
+        = $driver->find_child_elements( $resources_grid, 'x-grid-cell',
+        'class' );
+    ok( !@resources_grid, "no networkresources, if no network is selected" );
 
-my @enabled = grep { $_->is_selected() } @$checkboxes;
+    # select network 'Big' and 'Kunde'
+    $driver->select_by_name( \@grid_cells, \4, \2, \"network:Big" );
 
-my @array = grep { $_->get_text() eq 'network:DMZ' } @$elements;
+    ok( $driver->find_element( 'x-grid-group-hd', 'class' )->get_text
+            =~ /network:Big/,
+        "found group:\tnetwork:Big"
+    );
 
-is( scalar(@enabled), 0, 'No network selected initially' );
+    my @names
+        = ( 'host:B10', 'host:Range', 'interface:asa.Big',
+        'interface:u.Big' );
+    ok( $driver->grid_contains( \$resources_grid, \3, \1, \@names ),
+        "networkresources are corret for network:Big" );
 
-$driver->move_to( element => $array[0] );
-ok( $driver->click(), 'Select "network:DMZ"' );
+    $grid_head_right[1]->click;
 
+    ok( $driver->is_order_after_change(
+            \$resources_grid, \3, \0, \@grid_head_right, \1
+        ),
+        "resources grid order changes correctly"
+    );
 
-$checkboxes = $driver->find_child_elements( $networks_grid, 'x-grid-row-checker', 'class' ); #THIS IS BROKEN! HOW TO FIND SELECTED GRID ELEMENTS?
+    $driver->select_by_name( \@grid_cells, \4, \2, \"network:Kunde" );
 
-@enabled = grep { $_->is_selected() } @$checkboxes;
-error scalar( @enabled );
+    ok( $driver->find_element( 'x-grid-group-hd', 'class' )->get_text
+            =~ /network:Big/,
+        "found group:\tnetwork:Kunde"
+    );
 
-#my $foo = wait_until { $driver->find_element('foo' ) };
+    # grid should now contain more
+    push( @names, ( 'host:k', 'interface:asa.Kunde' ) );
 
-is( scalar(@enabled), 1, 'One network selected' );
+    ok( $driver->grid_contains( \$resources_grid, \3, \1, \@names ),
+        "networkresources are corret for network:Big and network:Kunde"
+    );
 
+    # for checking correct syntax
+    my @res_reg = (
+        '(1\d\d|\d\d|\d)\.(1\d\d|\d\d|\d)\.(1\d\d|\d\d|\d)\.(1\d\d|\d\d|\d)',
+        '(host)|(interface):\.*', 'x|y|z|'
+    );
 
-    
-for my $el ( @$elements ) {
-    #error Dumper( $el->get_text() );
-    #error "------------------------------";
+    # reload grid
+    @resources_grid
+        = $driver->find_child_elements( $resources_grid, 'x-grid-cell',
+        'class' );
+    ok( $driver->check_sytax_grid( \@resources_grid, \3, \0, \@res_reg ),
+        "resources grids looks fine" );
+
+    $driver->find_child_element( $resources_grid,
+        '//div[contains(@id, "network:Big")]', 'xpath' )->click;
+
+    # grid should now contain less
+    @names = ( 'host:k', 'interface:asa.Kunde' );
+
+    ok( $driver->grid_contains( \$resources_grid, \3, \1, \@names ),
+        "networkresources are corret while network:Big is collapsed"
+    );
+
+    $driver->find_element('btn_cancel_network_selection')->click;
+
+    ok( $driver->find_child_elements(
+            $resources_grid, 'x-grid-cell', 'class'
+        ),
+        "network selection canceled"
+    );
+
+    my $bont_b
+        = $driver->find_element('btn_own_networks_tab')->get_text
+        =~ "Eigene Netze"
+        and $driver->find_element('btn_own_networks_tab')
+        ->Selenium::Remote::WebElement::get_attribute('class')
+        =~ /icon-computer_connect/;
+
+    #should be disabled
+    my $boncc_b
+        = $driver->find_element('btn_confirm_network_selection')
+        ->Selenium::Remote::WebElement::get_attribute('class')
+        =~ /x-disabled/;
+    $boncc_b
+        &= $driver->find_element('btn_cancel_network_selection')
+        ->Selenium::Remote::WebElement::get_attribute('class')
+        =~ /x-disabled/;
+
+    $driver->select_by_name( \@grid_cells, \4, \2, \"network:KUNDE1" );
+
+    #should be enabled
+    $boncc_b
+        &= !( $driver->find_element('btn_confirm_network_selection')
+        ->Selenium::Remote::WebElement::get_attribute('class')
+        =~ /x-disabled/ );
+    $boncc_b
+        &= !( $driver->find_element('btn_cancel_network_selection')
+        ->Selenium::Remote::WebElement::get_attribute('class')
+        =~ /x-disabled/ );
+
+    $driver->find_element('btn_confirm_network_selection')->click;
+
+    #only confirm should be disabled
+    $boncc_b
+        &= $driver->find_element('btn_confirm_network_selection')
+        ->Selenium::Remote::WebElement::get_attribute('class')
+        =~ /x-disabled/;
+    $boncc_b
+        &= !( $driver->find_element('btn_cancel_network_selection')
+        ->Selenium::Remote::WebElement::get_attribute('class')
+        =~ /x-disabled/ );
+
+    #'Eigene Netze' should've changed to 'Ausgewählte Netze'
+    $bont_b
+        &= $driver->find_element('btn_own_networks_tab')->get_text
+        =~ "Ausgew.hlte Netze"
+        and $driver->find_element('btn_own_networks_tab')
+        ->Selenium::Remote::WebElement::get_attribute('class')
+        =~ /icon-exclamation/;
+
+    $driver->find_element('btn_services_tab')->click;
+
+    $driver->find_element('btn_own_services-btnIconEl')->click;
+
+    my @service_grid
+        = $driver->find_child_elements( $driver->find_element('pnl_services'),
+        'x-grid-cell', 'class' );
+
+    ok( (   scalar @service_grid == 1
+                and $service_grid[0]->get_text eq 'Test11'
+        ),
+        "found services:\tonly Test11"
+    );
+
+    $driver->find_element('btn_own_networks_tab')->click;
+
+    $driver->find_element('btn_cancel_network_selection')->click;
+
+    #should return to standard
+    $boncc_b
+        &= $driver->find_element('btn_confirm_network_selection')
+        ->Selenium::Remote::WebElement::get_attribute('class')
+        =~ /x-disabled/;
+    $boncc_b
+        &= $driver->find_element('btn_cancel_network_selection')
+        ->Selenium::Remote::WebElement::get_attribute('class')
+        =~ /x-disabled/;
+    $bont_b
+        = $driver->find_element('btn_own_networks_tab')->get_text
+        =~ "Eigene Netze"
+        and $driver->find_element('btn_own_networks_tab')
+        ->Selenium::Remote::WebElement::get_attribute('class')
+        =~ /icon-computer_connect/;
+
+    ok( $bont_b, "button own network tab changed name and icon correctly" );
+    ok( $boncc_b,
+        "buttons confirm and cancel network selection changed disabled status correctly"
+    );
+
+    $driver->find_element('btn_services_tab')->click;
+
+    @service_grid
+        = $driver->find_child_elements( $driver->find_element('pnl_services'),
+        'x-grid-cell', 'class' );
+
+    ok( ( scalar @service_grid == 12 ), "found services:\tall 12" );
+
+#$driver->move_to_element($driver->find_element('//*[@id="gridcolumn-1071-triggerEl"]', 'xpath'));
+#sleep 5;
+#$driver->click_element_ok('//*[@id="gridcolumn-1071-triggerEl"]', 'class', 'ok');
+#sleep 10;
+
+    #for (my $i = 0; $i < @resources_grid; $i++) {
+    #	print "res($i): " . $resources_grid[$i]->get_text . "\n";
+    #}
+
+    done_testing();
+};
+
+if ($@) { print $@ . "\n"; }
+
+$driver->quit();
+
+sub test_own_networks_grid {
+
+    my $own_networks_grid = $driver->find_element('grid_own_networks');
+
+    if ( !ok( $own_networks_grid, "found grid:\tnetwork" ) ) {
+        die("network grid is missing");
+    }
+
+    my @grid_cells
+        = $driver->find_child_elements( $own_networks_grid, 'x-grid-cell',
+        'class' );
+
+    # check form
+    my @regex = (
+        '(1\d\d|\d\d|\d)\.(1\d\d|\d\d|\d)\.(1\d\d|\d\d|\d)\.(1\d\d|\d\d|\d)',
+        '(network)|(interface):\.*', 'x|y|z'
+    );
+
+    ok( $driver->check_sytax_grid( \@grid_cells, \4, \1, \@regex ),
+        "own networks grid looks fine" );
+
+    # find grid head
+    my @grid_heads = $driver->find_child_elements( $own_networks_grid,
+        'x-column-header', 'class' );
+
+    if ( !ok( @grid_heads, "found header:\tleft grid" ) ) {
+        die("no headers found for own networks grid");
+    }
+
+    ok( $driver->is_order_after_change(
+            \$own_networks_grid, \4, \1, \@grid_heads, \0
+        ),
+        "own networks grid order changes correctly"
+    );
+
+    # back to standart
+    $grid_heads[1]->click;
+
+    return $driver->find_child_elements( $own_networks_grid, 'x-grid-cell',
+        'class' );
 }
-
-my $label = $networks_tab_button->get_text();
-like( $label, qr/Eigene Netze/,
-    'Button for own networks has default label' );
-$driver->move_to( element => $confirm_button );
-ok( $driver->click(), 'Confirm selection of network "network:DMZ"' );
-
-$label = $networks_tab_button->get_text();
-chomp($label);
-like( $label, qr/Ausgew\whlte Netze/,
-    'Button for own networks changed to selection mode label "Ausgewählte Netze"' );
-
-
-my $expected = [ 'Test3a', 'Test4', 'Test9' ];
-
-$driver->move_to( element => $services_tab_button );
-ok( $driver->click(), 'Select tab "Dienste, Freischaltungen"' );
-
-
-$driver->click_element_ok( 'btn_own_services', 'id', 'Click on button "Eigene Dienste" ' );
-
-
-my $service_grid = wait_until { $driver->find_element('grid_services' ) };
-$elements = $driver->find_child_elements( $service_grid, 'x-grid-cell', 'class' );
-
-my $got = [ map { $_->get_text } @$elements ];
-
-is_deeply( $expected, $got, 'Three expected services remained for "network:DMZ"' );
-
-
-#my $foo = wait_until { $driver->find_element('foo' ) };
-
-
-=head
-IP-Adresse	       Name	      Verantwortungsbereich
-0.0.0.0/0.0.0.0        network:Internet x
-10.1.0.0/255.255.0.0   network:Big      x
-10.1.1.0/255.255.255.0 network:Sub      z
-10.2.2.0/255.255.255.0 network:Kunde    y
-10.2.3.0/255.255.255.0 network:KUNDE    y
-10.2.4.0/255.255.255.0 network:KUNDE1   y
-10.9.9.0/255.255.255.0 network:DMZ      x
-=cut
-
-done_testing();
-
-
-
 

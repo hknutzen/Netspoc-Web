@@ -3,16 +3,14 @@ use strict;
 use warnings;
 
 use lib 't';
-use Test::More;
+use Test::More tests => 7;
 use Selenium::Remote::Driver;
-use Selenium::Firefox::Profile;
+
 use Selenium::Remote::WDKeys;
-use Selenium::Waiter;
 use Test::Selenium::Remote::Driver;
 use PolicyWeb::Init qw/$SERVER $port/;
 use PolicyWeb::FrontendTest;
-use Data::Dumper;
-
+use Selenium::Waiter qw/wait_until/;
 
 =head
 my $profile = Selenium::Firefox::Profile->new();
@@ -32,36 +30,59 @@ PolicyWeb::Init::prepare_runtime_no_login();
 
 my $base_url = "http://$SERVER:$port";
 
-
 my $driver = Test::Selenium::Remote::Driver->new(
     browser_name   => 'chrome',
-    proxy => {
-        proxyType => 'direct',
-    },
+    proxy          => { proxyType => 'direct', },
     base_url       => $base_url,
     default_finder => 'id',
     javascript     => 1,
-    );
+);
 
-#$driver->debug_on();
+eval {
 
+    $driver->get('index.html');
 
-$driver->get( 'index.html' );
+    $driver->set_window_size( 640, 480 );
 
+    if ( find_login() ) {
 
-$driver->find_element_ok( '//input[@name="email"]', "xpath",
-                          "Eingabefeld für Email vorhanden" );
-$driver->find_element_ok( '//input[@name="pass"]', "xpath",
-                          "Eingabefeld für Passwort vorhanden" );
+        $driver->send_keys_to_active_element('not_guest');
 
-$driver->send_keys_to_active_element('guest');
+        $driver->click_element_ok( 'btn_login', "login button" );
 
-my $login_button = $driver->find_element( '//input[@value="Login"]', "xpath" );
+        ok( $driver->get_current_url() =~ /backend\/login/,
+            "login as not_guest failed" );
 
-$driver->click_element_ok('//input[@value="Login"]', "xpath",
-                          "Login-Knopf gedrückt" );
+        $driver->get('index.html');
 
+        $driver->send_keys_to_active_element('guest');
 
-my $button = wait_until { $driver->find_element_by_id('btn_print_rules') };
+        $driver->find_element('btn_login')->click;
 
-done_testing();
+        ok( $driver->get_current_url() =~ /app.html/,
+            "login as guest successeful" );
+
+        my $logout = $driver->find_element('btn_logout');
+        $driver->PolicyWeb::FrontendTest::move_click($logout);
+        ok( wait_until { $driver->get_current_url() =~ /\/index\.html/ },
+            "logout successeful" );
+    }
+    done_testing();
+};
+
+if ($@) { print $@ . "\n"; }
+
+$driver->quit;
+
+exit 0;
+
+# checks if elements needed to login are present.
+# return 1, if true.
+sub find_login {
+    my $a
+        = $driver->find_element_ok( 'txtf_email', "found input box:\temail" );
+    my $b = $driver->find_element_ok( 'txtf_password',
+        "found input box:\tpassword" );
+    my $c = $driver->find_element_ok( 'btn_login', "found button:\tlogin" );
+    return $a && $b && $c;
+}

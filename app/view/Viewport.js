@@ -76,18 +76,26 @@ Ext.define(
                     },
                     '->',
                     'Stand',
-                    { xtype : 'historycombo' },
+                    { 
+                        id    : 'list_history',
+                        xtype : 'historycombo' 
+                    },
                     ' ',
                     'Verantwortungsbereich',
-                    { xtype : 'ownercombo' },
+                    { 
+                        id    : 'list_owner',
+                        xtype : 'ownercombo' 
+                    },
                     ' ',
                     'Abmelden',
                     {
+                        id      : 'btn_logout',
                         iconCls : 'icon-door_out',
                         scope   : this,
                         handler : this.fireLogoutEvent
                     },
-                    {
+                    {   
+                        id      : 'btn_info',
                         iconCls : 'icon-info'
                     }
                 ]

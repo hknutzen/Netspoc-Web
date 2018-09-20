@@ -18,7 +18,8 @@ along with this program. If not, see <http://www.gnu.org/licenses/>.
 
 Ext.define(
     'PolicyWeb.view.window.Search',
-    {
+    {   
+        id      : 'window_search',
         extend  : 'Ext.window.Window',
         alias   : 'widget.searchwindow',
 
@@ -59,7 +60,8 @@ Ext.define(
                         this.buildGeneralOptionsFieldSet()
                     ],
                     buttons : [
-                        {
+                        {   
+                            id    : 'btn_search_start',
                             text  : 'Suche starten'
                         }
                     ]
@@ -87,6 +89,7 @@ Ext.define(
 
         buildGeneralSearchTab : function() {
             var textfield = {
+                id        : 'txtf_search_string',
                 xtype     : 'textfield',
                 name      : 'search_string',
                 blankText : 'Eine Suche ohne Suchbegriff macht keinen Sinn',
@@ -120,7 +123,8 @@ Ext.define(
                     checked : false
                 },
                 items       : [
-                    {
+                    {   
+                        id         : 'cb_search_description',
                         boxLabel   : 'Suche auch in Dienstbeschreibungen',
                         checked    : true,
                         name       : 'search_in_desc'
@@ -138,16 +142,19 @@ Ext.define(
                     checked : false
                 },
                 items       : [
-                    {
+                    {   
+                        id         : 'cb_search_case_sensitive',
                         boxLabel   : 'Groß-/Kleinschreibung beachten',
                         name       : 'search_case_sensitive'
                     },
-                    {
+                    {   
+                        id         : 'cb_search_exact',
                         boxLabel   : 'Suchergebnisse nur mit ' +
                             'exakter Übereinstimmung',
                         name       : 'search_exact'
                     },
-                    {
+                    {   
+                        id         : 'cb_search_keep_foreground',
                         boxLabel   : 'Such-Fenster im Vordergrund halten',
                         name       : 'keep_front'
                     }
@@ -179,14 +186,17 @@ Ext.define(
                 },
                 items      : [
                     {
+                        id         : 'cb_search_own',
                         boxLabel   : 'Eigene',
                         name       : 'search_own'
                     },
                     {
+                        id         : 'cb_search_used',
                         boxLabel   : 'Genutzte',
                         name       : 'search_used'
                     },
                     {
+                        id         : 'cb_search_usable',
                         boxLabel   : 'Nutzbare',
                         name       : 'search_visible',
                         checked    : false
@@ -202,9 +212,9 @@ Ext.define(
                 },
                 items      : [
                     {
+                        id         : 'cb_search_limited',
                         boxLabel   : 'Nur befristete Dienste suchen',
                         name       : 'search_disable_at',
-                        id         : 'checkbox_FOO',
                         width      : 200
                     }
                 ]
@@ -239,16 +249,19 @@ Ext.define(
                 vertical   : true,
                 flex       : 1,
                 items      : [
-                    {
+                    {   
+                        id         : 'cb_search_supernet',
                         boxLabel   : 'Übergeordnete Netze einbeziehen',
                         name       : 'search_supernet'
                     },
-                    {
+                    {   
+                        id         : 'cb_search_subnet',
                         boxLabel   : 'Enthaltene Netze einbeziehen',
                         name       : 'search_subnet',
                         checked    : true
                     },
-                    {
+                    {   
+                        id         : 'cb_search_range',
                         boxLabel   : 'Port-Ranges einbeziehen',
                         name       : 'search_range'
                     }
@@ -261,7 +274,7 @@ Ext.define(
                 items       : [
                     {
                         xtype          : 'textfield',
-                        id             : 'ip1',
+                        id             : 'txtf_search_ip1',
                         name           : 'search_ip1',
                         labelWidth     : 60,
                         margin         : '0 10 0 0', // top,r,b,l
@@ -274,7 +287,7 @@ Ext.define(
                     },
                     {
                         xtype          : 'textfield',
-                        id             : 'ip2',
+                        id             : 'txtf_search_ip2',
                         name           : 'search_ip2',
                         labelWidth     : 60,
                         margin         : '0 10 0 0', // top,r,b,l
@@ -287,6 +300,7 @@ Ext.define(
                     },
                     {
                         xtype          : 'textfield',
+                        id             : 'txtf_search_proto',
                         name           : 'search_proto',
                         labelWidth     : 60,
                         margin         : '0 10 0 0', // top,r,b,l
