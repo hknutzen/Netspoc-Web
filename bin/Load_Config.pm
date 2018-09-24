@@ -40,7 +40,6 @@ sub load {
         local $/ = undef;
         $result = from_json(  <$fh>, { relaxed  => 1 } );
     }
-    my %required;
     for my $key (keys %conf_keys) {
         $conf_keys{$key} eq ':REQUIRED' or next;
         defined $result->{$key} or croak("Missing key '$key' in $conf_file");
