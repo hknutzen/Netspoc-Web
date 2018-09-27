@@ -4,7 +4,8 @@ use warnings;
 
 package PolicyWeb::FrontendTest;
 
-use base ("Test::Selenium::Remote::Driver");
+#use base ("Test::Selenium::Remote::Driver");
+use base ("Selenium::Chrome");
 use parent 'Exporter';    # imports and subclasses Exporter
 use Selenium::Waiter qw/wait_until/;
 use File::Temp qw/ tempfile tempdir /;
@@ -13,6 +14,7 @@ use HTTP::Request::Common;
 use Plack::Test;
 use PolicyWeb::Init qw( $port $SERVER);
 use Data::Dumper;
+use Test::Simple;
 
 our @EXPORT = qw(
   login_as_guest
@@ -23,31 +25,12 @@ our @EXPORT = qw(
   error
   );
 
-sub find_top_buttons {
-    my ($driver) = @_;
-    $driver->find_element_ok('btn_services_tab', "found button:\tservices tab");
-    $driver->find_element_ok('btn_own_networks_tab',
-                             "found button:\town networks tab");
-    $driver->find_element_ok('btn_diff_tab', "found button:\tdiff tab");
-    $driver->find_element_ok('btn_entitlement_tab',
-                             "found button:\tentitlement tab");
-    $driver->find_element_ok('//div[text()="Stand"]', 'xpath',
-                             "found text:\t'Stand'");
-
-    # historycombo...
-    # -> button zum auswaehlen usw
-    # "Verantwortungsbereich"
-    # ownercombo
-    # "Abmelden"
-}
-
 # tries to login with given username and password
 sub login {
     my ($driver, $name, $pass) = @_;
     return if !$name;
 
-    my $base_url = "http://$SERVER:$port/index.html";
-    $driver->get($base_url);
+    $driver->get("http://$SERVER:$port/index.html");
 
     $driver->find_element('txtf_email');
     $driver->send_keys_to_active_element($name);
@@ -68,7 +51,11 @@ sub login_as_guest {
 sub login_as_guest_and_choose_owner {
     my ($driver, $owner) = @_;
     $driver->login_as_guest();
+    $driver->choose_owner($owner);
+}
 
+sub choose_owner {
+    my ($driver, $owner) = @_;
     # The two waits below are necessary to avoid a race condition.
     # Without them, sometimes the combo box has not been rendered
     # yet and an error that "triggerEl of undefined cannot be found"
@@ -319,6 +306,24 @@ sub print_table {
         print $table[$i]->get_text . "\n";
     }
     print "\n-----\n";
+}
+
+# find_element($driver, $search1, $search2, $ok_string)
+sub find_element_ok {
+    my $driver    = shift;
+    my $ok_string = pop;
+    my $hit       = 0;
+
+    eval {
+        if (scalar @_ == 1) {
+            $hit = $driver->find_element(shift);
+        }
+        elsif (scalar @_ == 2) {
+            $hit = $driver->find_element(shift, shift);
+        }
+    };
+    if ($@){ print "$@\n";}
+    return ok($hit, $ok_string);
 }
 
 1;

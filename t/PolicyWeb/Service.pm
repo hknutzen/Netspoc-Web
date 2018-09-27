@@ -1,143 +1,135 @@
 
+package PolicyWeb::Service;
+
 use strict;
 use warnings;
-use lib 't';
-use Test::More;    # tests => 60;
-use Selenium::Remote::WDKeys;
-use PolicyWeb::Init;
-use PolicyWeb::FrontendTest;
+use Test::More;
 
-my $driver =
-  PolicyWeb::FrontendTest->new(browser_name       => 'chrome',
-                               proxy              => { proxyType => 'direct', },
-                               default_finder     => 'id',
-                               javascript         => 1,
-                               extra_capabilities => { nativeEvents => 'false' }
-                              );
+sub test {
 
-prepare_export();
-prepare_runtime();
+    my $driver = shift;
 
-eval {
-    $driver->set_implicit_wait_timeout(200);
-
-    #   print $driver->fullscreen_window;
-    $driver->login_as_guest_and_choose_owner('x');
-
-    # left and right panel
-    my $lp;
-    my $rp;
+    #plan tests => todo;
+    
     eval {
-        $lp = $driver->find_element('pnl_services');
-        $rp = $driver->find_element('pnl_service_details');
-    } or do { die("service tab panels not found\n$@"); };
 
-    # cannot check further without buttons
-    if (!check_service_buttons($lp, $rp)) { die("buttons are missing"); }
+        # left and right panel
+        my $lp;
+        my $rp;
+        eval {
+            $lp = $driver->find_element('pnl_services');
+            $rp = $driver->find_element('pnl_service_details');
+        } or do { die("service tab panels not found\n$@"); };
 
-    # go to own services tab
-    #$l_btns[0]->click;
-    $driver->move_click($driver->find_child_element($lp, 'btn_own_services'));
+        # cannot check further without buttons
+        if (!check_service_buttons($driver, $lp, $rp)) { die("buttons are missing"); }
 
-    my @l_grid = check_own_services_grid($lp);
+        # go to own services tab
+        #$l_btns[0]->click;
+        $driver->move_click($driver->find_child_element($lp, 'btn_own_services'));
 
-    # test service details panel for 'Test4'
-    service_details($rp, \@l_grid);
+        my @l_grid = check_own_services_grid($driver, $lp);
 
-    # test search functions
-    search_tab();
+        # test service details panel for 'Test4'
+        service_details($driver, $rp, \@l_grid);
 
-    done_testing();
-};
+        # test search functions
+        search_tab($driver);
+    };
+    if ($@) { print $@ , "\n"; }
+}
 
-if ($@) { print $@ , "\n"; }
-
-$driver->quit();
-
-# nicht gut, muesste komplett ueberarbeitet werden
-# buttons muessen derzeit in der gegeben reinfolge existieren
 sub check_service_buttons {
 
-    my ($lp, $rp) = @_;
+    my ($driver, $lp, $rp) = @_;
     my $is_ok = 1;
 
-    # check buttons on left panel
-    $is_ok &= ok($driver->find_child_element($lp, 'btn_own_services'),
-                 "found button:\t'Eigene'");
-    $is_ok &= ok($driver->find_child_element($lp, 'btn_used_services'),
-                 "found button:\t'Genutzte'");
-    $is_ok &= ok($driver->find_child_element($lp, 'btn_usable_services'),
-                 "found button:\t'Nutzbare'");
-    $is_ok &= ok($driver->find_child_element($lp, 'btn_search_services'),
-                 "found button:\t'Suche'");
-    $is_ok &= ok($driver->find_child_element($lp, 'btn_services_print_all'),
-                 "found button:\tprint all");
-    $is_ok &= ok($driver->find_child_element($lp, 'btn_services_print'),
-                 "found button:\tprint");
+    subtest check_service_buttons => sub {
+        plan tests => 11;
 
-    # check buttons on right panel
-    $is_ok &= ok($driver->find_child_element($rp, 'btn_service_details'),
-                 "found button:\t'Details zum Dienst'");
-    $is_ok &= ok($driver->find_child_element($rp, 'btn_service_user'),
-                 "found button:\t'Benutzer (User) des Dienstes'");
-    $is_ok &= ok($driver->find_child_element($rp, 'btn_print_rules',),
-                 "found button:\tprint rules");
-    $is_ok &= ok($driver->find_child_element($rp, 'btn_service_user_add'),
-                 "found button:\tadd user to service");
-    $is_ok &= ok($driver->find_child_element($rp, 'btn_service_user_del'),
-                 "found button:\tdelete user from service");
+        # check buttons on left panel
+        $is_ok &= ok($driver->find_child_element($lp, 'btn_own_services'),
+                     "found button:\t'Eigene'");
+        $is_ok &= ok($driver->find_child_element($lp, 'btn_used_services'),
+                     "found button:\t'Genutzte'");
+        $is_ok &= ok($driver->find_child_element($lp, 'btn_usable_services'),
+                     "found button:\t'Nutzbare'");
+        $is_ok &= ok($driver->find_child_element($lp, 'btn_search_services'),
+                     "found button:\t'Suche'");
+        $is_ok &= ok($driver->find_child_element($lp, 'btn_services_print_all'),
+                     "found button:\tprint all");
+        $is_ok &= ok($driver->find_child_element($lp, 'btn_services_print'),
+                     "found button:\tprint");
 
+        # check buttons on right panel
+        $is_ok &= ok($driver->find_child_element($rp, 'btn_service_details'),
+                     "found button:\t'Details zum Dienst'");
+        $is_ok &= ok($driver->find_child_element($rp, 'btn_service_user'),
+                     "found button:\t'Benutzer (User) des Dienstes'");
+        $is_ok &= ok($driver->find_child_element($rp, 'btn_print_rules',),
+                     "found button:\tprint rules");
+        $is_ok &= ok($driver->find_child_element($rp, 'btn_service_user_add'),
+                     "found button:\tadd user to service");
+        $is_ok &= ok($driver->find_child_element($rp, 'btn_service_user_del'),
+                     "found button:\tdelete user from service");
+    };
     return $is_ok;
 }
 
 sub check_own_services_grid {
 
-    my $lp = shift;
+    my ($driver, $lp) = @_;
 
     my @grid =
       $driver->find_child_elements($lp, './/*[contains(@class, "x-grid-row")]',
                                    'xpath');
-
-#   for (my $i = 0; $i < @grid; $i++) { print "$i: ". $grid[$i]->get_attribute('id'). ", " . $grid[$i]->get_text . "\n"; }
-
     my $grid_head = $driver->find_child_element($lp, 'x-column-header', 'class');
     my $grid_head_text = $grid_head->get_text;
-    ok($grid_head_text =~ 'Dienstname\s\(Anzahl:\s\d+\)',
-        "found header:\town services grid");
-    ok($grid_head_text =~ /([0-9]+)/ ? ($1 eq scalar @grid) : 0,
-        "header contains number of elements");
 
-    my @contains = ("Test1", "Test10", "Test11", "Test2", "Test3", "Test3a",
-                    "Test4", "Test5",  "Test6",  "Test7", "Test8", "Test9");
-    if (
-        !ok($driver->grid_contains(\$lp, \1, \0, \@contains),
-            "grid contains all tests services")
-       )
-    {
-        die("own services missing test");
-    }
+    subtest check_own_services_grid => sub {
 
-    my $is_ok = 1;
-    $is_ok &= $driver->is_grid_in_order(\@grid, \1, \1, \-1, \0);
-    $driver->move_to(element => $grid_head);
-    sleep 1;    # without 1sec sleep cursor clicks on info window from tab button
-    $driver->click;
-    @grid =
-      $driver->find_child_elements($lp, './/*[contains(@class, "x-grid-row")]',
-                                   'xpath');
-    $is_ok &= $driver->is_grid_in_order(\@grid, \1, \1, \1, \0);
+        #plan tests => 6;
 
-    if (!ok($is_ok, "grid changes correctly")) {
-        die("own service grid");
-    }
+        ok($grid_head_text =~ 'Dienstname\s\(Anzahl:\s\d+\)',
+            "found header:\town services grid");
+        ok($grid_head_text =~ /([0-9]+)/ ? ($1 eq scalar @grid) : 0,
+            "header contains number of elements");
 
-    test_print_services($lp, $grid_head_text, \@grid);
+        my @contains = ("Test1", "Test10", "Test11", "Test2", "Test3", "Test3a",
+                        "Test4", "Test5",  "Test6",  "Test7", "Test8", "Test9");
+        if (
+            !ok($driver->grid_contains(\$lp, \1, \0, \@contains),
+                "grid contains all tests services")
+           )
+        {
+            die("own services missing test");
+        }
 
+        my $is_ok = 1;
+        $is_ok &= $driver->is_grid_in_order(\@grid, \1, \1, \-1, \0);
+        $driver->move_to(element => $grid_head);
+        sleep 1;    # without 1sec sleep cursor clicks on info window from tab button
+        $driver->click;
+        @grid =
+          $driver->find_child_elements($lp, './/*[contains(@class, "x-grid-row")]',
+                                       'xpath');
+        $is_ok &= $driver->is_grid_in_order(\@grid, \1, \1, \1, \0);
+
+        if (!ok($is_ok, "grid changes correctly")) {
+            die("own service grid");
+        }
+
+        test_print_services($driver, $lp, $grid_head_text, \@grid);
+
+        #test_print_all_services($driver);
+
+    };
     return @grid;
 }
 
 sub test_print_services {
 
+    my $driver        = shift;
     my $lp            = shift;
     my $service_head  = shift;
     my @service_cells = map { $_->get_text } @{ (shift) };
@@ -147,37 +139,88 @@ sub test_print_services {
     my $handles = $driver->get_window_handles;
     $driver->switch_to_window($handles->[1]);
 
-    ok($driver->get_title() eq "Druckansicht", "switched to print tab");
+    subtest print_services => sub {
+        plan tests => 5;
 
-    my $winprin = $driver->find_element('x-ux-grid-printer', 'class');
+        ok($driver->get_title() eq "Druckansicht", "switched to print tab");
 
-    my @p_bnts =
-      $driver->find_child_elements(
-                                   $driver->find_child_element(
-                                              $winprin, 'x-ux-grid-printer-noprint', 'class'
-                                                              ),
-                                   '//a', 'xpath'
-                                  );
+        my $winprin = $driver->find_element('x-ux-grid-printer', 'class');
 
-    ok($p_bnts[0]->get_text eq 'Drucken',   "found button:\t'Drucken'");
-    ok($p_bnts[1]->get_text =~ /Schlie.en/, "found button:\t'Schließen'");
+        my @p_bnts =
+          $driver->find_child_elements(
+                                       $driver->find_child_element(
+                                                  $winprin, 'x-ux-grid-printer-noprint', 'class'
+                                                                  ),
+                                       '//a', 'xpath'
+                                      );
 
-    my @print_cells = $driver->find_child_elements($winprin, '//td', 'xpath');
+        ok($p_bnts[0]->get_text eq 'Drucken',   "found button:\t'Drucken'");
+        ok($p_bnts[1]->get_text =~ /Schlie.en/, "found button:\t'Schließen'");
 
-    my $same_header =
-      $service_head eq
-      $driver->find_child_element($winprin, '//th', 'xpath')->get_text;
+        my @print_cells = $driver->find_child_elements($winprin, '//td', 'xpath');
 
-    ok($same_header && $driver->comp_array(\@service_cells, \@print_cells),
-        "print services contains all information");
+        my $same_header =
+          $service_head eq
+          $driver->find_child_element($winprin, '//th', 'xpath')->get_text;
 
-    $p_bnts[1]->click_ok("button clicked:\t'Schließen'");
+        ok($same_header && $driver->comp_array(\@service_cells, \@print_cells),
+            "print services contains all information");
 
-    $driver->switch_to_window($handles->[0]);
+        $p_bnts[1]->click;
+        $handles = $driver->get_window_handles;
+        ok(scalar @{$handles} == 1, "button clicked:\t'Schließen'");
+
+        $driver->switch_to_window($handles->[0]);
+    };
+}
+
+sub test_print_all_services {
+
+    my $driver = shift;
+
+    subtest test_print_all_services => sub {
+        plan tests => 1;
+        $driver->find_element('btn_services_print_all')->click;
+
+        my $pnl_print = $driver->find_element('window_print_services');
+        ok($pnl_print, "print preview opend for services + details");
+
+        my @weird_grid = $driver->find_child_elements($pnl_print, './/tr', 'xpath');
+
+        my @services;
+
+        my $check;
+
+        my $index = -1;
+
+        for (my $i = 0 ; $i < @weird_grid ; $i++) {
+
+            #print "$i: ", $weird_grid[$i]->get_text, "\n";
+
+            my @temp = split /\n/, $weird_grid[$i]->get_text;
+
+            if ($temp[0] =~ /\((d+)\sRegeln?\)/) { $index++; push @services, [] }
+
+            #   push $services[ $index ], @temp;
+
+            #for (my $j = 0; $j < @temp; $j++) {
+            #    print "\t$j: ", $temp[$j], "\n";
+            #}
+        }
+        print "-----------\n";
+
+        for (my $i = 0 ; $i < @services ; $i++) {
+
+            # print "$i: ", $services[$i], "\n";
+        }
+    };
+
 }
 
 sub service_details {
-    my $rp = shift;
+
+    my $driver = shift;
+    my $rp     = shift;
     my @sergri = @{ (shift) };
 
     my $det_bnt = $driver->find_child_element($rp, 'btn_service_details');
@@ -271,18 +314,9 @@ sub service_details {
       );
 }
 
-sub test_print_all_services {
-
-    $driver->find_element('btn_services_print_all')->click;
-
-    my $pnl_print = $driver->find_element('window_print_services');
-
-    $driver->PolicyWeb::FrontendTest::print_table($pnl_print);
-
-    # fertig schreiben
-}
-
 sub search_tab {
+
+    my $driver = shift;
 
     # -------------
     # Todo:
@@ -332,7 +366,7 @@ sub search_tab {
     $driver->find_child_element($search_window, 'txtf_search_ip1-inputEl')
       ->send_keys('10.2.2.2');
     $driver->find_child_element($search_window, 'btn_search_start')->click;
-    search_result_ok(4, "IP 1 = '10.2.2.2'\t=> 4 services");
+    search_result_ok($driver, 4, "IP 1 = '10.2.2.2'\t=> 4 services");
 
     if (!ok($search_window->is_displayed, "keep search in foreground")) {
         die("search window vanished:\n$@");
@@ -340,18 +374,20 @@ sub search_tab {
 
     $driver->find_child_element($search_window, 'cb_search_supernet')->click;
     $driver->find_child_element($search_window, 'btn_search_start')->click;
-    search_result_ok(8, "IP 1 = '10.2.2.2'\n\t& supernet\t\t=> 8 services");
+    search_result_ok($driver, 8,
+                     "IP 1 = '10.2.2.2'\n\t& supernet\t\t=> 8 services");
 
     $driver->find_child_element($search_window, 'txtf_search_ip2-inputEl')
       ->send_keys('10.9.9.0');
     $driver->find_child_element($search_window, 'btn_search_start')->click;
-    search_result_ok(2,
+    search_result_ok($driver, 2,
               "IP 1 = '10.2.2.2'\n\tIP 2 = '10.9.9.0'\n\t& supernet\t\t=> 2 services");
 
     $driver->find_child_element($search_window, 'txtf_search_proto-inputEl')
       ->send_keys('83');
     $driver->find_child_element($search_window, 'btn_search_start')->click;
     search_result_ok(
+        $driver,
         1,
 "IP 1 = '10.2.2.2'\n\tIP 2 = '10.9.9.0'\n\tProtokoll = 83\n\t& supernet\t\t=> 2 services"
     );
@@ -364,22 +400,22 @@ sub search_tab {
     $driver->find_child_element($search_window, 'txtf_search_ip1-inputEl')
       ->send_keys('sub1');
     $driver->find_child_element($search_window, 'btn_search_start')->click;
-    search_result_ok(1, "IP 1 = 'sub1'\t\t=> 1 service");
+    search_result_ok($driver, 1, "IP 1 = 'sub1'\t\t=> 1 service");
 
     $driver->find_child_element($search_window, 'cb_search_case_sensitive')->click;
     $driver->find_child_element($search_window, 'btn_search_start')->click;
-    search_result_ok(0, "IP 1 = 'sub1'\n\t& case sensitive\t=> 0 service");
+    search_result_ok($driver, 0, "IP 1 = 'sub1'\n\t& case sensitive\t=> 0 service");
 
     # close popup
     $driver->find_child_element($driver->find_element('x-message-box', 'class'),
-                                'x-btn-button', 'class')
-      ->click_ok("popup closed:\t'Ihre Suche ergab keine Treffer!'");
+                                'x-btn-button', 'class')->click;
+    ok("popup closed:\t'Ihre Suche ergab keine Treffer!'");
 
     $driver->find_child_element($search_window, 'txtf_search_ip1-inputEl')->clear;
     $driver->find_child_element($search_window, 'txtf_search_ip1-inputEl')
       ->send_keys('Sub1');
     $driver->find_child_element($search_window, 'btn_search_start')->click;
-    search_result_ok(1, "IP 1 = 'Sub1'\n\t& case sensitive\t=> 1 service");
+    search_result_ok($driver, 1, "IP 1 = 'Sub1'\n\t& case sensitive\t=> 1 service");
 
     $driver->find_child_element($search_window, 'cb_search_case_sensitive')->click;
     $driver->find_child_element($search_window, 'cb_search_exact')->click;
@@ -387,7 +423,7 @@ sub search_tab {
     $driver->find_child_element($search_window, 'txtf_search_ip1-inputEl')
       ->send_keys('sub1');
     $driver->find_child_element($search_window, 'btn_search_start')->click;
-    search_result_ok(0, "IP 1 = 'sub1'\n\t& exact\t\t\t=> 0 service");
+    search_result_ok($driver, 0, "IP 1 = 'sub1'\n\t& exact\t\t\t=> 0 service");
 
     # close popup
     $driver->find_child_element($driver->find_element('x-message-box', 'class'),
@@ -397,7 +433,7 @@ sub search_tab {
     $driver->find_child_element($search_window, 'txtf_search_ip1-inputEl')
       ->send_keys('any:sub1');
     $driver->find_child_element($search_window, 'btn_search_start')->click;
-    search_result_ok(1, "IP 1 = 'any:sub1'\n\t& exact\t\t\t=> 1 service");
+    search_result_ok($driver, 1, "IP 1 = 'any:sub1'\n\t& exact\t\t\t=> 1 service");
 
     $driver->find_child_element($search_window, 'btn_search_start')->click;
 
@@ -405,11 +441,12 @@ sub search_tab {
     $driver->find_child_element($search_window, 'txtf_search_ip1-inputEl')
       ->send_keys('10.1.0.0/16');
     $driver->find_child_element($search_window, 'btn_search_start')->click;
-    search_result_ok(1, "IP 1 = '10.1.0.0/16'\t=> 1 service");
+    search_result_ok($driver, 1, "IP 1 = '10.1.0.0/16'\t=> 1 service");
 
     $driver->find_child_element($search_window, 'cb_search_subnet')->click;
     $driver->find_child_element($search_window, 'btn_search_start')->click;
-    search_result_ok(11, "IP 1 = '10.1.0.0/16'\n\t& subnet\t\t=> 11 services");
+    search_result_ok($driver, 11,
+                     "IP 1 = '10.1.0.0/16'\n\t& subnet\t\t=> 11 services");
 
     $driver->find_child_element($search_window, 'cb_search_subnet')->click;
     $driver->find_child_element($search_window, 'cb_search_exact')->click;
@@ -417,15 +454,17 @@ sub search_tab {
     my @search_tabs =
       $driver->find_child_elements($search_window, 'x-tab-inner', 'class');
 
-    $search_tabs[1]->click_ok("switched to second search tab");
+    $search_tabs[1]->click;
+    ok("switched to second search tab");
 
     $driver->find_element('txtf_search_string-inputEl')->send_keys('foo');
     $driver->find_child_element($search_window, 'btn_search_start')->click;
-    search_result_ok(2, "search key = 'foo'\n\t& description\t=> 2 elements");
+    search_result_ok($driver, 2,
+                     "search key = 'foo'\n\t& description\t=> 2 elements");
 
     $driver->find_child_element($search_window, 'cb_search_description')->click;
     $driver->find_child_element($search_window, 'btn_search_start')->click;
-    search_result_ok(0, "search key = 'foo'\t=> 0 elements");
+    search_result_ok($driver, 0, "search key = 'foo'\t=> 0 elements");
 
     # close popup
     $driver->find_child_element($driver->find_element('x-message-box', 'class'),
@@ -435,12 +474,13 @@ sub search_tab {
     $driver->find_element('txtf_search_string-inputEl')->send_keys('Test9');
     $driver->find_child_element($search_window, 'cb_search_keep_foreground')->click;
     $driver->find_child_element($search_window, 'btn_search_start')->click;
-    search_result_ok(1, "search key = 'Test9'\t=> 1 elements");
+    search_result_ok($driver, 1, "search key = 'Test9'\t=> 1 elements");
 
     ok(!$search_window->is_displayed, "search window vanished after search");
 
     $driver->find_element('btn_search_services')->click;
-    $search_tabs[0]->click_ok("switched to first search tab");
+    $search_tabs[0]->click;
+    ok("switched to first search tab");
 
     $driver->find_child_element($search_window, 'txtf_search_ip1-inputEl')->clear;
     $driver->find_child_element($search_window, 'txtf_search_ip1-inputEl')
@@ -473,7 +513,7 @@ sub search_tab {
 }
 
 sub search_result_ok {
-    my ($expected, $ok_text) = @_;
+    my ($driver, $expected, $ok_text) = @_;
     eval {
         my @grid =
           $driver->find_child_elements($driver->find_element('pnl_services-body'),
@@ -482,3 +522,5 @@ sub search_result_ok {
     };
     if ($@) { die("something went wrong in 'search_result_ok':\n$@") }
 }
+
+1;
