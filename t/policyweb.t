@@ -2,7 +2,7 @@
 use strict;
 use warnings;
 use lib 't';
-use Test::More tests => 6;
+use Test::More;    # tests => 6;
 use Selenium::Remote::WDKeys;
 use Selenium::Chrome;
 use Selenium::Waiter qw/wait_until/;
@@ -13,51 +13,51 @@ use PolicyWeb::Service;
 use PolicyWeb::OwnNetworks;
 use PolicyWeb::Entitlement;
 
-PolicyWeb::Init::prepare_export();
-PolicyWeb::Init::prepare_runtime_no_login();
+#use PolicyWeb::StartDriver;
 
-my $driver = PolicyWeb::FrontendTest->new(
-    browser_name   => 'chrome',
-    proxy          => { proxyType => 'direct', },
-    default_finder => 'id',
-    javascript     => 1,
-    base_url       => "http://$SERVER:$port",
+my $driver = PolicyWeb::FrontendTest::getDriver();
 
-    #custom_args    => '--temp-profile',
-                                         );
+my %tests = (own_networks => \&PolicyWeb::OwnNetworks::test,
+             services      => \&PolicyWeb::Service::test,
+             entitlement  => \&PolicyWeb::Entitlement::test,
+            );
 
-$driver->set_implicit_wait_timeout(200);
+my $complete = !(scalar @ARGV);
 
-$driver->get("index.html");
+if ($complete) {
+    subtest login => sub { PolicyWeb::Login::test($driver); };
 
-subtest login => sub { $driver->PolicyWeb::Login::test(); };
+    subtest "choose owner" => sub {
+        plan tests => 1;
 
-subtest "choose owner" => sub {
-    plan tests => 1;
+        my $owner = 'x';
 
-    my $owner = 'x';
+        $driver->PolicyWeb::FrontendTest::choose_owner($owner);
 
-    $driver->PolicyWeb::FrontendTest::choose_owner($owner);
+        pass("owner $owner selcected");
+    };
 
-    pass("owner $owner selcected");
-};
+    for my $key (keys %tests) {
+        subtest $key => sub { $tests{$key}->($driver); };
+    }
+    subtest logout => sub {
+        plan tests => 1;
 
-subtest service => sub { $driver->PolicyWeb::Service::test(); };
+        my $logout = $driver->find_element('btn_logout');
 
-subtest "own networks" => sub { $driver->PolicyWeb::OwnNetworks::test(); };
+        $driver->PolicyWeb::FrontendTest::move_click($logout);
 
-subtest entitlement => sub { $driver->PolicyWeb::Entitlement::test(); };
+        ok(wait_until { $driver->get_current_url() =~ /\/index\.html/ },
+            "logout successeful");
+    };
 
-subtest logout => sub {
-    plan tests => 1;
-
-    my $logout = $driver->find_element('btn_logout');
-
-    $driver->PolicyWeb::FrontendTest::move_click($logout);
-
-    ok(wait_until { $driver->get_current_url() =~ /\/index\.html/ },
-        "logout successeful");
-};
+}
+else {
+    $driver->login_as_guest_and_choose_owner('x');
+    for my $key (@ARGV) {
+        subtest $key => sub { $tests{$key}->($driver); };
+    }
+}
 
 done_testing();
 

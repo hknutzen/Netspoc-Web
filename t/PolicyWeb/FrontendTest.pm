@@ -25,12 +25,30 @@ our @EXPORT = qw(
   error
   );
 
+sub getDriver {
+
+    PolicyWeb::Init::prepare_export();
+    PolicyWeb::Init::prepare_runtime_no_login();
+
+    my $driver =
+      PolicyWeb::FrontendTest->new(browser_name   => 'chrome',
+                                   proxy          => { proxyType => 'direct', },
+                                   default_finder => 'id',
+                                   javascript     => 1,
+                                   base_url       => "http://$SERVER:$port",
+                                  );
+
+    $driver->set_implicit_wait_timeout(200);
+
+    $driver->get("index.html");
+
+    return $driver;
+}
+
 # tries to login with given username and password
 sub login {
     my ($driver, $name, $pass) = @_;
     return if !$name;
-
-    $driver->get("http://$SERVER:$port/index.html");
 
     $driver->find_element('txtf_email');
     $driver->send_keys_to_active_element($name);

@@ -5,6 +5,21 @@ use strict;
 use warnings;
 use Test::More;
 
+####################################################################
+#
+# Test description:
+# -----------------
+#
+# - go to tab "Eigene Netze"
+# - check buttons and grid header beeing present
+# - check sytax of grids
+#   - check correct resources are displayed after selecting networks
+# - check selection and cancel mechanic is functioning properly
+#           button changes and
+#           services are correctly displayed in services tab
+#
+####################################################################
+
 sub test {
 
     my $driver = shift;

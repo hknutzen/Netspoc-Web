@@ -400,7 +400,7 @@ sub search_tab {
     $driver->find_child_element($search_window, 'txtf_search_ip1-inputEl')
       ->send_keys('sub1');
     $driver->find_child_element($search_window, 'btn_search_start')->click;
-    search_result_ok($driver, 1, "IP 1 = 'sub1'\t\t=> 1 service");
+    search_result_ok($driver, 1, "IP 1 = 'sub1'\t=> 1 service");
 
     $driver->find_child_element($search_window, 'cb_search_case_sensitive')->click;
     $driver->find_child_element($search_window, 'btn_search_start')->click;
@@ -441,7 +441,7 @@ sub search_tab {
     $driver->find_child_element($search_window, 'txtf_search_ip1-inputEl')
       ->send_keys('10.1.0.0/16');
     $driver->find_child_element($search_window, 'btn_search_start')->click;
-    search_result_ok($driver, 1, "IP 1 = '10.1.0.0/16'\t=> 1 service");
+    search_result_ok($driver, 1, "IP 1 = '10.1.0.0/16'=> 1 service");
 
     $driver->find_child_element($search_window, 'cb_search_subnet')->click;
     $driver->find_child_element($search_window, 'btn_search_start')->click;
@@ -474,7 +474,7 @@ sub search_tab {
     $driver->find_element('txtf_search_string-inputEl')->send_keys('Test9');
     $driver->find_child_element($search_window, 'cb_search_keep_foreground')->click;
     $driver->find_child_element($search_window, 'btn_search_start')->click;
-    search_result_ok($driver, 1, "search key = 'Test9'\t=> 1 elements");
+    search_result_ok($driver, 1, "search key = 'Test9'=> 1 elements");
 
     ok(!$search_window->is_displayed, "search window vanished after search");
 
