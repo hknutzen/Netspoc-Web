@@ -351,7 +351,6 @@ sub adapt_name_ip_user {
     my $user_props;
     if ( $expand_users ) {
         if ($disp_prop eq 'ip') {
-            my @unsorted = map { name2ip($_, $no_nat_set) } @$user_names;
             $user_props = sort_by_ip( [ map { name2ip($_, $no_nat_set) } @$user_names ] );
         }
         else {
