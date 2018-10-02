@@ -1,3 +1,7 @@
+
+# for testing test :)
+# look at PolicyWeb and print id of activ elements
+
 use lib 't';
 use Selenium::Chrome;
 use PolicyWeb::Init qw/$SERVER $port/;

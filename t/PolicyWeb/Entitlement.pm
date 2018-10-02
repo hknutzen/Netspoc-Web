@@ -13,9 +13,6 @@ sub test {
 
     eval {
 
-        ok($driver->find_element('btn_entitlement_tab'),
-            "found button:\tentitlement tab");
-
         $driver->find_element('btn_entitlement_tab')->click;
 
         my $grid =
@@ -23,6 +20,7 @@ sub test {
         ok($grid, "found grid:\taccoutnview");
         $driver->find_element_ok('//span[text()="Verantwortliche"]',
                                  'xpath', "found header:\t'Verantwortliche'");
+
         my @check = ('guest');
         ok(check_grid($driver, $grid, \@check),
             "'Verantwortliche' grid contains guest");
@@ -63,14 +61,10 @@ sub check_grid {
     my $grid     = shift;
     my @contains = @{ (shift) };
 
-    my @list = $driver->find_child_elements(
-                                            $driver->find_element(
-                                                      '//div[contains(@id, "accountview")]',
-                                                      'xpath'
-                                            ),
-                                            '//table[contains(id, gridview)]',
-                                            'xpath'
-                                           );
+    my @list =
+      $driver->find_child_elements($grid, '//table[contains(id, gridview)]',
+                                   'xpath');
+
     for (my $i = 0 ; $i < @contains ; $i++) {
         my $check = grep { $_->get_text eq $contains[$i] } @list;
         if (!$check) {

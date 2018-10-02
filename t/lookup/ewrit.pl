@@ -1,3 +1,7 @@
+
+# for testing test :)
+# look at PolicyWeb and run perl lines
+
 use lib 't';
 use Selenium::Chrome;
 use PolicyWeb::Init qw/$SERVER $port/;
@@ -15,15 +19,16 @@ my $driver =
 
 $driver->get('index.html');
 
-print "enter 'q' to exit\n";
+print "Enter stuff to run as perl code\nctrl + D to exit\n>";
+
 eval {
     my $input;
-    while (chomp($input = <>) ne "quit") {
+    while (chomp($input = <>)) {
         eval $input;
-        if ($@) { print $@ , "\n"; }
-        print "\n>";
+        if   ($@) { print "\n$@\n>"; }
+        else      { print "\n>"; }
     }
 };
-if ($@) { print $@ , "\n"; }
+if ($@) { print "bye bye\n"; }
 
 $driver->shutdown_binary;

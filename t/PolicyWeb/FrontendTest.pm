@@ -1,20 +1,19 @@
 
-use strict;
-use warnings;
-
 package PolicyWeb::FrontendTest;
 
-#use base ("Test::Selenium::Remote::Driver");
+use strict;
+use warnings;
+use Test::More;
 use base ("Selenium::Chrome");
-use parent 'Exporter';    # imports and subclasses Exporter
 use Selenium::Waiter qw/wait_until/;
-use File::Temp qw/ tempfile tempdir /;
-use Plack::Builder;
-use HTTP::Request::Common;
 use Plack::Test;
 use PolicyWeb::Init qw( $port $SERVER);
-use Data::Dumper;
-use Test::Simple;
+
+#use base ("Test::Selenium::Remote::Driver");
+#use parent 'Exporter';    # imports and subclasses Exporter
+#use File::Temp qw/ tempfile tempdir /;
+#use Plack::Builder;
+#use HTTP::Request::Common;
 
 our @EXPORT = qw(
   login_as_guest
@@ -74,6 +73,7 @@ sub login_as_guest_and_choose_owner {
 
 sub choose_owner {
     my ($driver, $owner) = @_;
+
     # The two waits below are necessary to avoid a race condition.
     # Without them, sometimes the combo box has not been rendered
     # yet and an error that "triggerEl of undefined cannot be found"
@@ -239,7 +239,24 @@ sub check_sytax_grid {
     my @regex      = @{ (shift) };
 
     if (!scalar @grid_cells) {
-        print "grid is empty\n";
+        print "grid is empty!\n";
+        return 0;
+    }
+    elsif (!scalar @regex) {
+        print "no regular expressions given!\n";
+        return 0;
+    }
+    elsif (scalar @grid_cells % $row != 0) {
+        print
+          "rows seem to cointain less then stated! (expected $row elements per row)\n";
+        return 0;
+    }
+    elsif ($row < $offset + scalar @regex) {
+        my $not_testet = $offset + scalar @regex - $row;
+        print "Regular expressions($not_testet) are not beein testet:\n";
+        for (my $i = $row - $offset; $i < @regex ; $i++) {
+            print "i=$i\t$regex[$i]\n";
+        }
         return 0;
     }
 
@@ -340,7 +357,7 @@ sub find_element_ok {
             $hit = $driver->find_element(shift, shift);
         }
     };
-    if ($@){ print "$@\n";}
+    if ($@) { print "$@\n"; }
     return ok($hit, $ok_string);
 }
 

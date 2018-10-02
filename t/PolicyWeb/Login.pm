@@ -24,7 +24,7 @@ sub test {
 
     my $driver = shift;
 
-    plan tests => 4;
+    plan tests => 5;
 
     eval {
 
@@ -52,13 +52,23 @@ sub test {
                 ok($driver->get_current_url() =~ /app.html/, "login as guest successeful");
             };
 
+            subtest "choose owner" => sub {
+                plan tests => 1;
+
+                my $owner = 'x';
+
+                $driver->PolicyWeb::FrontendTest::choose_owner($owner);
+
+                pass("owner $owner selcected");
+            };
+
             find_top_buttons($driver);
         }
     };
 
-    if ($@) { 
-    	print "$@\n";
-    	return 0; 
+    if ($@) {
+        print "$@\n";
+        return 0;
     }
     return 1;
 }

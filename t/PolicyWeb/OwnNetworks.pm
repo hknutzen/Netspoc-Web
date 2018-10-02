@@ -9,11 +9,32 @@ sub test {
 
     my $driver = shift;
 
-    #plan tests => todo;
+    plan tests => 3;
 
     eval {
 
         $driver->find_element('btn_own_networks_tab')->click;
+
+        test_own_networks_grid($driver);
+
+        my @networks_grid_cells =
+          $driver->find_child_elements($driver->find_element('grid_own_networks'),
+                                       'x-grid-cell', 'class');
+
+        test_resources_grid($driver, \@networks_grid_cells);
+
+        test_selection_and_services($driver, \@networks_grid_cells);
+    };
+    if ($@) { print $@ , "\n"; }
+}
+
+sub test_own_networks_grid {
+
+    my $driver            = shift;
+    my $own_networks_grid = $driver->find_element('grid_own_networks');
+
+    subtest "own networks grid" => sub {
+        plan tests => 7;
 
         $driver->find_element_ok('//div[text()="Netzauswahl"]', 'xpath',
                                  "found text:\t'Netzauswahl'");
@@ -22,8 +43,45 @@ sub test {
         $driver->find_element_ok('btn_cancel_network_selection',
                                  "found button:\tcancel selection");
 
-        # test own networks grid
-        my @grid_cells = test_own_networks_grid($driver);
+        if (!ok($own_networks_grid, "found grid:\tnetwork")) {
+            die("network grid is missing");
+        }
+
+        my @networks_grid_cells =
+          $driver->find_child_elements($own_networks_grid, 'x-grid-cell', 'class');
+
+        # check form
+        my @regex = ('(1\d\d|\d\d|\d)\.(1\d\d|\d\d|\d)\.(1\d\d|\d\d|\d)\.(1\d\d|\d\d|\d)',
+                     '(network)|(interface):\.*', 'x|y|z'
+                    );
+
+        ok($driver->check_sytax_grid(\@networks_grid_cells, \4, \1, \@regex),
+            "own networks grid looks fine");
+
+        # find grid head
+        my @grid_heads =
+          $driver->find_child_elements($own_networks_grid, 'x-column-header', 'class');
+
+        if (!ok(@grid_heads, "found header:\tleft grid")) {
+            die("no headers found for own networks grid");
+        }
+
+        ok( $driver->is_order_after_change(\$own_networks_grid, \4, \1, \@grid_heads, \0),
+            "own networks grid order changes correctly");
+
+        # back to standart
+        $grid_heads[1]->click;
+
+    };
+}
+
+sub test_resources_grid {
+
+    my $driver = shift;
+    my @networks_grid_cells = @{ (shift) };
+
+    subtest "resources grid" => sub {
+        plan tests => 12;
 
         $driver->find_element_ok('//div[text()="Enthaltene Ressourcen"]',
                                  'xpath',
@@ -39,12 +97,12 @@ sub test {
         ok(@grid_head_right, "found header:\tright grid");
 
         # grid should be empty, if no own network is selected
-        my @resources_grid =
+        my @resources_grid_cells =
           $driver->find_child_elements($resources_grid, 'x-grid-cell', 'class');
-        ok(!@resources_grid, "no networkresources, if no network is selected");
+        ok(!@resources_grid_cells, "no networkresources, if no network is selected");
 
         # select network 'Big' and 'Kunde'
-        $driver->select_by_name(\@grid_cells, \4, \2, \"network:Big");
+        $driver->select_by_name(\@networks_grid_cells, \4, \2, \"network:Big");
 
         ok($driver->find_element('x-grid-group-hd', 'class')->get_text =~ /network:Big/,
             "found group:\tnetwork:Big");
@@ -58,7 +116,7 @@ sub test {
         ok( $driver->is_order_after_change(\$resources_grid, \3, \0, \@grid_head_right, \1),
             "resources grid order changes correctly");
 
-        $driver->select_by_name(\@grid_cells, \4, \2, \"network:Kunde");
+        $driver->select_by_name(\@networks_grid_cells, \4, \2, \"network:Kunde");
 
         ok($driver->find_element('x-grid-group-hd', 'class')->get_text =~ /network:Big/,
             "found group:\tnetwork:Kunde");
@@ -75,9 +133,9 @@ sub test {
                       );
 
         # reload grid
-        @resources_grid =
+        @resources_grid_cells =
           $driver->find_child_elements($resources_grid, 'x-grid-cell', 'class');
-        ok($driver->check_sytax_grid(\@resources_grid, \3, \0, \@res_reg),
+        ok($driver->check_sytax_grid(\@resources_grid_cells, \3, \0, \@res_reg),
             "resources grids looks fine");
 
         $driver->find_child_element($resources_grid,
@@ -93,7 +151,16 @@ sub test {
 
         ok($driver->find_child_elements($resources_grid, 'x-grid-cell', 'class'),
             "network selection canceled");
+    };
+}
 
+sub test_selection_and_services {
+
+    my $driver = shift;
+    my @networks_grid_cells = @{ (shift) };
+
+    subtest "selection and services" => sub {
+        plan tests => 4;
         my $bont_b =
               $driver->find_element('btn_own_networks_tab')->get_text =~ "Eigene Netze"
           and $driver->find_element('btn_own_networks_tab')
@@ -106,7 +173,7 @@ sub test {
         $boncc_b &= $driver->find_element('btn_cancel_network_selection')
           ->Selenium::Remote::WebElement::get_attribute('class') =~ /x-disabled/;
 
-        $driver->select_by_name(\@grid_cells, \4, \2, \"network:KUNDE1");
+        $driver->select_by_name(\@networks_grid_cells, \4, \2, \"network:KUNDE1");
 
         #should be enabled
         $boncc_b &= !($driver->find_element('btn_confirm_network_selection')
@@ -166,48 +233,7 @@ sub test {
                                        'x-grid-cell', 'class');
 
         ok((scalar @service_grid == 12), "found services:\tall 12");
-
     };
-    if ($@) { print $@ , "\n"; }
-
-}
-
-sub test_own_networks_grid {
-
-    my $driver = shift;
-
-    my $own_networks_grid = $driver->find_element('grid_own_networks');
-
-    if (!ok($own_networks_grid, "found grid:\tnetwork")) {
-        die("network grid is missing");
-    }
-
-    my @grid_cells =
-      $driver->find_child_elements($own_networks_grid, 'x-grid-cell', 'class');
-
-    # check form
-    my @regex = ('(1\d\d|\d\d|\d)\.(1\d\d|\d\d|\d)\.(1\d\d|\d\d|\d)\.(1\d\d|\d\d|\d)',
-                 '(network)|(interface):\.*', 'x|y|z'
-                );
-
-    ok($driver->check_sytax_grid(\@grid_cells, \4, \1, \@regex),
-        "own networks grid looks fine");
-
-    # find grid head
-    my @grid_heads =
-      $driver->find_child_elements($own_networks_grid, 'x-column-header', 'class');
-
-    if (!ok(@grid_heads, "found header:\tleft grid")) {
-        die("no headers found for own networks grid");
-    }
-
-    ok( $driver->is_order_after_change(\$own_networks_grid, \4, \1, \@grid_heads, \0),
-        "own networks grid order changes correctly");
-
-    # back to standart
-    $grid_heads[1]->click;
-
-    return $driver->find_child_elements($own_networks_grid, 'x-grid-cell', 'class');
 }
 
 1;
