@@ -300,10 +300,10 @@ sub service_details {
             'permit',
             'User',
 '(2(0..5)(0..5)|1\d\d|\d\d|\d)\.(2(0..5)(0..5)|1\d\d|\d\d|\d)\.(2(0..5)(0..5)|1\d\d|\d\d|\d)\.(2(0..5)(0..5)|1\d\d|\d\d|\d)',
-            '(udp|tcp)\s\d+', 'wtf:)'
+            '(udp|tcp)\s\d+'
         );
         $is_ok = 1;
-        $is_ok = $driver->check_sytax_grid(\@gcc, \4, \0, \@regex);
+        $is_ok = $driver->check_sytax_grid(\@gcc, \5, \0, \@regex);
 
         $driver->find_child_element($rp, 'cb_expand_users')->click;
 
