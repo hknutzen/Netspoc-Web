@@ -17,18 +17,18 @@ use HTTP::Request::Common;
 use Plack::Builder;
 
 require Exporter;
-our @ISA = qw(Exporter);
+our @ISA    = qw(Exporter);
 our @EXPORT = qw(
- prepare_export
- prepare_runtime
-);
+  prepare_export
+  prepare_runtime
+  );
 
 our @EXPORT_OK = qw(
- $app
- $port
- $policy
- $SERVER
-);
+  $app
+  $port
+  $policy
+  $SERVER
+  );
 
 our $SERVER = "127.0.0.1";
 our $port;
@@ -155,19 +155,18 @@ service:Test11 = {
 END
 ############################################################
 
-
 my $server;
 
-my $export_dir = tempdir( CLEANUP => 1 );
+my $export_dir = tempdir(CLEANUP => 1);
 
 sub prepare_in_dir {
-    my($input) = @_;
+    my ($input) = @_;
 
     # Prepare input directory and file(s).
     # Input is optionally preceeded by single lines of dashes
     # followed by a filename.
     # If no filenames are given, a single file named STDIN is used.
-    my $delim  = qr/^-+[ ]*(\S+)[ ]*\n/m;
+    my $delim = qr/^-+[ ]*(\S+)[ ]*\n/m;
     my @input = split($delim, $input);
     my $first = shift @input;
 
@@ -180,7 +179,7 @@ sub prepare_in_dir {
         }
         @input = ('STDIN', $first);
     }
-    my $in_dir = tempdir( CLEANUP => 1 );
+    my $in_dir = tempdir(CLEANUP => 1);
     while (@input) {
         my $path = shift @input;
         my $data = shift @input;
@@ -211,11 +210,11 @@ sub prepare_export {
     $status == 0 or die "Export failed:\n$stderr\n";
     $stderr and die "Unexpected output during export:\n$stderr\n";
     system("echo '# $policy #' > $export_dir/$policy/POLICY") == 0 or die;
-    system("cd $export_dir; ln -s $policy current") == 0 or die;
+    system("cd $export_dir; ln -s $policy current") == 0           or die;
 }
 
-my $home_dir   = tempdir( CLEANUP => 1 );
-my $conf_file  = "$home_dir/policyweb.conf";
+my $home_dir  = tempdir(CLEANUP => 1);
+my $conf_file = "$home_dir/policyweb.conf";
 my $conf_data = <<END;
 {
  "netspoc_data"         : "$export_dir",
@@ -226,9 +225,9 @@ my $conf_data = <<END;
 }
 END
 
-
 our $cookie;
 our $app;
+
 sub prepare_runtime_base {
     my $opts = shift;
 
@@ -242,38 +241,31 @@ sub prepare_runtime_base {
     my $netspoc_psgi = do 'bin/netspoc.psgi' or die "Couldn't parse PSGI file: $@";
 
     $app = builder {
-        mount "/extjs4"     =>
-            Plack::App::File->new(root => "/home/$ENV{USER}/htdocs/extjs4")->to_app;
+        mount "/extjs4" =>
+          Plack::App::File->new(root => "/home/$ENV{USER}/htdocs/extjs4")->to_app;
         mount "/silk-icons" =>
-            Plack::App::File->new(root => "/home/$ENV{USER}/htdocs/silk-icons")->to_app;
-        mount "/"           =>
-            Plack::App::File->new(root => "/home/$ENV{USER}/Netspoc-Web")->to_app;
+          Plack::App::File->new(root => "/home/$ENV{USER}/htdocs/silk-icons")->to_app;
+        mount "/" =>
+          Plack::App::File->new(root => "/home/$ENV{USER}/Netspoc-Web")->to_app;
         mount "/backend" => $netspoc_psgi;
     };
 
-    $server = Plack::Test::Server->new( $app );
-    $port = $server->port();
+    $server = Plack::Test::Server->new($app);
+    $port   = $server->port();
 }
 
 sub prepare_runtime {
-    prepare_runtime_base( { login => 1 } );
+    prepare_runtime_base({ login => 1 });
 }
 
 sub prepare_runtime_no_login {
-    prepare_runtime_base( { login => 0 } );
+    prepare_runtime_base({ login => 0 });
 }
 
-
-
-
 #__PACKAGE__::init();
-
 
 sub init {
 
 }
-
-
-
 
 1;

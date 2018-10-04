@@ -1,0 +1,11 @@
+# .proverc
+
+# start testing with recently failed
+--state=save
+
+# ctrl+c will still output test summary
+--trap
+
+-j 5
+
+-v

@@ -19,6 +19,7 @@ along with this program. If not, see <http://www.gnu.org/licenses/>.
 Ext.define(
     'PolicyWeb.view.window.ExpandedServices',
     {
+        id      : 'window_print_services',
         extend  : 'Ext.window.Window',
         alias   : 'widget.expandedservices',
 
