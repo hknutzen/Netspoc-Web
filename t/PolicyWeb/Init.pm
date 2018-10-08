@@ -238,7 +238,7 @@ sub prepare_runtime_base {
 
     # netspoc.psgi searches config file in $HOME directory.
     $ENV{HOME} = $home_dir;
-    my $netspoc_psgi = do 'bin/netspoc.psgi' or die "Couldn't parse PSGI file: $@";
+    my $netspoc_psgi = do './bin/netspoc.psgi' or die "Couldn't parse PSGI file: $@";
 
     $app = builder {
         mount "/extjs4" =>
