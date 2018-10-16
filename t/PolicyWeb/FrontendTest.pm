@@ -14,6 +14,7 @@ use PolicyWeb::Init qw( $port $SERVER);
 #use File::Temp qw/ tempfile tempdir /;
 #use Plack::Builder;
 #use HTTP::Request::Common;
+#use Data::Dumper;
 
 our @EXPORT = qw(
   login_as_guest
@@ -27,7 +28,8 @@ our @EXPORT = qw(
 sub getDriver {
 
     PolicyWeb::Init::prepare_export();
-    PolicyWeb::Init::prepare_runtime_no_login();
+    PolicyWeb::Init::prepare_runtime();
+    #PolicyWeb::Init::prepare_runtime_no_login();
 
     my $driver =
       PolicyWeb::FrontendTest->new(browser_name   => 'chrome',
@@ -37,6 +39,8 @@ sub getDriver {
                                    base_url       => "http://$SERVER:$port",
                                   );
 
+    #print "Direkt nach 'my$ driver = PolicyWeb::FrontendTest->new(...);'\n", Dumper $driver; 
+      
     $driver->set_implicit_wait_timeout(200);
 
     $driver->get("index.html");

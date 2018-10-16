@@ -249,7 +249,7 @@ sub prepare_runtime_base {
           Plack::App::File->new(root => "/home/$ENV{USER}/Netspoc-Web")->to_app;
         mount "/backend" => $netspoc_psgi;
     };
-
+    
     $server = Plack::Test::Server->new($app);
     $port   = $server->port();
 }
