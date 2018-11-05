@@ -203,7 +203,7 @@ sub prepare_export {
     $input ||= $netspoc;
     my $in_dir = prepare_in_dir($input);
 
-    my $cmd = "~/Netspoc/bin/export-netspoc -quiet $in_dir $export_dir/$policy";
+    my $cmd = "/home/$ENV{USER}/Netspoc/bin/export-netspoc -quiet $in_dir $export_dir/$policy";
     my ($stdout, $stderr);
     run3($cmd, \undef, \$stdout, \$stderr);
     my $status = $?;
@@ -237,7 +237,7 @@ sub prepare_runtime_base {
     close $fh;
 
     # netspoc.psgi searches config file in $HOME directory.
-    $ENV{HOME} = $home_dir;
+    local $ENV{HOME} = $home_dir;
     my $netspoc_psgi = do 'bin/netspoc.psgi' or die "Couldn't parse PSGI file: $@";
 
     $app = builder {
@@ -246,7 +246,7 @@ sub prepare_runtime_base {
         mount "/silk-icons" =>
           Plack::App::File->new(root => "/home/$ENV{USER}/htdocs/silk-icons")->to_app;
         mount "/" =>
-          Plack::App::File->new(root => "/home/$ENV{USER}/Netspoc-Web")->to_app;
+          Plack::App::File->new(root => "/home/$ENV{USER}/NetspocWeb")->to_app;
         mount "/backend" => $netspoc_psgi;
     };
 
