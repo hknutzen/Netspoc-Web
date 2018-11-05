@@ -238,8 +238,7 @@ sub prepare_runtime_base {
 
     # netspoc.psgi searches config file in $HOME directory.
     local $ENV{HOME} = $home_dir;
-    my $netspoc_psgi = do 'bin/netspoc.psgi' or die "Couldn't parse PSGI file: $@";
-
+    my $netspoc_psgi = do './bin/netspoc.psgi' or die "Couldn't parse PSGI file: $@";
     $app = builder {
         mount "/extjs4" =>
           Plack::App::File->new(root => "/home/$ENV{USER}/htdocs/extjs4")->to_app;
