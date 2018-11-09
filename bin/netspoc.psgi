@@ -1811,7 +1811,7 @@ sub login {
     logout($req, $session);
     my $email = $req->param('email') or abort "Missing param 'email'";
     $email = lc $email;
-    check_email_authorization($email);
+    #check_email_authorization($email);
 
     # User 'guest' needs no password.
     if ($email ne 'guest') {

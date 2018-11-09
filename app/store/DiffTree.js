@@ -37,14 +37,14 @@ Ext.define(
                 child.set( 'text', out );
             }
         },
-        root            : {
+        rootProperty : {
             text : 'Bitte Stand auswählen in "Vergleiche mit".',
             id   : 'none'
         },
         proxy  : {
-            type    : 'ajax',
-            noCache : false,
-            url     : 'backend/get_diff'
+            type     : 'ajax',
+            noCache  : false,
+            url      : 'backend/get_diff'
         }
     }
 );

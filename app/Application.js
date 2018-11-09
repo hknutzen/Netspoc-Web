@@ -116,7 +116,7 @@ Ext.application(
 	name               : 'PolicyWeb',
         appFolder          : './app',
 	autoCreateViewport : true,
-	models             : [ 'Netspoc', 'Service', 'Rule', 'Owner', 'Item',
+	models             : [ 'Base', 'Netspoc', 'Service', 'Rule', 'Owner', 'Item',
                                'Overview' ],
 	stores             : [ 'Netspoc', 'NetspocState', 'Service',
                                'Rules', 'Users', 'Emails', 'Owner',

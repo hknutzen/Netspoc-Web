@@ -240,8 +240,8 @@ sub prepare_runtime_base {
     local $ENV{HOME} = $home_dir;
     my $netspoc_psgi = do './bin/netspoc.psgi' or die "Couldn't parse PSGI file: $@";
     $app = builder {
-        mount "/extjs4" =>
-          Plack::App::File->new(root => "/home/$ENV{USER}/htdocs/extjs4")->to_app;
+        mount "/extjs5" =>
+          Plack::App::File->new(root => "/home/$ENV{USER}/htdocs/extjs5")->to_app;
         mount "/silk-icons" =>
           Plack::App::File->new(root => "/home/$ENV{USER}/htdocs/silk-icons")->to_app;
         mount "/" =>

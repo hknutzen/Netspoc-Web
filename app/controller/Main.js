@@ -82,16 +82,6 @@ Ext.define(
                     }
                 }
             );
-
-            // Handle application wide events.
-            this.application.on(
-/*
-                {
-                    policyLoaded : this.onPolicyLoaded,
-                    scope    : this
-                }
-*/
-            );
         },
 
 	onSessionTimeout : function( button, event ) {
@@ -202,7 +192,6 @@ Ext.define(
             if (success && records.length) {
                 owner = records[0].get('name');
                 this.setOwnerState({ name  : owner });
-                // Get theme from session.
             }
             // Owner was never selected,
             // check number of available owners.
@@ -210,6 +199,7 @@ Ext.define(
                 var all_owners_store = this.getAllOwnersStore();
                 var all_owners = all_owners_store.getRange();
                 // Automatically select owner if only one is available.
+                //debugger;
                 if ( all_owners.length === 1 ) {
                     owner = all_owners[0].get('name');
                     this.setOwner( owner );
@@ -273,13 +263,6 @@ Ext.define(
         },
 
         setOwnerState : function(owner_obj) {
-/*
-            global_theme_name = 'gray';
-            var theme = '/extjs4/resources/ext-theme-' + global_theme_name + '/ext-theme-' +
-                global_theme_name + '-all.css';
-            console.log(theme);
-            Ext.util.CSS.swapStyleSheet("theme", theme);
-*/
             var store = this.getCurrentPolicyStore();
             store.load(
                 {
