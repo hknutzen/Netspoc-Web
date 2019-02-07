@@ -167,7 +167,7 @@ sub select_history {
 
     # Read requested version date from cgi parameter.
     if ($selected_history = $req->param('history')) {
-	$history_needed or abort "Must not send parameter 'history'";
+	$history_needed or abort $req->path_info() . ": Must not send parameter 'history'";
     }
 
     # Read current version tag from current/POLICY.

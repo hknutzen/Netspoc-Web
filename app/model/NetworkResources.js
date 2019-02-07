@@ -19,7 +19,7 @@ along with this program. If not, see <http://www.gnu.org/licenses/>.
 Ext.define(
     'PolicyWeb.model.NetworkResources',
     {
-        extend : 'PolicyWeb.model.Netspoc',
+        extend : 'PolicyWeb.model.Base',
         fields : [
             { name     : 'name' },
             { name     : 'child_ip',
@@ -36,7 +36,10 @@ Ext.define(
                   return node.child_owner.owner;
               }
             }
-        ]
+        ],
+        proxy : {
+            url : 'backend/get_network_resources'
+        }
     }
 );
 

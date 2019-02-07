@@ -16,10 +16,6 @@ Ext.define(
                 },
                 direction : 'ASC'
             }
-        ],
-        proxy      : {
-            type     : 'policyweb',
-            proxyurl : 'get_services_and_rules'
-        }
+        ]
     }
 );

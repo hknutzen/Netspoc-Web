@@ -2,7 +2,7 @@
 Ext.define(
     'PolicyWeb.model.Network',
     {
-        extend : 'PolicyWeb.model.Netspoc',
+        extend : 'PolicyWeb.model.Base',
         fields : [
             {
                 name     : 'ip',   
@@ -36,7 +36,10 @@ Ext.define(
                   return node.owner;
               }
             }
-        ]
+        ],
+        proxy : {
+            url : 'backend/get_networks'
+        }
     }
 );
 

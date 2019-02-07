@@ -125,14 +125,11 @@ Ext.define(
             var store = Ext.create(
                 'PolicyWeb.store.Netspoc',
                 {
-                    proxy : {
-                        type     : 'policyweb',
-                        proxyurl : 'get_compat_msg_mode'
-                    },
                     fields      : [],
                     autoDestroy : true
                 }
             );
+            store.getProxy().setUrl('backend/get_compat_msg_mode');
             store.load(
                 {
                     callback : this.showCompatInfoWindow,
@@ -167,14 +164,11 @@ Ext.define(
             var store = Ext.create(
                 'PolicyWeb.store.Netspoc',
                 {
-                    proxy       : {
-                        type     : 'policyweb',
-                        proxyurl : 'set'
-                    },
                     fields      : [],
                     autoDestroy : true
                 }
             );
+            store.getProxy().setUrl('backend/get_compat_msg_mode');
             store.load(
                 {
                     params   : { ignore_compat_msg : value },
@@ -199,7 +193,6 @@ Ext.define(
                 var all_owners_store = this.getAllOwnersStore();
                 var all_owners = all_owners_store.getRange();
                 // Automatically select owner if only one is available.
-                //debugger;
                 if ( all_owners.length === 1 ) {
                     owner = all_owners[0].get('name');
                     this.setOwner( owner );
@@ -233,14 +226,11 @@ Ext.define(
             var store = Ext.create(
                 'PolicyWeb.store.Netspoc',
                 {
-                    proxy       : {
-                        type     : 'policyweb',
-                        proxyurl : 'set'
-                    },
                     fields      : [],
                     autoDestroy : true
                 }
             );
+            store.getProxy().setUrl('backend/set');
             store.load(
                 { params   : { owner : owner },
                   callback : this.onSetOwnerSuccess,
@@ -344,14 +334,11 @@ Ext.define(
             var store = Ext.create(
                 'PolicyWeb.store.Netspoc',
                 {
-                    proxy       : {
-                        type     : 'policyweb',
-                        proxyurl : 'logout'
-                    },
                     fields      : [],
                     autoDestroy : true
                 }
             );
+            store.getProxy().setUrl('backend/logout');
             store.load(
                 { params   : {},
                   callback : this.onAfterLogout,

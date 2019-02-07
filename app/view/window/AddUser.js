@@ -73,14 +73,10 @@ Ext.define(
             );
             var myStore = Ext.create(
                 'PolicyWeb.store.NetspocState', {
-                    model    : 'BU',
-                    proxy    : {
-                        type     : 'policyweb',
-                        proxyurl : 'get_business_units'
-                    },
                     autoLoad : true
                 }
             );
+            myStore.getProxy().setUrl('backend/get_business_units');
             var combo = Ext.create(
                 'Ext.form.ComboBox', {
                     fieldLabel   : 'Mandant',

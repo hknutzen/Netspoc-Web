@@ -5,10 +5,6 @@ Ext.define(
     {
         extend   : 'PolicyWeb.store.NetspocState',
         model    : 'PolicyWeb.model.Watcher',
-        autoLoad : false,
-        proxy       : {
-            type     : 'policyweb',
-            proxyurl : 'get_watchers'
-        }
+        autoLoad : false
     }
 );
