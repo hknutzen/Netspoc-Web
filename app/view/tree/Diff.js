@@ -18,7 +18,8 @@ along with this program. If not, see <http://www.gnu.org/licenses/>.
 
 Ext.define(
     'PolicyWeb.view.tree.Diff',
-    {
+    {   
+        id              : 'pnl_diff',
         extend          : 'Ext.tree.Panel',
         alias           : 'widget.diffview',
         controllers     : [ 'Diff' ],

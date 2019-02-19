@@ -57,8 +57,8 @@ sub test {
 
                 my $owner = 'x';
 
-                $driver->PolicyWeb::FrontendTest::choose_owner($owner);
-
+                $driver->choose_owner($owner);
+                
                 pass("owner $owner selcected");
             };
 

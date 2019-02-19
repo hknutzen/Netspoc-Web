@@ -9,7 +9,7 @@ sub test {
 
     my $driver = shift;
 
-    #plan tests => todo;
+    plan tests => 11;
 
     eval {
 

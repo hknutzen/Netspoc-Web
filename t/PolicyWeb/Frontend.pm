@@ -1,5 +1,5 @@
 
-package PolicyWeb::FrontendTest;
+package PolicyWeb::Frontend;
 
 use strict;
 use warnings;
@@ -7,14 +7,13 @@ use Test::More;
 use base ("Selenium::Chrome");
 use Selenium::Waiter qw/wait_until/;
 use Plack::Test;
-use PolicyWeb::Init qw( $port $SERVER);
+use PolicyWeb::Init qw( $port $SERVER $export_dir $home_dir $netspoc );
 
 #use base ("Test::Selenium::Remote::Driver");
 #use parent 'Exporter';    # imports and subclasses Exporter
 #use File::Temp qw/ tempfile tempdir /;
 #use Plack::Builder;
 #use HTTP::Request::Common;
-#use Data::Dumper;
 
 our @EXPORT = qw(
   login_as_guest
@@ -23,24 +22,22 @@ our @EXPORT = qw(
   ip2numeric
   numeric2ip
   error
+  getDriver
   );
 
 sub getDriver {
 
     PolicyWeb::Init::prepare_export();
     PolicyWeb::Init::prepare_runtime();
-    #PolicyWeb::Init::prepare_runtime_no_login();
 
     my $driver =
-      PolicyWeb::FrontendTest->new(browser_name   => 'chrome',
-                                   proxy          => { proxyType => 'direct', },
-                                   default_finder => 'id',
-                                   javascript     => 1,
-                                   base_url       => "http://$SERVER:$port",
-                                  );
+      PolicyWeb::Frontend->new(browser_name   => 'chrome',
+                               proxy          => { proxyType => 'direct', },
+                               default_finder => 'id',
+                               javascript     => 1,
+                               base_url       => "http://$SERVER:$port",
+                              );
 
-    #print "Direkt nach 'my$ driver = PolicyWeb::FrontendTest->new(...);'\n", Dumper $driver; 
-      
     $driver->set_implicit_wait_timeout(200);
 
     $driver->get("index.html");
@@ -164,21 +161,35 @@ sub error {
     print STDERR @_, "\n";
 }
 
-sub select_by_name {
+'' // '
+    search for a specific key in an array, representing a grid with checkboxes and data,
+    and clicks the related checkbox.
+
+    Bails if the key was not found.
+
+    params:
+    0. $driver
+    1. reference to an array constits of (checkbox, e1, ..., en)*
+    2. amount of elements/row
+    3. position in row
+    4. key (string) to look for
+';
+
+sub select_by_key {
     my $driver     = shift;
     my @grid_cells = @{ (shift) };
-    my $row        = ${ (shift) };
-    my $offset     = ${ (shift) };
-    my $name       = ${ (shift) };
+    my $row        = shift;
+    my $offset     = shift;
+    my $key        = shift;
 
-    for (my $i = $row ; $i < @grid_cells ; $i += $row) {
+    for (my $i = 0 ; $i < @grid_cells ; $i += $row) {
         my $a = $grid_cells[ $i + $offset ]->get_text;
-        if ($a eq $name) {
+        if ($a eq $key) {
             $grid_cells[$i]->click;
             return;
         }
     }
-    BAIL_OUT("$name not found");
+    BAIL_OUT("$key not found");
 }
 
 sub grid_contains {
@@ -252,13 +263,13 @@ sub check_sytax_grid {
     }
     elsif (scalar @grid_cells % $row != 0) {
         print
-          "rows seem to cointain less then stated! (expected $row elements per row)\n";
+"row seems to contain different amount of elements than stated! (expected $row elements per row)\n";
         return 0;
     }
     elsif ($row < $offset + scalar @regex) {
         my $not_testet = $offset + scalar @regex - $row;
         print "Regular expressions($not_testet) are not beein testet:\n";
-        for (my $i = $row - $offset; $i < @regex ; $i++) {
+        for (my $i = $row - $offset ; $i < @regex ; $i++) {
             print "i=$i\t$regex[$i]\n";
         }
         return 0;
@@ -323,9 +334,15 @@ sub comp_array {
     my @a      = @{ (shift) };
     my @b      = @{ (shift) };
 
-    if (scalar @a != scalar @b) { return 0; }
+    if (scalar @a != scalar @b) {
+        print "size a(", scalar @a, ") != size b(", scalar @b, ")\n";
+        return 0;
+    }
     for (my $i = 0 ; $i < @a ; $i++) {
-        if ($a[$i] ne $b[$i]->get_text) { return 0; }
+        if ($a[$i] ne $b[$i]) {
+            print "$a[$i] ne $b[$i]\n";
+            return 0;
+        }
     }
     return 1;
 }
@@ -363,6 +380,26 @@ sub find_element_ok {
     };
     if ($@) { print "$@\n"; }
     return ok($hit, $ok_string);
+}
+
+sub set_export_dir {
+    my ($driver, $set) = @_;
+    if (!$set) { print "no export directory given\n"; return; }
+    if (-d $set) { $export_dir = $set; }
+    else         { print "not a directory\n"; }
+    return;
+}
+
+sub get_export_dir {
+    return $export_dir;
+}
+
+sub get_home_dir {
+    return $home_dir;
+}
+
+sub get_netspoc {
+    return $netspoc;
 }
 
 1;

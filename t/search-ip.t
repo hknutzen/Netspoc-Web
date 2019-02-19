@@ -5,7 +5,7 @@ use Test::More;
 use lib 't';
 
 use PolicyWeb::Init;
-use PolicyWeb::BackendTest;
+use PolicyWeb::Backend;
 
 ############################################################
 # Netspoc configuration
@@ -150,7 +150,7 @@ END
 ############################################################
 
 prepare_export($data);
-PolicyWeb::BackendTest::prepare_runtime();
+PolicyWeb::Backend::prepare_runtime();
 
 my ($path, $params, $owner, $out, $title);
 $path = 'service_list';

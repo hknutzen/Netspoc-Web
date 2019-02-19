@@ -1,5 +1,5 @@
 
-package PolicyWeb::BackendTest;
+package PolicyWeb::Backend;
 
 use strict;
 use Test::More;

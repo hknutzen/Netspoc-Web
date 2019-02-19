@@ -21,6 +21,7 @@ our @ISA    = qw(Exporter);
 our @EXPORT = qw(
   prepare_export
   prepare_runtime
+  get_export_dir
   );
 
 our @EXPORT_OK = qw(
@@ -28,16 +29,20 @@ our @EXPORT_OK = qw(
   $port
   $policy
   $SERVER
+  $export_dir
+  $home_dir
+  $netspoc
   );
 
 our $SERVER = "127.0.0.1";
 our $port;
 our $policy = 'p1';
+our $export_dir;
 
 ############################################################
 # Shared Netspoc configuration
 ############################################################
-my $netspoc = <<'END';
+our $netspoc = <<'END';
 owner:x = { admins = guest; show_all; }
 owner:y = { admins = guest; }
 owner:z = { admins = guest; }
@@ -155,9 +160,7 @@ service:Test11 = {
 END
 ############################################################
 
-my $server;
-
-my $export_dir = tempdir(CLEANUP => 1);
+$export_dir = tempdir(CLEANUP => 1);
 
 sub prepare_in_dir {
     my ($input) = @_;
@@ -213,20 +216,24 @@ sub prepare_export {
     system("cd $export_dir; ln -s $policy current") == 0           or die;
 }
 
-my $home_dir  = tempdir(CLEANUP => 1);
+our $home_dir  = tempdir(CLEANUP => 1);
 my $conf_file = "$home_dir/policyweb.conf";
 my $conf_data = <<END;
 {
  "netspoc_data"         : "$export_dir",
+ "user_dir"             : "$home_dir/users",
  "session_dir"          : "$home_dir/sessions",
- "noreply_address"      : "",
- "user_dir"             : "",
+ "noreply_address"      : "noreply",
  "business_units"       : "",
 }
 END
 
 our $cookie;
 our $app;
+
+# $server needs to be global, otherwise the plack server 
+# would get deleted after prepare_runtime_base
+my $server;
 
 sub prepare_runtime_base {
     my $opts = shift;

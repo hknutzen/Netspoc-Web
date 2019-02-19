@@ -18,6 +18,7 @@ along with this program. If not, see <http://www.gnu.org/licenses/>.
 
 Ext.define(
     'PolicyWeb.view.combo.HistoryCombo', {
+        id             : 'list_diff_policies',
         extend         : 'Ext.form.field.ComboBox',
         alias          : 'widget.historycombo',
         store          : 'History',
