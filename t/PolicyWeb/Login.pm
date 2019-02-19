@@ -49,7 +49,7 @@ sub test {
 
                 $driver->find_element('btn_login')->click;
 
-                ok($driver->get_current_url() =~ /app.html/, "login as guest successeful");
+                ok($driver->get_current_url() =~ /app.html/, "login as guest");
             };
 
             subtest "choose owner" => sub {
@@ -59,7 +59,7 @@ sub test {
 
                 $driver->choose_owner($owner);
 
-                pass("owner $owner selcected");
+                pass("owner $owner selected");
             };
 
             find_top_buttons($driver);

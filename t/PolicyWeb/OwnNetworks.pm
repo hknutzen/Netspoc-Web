@@ -70,7 +70,7 @@ sub test_own_networks_grid {
         }
 
         ok( $driver->is_order_after_change(\$own_networks_grid, \4, \1, \@grid_heads, \0),
-            "own networks grid order changes correctly");
+            "own networks grid order changes");
 
         # back to standart
         $grid_heads[1]->click;
@@ -112,12 +112,12 @@ sub test_resources_grid {
 
         my @names = ('host:B10', 'host:Range', 'interface:asa.Big', 'interface:u.Big');
         ok($driver->grid_contains(\$resources_grid, \3, \1, \@names),
-            "networkresources are corret for network:Big");
+            "networkresources for network:Big");
 
         $grid_head_right[1]->click;
 
         ok( $driver->is_order_after_change(\$resources_grid, \3, \0, \@grid_head_right, \1),
-            "resources grid order changes correctly");
+            "resources grid order changes");
 
         $driver->select_by_key(\@networks_grid_cells, 4, 2, "network:Kunde");
 
@@ -128,7 +128,7 @@ sub test_resources_grid {
         push(@names, ('host:k', 'interface:asa.Kunde'));
 
         ok($driver->grid_contains(\$resources_grid, \3, \1, \@names),
-            "networkresources are corret for network:Big and network:Kunde");
+            "networkresources for network:Big and network:Kunde");
 
         # for checking correct syntax
         my @res_reg = ('(1\d\d|\d\d|\d)\.(1\d\d|\d\d|\d)\.(1\d\d|\d\d|\d)\.(1\d\d|\d\d|\d)',
@@ -148,7 +148,7 @@ sub test_resources_grid {
         @names = ('host:k', 'interface:asa.Kunde');
 
         ok($driver->grid_contains(\$resources_grid, \3, \1, \@names),
-            "networkresources are corret while network:Big is collapsed");
+            "networkresources while network:Big is collapsed");
 
         $driver->find_element('btn_cancel_network_selection')->click;
 
