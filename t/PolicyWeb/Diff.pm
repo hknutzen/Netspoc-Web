@@ -5,6 +5,7 @@ use strict;
 use warnings;
 use Test::More;
 use PolicyWeb::CleanupDaily;
+use Selenium::Waiter qw/wait_until/;
 
 sub test {
 
@@ -13,6 +14,7 @@ sub test {
     plan tests => 2;
 
     eval {
+        $driver->set_implicit_wait_timeout(200);
         setup($driver);
 
         services($driver);
@@ -21,7 +23,6 @@ sub test {
 
         # other test work with the old policy
         fallback($driver);
-        # sleep 1000;
     };
     if ($@) { print $@ , "\n"; }
 }
@@ -34,7 +35,7 @@ sub services {
 
         plan tests => 4;
 
-        $driver->find_element('btn_services_tab')->click;
+        wait_until { $driver->find_element('btn_services_tab')->click };
         $driver->find_element('btn_own_services')->click;
 
         my $lp = $driver->find_element('pnl_services');
@@ -44,7 +45,7 @@ sub services {
         my $find_Test10;
         my $find_Test11;
         my $find_Test12;
-        
+
         for (my $i = 0 ; $i < @grid ; $i++) {
             if ($grid[$i]->get_text eq "Test10") {
                 $find_Test10 = $grid[$i];
@@ -56,14 +57,14 @@ sub services {
                 $find_Test12 = $grid[$i];
             }
         }
-        
+
         ok(!$find_Test10, "Test10 removed");
-        ok($find_Test11, "found service:\tTest11");
-        ok($find_Test12, "found service:\tTest12");
+        ok($find_Test11,  "found service:\tTest11");
+        ok($find_Test12,  "found service:\tTest12");
 
         # changed Protokoll tcp 84 -> tcp 83
         $find_Test11->click;
-        my $rp = $driver->find_element('pnl_service_details');
+        my $rp      = $driver->find_element('pnl_service_details');
         my @details = $driver->find_child_elements($rp, 'x-grid-cell', 'class');
         ok($details[3]->get_text eq "tcp 83", "changed protokoll of Test11");
     };
@@ -75,32 +76,92 @@ sub diff {
 
     subtest "check diff" => sub {
 
-        #plan tests => todo;
+        plan tests => 6;
 
         $driver->find_element('btn_diff_tab')->click;
 
-        my $pnl = $driver->find_element('pnl_diff');
+        my $pnl_diff = $driver->find_element('pnl_diff');
 
-        my $combo = $driver->find_child_element($pnl, 'list_diff_policies');
+        ok(
+            $driver->find_child_element($pnl_diff, '//div[text()="Vergleiche mit"]', 'xpath'
+                                       ),
+            "found text:\t'Vergleiche mit'"
+          );
+
+        my $combo = $driver->find_child_element($pnl_diff, 'list_diff_policies');
+        ok($combo, "found combo:\tolder policies");
+
+        ok($driver->find_child_element($pnl_diff, 'btn_diff_tooltip'),
+            "found button:\ttooltip");
+
+        ok($driver->find_child_element($pnl_diff, 'x-form-checkbox', 'class'),
+            "found checkbox:\tsend diffs per mail");
+
+        my $pnl_tree = $driver->find_child_element($pnl_diff, 'x-panel-body', 'class');
+
+        my @tree = $driver->find_child_elements($pnl_tree, './/tr', 'xpath');
+
+        ok( scalar @tree == 1
+              && $tree[0]->get_text =~ /Bitte Stand ausw.hlen in "Vergleiche mit"./,
+            "no tree without choosen policy"
+          );
+
+        # select old policy to get diff
         $combo->click;
-
-
         my @boundlists = $driver->find_elements('x-boundlist', 'class');
         my @histories;
-        for (my $i = 0; $i < @boundlists; $i++) {
-            print $boundlists[$i]->get_text, "\n";
+        for (my $i = 0 ; $i < @boundlists ; $i++) {
             if ($boundlists[$i]->get_text) {
-                @histories = $driver->find_child_elements($boundlists[$i], 'x-boundlist-item', 'class');
+                @histories =
+                  $driver->find_child_elements($boundlists[$i], 'x-boundlist-item', 'class');
             }
         }
+        wait_until { $histories[0]->click };
 
-        $histories[0]->click;
+        # tree needs to be loaded
+        sleep 1;
+        @tree = $driver->find_child_elements($pnl_tree, './/tr', 'xpath');
 
-        my $pnl_diff;
-
-        ok(1, "okay");
-
-        sleep 4;
+        my $check = 1;
+        $check &= $tree[0]->get_text eq "Unterschiede";
+        $check &= $tree[1]->get_text eq "Dienste";
+        $check &= $tree[2]->get_text eq "Test11";
+        $check &= $tree[3]->get_text eq "rules";
+        $check &= $tree[4]->get_text eq "1";
+        $check &= $tree[5]->get_text eq "prt";
+        $check &= (
+               $driver->find_child_element($tree[6], './/img[contains(@class, "icon-add")]',
+                                           'xpath'
+                 ) ? 1 : 0
+        );
+        $check &= $tree[7]->get_text eq "tcp 83";
+        $check &= (
+            $driver->find_child_element($tree[8], './/img[contains(@class, "icon-delete")]',
+                                        'xpath'
+              ) ? 1 : 0
+        );
+        $check &= $tree[9]->get_text eq "tcp 84";
+        $check &= $tree[10]->get_text eq "Liste eigener Dienste";
+        $check &= (
+            $driver->find_child_element($tree[11],
+                                        './/img[contains(@class, "icon-page_edit")]', 'xpath')
+            ? 1
+            : 0
+        );
+        $check &= $tree[12]->get_text eq "Test11";
+        $check &= (
+              $driver->find_child_element($tree[13], './/img[contains(@class, "icon-add")]',
+                                          'xpath'
+                ) ? 1 : 0
+        );
+        $check &= $tree[14]->get_text eq "Test12";
+        $check &= (
+            $driver->find_child_element($tree[15], './/img[contains(@class, "icon-delete")]',
+                                        'xpath'
+              ) ? 1 : 0
+        );
+        $check &= $tree[16]->get_text eq "Test10";
+        ok($check, "diff tree contains all information");
     };
 }
 
@@ -146,7 +207,19 @@ s/service:Test11(.+\n)*\}\n/service:Test11 = {\n user = network:Sub;\n permit sr
 sub fallback {
     my $driver = shift;
 
-    my $history = $driver->find_element('list_history');
+    $driver->find_element('list_history')->click;
+
+    my @boundlists = $driver->find_elements('x-boundlist', 'class');
+    my @histories;
+    for (my $i = 0 ; $i < @boundlists ; $i++) {
+        if ($boundlists[$i]->get_text) {
+            @histories =
+              $driver->find_child_elements($boundlists[$i], 'x-boundlist-item', 'class');
+        }
+    }
+
+    # choose oldest policy
+    $histories[-1]->click;
 }
 
 1;

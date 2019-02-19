@@ -216,7 +216,7 @@ sub prepare_export {
     system("cd $export_dir; ln -s $policy current") == 0           or die;
 }
 
-our $home_dir  = tempdir(CLEANUP => 1);
+our $home_dir = tempdir(CLEANUP => 1);
 my $conf_file = "$home_dir/policyweb.conf";
 my $conf_data = <<END;
 {
@@ -231,7 +231,7 @@ END
 our $cookie;
 our $app;
 
-# $server needs to be global, otherwise the plack server 
+# $server needs to be global, otherwise the plack server
 # would get deleted after prepare_runtime_base
 my $server;
 
@@ -256,7 +256,7 @@ sub prepare_runtime_base {
           Plack::App::File->new(root => "/home/$ENV{USER}/Netspoc-Web")->to_app;
         mount "/backend" => $netspoc_psgi;
     };
-    
+
     $server = Plack::Test::Server->new($app);
     $port   = $server->port();
 }

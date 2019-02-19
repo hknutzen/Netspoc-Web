@@ -22,12 +22,12 @@ sub test {
                                        'x-grid-cell', 'class');
 
         test_resources_grid($driver, \@networks_grid_cells);
-        
-        test_print($driver, \@networks_grid_cells);          
+
+        test_print($driver, \@networks_grid_cells);
 
         test_selection_and_services($driver, \@networks_grid_cells);
 
-};
+    };
     if ($@) { print $@ , "\n"; }
 }
 
@@ -80,7 +80,7 @@ sub test_own_networks_grid {
 
 sub test_resources_grid {
 
-    my $driver = shift;
+    my $driver              = shift;
     my @networks_grid_cells = @{ (shift) };
 
     subtest "resources grid" => sub {
@@ -159,7 +159,7 @@ sub test_resources_grid {
 
 sub test_selection_and_services {
 
-    my $driver = shift;
+    my $driver              = shift;
     my @networks_grid_cells = @{ (shift) };
 
     subtest "selection and services" => sub {
@@ -241,123 +241,152 @@ sub test_selection_and_services {
     };
 }
 
-sub test_print{
-  
-  my $driver = shift;
-  my @networks_grid_cells = @{ (shift) };
-  
-  subtest print => sub {
-    plan tests => 2;
+sub test_print {
 
-    test_print_own_networks($driver, \@networks_grid_cells);
-    
-    test_print_resources($driver, \@networks_grid_cells);
+    my $driver              = shift;
+    my @networks_grid_cells = @{ (shift) };
 
-    $driver->find_element('btn_cancel_network_selection')->click;
-  };
+    subtest print => sub {
+        plan tests => 2;
+
+        test_print_own_networks($driver, \@networks_grid_cells);
+
+        test_print_resources($driver, \@networks_grid_cells);
+
+        $driver->find_element('btn_cancel_network_selection')->click;
+    };
 }
 
 sub test_print_own_networks {
 
-  my $driver = shift;
-  my @networks_grid_cells = grep { /.*\S.*/ } map {$_->get_text} @{(shift)};
+    my $driver              = shift;
+    my @networks_grid_cells = grep { /.*\S.*/ } map { $_->get_text } @{ (shift) };
 
-  subtest "print own networks" => sub {
-    plan tests => 6;
-    
-    # go to print tab
-    $driver->find_element('btn_print_own_networks')->click;
-    my $handles = $driver->get_window_handles;
-    $driver->switch_to_window($handles->[1]);
-    ok($driver->get_title() eq "Druckansicht", "switched to a print tab");
-    
-    my $winprin = $driver->find_element('x-ux-grid-printer', 'class');
-    
-    # check for control buttons
-    my @p_bnts = $driver->find_child_elements($driver->find_child_element($winprin, 'x-ux-grid-printer-noprint', 'class'),'//a', 'xpath');
-    ok($p_bnts[0]->get_text eq 'Drucken',   "found button:\t'Drucken'");
-    ok($p_bnts[1]->get_text =~ /Schlie.en/, "found button:\t'Schließen'");
+    subtest "print own networks" => sub {
+        plan tests => 6;
 
-    # compare
-    my @print_head = map { $_->get_text } $driver->find_child_elements($winprin, './/th', 'xpath');
-    ok( $print_head[0] eq "IP-Adresse" 
-      & $print_head[1] eq "Name" 
-      & $print_head[2] eq "Verantwortungsbereich", "print grid header are correct");
+        # go to print tab
+        $driver->find_element('btn_print_own_networks')->click;
+        my $handles = $driver->get_window_handles;
+        $driver->switch_to_window($handles->[1]);
+        ok($driver->get_title() eq "Druckansicht", "switched to a print tab");
 
-    my @print_cells = map {$_->get_text} $driver->find_child_elements($winprin, './/td', 'xpath');
-    ok ($driver->comp_array (\@networks_grid_cells, \@print_cells), "print contains same grid");
+        my $winprin = $driver->find_element('x-ux-grid-printer', 'class');
 
-    # close print tab and go back
-    $p_bnts[1]->click;
-    $handles = $driver->get_window_handles;
-    ok(scalar @{$handles} == 1, "button clicked:\t'Schließen'");
-    $driver->switch_to_window($handles->[0]);    
-  };
+        # check for control buttons
+        my @p_bnts =
+          $driver->find_child_elements(
+                                       $driver->find_child_element(
+                                                  $winprin, 'x-ux-grid-printer-noprint', 'class'
+                                                                  ),
+                                       '//a', 'xpath'
+                                      );
+        ok($p_bnts[0]->get_text eq 'Drucken', "found button:\t'Drucken'");
+        ok($p_bnts[1]->get_text =~ /Schlie.en/, "found button:\t'Schließen'");
+
+        # compare
+        my @print_head =
+          map { $_->get_text } $driver->find_child_elements($winprin, './/th', 'xpath');
+        ok( $print_head[0] eq "IP-Adresse" & $print_head[1] eq "Name" &
+              $print_head[2] eq "Verantwortungsbereich",
+            "print grid header are correct"
+          );
+
+        my @print_cells =
+          map { $_->get_text } $driver->find_child_elements($winprin, './/td', 'xpath');
+        ok($driver->comp_array(\@networks_grid_cells, \@print_cells),
+            "print contains same grid");
+
+        # close print tab and go back
+        $p_bnts[1]->click;
+        $handles = $driver->get_window_handles;
+        ok(scalar @{$handles} == 1, "button clicked:\t'Schließen'");
+        $driver->switch_to_window($handles->[0]);
+    };
 }
 
 sub test_print_resources {
 
-  my $driver = shift;
-  my @networks_grid_cells = @{(shift)};
+    my $driver              = shift;
+    my @networks_grid_cells = @{ (shift) };
 
-  subtest "print resources" => sub {
-    plan tests => 6;
+    subtest "print resources" => sub {
+        plan tests => 6;
 
-    # select networks
-    $driver->select_by_key(\@networks_grid_cells, 4, 2, "network:Big");
-    $driver->select_by_key(\@networks_grid_cells, 4, 2, "network:Kunde");
+        # select networks
+        $driver->select_by_key(\@networks_grid_cells, 4, 2, "network:Big");
+        $driver->select_by_key(\@networks_grid_cells, 4, 2, "network:Kunde");
 
-    # collect resources data
-    my $res_panel = $driver->find_element('grid_network_resources');
-    my @res_header = map {$_->get_text} $driver->find_child_elements($res_panel, 'x-column-header', 'class');
-    my @res_grid = map {$_->get_text} $driver->find_child_elements($res_panel, './/*[contains(@class, "x-grid-group-title") or contains(@class, "x-grid-data-row")]', 'xpath');
+        # collect resources data
+        my $res_panel  = $driver->find_element('grid_network_resources');
+        my @res_header = map { $_->get_text }
+          $driver->find_child_elements($res_panel, 'x-column-header', 'class');
+        my @res_grid = map { $_->get_text }
+          $driver->find_child_elements(
+            $res_panel,
+'.//*[contains(@class, "x-grid-group-title") or contains(@class, "x-grid-data-row")]',
+            'xpath'
+          );
 
-    # go to print tab
-    $driver->find_element('btn_print_network_resources')->click;
-    my $handles = $driver->get_window_handles;
-    $driver->switch_to_window($handles->[1]);
-    ok($driver->get_title() eq "Druckansicht", "switched to a print tab");
-    
-    my $winprin = $driver->find_element('x-ux-grid-printer', 'class');
-    
-    # check for control buttons
-    my @p_bnts = $driver->find_child_elements($driver->find_child_element($winprin, 'x-ux-grid-printer-noprint', 'class'),'//a', 'xpath');
-    ok($p_bnts[0]->get_text eq 'Drucken',   "found button:\t'Drucken'");
-    ok($p_bnts[1]->get_text =~ /Schlie.en/, "found button:\t'Schließen'");
+        # go to print tab
+        $driver->find_element('btn_print_network_resources')->click;
+        my $handles = $driver->get_window_handles;
+        $driver->switch_to_window($handles->[1]);
+        ok($driver->get_title() eq "Druckansicht", "switched to a print tab");
 
-    # compare headers
-    my @print_head = map { $_->get_text } $driver->find_child_elements($winprin, './/th', 'xpath');
-    my $is_ok = 1;
-    for (my $i = 1; $i < @res_header; $i++) {
-      # $i starts at 1 because the first resources header is for some reason empty
-      if ($res_header[$i] ne $print_head[$i-1]) { 
-        $is_ok = 0; 
-        print "at $i: $res_header[$i] ne $print_head[$i-1]\n";
-        last;
-      }
-    }
-    ok( $is_ok, "print grid header are correct");
+        my $winprin = $driver->find_element('x-ux-grid-printer', 'class');
 
-    # collect print grid
-    my @print_grid = $driver->find_child_elements($winprin, './/*[contains(@class, "group-header") or contains(@class, "odd") or contains(@class, "even")]', 'xpath');
-    shift @print_grid;
+        # check for control buttons
+        my @p_bnts =
+          $driver->find_child_elements(
+                                       $driver->find_child_element(
+                                                  $winprin, 'x-ux-grid-printer-noprint', 'class'
+                                                                  ),
+                                       '//a', 'xpath'
+                                      );
+        ok($p_bnts[0]->get_text eq 'Drucken', "found button:\t'Drucken'");
+        ok($p_bnts[1]->get_text =~ /Schlie.en/, "found button:\t'Schließen'");
 
-    # compare grids
-    $is_ok = scalar @res_grid eq scalar @print_grid;
-    for (my $i = 0; $i < @print_grid; $i++) {
-      if ($res_grid[$i] ne $print_grid[$i]->get_text){
-        $is_ok = 0;
-        print "at $i: $res_grid[$i] ne ", $print_grid[$i]->get_text, "\n";        
-      }
-    }
-    ok($is_ok, "print contains same grid");
-    
-    # close print tab and go back
-    $p_bnts[1]->click;
-    $handles = $driver->get_window_handles;
-    ok(scalar @{$handles} == 1, "button clicked:\t'Schließen'");
-    $driver->switch_to_window($handles->[0]);
-  };
+        # compare headers
+        my @print_head =
+          map { $_->get_text } $driver->find_child_elements($winprin, './/th', 'xpath');
+        my $is_ok = 1;
+        for (my $i = 1 ; $i < @res_header ; $i++) {
+
+            # $i starts at 1 because the first resources header is for some reason empty
+            if ($res_header[$i] ne $print_head[ $i - 1 ]) {
+                $is_ok = 0;
+                print "at $i: $res_header[$i] ne $print_head[$i-1]\n";
+                last;
+            }
+        }
+        ok($is_ok, "print grid header are correct");
+
+        # collect print grid
+        my @print_grid =
+          $driver->find_child_elements(
+            $winprin,
+'.//*[contains(@class, "group-header") or contains(@class, "odd") or contains(@class, "even")]',
+            'xpath'
+          );
+        shift @print_grid;
+
+        # compare grids
+        $is_ok = scalar @res_grid eq scalar @print_grid;
+        for (my $i = 0 ; $i < @print_grid ; $i++) {
+            if ($res_grid[$i] ne $print_grid[$i]->get_text) {
+                $is_ok = 0;
+                print "at $i: $res_grid[$i] ne ", $print_grid[$i]->get_text, "\n";
+            }
+        }
+        ok($is_ok, "print contains same grid");
+
+        # close print tab and go back
+        $p_bnts[1]->click;
+        $handles = $driver->get_window_handles;
+        ok(scalar @{$handles} == 1, "button clicked:\t'Schließen'");
+        $driver->switch_to_window($handles->[0]);
+    };
 }
 
 1;

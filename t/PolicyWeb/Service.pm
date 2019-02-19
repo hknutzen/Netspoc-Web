@@ -4,7 +4,6 @@ package PolicyWeb::Service;
 use strict;
 use warnings;
 use Test::More;
-use Selenium::Waiter qw/wait_until/;
 
 sub test {
 
@@ -148,12 +147,18 @@ sub test_print_services {
         my $winprin = $driver->find_element('x-ux-grid-printer', 'class');
 
         my @p_bnts =
-          $driver->find_child_elements( $driver->find_child_element( $winprin, 'x-ux-grid-printer-noprint', 'class' ), '//a', 'xpath' );
+          $driver->find_child_elements(
+                                       $driver->find_child_element(
+                                                  $winprin, 'x-ux-grid-printer-noprint', 'class'
+                                                                  ),
+                                       '//a', 'xpath'
+                                      );
 
-        ok($p_bnts[0]->get_text eq 'Drucken',   "found button:\t'Drucken'");
+        ok($p_bnts[0]->get_text eq 'Drucken', "found button:\t'Drucken'");
         ok($p_bnts[1]->get_text =~ /Schlie.en/, "found button:\t'Schließen'");
 
-        my @print_cells = map {$_->get_text} $driver->find_child_elements($winprin, '//td', 'xpath');
+        my @print_cells =
+          map { $_->get_text } $driver->find_child_elements($winprin, '//td', 'xpath');
 
         my $same_header =
           $service_head eq
@@ -176,28 +181,38 @@ sub test_print_all_services {
 
     subtest "test print all services" => sub {
         plan tests => 8;
-        
+
         my $cb_expand_users = $driver->find_element('cb_expand_users');
-        my $cb_show_names = $driver->find_element('cb_show_names');
+        my $cb_show_names   = $driver->find_element('cb_show_names');
 
         my $pnl_services = $driver->find_element('pnl_services');
         $driver->find_child_element($pnl_services, 'x-column-header', 'class')->click;
-        my @services = map {$_->get_text} $driver->find_child_elements($pnl_services, 'x-grid-cell', 'class');
+        my @services = map { $_->get_text }
+          $driver->find_child_elements($pnl_services, 'x-grid-cell', 'class');
 
         $driver->find_element('btn_services_print_all')->click;
 
         my $pnl_print = $driver->find_element('window_print_services');
         ok($pnl_print, "all services opend for services + details");
 
-        my @all_services = map {$_->get_text} $driver->find_child_elements($pnl_print, './/*[contains(@class, "x-grid-group-title") or contains(@class, "x-grid-data-row")]', 'xpath');
-        
+        my @all_services = map { $_->get_text }
+          $driver->find_child_elements(
+            $pnl_print,
+'.//*[contains(@class, "x-grid-group-title") or contains(@class, "x-grid-data-row")]',
+            'xpath'
+          );
+
         #my $regex = 'permit\sUser\s(network|any|host):.+\s(udp|tcp)\s\d+';
-        my $regex = 'permit\sUser\s(User|(\d+\.\d+\.\d+\.\d+(\/\d+\.\d+\.\d+\.\d+)?))\s(udp|tcp)\s\d+';
-        
-        ok(check_all_services(\@all_services, \@services, $regex), "all services contains correct data");
+        my $regex =
+'permit\sUser\s(User|(\d+\.\d+\.\d+\.\d+(\/\d+\.\d+\.\d+\.\d+)?))\s(udp|tcp)\s\d+';
+
+        ok(check_all_services(\@all_services, \@services, $regex),
+            "all services contains correct data");
 
         # cannot find close button for print preview, if the window is to small
-        $driver->find_child_element($pnl_print, './/*[contains(@class, "x-tool-after-title")]', 'xpath')->click;
+        $driver->find_child_element($pnl_print,
+                                    './/*[contains(@class, "x-tool-after-title")]', 'xpath')
+          ->click;
 
         # print_all_services should now conain diffrent data after:
         $cb_expand_users->click;
@@ -206,14 +221,21 @@ sub test_print_all_services {
         $driver->find_element('btn_services_print_all')->click;
         $pnl_print = $driver->find_element('window_print_services');
 
-        @all_services = map {$_->get_text} $driver->find_child_elements($pnl_print, './/*[contains(@class, "x-grid-group-title") or contains(@class, "x-grid-data-row")]', 'xpath');
+        @all_services = map { $_->get_text }
+          $driver->find_child_elements(
+            $pnl_print,
+'.//*[contains(@class, "x-grid-group-title") or contains(@class, "x-grid-data-row")]',
+            'xpath'
+          );
 
         $regex = 'permit\s((network|any|host|interface):.+\s)+(udp|tcp)\s\d+';
 
-        ok(check_all_services(\@all_services, \@services, $regex), "all services contains correct data for diffrent options at service details");
+        ok(check_all_services(\@all_services, \@services, $regex),
+            "all services contains correct data for diffrent options at service details");
 
         # check if the print_previews contains the same data
-        $driver->find_child_element($pnl_print, './/a[contains(@id, "printbutton")]', 'xpath')->click;
+        $driver->find_child_element($pnl_print, './/a[contains(@id, "printbutton")]',
+                                    'xpath')->click;
         my $handles = $driver->get_window_handles;
         $driver->switch_to_window($handles->[1]);
 
@@ -222,15 +244,22 @@ sub test_print_all_services {
         my $winprin = $driver->find_element('x-ux-grid-printer', 'class');
 
         my @p_bnts =
-          $driver->find_child_elements( $driver->find_child_element( $winprin, 'x-ux-grid-printer-noprint', 'class' ), '//a', 'xpath' );
+          $driver->find_child_elements(
+                                       $driver->find_child_element(
+                                                  $winprin, 'x-ux-grid-printer-noprint', 'class'
+                                                                  ),
+                                       '//a', 'xpath'
+                                      );
 
-        ok($p_bnts[0]->get_text eq 'Drucken',   "found button:\t'Drucken'");
+        ok($p_bnts[0]->get_text eq 'Drucken', "found button:\t'Drucken'");
         ok($p_bnts[1]->get_text =~ /Schlie.en/, "found button:\t'Schließen'");
 
-        my @print_cells = map {$_->get_text} $driver->find_child_elements($winprin, '//tr', 'xpath');
+        my @print_cells =
+          map { $_->get_text } $driver->find_child_elements($winprin, '//tr', 'xpath');
 
-        my @slice = @print_cells[2..scalar @print_cells-1];
-        ok($driver->comp_array(\@slice, \@all_services), "print preview contains all information");
+        my @slice = @print_cells[ 2 .. scalar @print_cells - 1 ];
+        ok($driver->comp_array(\@slice, \@all_services),
+            "print preview contains all information");
 
         $p_bnts[1]->click;
         $handles = $driver->get_window_handles;
@@ -238,7 +267,9 @@ sub test_print_all_services {
         $driver->switch_to_window($handles->[0]);
 
         # cannot find close button for print preview, if the window is to small
-        $driver->find_child_element($pnl_print, './/*[contains(@class, "x-tool-after-title")]', 'xpath')->click;
+        $driver->find_child_element($pnl_print,
+                                    './/*[contains(@class, "x-tool-after-title")]', 'xpath')
+          ->click;
 
         # back to normal
         $cb_expand_users->click;
@@ -249,39 +280,40 @@ sub test_print_all_services {
 
 sub check_all_services {
 
-    my @pap = @{ ( shift) };
-    my @services = @{(shift)};
-    my $regex = shift;
+    my @pap      = @{ (shift) };
+    my @services = @{ (shift) };
+    my $regex    = shift;
 
     my $count = 0;
     my $is_ok = 1;
-        
-    for (my $i = 0 ; $i < @pap ; $i++) { 
-        if ($pap[$i] =~ /Dienst:\s(.*)\s\((\d+)\sRegeln?\)/ ){
-                
-        # $1 : service name
-        # $2 : amount of rules
-        # print "1:$1\n2:$2\n";
 
-        if($1 ne $services[$count++]){
-            print "$1 ne $services[$count-1]\n";
-            $is_ok = 0;
-            last;
-        }
+    for (my $i = 0 ; $i < @pap ; $i++) {
+        if ($pap[$i] =~ /Dienst:\s(.*)\s\((\d+)\sRegeln?\)/) {
 
-        for (my $j = 1; $j <= $2; $j++) {
-            if (!($pap[$j+$i] =~ /$regex/)){
-                print "-> $pap[$j+$i] \n!=~ $regex\n";
+            # $1 : service name
+            # $2 : amount of rules
+            # print "1:$1\n2:$2\n";
+
+            if ($1 ne $services[ $count++ ]) {
+                print "$1 ne $services[$count-1]\n";
                 $is_ok = 0;
                 last;
             }
-        }
-                
+
+            for (my $j = 1 ; $j <= $2 ; $j++) {
+                if (!($pap[ $j + $i ] =~ /$regex/)) {
+                    print "-> $pap[$j+$i] \n!=~ $regex\n";
+                    $is_ok = 0;
+                    last;
+                }
+            }
+
             $i += $2;
-        } else {
+        }
+        else {
             print "something is wrong at index $i:\n$pap[$i]\n";
             $is_ok = 0;
-            last; 
+            last;
         }
     }
     return $is_ok;
@@ -302,6 +334,7 @@ sub service_details {
     $driver->find_element('btn_confirm_network_selection')->click;
     $driver->find_element('btn_cancel_network_selection')->click;
     $driver->find_element('btn_services_tab')->click;
+
     # ^ could be deletet if own_networks runs before service
 
     my $lp      = $driver->find_element('pnl_services');
@@ -406,14 +439,15 @@ sub service_details {
 sub test_print_details {
 
     my $driver = shift;
-    my $grid = shift;
+    my $grid   = shift;
 
     subtest "test print details" => sub {
-        
+
         plan tests => 6;
-        
-        my @grid_rules = map {$_->get_text} $driver->find_child_elements($grid, './/td', 'xpath');
-        
+
+        my @grid_rules =
+          map { $_->get_text } $driver->find_child_elements($grid, './/td', 'xpath');
+
         $driver->find_element('btn_print_rules')->click;
 
         my $handles = $driver->get_window_handles;
@@ -422,41 +456,58 @@ sub test_print_details {
         my $winprin = $driver->find_element('x-ux-grid-printer', 'class');
 
         my @p_bnts =
-          $driver->find_child_elements( $driver->find_child_element( $winprin, 'x-ux-grid-printer-noprint', 'class' ), '//a', 'xpath' );
+          $driver->find_child_elements(
+                                       $driver->find_child_element(
+                                                  $winprin, 'x-ux-grid-printer-noprint', 'class'
+                                                                  ),
+                                       '//a', 'xpath'
+                                      );
 
-        ok($p_bnts[0]->get_text eq 'Drucken',   "found button:\t'Drucken'");
+        ok($p_bnts[0]->get_text eq 'Drucken', "found button:\t'Drucken'");
         ok($p_bnts[1]->get_text =~ /Schlie.en/, "found button:\t'Schließen'");
-        
+
         my @header = ("Aktion", "Quelle", "Ziel", "Protokoll");
-        my @print_header = map {$_->get_text} $driver->find_child_elements($winprin, './/th', 'xpath');
+        my @print_header =
+          map { $_->get_text } $driver->find_child_elements($winprin, './/th', 'xpath');
         ok($driver->comp_array(\@header, \@print_header), "print header are correct");
 
-        my @print_cells = map {$_->get_text} $driver->find_child_elements($winprin, './/td', 'xpath');        
+        my @print_cells =
+          map { $_->get_text } $driver->find_child_elements($winprin, './/td', 'xpath');
 
-        ok($driver->comp_array(\@grid_rules, \@print_cells), "print preview contains all service rules");
+        ok($driver->comp_array(\@grid_rules, \@print_cells),
+            "print preview contains all service rules");
 
         # change service details to check if print preview also changes
         $p_bnts[1]->click;
         $handles = $driver->get_window_handles;
         ok(scalar @{$handles} == 1, "button clicked:\t'Schließen'");
         $driver->switch_to_window($handles->[0]);
-        
-        sleep 5; # some infotext, which does not disapear earlier
+
+        sleep 5;    # some infotext, which does not disapear earlier
 
         $driver->find_element('cb_expand_users')->click;
         $driver->find_element('cb_show_names')->click;
 
-        @grid_rules = map {$_->get_text} $driver->find_child_elements($grid, './/td', 'xpath');
+        @grid_rules =
+          map { $_->get_text } $driver->find_child_elements($grid, './/td', 'xpath');
 
         $driver->find_element('btn_print_rules')->click;
         $handles = $driver->get_window_handles;
         $driver->switch_to_window($handles->[1]);
         $winprin = $driver->find_element('x-ux-grid-printer', 'class');
-        @p_bnts = $driver->find_child_elements( $driver->find_child_element( $winprin, 'x-ux-grid-printer-noprint', 'class' ), '//a', 'xpath' );
+        @p_bnts = $driver->find_child_elements(
+                                               $driver->find_child_element(
+                                                          $winprin, 'x-ux-grid-printer-noprint',
+                                                          'class'
+                                                                          ),
+                                               '//a', 'xpath'
+                                              );
 
-        @print_cells = map {$_->get_text} $driver->find_child_elements($winprin, './/td', 'xpath');  
+        @print_cells =
+          map { $_->get_text } $driver->find_child_elements($winprin, './/td', 'xpath');
 
-        ok($driver->comp_array(\@grid_rules, \@print_cells), "print preview contains service rules after change");
+        ok($driver->comp_array(\@grid_rules, \@print_cells),
+            "print preview contains service rules after change");
 
         $p_bnts[1]->click;
         $handles = $driver->get_window_handles;
@@ -644,7 +695,9 @@ sub search_tab {
 
         # filter nach Suche
 
-        my @service_grid = $driver->find_child_elements($driver->find_element('pnl_services'), 'x-grid-data-row', 'class');
+        my @service_grid =
+          $driver->find_child_elements($driver->find_element('pnl_services'),
+                                       'x-grid-data-row', 'class');
 
         $driver->select_by_key(\@service_grid, 1, 0, "Test9");
 
@@ -658,10 +711,12 @@ sub search_tab {
         $is_ok &= $zeug[1]->get_text eq "10.2.2.2";
         $is_ok &= $zeug[2]->get_text eq "10.2.2.2";
         $is_ok &= $zeug[3]->get_text eq "udp 83";
-        if(!$is_ok){print "0: ", $zeug[0]->get_text,
-                        "\n1: ", $zeug[1]->get_text,
-                        "\n2: ", $zeug[2]->get_text,
-                        "\n3: ", $zeug[3]->get_text, "\n";}
+        if (!$is_ok) {
+            print "0: ", $zeug[0]->get_text,
+              "\n1: ", $zeug[1]->get_text,
+              "\n2: ", $zeug[2]->get_text,
+              "\n3: ", $zeug[3]->get_text, "\n";
+        }
 
         $driver->find_element('cb_filter_search')->click;
         @zeug = $driver->find_child_elements($grid_rules, 'x-grid-cell', 'class');
@@ -670,10 +725,12 @@ sub search_tab {
         $is_ok &= $zeug[1]->get_text eq "10.1.0.10\n10.2.2.2";
         $is_ok &= $zeug[2]->get_text eq "10.1.0.10\n10.2.2.2";
         $is_ok &= $zeug[3]->get_text eq "udp 83";
-        if(!$is_ok){print "0: ", $zeug[0]->get_text,
-                        "\n1: ", $zeug[1]->get_text,
-                        "\n2: ", $zeug[2]->get_text,
-                        "\n3: ", $zeug[3]->get_text, "\n";}
+        if (!$is_ok) {
+            print "0: ", $zeug[0]->get_text,
+              "\n1: ", $zeug[1]->get_text,
+              "\n2: ", $zeug[2]->get_text,
+              "\n3: ", $zeug[3]->get_text, "\n";
+        }
 
         ok($is_ok, "filter for search correcty");
 

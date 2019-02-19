@@ -77,4 +77,3 @@ sub extract_names {
 }
 
 1;
-

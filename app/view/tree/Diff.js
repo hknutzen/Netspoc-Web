@@ -42,7 +42,8 @@ Ext.define(
                 'Vergleiche mit', 
                 combo,
                 ' ',
-                {
+                {   
+                    id                : 'btn_diff_tooltip',
                     xtype             : 'button',
                     text              : 'Diff per Mail senden',
                     handleMouseEvents : false,

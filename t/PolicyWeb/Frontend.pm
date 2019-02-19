@@ -9,12 +9,6 @@ use Selenium::Waiter qw/wait_until/;
 use Plack::Test;
 use PolicyWeb::Init qw( $port $SERVER $export_dir $home_dir $netspoc );
 
-#use base ("Test::Selenium::Remote::Driver");
-#use parent 'Exporter';    # imports and subclasses Exporter
-#use File::Temp qw/ tempfile tempdir /;
-#use Plack::Builder;
-#use HTTP::Request::Common;
-
 our @EXPORT = qw(
   login_as_guest
   select_combobox_item
