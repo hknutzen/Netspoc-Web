@@ -14,23 +14,25 @@ use Test::More;
 use Selenium::Remote::WDKeys;
 use Selenium::Chrome;
 use Selenium::Waiter qw/wait_until/;
-use PolicyWeb::Init qw/$SERVER $port/;
-use PolicyWeb::FrontendTest;
+
+use PolicyWeb::Frontend;
 use PolicyWeb::Login;
 use PolicyWeb::Service;
 use PolicyWeb::OwnNetworks;
 use PolicyWeb::Entitlement;
+use PolicyWeb::Diff;
 
-my $driver = PolicyWeb::FrontendTest::getDriver();
+my $driver = PolicyWeb::Frontend::getDriver();
 
 my %tests = (own_networks => \&PolicyWeb::OwnNetworks::test,
              services     => \&PolicyWeb::Service::test,
              entitlement  => \&PolicyWeb::Entitlement::test,
+             diff         => \&PolicyWeb::Diff::test,
             );
 
 if (!scalar @ARGV) {
 
-    plan tests => 5;
+    plan tests => 6;
 
     subtest login => sub { PolicyWeb::Login::test($driver); };
 
@@ -43,7 +45,7 @@ if (!scalar @ARGV) {
 
         my $logout = $driver->find_element('btn_logout');
 
-        $driver->PolicyWeb::FrontendTest::move_click($logout);
+        $driver->move_click($logout);
 
         ok(wait_until { $driver->get_current_url() =~ /\/index\.html/ },
             "logout successeful");
@@ -55,25 +57,19 @@ else {
     plan tests => scalar @ARGV;
 
     my $with_login = 0;
-    
-    for (my $i = 0 ; $i < @ARGV ; $i++) {
-        
-        if ($ARGV[$i] eq "login"){
-            
-            $with_login = 1;
-            
-            splice @ARGV, $i, 1;
 
+    for (my $i = 0 ; $i < @ARGV ; $i++) {
+        if ($ARGV[$i] eq "login") {
+            $with_login = 1;
+            splice @ARGV, $i, 1;
             last;
         }
     }
 
     if ($with_login) {
-        
         subtest login => sub { PolicyWeb::Login::test($driver); };
     }
     else {
-        
         $driver->login_as_guest_and_choose_owner('x');
     }
 

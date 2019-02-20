@@ -1,5 +1,5 @@
 
-package PolicyWeb::BackendTest;
+package PolicyWeb::Backend;
 
 use strict;
 use Test::More;
@@ -77,4 +77,3 @@ sub extract_names {
 }
 
 1;
-

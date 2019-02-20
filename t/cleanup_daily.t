@@ -5,15 +5,16 @@ use warnings;
 use Test::More;
 use Test::Differences;
 use lib 'bin';
+use lib 't';
 use IPC::Run3;
 use File::Temp qw/ tempfile tempdir /;
 use Cwd 'abs_path';
 use File::Find;
 use Plack::Test;
 use JSON;
-
 use Load_Config;
 use User_Store;
+use PolicyWeb::CleanupDaily;
 
 my $export_dir = tempdir(CLEANUP => 1);
 my $home_dir   = tempdir(CLEANUP => 1);
@@ -45,13 +46,6 @@ sub write_file {
     close $fh;
 }
 
-sub make_visible {
-    my ($path) = @_;
-    my $abs = abs_path($path) or die "Can't find '$path' directory: $!";
-    -d "$home_dir/NetspocWeb" or mkdir "$home_dir/NetspocWeb" or die $!;
-    symlink $abs, "$home_dir/NetspocWeb/$path" or die $!;
-}
-
 sub prepare {
 
     # Prepare config file used by cleanup_daily.
@@ -61,10 +55,10 @@ sub prepare {
     $ENV{HOME} = $home_dir;
 
     # Called scripts are searched in ~/NetspocWeb/bin/
-    make_visible('bin');
+    make_visible($home_dir, 'bin');
 
     # Templates in subdirectory 'mail' are used in send_diff.pl
-    make_visible('mail');
+    make_visible($home_dir, 'mail');
 
     # Create users directory
     # - to calm down del_obsolete_users.pl and
@@ -97,43 +91,6 @@ sub set_old_time {
 sub inc_time_by_days {
     my ($n) = @_;
     $timestamp += $n * $one_day;
-}
-
-sub set_timestamp_of_files {
-    my ($path) = @_;
-    find(sub { -f and utime($timestamp, $timestamp, $_) }, $path);
-}
-
-sub export_netspoc {
-    my ($input) = @_;
-    my $policy = "p$policy_num";
-    $policy_num++;
-    my ($in_fh, $filename) = tempfile(UNLINK => 1);
-    print $in_fh $input;
-    close $in_fh;
-
-    my $policy_path = "$export_dir/$policy";
-    my $cmd =
-"perl /home/$ENV{USER}/Netspoc/bin/export-netspoc -quiet $filename $policy_path";
-    my ($stdout, $stderr);
-    run3($cmd, \undef, \$stdout, \$stderr);
-    my $status = $?;
-    $status == 0 or die "Export failed:\n$stderr\n";
-    $stderr and die "Unexpected output during export:\n$stderr\n";
-    system("echo '# $policy #' > $policy_path/POLICY") == 0 or die $!;
-    system("cd $export_dir; ln -sfT $policy current") == 0  or die $!;
-    set_timestamp_of_files($policy_path);
-}
-
-sub cleanup_daily {
-    my $cmd = "bin/cleanup_daily";
-    my ($stdout, $stderr);
-    run3($cmd, \undef, \$stdout, \$stderr);
-    my $status = $?;
-    $status == 0 or die "cleanup_daily failed:\n$stderr\n";
-    $stderr
-      and die "Unexpected output on STDERR during cleanup_daily:\n$stderr\n";
-    return $stdout;
 }
 
 sub test_removed {
@@ -180,7 +137,8 @@ END
 
 # Set time to 1970, older than 1 year; will be removed from RCS.
 set_old_time();
-export_netspoc($netspoc);
+export_netspoc($netspoc, $export_dir, $policy_num++, $timestamp);
+
 $mail = cleanup_daily();
 
 test_rlog($title, 'RCS/POLICY,v', <<"END");
@@ -212,7 +170,7 @@ END
 inc_time_by_days(1);
 set_send_diff('x@example.com', [ 'x', 'y' ]);
 set_send_diff('y@example.com', [ 'x', 'y' ]);
-export_netspoc($netspoc);
+export_netspoc($netspoc, $export_dir, $policy_num++, $timestamp);
 $mail = cleanup_daily();
 
 test_rlog($title, 'RCS/POLICY,v', <<END);
@@ -251,7 +209,7 @@ service:s1 = {
 END
 
 inc_time_by_days(1);
-export_netspoc($netspoc);
+export_netspoc($netspoc, $export_dir, $policy_num++, $timestamp);
 $mail = cleanup_daily();
 
 test_rlog($title, 'RCS/POLICY,v', <<END);
@@ -340,7 +298,7 @@ $netspoc =~ s/owner = y;//;
 inc_time_by_days(1);
 set_send_diff('x@example.com', [ 'x', 'y' ]);
 set_send_diff('y@example.com', [ 'x', 'y' ]);
-export_netspoc($netspoc);
+export_netspoc($netspoc, $export_dir, $policy_num++, $timestamp);
 $mail = cleanup_daily();
 eq_or_diff($mail, <<"END", "$title: mail");
 To: x\@example.com

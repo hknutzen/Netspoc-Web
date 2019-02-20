@@ -57,7 +57,7 @@ sub test {
 
                 my $owner = 'x';
 
-                $driver->PolicyWeb::FrontendTest::choose_owner($owner);
+                $driver->choose_owner($owner);
 
                 pass("owner $owner selected");
             };
@@ -97,9 +97,8 @@ sub find_top_buttons {
 
     my $driver = shift;
 
-    #my ($a, $b, $c, $d, $e);
     subtest top_elements => sub {
-        plan tests => 5;
+        plan tests => 11;
 
         ok($driver->find_element('btn_services_tab'), "found button:\tservices tab");
 
@@ -114,11 +113,18 @@ sub find_top_buttons {
         ok($driver->find_element('//div[text()="Stand"]', 'xpath'),
             "found text:\t'Stand'");
 
-        # historycombo...
-        # -> button zum auswaehlen usw
-        # "Verantwortungsbereich"
-        # ownercombo
-        # "Abmelden"
+        ok($driver->find_element('list_history'), "found combo:\thistory");
+
+        ok($driver->find_element('//div[text()="Verantwortungsbereich"]', 'xpath'),
+            "found text:\t'Verantwortungsbereich'");
+        ok($driver->find_element('list_owner'), "found combo:\towner");
+
+        ok($driver->find_element('//div[text()="Abmelden"]', 'xpath'),
+            "found text:\t'Abmelden'");
+
+        ok($driver->find_element('btn_logout'), "found button:\tlogout");
+
+        ok($driver->find_element('btn_info'), "found button:\tinfo");
     };
 }
 
