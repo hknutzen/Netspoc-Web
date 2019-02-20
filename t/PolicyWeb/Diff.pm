@@ -172,6 +172,8 @@ sub setup {
     my $export_dir = $driver->get_export_dir();
     my $home_dir   = $driver->get_home_dir();
 
+    local $ENV{HOME} = $home_dir;
+
     make_visible($home_dir, 'bin');
     make_visible($home_dir, 'mail');
 

@@ -252,7 +252,7 @@ sub prepare_runtime_base {
         mount "/silk-icons" =>
           Plack::App::File->new(root => "/home/$ENV{USER}/htdocs/silk-icons")->to_app;
         mount "/" =>
-          Plack::App::File->new(root => "/home/$ENV{USER}/NetspocWeb")->to_app;
+          Plack::App::File->new(root => "/home/$ENV{USER}/Netspoc-Web")->to_app;
         mount "/backend" => $netspoc_psgi;
     };
 
