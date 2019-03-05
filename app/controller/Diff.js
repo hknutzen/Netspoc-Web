@@ -83,12 +83,13 @@ Ext.define(
             );
             diff_store.on(
                 'load',
-                function ( store, node ) {
+                function ( store, records, success, op, node, eOpts ) {
                     node.eachChild( store.rename, store );
                     // Expand recursively
-                    node.expandChildren( true );
                     node.set( 'text', (node.firstChild ? '' : 'keine ') +
                                   'Unterschiede' );
+                    var tree = this.getDiffView();
+                    tree.expandAll();
                 },
                 this
             );
@@ -125,8 +126,7 @@ Ext.define(
             this.getDiffGetMailStore().load();
         },
 
-        onSelectDiffPolicy : function( combo, records ) {
-            var record  = records[0];
+        onSelectDiffPolicy : function( combo, record ) {
             var tree    = this.getDiffView();
             var version = record.get('date');
             var node    = tree.getRootNode();

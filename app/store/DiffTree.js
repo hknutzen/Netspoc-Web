@@ -20,6 +20,7 @@ Ext.define(
     'PolicyWeb.store.DiffTree', {
         extend      : 'Ext.data.TreeStore',
         alias       : 'store.difftreestore',
+        model       : 'PolicyWeb.model.DiffTree',
         autoLoad    : false,
         // Send  value of 'id' of root node as parameter 'version'.
         nodeParam   : 'version',
