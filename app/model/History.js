@@ -8,7 +8,10 @@ Ext.define(
             { name : 'date'    },
             { name : 'time'    },
             { name : 'current' }
-        ]
+        ],
+        proxy  : {
+            url : 'backend/get_history'
+        }
     }
 );
 

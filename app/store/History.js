@@ -6,10 +6,6 @@ Ext.define(
         extend   : 'PolicyWeb.store.NetspocState',
         model    : 'PolicyWeb.model.History',
         autoLoad : false,
-        needLoad : true, // own config param, not ExtJs
-        proxy    : {
-            type          : 'policyweb',
-            proxyurl      : 'get_history'
-        }
+        needLoad : true // own config param, not ExtJs
     }
 );

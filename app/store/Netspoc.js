@@ -19,13 +19,9 @@ along with this program. If not, see <http://www.gnu.org/licenses/>.
 Ext.define(
     'PolicyWeb.store.Netspoc', {
         extend      : 'Ext.data.Store',
-        model       : 'PolicyWeb.model.Netspoc',
+        model       : 'PolicyWeb.model.Base',
         alias       : 'store.netspocstore',
         autoLoad    : false,
-        proxy       : {
-            type     : 'policyweb',
-            proxyurl : 'netspoc_override_me'
-        },
         constructor : function() {
             this.callParent( arguments );
 

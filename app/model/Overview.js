@@ -20,7 +20,7 @@ along with this program. If not, see <http://www.gnu.org/licenses/>.
 Ext.define(
     'PolicyWeb.model.Overview',
     {
-        extend : 'PolicyWeb.model.Netspoc',
+        extend : 'PolicyWeb.model.Base',
         fields : [
             { name : 'res'  },
             { name : 'what' },

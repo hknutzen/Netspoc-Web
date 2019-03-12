@@ -120,17 +120,7 @@ Ext.define(
                                     name      : 'filter_rules',
                                     boxLabel  : 'Filtern nach Suche',
                                     checked   : true,
-                                    disabled  : true,
-                                    listeners : {
-                                        afterrender: function(c) {
-                                            Ext.create(
-                                                'Ext.tip.ToolTip', {
-                                                    target : c.getEl(),
-                                                    html   : 'Alle Regeln oder nur zum Suchergebnis passende anzeigen' 
-                                                }
-                                            );
-                                        }
-                                    }
+                                    disabled  : true
                                 }
                             ]
                         }

@@ -2,13 +2,17 @@
 Ext.define(
     'PolicyWeb.model.AllOwners',
     {
-        extend : 'PolicyWeb.model.Netspoc',
-        //extend : 'Ext.data.Model',
-        fields      : [
+        extend : 'PolicyWeb.model.Base',
+
+        fields : [
             {
-                name : 'name'
+                name : 'name',
+                type : 'string'
             }
-        ]
+        ],
+        proxy : {
+            url : 'backend/get_owners'
+        }
     }
 );
 

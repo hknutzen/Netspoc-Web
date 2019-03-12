@@ -11,10 +11,6 @@ Ext.define(
                 property  : 'ip',
                 direction : 'ASC'
             }
-        ],
-        proxy    : {
-            type     : 'policyweb',
-            proxyurl : 'get_users'
-        }
+        ]
     }
 );

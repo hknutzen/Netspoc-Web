@@ -82,16 +82,6 @@ Ext.define(
                     }
                 }
             );
-
-            // Handle application wide events.
-            this.application.on(
-/*
-                {
-                    policyLoaded : this.onPolicyLoaded,
-                    scope    : this
-                }
-*/
-            );
         },
 
 	onSessionTimeout : function( button, event ) {
@@ -135,14 +125,11 @@ Ext.define(
             var store = Ext.create(
                 'PolicyWeb.store.Netspoc',
                 {
-                    proxy : {
-                        type     : 'policyweb',
-                        proxyurl : 'get_compat_msg_mode'
-                    },
                     fields      : [],
                     autoDestroy : true
                 }
             );
+            store.getProxy().setUrl('backend/get_compat_msg_mode');
             store.load(
                 {
                     callback : this.showCompatInfoWindow,
@@ -177,14 +164,11 @@ Ext.define(
             var store = Ext.create(
                 'PolicyWeb.store.Netspoc',
                 {
-                    proxy       : {
-                        type     : 'policyweb',
-                        proxyurl : 'set'
-                    },
                     fields      : [],
                     autoDestroy : true
                 }
             );
+            store.getProxy().setUrl('backend/get_compat_msg_mode');
             store.load(
                 {
                     params   : { ignore_compat_msg : value },
@@ -202,7 +186,6 @@ Ext.define(
             if (success && records.length) {
                 owner = records[0].get('name');
                 this.setOwnerState({ name  : owner });
-                // Get theme from session.
             }
             // Owner was never selected,
             // check number of available owners.
@@ -240,29 +223,26 @@ Ext.define(
         },
 
         setOwner : function(owner) {
-            var store = Ext.create(
-                'PolicyWeb.store.Netspoc',
+            Ext.Ajax.request(
                 {
-                    proxy       : {
-                        type     : 'policyweb',
-                        proxyurl : 'set'
+                    url     : 'backend/set',
+                    params  : {
+                        owner : {  name : owner }
                     },
-                    fields      : [],
-                    autoDestroy : true
-                }
-            );
-            store.load(
-                { params   : { owner : owner },
-                  callback : this.onSetOwnerSuccess,
-                  scope    : this,
-
-                  // private option
-                  owner    : {  name : owner }
+                    scope   : this, // important for "this" to be defined in success handler!
+                    success : this.onSetOwnerSuccess,
+                    failure : this.onSetOwnerException
                 }
             );
         },
-        onSetOwnerSuccess : function(records, options, success) {
-            var owner_obj = options.owner;
+
+        onSetOwnerException : function(connection, options, e_opts) {
+            alert("Fehler beim Setzen des owners in der Session!");
+        },
+
+        onSetOwnerSuccess : function(response, options) {
+            var obj = Ext.decode(response.responseText);
+            var owner_obj = options.params.owner;
             var window = Ext.getCmp( 'win_owner' );
 
             // Close window late, otherwise we get some extjs error.
@@ -273,13 +253,6 @@ Ext.define(
         },
 
         setOwnerState : function(owner_obj) {
-/*
-            global_theme_name = 'gray';
-            var theme = '/extjs4/resources/ext-theme-' + global_theme_name + '/ext-theme-' +
-                global_theme_name + '-all.css';
-            console.log(theme);
-            Ext.util.CSS.swapStyleSheet("theme", theme);
-*/
             var store = this.getCurrentPolicyStore();
             store.load(
                 {
@@ -361,14 +334,11 @@ Ext.define(
             var store = Ext.create(
                 'PolicyWeb.store.Netspoc',
                 {
-                    proxy       : {
-                        type     : 'policyweb',
-                        proxyurl : 'logout'
-                    },
                     fields      : [],
                     autoDestroy : true
                 }
             );
+            store.getProxy().setUrl('backend/logout');
             store.load(
                 { params   : {},
                   callback : this.onAfterLogout,

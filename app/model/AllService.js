@@ -2,7 +2,7 @@
 Ext.define(
     'PolicyWeb.model.AllService',
     {
-        extend : 'PolicyWeb.model.Netspoc',
+        extend : 'PolicyWeb.model.Base',
         fields : [
             { name : 'service' },
             { name : 'action' },
@@ -24,6 +24,9 @@ Ext.define(
                     return node.proto.join( '<br>' );
                 }
             }
-        ]
+        ],
+        proxy  : {
+            url : 'backend/get_services_and_rules'
+        }
     }
 );

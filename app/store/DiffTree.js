@@ -20,6 +20,7 @@ Ext.define(
     'PolicyWeb.store.DiffTree', {
         extend      : 'Ext.data.TreeStore',
         alias       : 'store.difftreestore',
+        model       : 'PolicyWeb.model.DiffTree',
         autoLoad    : false,
         // Send  value of 'id' of root node as parameter 'version'.
         nodeParam   : 'version',
@@ -37,14 +38,14 @@ Ext.define(
                 child.set( 'text', out );
             }
         },
-        root            : {
+        rootProperty : {
             text : 'Bitte Stand auswählen in "Vergleiche mit".',
             id   : 'none'
         },
         proxy  : {
-            type    : 'ajax',
-            noCache : false,
-            url     : 'backend/get_diff'
+            type     : 'ajax',
+            noCache  : false,
+            url      : 'backend/get_diff'
         }
     }
 );

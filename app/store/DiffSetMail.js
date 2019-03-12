@@ -4,12 +4,8 @@ Ext.define(
     'PolicyWeb.store.DiffSetMail',
     {
         extend      : 'PolicyWeb.store.NetspocState',
-        model       : 'PolicyWeb.model.Netspoc',
+        model       : 'PolicyWeb.model.DiffSetMail',
         autoLoad    : false,
-        autoDestroy : true,
-        proxy       : {
-            type     : 'policyweb',
-            proxyurl : 'set_diff_mail'
-        }
+        autoDestroy : true
     }
 );
