@@ -1513,6 +1513,7 @@ my %saveparam = (
 sub set_session_data {
     my ($req, $session) = @_;
     for my $param ($req->param) {
+        next if $param =~ /^_dc/;
 	$saveparam{$param} or abort "Invalid param '$param'";
 	my $val = $req->param($param);
 	$session->param($param, $val);
