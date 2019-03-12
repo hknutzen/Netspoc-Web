@@ -15,6 +15,11 @@ Ext.define(
             
             proxy     : {     // Ext.util.ObjectTemplate
                 type          : 'ajax',
+                noCache       : false,
+                extraParams   : {},
+                pageParam     : '',
+                limitParam    : '',
+                startParam    : '',
                 actionMethods : { read : 'POST' },
                 reader        : {
                     type         : 'json',
