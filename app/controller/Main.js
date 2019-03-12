@@ -223,26 +223,26 @@ Ext.define(
         },
 
         setOwner : function(owner) {
-            var store = Ext.create(
-                'PolicyWeb.store.Netspoc',
+            Ext.Ajax.request(
                 {
-                    fields      : [],
-                    autoDestroy : true
-                }
-            );
-            store.getProxy().setUrl('backend/set');
-            store.load(
-                { params   : { owner : owner },
-                  callback : this.onSetOwnerSuccess,
-                  scope    : this,
-
-                  // private option
-                  owner    : {  name : owner }
+                    url     : 'backend/set',
+                    params  : {
+                        owner : {  name : owner }
+                    },
+                    scope   : this, // important for "this" to be defined in success handler!
+                    success : this.onSetOwnerSuccess,
+                    failure : this.onSetOwnerException
                 }
             );
         },
-        onSetOwnerSuccess : function(records, options, success) {
-            var owner_obj = options.owner;
+
+        onSetOwnerException : function(connection, options, e_opts) {
+            alert("Fehler beim Setzen des owners in der Session!");
+        },
+
+        onSetOwnerSuccess : function(response, options) {
+            var obj = Ext.decode(response.responseText);
+            var owner_obj = options.params.owner;
             var window = Ext.getCmp( 'win_owner' );
 
             // Close window late, otherwise we get some extjs error.
