@@ -641,8 +641,6 @@ sub search_tab {
         $driver->find_child_element($search_window, 'btn_search_start')->click;
         search_result_ok($driver, 1, "IP 1 = 'any:sub1'\n\t& exact\t\t\t=> 1 service");
 
-        $driver->find_child_element($search_window, 'btn_search_start')->click;
-
         $driver->find_child_element($search_window, 'txtf_search_ip1-inputEl')->clear;
         $driver->find_child_element($search_window, 'txtf_search_ip1-inputEl')
           ->send_keys('10.1.0.0/16');

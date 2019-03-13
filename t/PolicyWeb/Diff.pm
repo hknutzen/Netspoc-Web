@@ -111,6 +111,7 @@ sub diff {
         my @boundlists = $driver->find_elements('x-boundlist', 'class');
         my @histories;
         for (my $i = 0 ; $i < @boundlists ; $i++) {
+            # get_text is the only indicator for being displayed
             if ($boundlists[$i]->get_text) {
                 @histories =
                   $driver->find_child_elements($boundlists[$i], 'x-boundlist-item', 'class');

@@ -43,6 +43,25 @@ our $export_dir;
 # Shared Netspoc configuration
 ############################################################
 our $netspoc = <<'END';
+owner:Axolotl = { admins = guest; }
+owner:Blutegel = { admins = guest; }
+owner:Chinchilla = { admins = guest; }
+owner:Dachs = { admins = guest; }
+owner:Eule = { admins = guest; }
+owner:Flamingo = { admins = guest; }
+owner:Gundi = { admins = guest; }
+owner:Hermelin = { admins = guest; }
+owner:Igeltanreks = { admins = guest; }
+owner:Josephinenlori = { admins = guest; }
+owner:Kondor = { admins = guest; }
+owner:Lemming = { admins = guest; }
+owner:Mungo = { admins = guest; }
+owner:Nerz = { admins = guest; }
+owner:Otter = { admins = guest; }
+owner:Python = { admins = guest; }
+owner:Qualle = { admins = guest; }
+owner:Regenwurm = { admins = guest; }
+owner:Steinbock = { admins = guest; }
 owner:x = { admins = guest; show_all; }
 owner:y = { admins = guest; }
 owner:z = { admins = guest; }
