@@ -25,7 +25,7 @@ Ext.define(
     {
         extend  : 'Ext.grid.Panel',
         alias   : 'widget.abstractgrid',
-        plugins : 'bufferedrenderer',
+        //plugins : 'bufferedrenderer',
         
         initComponent : function() {
             Ext.apply(

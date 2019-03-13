@@ -174,17 +174,7 @@ Ext.define(
                     labelStyle   : 'cursor:move;',
                     margin       : '0 5 0 0',
                     store        : theme_store,
-                    value        : theme,
-                    listeners    : {
-                        select : function(combo) {
-                            var theme = combo.getValue();
-                            if (theme !== defaultTheme) {
-                                setParam({ theme: theme });
-                            } else {
-                                removeParam('theme');
-                            }
-                        }
-                    }
+                    value        : theme
                 }
             );
             var panel = {

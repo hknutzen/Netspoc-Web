@@ -198,7 +198,7 @@ sub test_print_all_services {
         my @all_services = map { $_->get_text }
           $driver->find_child_elements(
             $pnl_print,
-'.//*[contains(@class, "x-grid-group-title") or contains(@class, "x-grid-data-row")]',
+'.//*[contains(@class, "x-grid-group-title") or contains(@class, "x-grid-row")]',
             'xpath'
           );
 
@@ -224,7 +224,7 @@ sub test_print_all_services {
         @all_services = map { $_->get_text }
           $driver->find_child_elements(
             $pnl_print,
-'.//*[contains(@class, "x-grid-group-title") or contains(@class, "x-grid-data-row")]',
+'.//*[contains(@class, "x-grid-group-title") or contains(@class, "x-grid-row")]',
             'xpath'
           );
 
@@ -695,7 +695,7 @@ sub search_tab {
 
         my @service_grid =
           $driver->find_child_elements($driver->find_element('pnl_services'),
-                                       'x-grid-data-row', 'class');
+                                       'x-grid-row', 'class');
 
         $driver->select_by_key(\@service_grid, 1, 0, "Test9");
 

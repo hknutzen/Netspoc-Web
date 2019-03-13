@@ -1,11 +1,10 @@
 
 Ext.define(
-    'PolicyWeb.model.Supervisor',
+    'PolicyWeb.model.SendNewUserTaskMail',
     {
         extend : 'PolicyWeb.model.Base',
-
         proxy : {
-            url : 'backend/get_supervisors'
+            url : 'backend/send_add_user_task_mail'
         }
     }
 );

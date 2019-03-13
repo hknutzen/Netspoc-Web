@@ -18,7 +18,7 @@ sub test {
         my $grid =
           $driver->find_element('//div[contains(@id, "accountview")]', 'xpath');
         ok($grid, "found grid:\taccoutnview");
-        $driver->find_element_ok('//span[text()="Verantwortliche"]',
+        $driver->find_element_ok('//div[text()="Verantwortliche"]',
                                  'xpath', "found header:\t'Verantwortliche'");
 
         my @check = ('guest');
@@ -27,7 +27,7 @@ sub test {
 
         $grid = $driver->find_element('//div[contains(@id, "watcherlist")]', 'xpath');
         ok($grid, "found grid:\twatcherlist");
-        $driver->find_element_ok('//span[text()="Zuschauer (Watcher)"]',
+        $driver->find_element_ok('//div[text()="Zuschauer (Watcher)"]',
                                  'xpath',
                                  "found header:\t'Zuschauer (Watcher)'"
                                 );
@@ -37,7 +37,7 @@ sub test {
         $grid =
           $driver->find_element('//div[contains(@id, "supervisorlist")]', 'xpath');
         ok($grid, "found grid:\tsupervisorlist");
-        $driver->find_element_ok('//span[contains(text(),"bergeordnet")]',
+        $driver->find_element_ok('//div[contains(text(),"bergeordnet")]',
                                  'xpath', "found header:\t'Übergeordnet'");
         @check = ('x');
         ok(check_grid($driver, $grid, \@check), "'Übergeordnet' grid contains x");
@@ -45,7 +45,7 @@ sub test {
         $grid =
           $driver->find_element('//div[contains(@id, "supervisoremaillist")]', 'xpath');
         ok($grid, "found grid:\tsupervisoremaillist");
-        $driver->find_element_ok('//span[contains(text(), "Berechtigte f")]',
+        $driver->find_element_ok('//div[contains(text(), "Berechtigte f")]',
                                  'xpath',
                                  "found header:\tBerechtigte für x"
                                 );

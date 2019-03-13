@@ -98,6 +98,9 @@ var specialchar2normalchar = {
     'ß' : 'ss'
 };
 function germanize(s) {
+    if (!s) {
+         return '';
+    }
     var ret;
     var first_char = s.substring(0,1);
     if ( first_char in specialchar2normalchar ) {

@@ -29,7 +29,7 @@ var bold_user = function ( node, what ) {
 Ext.define(
     'PolicyWeb.model.Rule',
     {
-        extend : 'PolicyWeb.model.Netspoc',
+        extend : 'PolicyWeb.model.Base',
         fields : [
             { name : 'has_user', mapping : 'hasuser'  },
             { name : 'action',   mapping : 'action'  },
@@ -45,7 +45,10 @@ Ext.define(
                   return node.prt.join( '<br>' );
               }
             }
-        ]
+        ],
+        proxy : {
+            url : 'backend/get_rules'
+        }
     }
 );
 

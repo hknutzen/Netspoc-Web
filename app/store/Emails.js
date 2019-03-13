@@ -5,10 +5,6 @@ Ext.define(
     {
         extend   : 'PolicyWeb.store.NetspocState',
         model    : 'PolicyWeb.model.Email',
-        autoLoad : false,
-        proxy    : {
-            type     : 'policyweb',
-            proxyurl : 'get_admins'
-        }
+        autoLoad : false
     }
 );

@@ -115,14 +115,14 @@ Ext.define(
 
         preCollapse : function (store, records) {
             var threshold = 100;
-            var groups    = store.getGroups();
+            var groups    = store.getGroups().getRange();
             var grid      = this.getNetworkResourcesGrid();
             var grouping  = get_store_feature( grid, 'grouping' ); // see common.js
             Ext.each(
                 groups,
                 function(group, index) {
-                    if ( group.children.length > threshold ) {
-                        grouping.collapse( group.name );
+                    if ( group.length > threshold ) {
+                        grouping.collapse( group.getGroupKey() );
                     }
                 }
             );

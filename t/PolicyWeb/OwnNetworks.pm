@@ -142,7 +142,7 @@ sub test_resources_grid {
             "resources grids looks fine");
 
         $driver->find_child_element($resources_grid,
-                                    '//div[contains(@id, "network:Big")]', 'xpath')->click;
+                                    '//div[contains(@data-groupname, "network:Big")]', 'xpath')->click;
 
         # grid should now contain less
         @names = ('host:k', 'interface:asa.Kunde');
@@ -324,7 +324,7 @@ sub test_print_resources {
         my @res_grid = map { $_->get_text }
           $driver->find_child_elements(
             $res_panel,
-'.//*[contains(@class, "x-grid-group-title") or contains(@class, "x-grid-data-row")]',
+'.//*[contains(@class, "x-grid-group-title") or contains(@class, "x-grid-row")]',
             'xpath'
           );
 

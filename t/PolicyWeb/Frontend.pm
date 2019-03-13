@@ -214,7 +214,7 @@ sub grid_contains {
         }
         if (!$ok) {
             print "------------\n"
-              . $search[ $i + $offset ]->get_text
+              . $search[ $i + $offset ]
               . "\n is not equal to any item"
               . "\n------------\n";
             return 0;

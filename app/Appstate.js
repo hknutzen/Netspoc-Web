@@ -26,8 +26,6 @@ var appstate = (
         var init_phase  = true;
         var admin       = false;
         var state = Ext.create( 'Ext.util.Observable' );
-        state.addEvents('changed', 'ownerChanged',
-                        'historyChanged', 'networksChanged');
 
         state.setAdmin = function ( bool ) {
             admin = bool;

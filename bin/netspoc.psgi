@@ -167,7 +167,7 @@ sub select_history {
 
     # Read requested version date from cgi parameter.
     if ($selected_history = $req->param('history')) {
-	$history_needed or abort "Must not send parameter 'history'";
+	$history_needed or abort $req->path_info() . ": Must not send parameter 'history'";
     }
 
     # Read current version tag from current/POLICY.
@@ -1513,6 +1513,7 @@ my %saveparam = (
 sub set_session_data {
     my ($req, $session) = @_;
     for my $param ($req->param) {
+        next if $param =~ /^_dc/;
 	$saveparam{$param} or abort "Invalid param '$param'";
 	my $val = $req->param($param);
 	$session->param($param, $val);
@@ -1811,7 +1812,7 @@ sub login {
     logout($req, $session);
     my $email = $req->param('email') or abort "Missing param 'email'";
     $email = lc $email;
-    check_email_authorization($email);
+    #check_email_authorization($email);
 
     # User 'guest' needs no password.
     if ($email ne 'guest') {

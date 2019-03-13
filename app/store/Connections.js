@@ -11,8 +11,8 @@ Ext.define(
         proxy      : {
             type   : 'memory',
             reader : {
-                type : 'json',
-                root : 'records'
+                type         : 'json',
+                rootProperty : 'records'
             }
         }
     }
