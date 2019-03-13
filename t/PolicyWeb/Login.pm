@@ -30,7 +30,7 @@ sub test {
 
         if (find_login($driver)) {
 
-            subtest fail_to_login => sub {
+            subtest "fail to login" => sub {
                 plan tests => 1;
 
                 $driver->send_keys_to_active_element('not_guest');
@@ -40,7 +40,7 @@ sub test {
                 ok($driver->get_current_url() =~ /backend\/login/, "login as not_guest failed");
             };
 
-            subtest login_as_guest => sub {
+            subtest "login as guest" => sub {
                 plan tests => 1;
 
                 $driver->get('index.html');
@@ -81,7 +81,7 @@ sub find_login {
 
     my ($a, $b, $c);
 
-    subtest login_elements => sub {
+    subtest "login elements" => sub {
         plan tests => 3;
 
         ok($a = $driver->find_element('txtf_email'), "found input box:\temail");
@@ -97,7 +97,7 @@ sub find_top_buttons {
 
     my $driver = shift;
 
-    subtest top_elements => sub {
+    subtest "top elements" => sub {
         plan tests => 11;
 
         ok($driver->find_element('btn_services_tab'), "found button:\tservices tab");

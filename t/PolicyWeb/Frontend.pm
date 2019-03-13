@@ -6,6 +6,7 @@ use warnings;
 use Test::More;
 use base ("Selenium::Chrome");
 use Selenium::Waiter qw/wait_until/;
+use Selenium::Remote::WDKeys;
 use Plack::Test;
 use PolicyWeb::Init qw( $port $SERVER $export_dir $home_dir $netspoc );
 
@@ -74,10 +75,13 @@ sub choose_owner {
     # yet and an error that "triggerEl of undefined cannot be found"
     # is raised.
     my $window = wait_until { $driver->find_element('win_owner') };
+    my $owner_field;
     wait_until {
-        $driver->find_child_element($window, 'combo_initial_owner')
+        $owner_field = $driver->find_child_element($window, 'combo_initial_owner-inputEl')
     };
-    $driver->select_combobox_item('combo_initial_owner', $owner);
+    $owner_field->send_keys('x');
+    $owner_field->send_keys(KEYS->{'enter'});
+    # $driver->select_combobox_item('combo_initial_owner', $owner);
 }
 
 sub get_grid_cell_value_by_field_name {
