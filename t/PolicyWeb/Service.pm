@@ -697,7 +697,7 @@ sub search_tab {
 
         my @service_grid =
           $driver->find_child_elements($driver->find_element('pnl_services'),
-                                       'x-grid-data-row', 'class');
+                                       'x-grid-row', 'class');
 
         $driver->select_by_key(\@service_grid, 1, 0, "Test9");
 
