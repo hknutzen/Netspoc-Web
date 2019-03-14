@@ -181,8 +181,8 @@ sub select_by_key {
     my $key        = shift;
 
     for (my $i = 0 ; $i < @grid_cells ; $i += $row) {
-        my $a = $grid_cells[ $i + $offset ]->get_text;
-        if ($a eq $key) {
+        my $gird_key = $grid_cells[ $i + $offset ]->get_text;
+        if ($gird_key eq $key) {
             $grid_cells[$i]->click;
             return;
         }
@@ -215,8 +215,11 @@ sub grid_contains {
         if (!$ok) {
             print "------------\n"
               . $search[ $i + $offset ]
-              . "\n is not equal to any item"
-              . "\n------------\n";
+              . "\n is not equal to any item:\n";
+            for (my $i=0; $i<@grid_cells; $i+=$row) {
+                print "$i: ", $grid_cells[$i]->get_text;
+            }
+            print "\n------------\n";
             return 0;
         }
     }
