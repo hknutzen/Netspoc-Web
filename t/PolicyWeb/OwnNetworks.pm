@@ -8,7 +8,7 @@ use Test::More;
 sub test {
 
     my $driver = shift;
-
+    
     plan tests => 4;
 
     eval {
@@ -169,28 +169,28 @@ sub test_selection_and_services {
           and $driver->find_element('btn_own_networks_tab')
           ->Selenium::Remote::WebElement::get_attribute('class') =~
           /icon-computer_connect/;
-
         #should be disabled
         my $boncc_b = $driver->find_element('btn_confirm_network_selection')
-          ->Selenium::Remote::WebElement::get_attribute('class') =~ /x-disabled/;
+          ->Selenium::Remote::WebElement::get_attribute('class') =~ /x-btn-disabled/;
         $boncc_b &= $driver->find_element('btn_cancel_network_selection')
-          ->Selenium::Remote::WebElement::get_attribute('class') =~ /x-disabled/;
+          ->Selenium::Remote::WebElement::get_attribute('class') =~ /x-btn-disabled/;
 
         $driver->select_by_key(\@networks_grid_cells, 4, 2, "network:KUNDE1");
 
+
         #should be enabled
         $boncc_b &= !($driver->find_element('btn_confirm_network_selection')
-                ->Selenium::Remote::WebElement::get_attribute('class') =~ /x-disabled/);
+                ->Selenium::Remote::WebElement::get_attribute('class') =~ /x-btn-disabled/);
         $boncc_b &= !($driver->find_element('btn_cancel_network_selection')
-                ->Selenium::Remote::WebElement::get_attribute('class') =~ /x-disabled/);
+                ->Selenium::Remote::WebElement::get_attribute('class') =~ /x-btn-disabled/);
 
         $driver->find_element('btn_confirm_network_selection')->click;
 
         #only confirm should be disabled
         $boncc_b &= $driver->find_element('btn_confirm_network_selection')
-          ->Selenium::Remote::WebElement::get_attribute('class') =~ /x-disabled/;
+          ->Selenium::Remote::WebElement::get_attribute('class') =~ /x-btn-disabled/;
         $boncc_b &= !($driver->find_element('btn_cancel_network_selection')
-                ->Selenium::Remote::WebElement::get_attribute('class') =~ /x-disabled/);
+                ->Selenium::Remote::WebElement::get_attribute('class') =~ /x-btn-disabled/);
 
         #'Eigene Netze' should've changed to 'Ausgewählte Netze'
         $bont_b &=
@@ -200,7 +200,7 @@ sub test_selection_and_services {
 
         $driver->find_element('btn_services_tab')->click;
 
-        $driver->find_element('btn_own_services-btnIconEl')->click;
+        $driver->find_element('btn_own_services')->click;
 
         my @service_grid =
           $driver->find_child_elements($driver->find_element('pnl_services'),
@@ -215,9 +215,9 @@ sub test_selection_and_services {
 
         #should return to standard
         $boncc_b &= $driver->find_element('btn_confirm_network_selection')
-          ->Selenium::Remote::WebElement::get_attribute('class') =~ /x-disabled/;
+          ->Selenium::Remote::WebElement::get_attribute('class') =~ /x-btn-disabled/;
         $boncc_b &= $driver->find_element('btn_cancel_network_selection')
-          ->Selenium::Remote::WebElement::get_attribute('class') =~ /x-disabled/;
+          ->Selenium::Remote::WebElement::get_attribute('class') =~ /x-btn-disabled/;
         $bont_b =
               $driver->find_element('btn_own_networks_tab')->get_text =~ "Eigene Netze"
           and $driver->find_element('btn_own_networks_tab')
