@@ -24,7 +24,6 @@ use PolicyWeb::Diff;
 
 my $driver = PolicyWeb::Frontend::getDriver();
 
-
 my %tests = (networks => \&PolicyWeb::OwnNetworks::test,
              services     => \&PolicyWeb::Service::test,
              entitlement  => \&PolicyWeb::Entitlement::test,
