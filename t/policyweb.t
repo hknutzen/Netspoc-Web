@@ -26,7 +26,7 @@ my $driver = PolicyWeb::Frontend::getDriver();
 
 $driver->set_implicit_wait_timeout(3000);
 
-my %tests = (own_networks => \&PolicyWeb::OwnNetworks::test,
+my %tests = (networks => \&PolicyWeb::OwnNetworks::test,
              services     => \&PolicyWeb::Service::test,
              entitlement  => \&PolicyWeb::Entitlement::test,
              diff         => \&PolicyWeb::Diff::test,

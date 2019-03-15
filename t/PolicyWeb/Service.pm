@@ -122,7 +122,7 @@ sub check_own_services_grid {
 
         test_print_services($driver, $lp, $grid_head_text, \@grid);
 
-        test_print_all_services($driver, \@grid);
+        # test_print_all_services($driver, \@grid);
 
     };
 }
