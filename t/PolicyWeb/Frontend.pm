@@ -7,7 +7,9 @@ use Test::More;
 use base ("Selenium::Chrome");
 use Selenium::Waiter qw/wait_until/;
 use Plack::Test;
-use PolicyWeb::Init qw( $port $SERVER $export_dir $home_dir $netspoc );
+use PolicyWeb::Init
+    qw( prepare_export prepare_runtime_base
+        $port $SERVER $export_dir $home_dir $netspoc );
 
 our @EXPORT = qw(
   login_as_guest
@@ -21,8 +23,8 @@ our @EXPORT = qw(
 
 sub getDriver {
 
-    PolicyWeb::Init::prepare_export();
-    PolicyWeb::Init::prepare_runtime();
+    prepare_export();
+    prepare_runtime_base();
 
     my $driver =
       PolicyWeb::Frontend->new(browser_name   => 'chrome',

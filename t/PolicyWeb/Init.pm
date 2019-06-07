@@ -237,7 +237,6 @@ our $app;
 my $server;
 
 sub prepare_runtime_base {
-    my $opts = shift;
 
     # Prepare config file for netspoc.psgi
     open(my $fh, '>', $conf_file) or die "Can't open $conf_file";
@@ -259,14 +258,6 @@ sub prepare_runtime_base {
 
     $server = Plack::Test::Server->new($app);
     $port   = $server->port();
-}
-
-sub prepare_runtime {
-    prepare_runtime_base({ login => 1 });
-}
-
-sub prepare_runtime_no_login {
-    prepare_runtime_base({ login => 0 });
 }
 
 #__PACKAGE__::init();
