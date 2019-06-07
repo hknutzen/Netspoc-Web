@@ -1558,8 +1558,26 @@ sub can_access_owner {
 sub get_owner {
     my ($req, $session) = @_;
     my $owner = $session->param('owner');
+
+    # Selected owner was stored before.
     if ($owner && can_access_owner($session, $owner)) {
 	return [ { name => $owner } ];
+    }
+
+    # Automatically select owner with most number of own services.
+    my $best_owner;
+    my $max_size = 0;
+    for $owner (find_authorized_owners $session->param('email')) {
+        my $service_lists = load_json("owner/$owner/service_lists");
+        my $size = @{$service_lists->{owner}};
+        if ($size > $max_size) {
+            $max_size = $size;
+            $best_owner = $owner;
+        }
+    }
+    if ($best_owner) {
+	$session->param('owner', $best_owner);
+	return [ { name => $best_owner } ];
     }
     else {
 	return [];
