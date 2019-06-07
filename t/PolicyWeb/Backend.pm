@@ -2,6 +2,7 @@
 package PolicyWeb::Backend;
 
 use strict;
+use warnings;
 use Test::More;
 use Test::Differences;
 use lib 'bin';
@@ -13,11 +14,11 @@ use HTTP::Request::Common;
 use Plack::Builder;
 use Data::Dumper;
 
-use PolicyWeb::Init qw/$app $policy $port $SERVER/;
+use PolicyWeb::Init qw/$app $port $SERVER prepare_runtime_base/;
 
 require Exporter;
 our @ISA    = qw(Exporter);
-our @EXPORT = qw(
+our @EXPORT_OK = qw(
   test_run
   extract_records
   extract_names
@@ -28,7 +29,7 @@ our $cookie;
 
 sub prepare_runtime {
 
-    PolicyWeb::Init::prepare_runtime_base({ login => 0 });
+    prepare_runtime_base();
 
     # Login as guest
     test_psgi $app, sub {
@@ -43,11 +44,7 @@ sub prepare_runtime {
 }
 
 sub test_run {
-    my ($title, $path, $request, $owner, $out, $process_result) = @_;
-
-    $request->{active_owner} = $owner;
-    $request->{history}      = $policy;
-
+    my ($title, $path, $request, $out, $process_result) = @_;
     my $uri = "http://$SERVER:$port/backend/$path?" . join '&',
       map { "$_=$request->{$_}" } keys %$request;
     test_psgi $app, sub {
