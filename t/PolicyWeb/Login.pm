@@ -24,7 +24,7 @@ sub test {
 
     my $driver = shift;
 
-    plan tests => 5;
+    plan tests => 4;
 
     eval {
 
@@ -50,16 +50,6 @@ sub test {
                 $driver->find_element('btn_login')->click;
 
                 ok($driver->get_current_url() =~ /app.html/, "login as guest");
-            };
-
-            subtest "choose owner" => sub {
-                plan tests => 1;
-
-                my $owner = 'x';
-
-                $driver->choose_owner($owner);
-
-                pass("owner $owner selected");
             };
 
             find_top_buttons($driver);

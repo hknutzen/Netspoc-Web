@@ -62,26 +62,6 @@ sub login_as_guest {
     $driver->login('guest');
 }
 
-sub login_as_guest_and_choose_owner {
-    my ($driver, $owner) = @_;
-    $driver->login_as_guest();
-    $driver->choose_owner($owner);
-}
-
-sub choose_owner {
-    my ($driver, $owner) = @_;
-
-    # The two waits below are necessary to avoid a race condition.
-    # Without them, sometimes the combo box has not been rendered
-    # yet and an error that "triggerEl of undefined cannot be found"
-    # is raised.
-    my $window = wait_until { $driver->find_element('win_owner') };
-    wait_until {
-        $driver->find_child_element($window, 'combo_initial_owner')
-    };
-    $driver->select_combobox_item('combo_initial_owner', $owner);
-}
-
 sub get_grid_cell_value_by_field_name {
     my ($driver, $grid_id, $row, $field_name) = @_;
     my $script =

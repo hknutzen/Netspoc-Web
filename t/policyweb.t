@@ -70,7 +70,7 @@ else {
         subtest login => sub { PolicyWeb::Login::test($driver); };
     }
     else {
-        $driver->login_as_guest_and_choose_owner('x');
+        $driver->login_as_guest();
     }
 
     for my $key (@ARGV) {
