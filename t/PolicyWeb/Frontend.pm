@@ -40,6 +40,46 @@ sub getDriver {
     return $driver;
 }
 
+sub getBrowserstackyDriver {
+
+
+    PolicyWeb::Init::prepare_export();
+    PolicyWeb::Init::prepare_runtime();
+
+
+    #Input capabilities
+    my $extraCaps = {
+        "browser" => "Chrome",
+        "browser_version" => "73.0",
+        "os" => "Windows",
+        "os_version" => "10",
+        "resolution" => "1024x768",
+        "name" => "Chrome 73",
+        "browserstack.local" => "true"
+    };
+
+    my $login = "leonarddietrich1";
+    my $key = "9Ej447ymmjCW8Lzs2VsR";
+    my $host = "$login:$key\@hub-cloud.browserstack.com";
+
+    my $driver =
+      PolicyWeb::Frontend->new(browser_name   => 'chrome',
+                               proxy          => { proxyType => 'direct', },
+                               default_finder => 'id',
+                               javascript     => 1,
+                               base_url       => "http://$SERVER:$port",
+                               'remote_server_addr' => $host,
+                               'port' => '80',
+                               'extra_capabilities' => $extraCaps
+                              );
+
+    $driver->set_implicit_wait_timeout(200);
+
+    $driver->get("index.html");
+
+    return $driver;
+}
+
 # tries to login with given username and password
 sub login {
     my ($driver, $name, $pass) = @_;

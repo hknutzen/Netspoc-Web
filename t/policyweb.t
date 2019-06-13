@@ -23,6 +23,7 @@ use PolicyWeb::Entitlement;
 use PolicyWeb::Diff;
 
 my $driver = PolicyWeb::Frontend::getDriver();
+# my $driver = PolicyWeb::Frontend::getBrowserstackyDriver();
 
 $driver->set_implicit_wait_timeout(3000);
 
