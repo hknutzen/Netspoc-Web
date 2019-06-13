@@ -18,13 +18,10 @@ use Plack::Builder;
 
 require Exporter;
 our @ISA    = qw(Exporter);
-our @EXPORT = qw(
-  prepare_export
-  prepare_runtime
-  get_export_dir
-  );
 
 our @EXPORT_OK = qw(
+  prepare_export
+  prepare_runtime_base
   $app
   $port
   $policy
@@ -36,7 +33,7 @@ our @EXPORT_OK = qw(
 
 our $SERVER = "127.0.0.1";
 our $port;
-our $policy = 'p1';
+our $policy = 'p0';
 our $export_dir;
 
 ############################################################
@@ -225,14 +222,18 @@ sub prepare_export {
     $input ||= $netspoc;
     my $in_dir = prepare_in_dir($input);
 
+    my($counter) = $policy =~ /^p(\d+)/;
+    $counter++;
+    $policy = "p$counter";
+
     my $cmd = "/home/$ENV{USER}/Netspoc/bin/export-netspoc -quiet $in_dir $export_dir/$policy";
     my ($stdout, $stderr);
     run3($cmd, \undef, \$stdout, \$stderr);
     my $status = $?;
     $status == 0 or die "Export failed:\n$stderr\n";
     $stderr and die "Unexpected output during export:\n$stderr\n";
-    system("echo '# $policy #' > $export_dir/$policy/POLICY") == 0 or die;
-    system("cd $export_dir; ln -s $policy current") == 0           or die;
+    system "echo '# $policy #' > $export_dir/$policy/POLICY";
+    system "cd $export_dir; rm -f current; ln -s $policy current";
 }
 
 our $home_dir = tempdir(CLEANUP => 1);
@@ -255,7 +256,6 @@ our $app;
 my $server;
 
 sub prepare_runtime_base {
-    my $opts = shift;
 
     # Prepare config file for netspoc.psgi
     open(my $fh, '>', $conf_file) or die "Can't open $conf_file";
@@ -277,14 +277,6 @@ sub prepare_runtime_base {
 
     $server = Plack::Test::Server->new($app);
     $port   = $server->port();
-}
-
-sub prepare_runtime {
-    prepare_runtime_base({ login => 1 });
-}
-
-sub prepare_runtime_no_login {
-    prepare_runtime_base({ login => 0 });
 }
 
 #__PACKAGE__::init();

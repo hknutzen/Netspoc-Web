@@ -4,8 +4,17 @@ use strict;
 use Test::More;
 use lib 't';
 
-use PolicyWeb::Init;
-use PolicyWeb::Backend;
+use PolicyWeb::Init qw/ $policy prepare_export/;
+use PolicyWeb::Backend
+    qw/prepare_runtime test_run extract_records extract_names/;
+
+sub test_run_o {
+    my ($title, $path, $request, $owner, $out, $process_result) = @_;
+
+    $request->{active_owner} = $owner;
+    $request->{history}      = $policy;
+    test_run($title, $path, $request, $out, $process_result);
+}
 
 ############################################################
 # Netspoc configuration
@@ -150,7 +159,7 @@ END
 ############################################################
 
 prepare_export($data);
-PolicyWeb::Backend::prepare_runtime();
+prepare_runtime();
 
 my ($path, $params, $owner, $out, $title);
 $path = 'service_list';
@@ -167,7 +176,7 @@ $params = { search_ip1  => '10.1.1.0/255.255.255.0',
 
 $out = [qw(Test1 Test3 Test3a)];
 
-test_run($title, $path, $params, $owner, $out, \&extract_names);
+test_run_o($title, $path, $params, $owner, $out, \&extract_names);
 
 ############################################################
 $title = 'Exact IP search in own services';
@@ -181,7 +190,7 @@ $params = { search_ip1 => '10.1.0.0/255.255.0.0',
 
 $out = [qw(Test2)];
 
-test_run($title, $path, $params, $owner, $out, \&extract_names);
+test_run_o($title, $path, $params, $owner, $out, \&extract_names);
 
 ############################################################
 $title = 'Exact IP search for host';
@@ -196,7 +205,7 @@ $params = { search_ip1  => '10.1.0.10/32',
 
 $out = [qw(Test4 Test9)];
 
-test_run($title, $path, $params, $owner, $out, \&extract_names);
+test_run_o($title, $path, $params, $owner, $out, \&extract_names);
 
 ############################################################
 $title = 'Exact IP search for range';
@@ -210,7 +219,7 @@ $params = { search_ip1  => '10.1.0.93/32',
 
 $out = [qw(Test4)];
 
-test_run($title, $path, $params, $owner, $out, \&extract_names);
+test_run_o($title, $path, $params, $owner, $out, \&extract_names);
 
 ############################################################
 $title = 'Exact IP search for interface';
@@ -224,7 +233,7 @@ $params = { search_ip1  => '10.1.0.2',
 
 $out = [qw(Test4)];
 
-test_run($title, $path, $params, $owner, $out, \&extract_names);
+test_run_o($title, $path, $params, $owner, $out, \&extract_names);
 
 ############################################################
 $title = 'Exact IP search for aggregate';
@@ -238,7 +247,7 @@ $params = { search_ip1  => '10.1.0.0/23',
 
 $out = [qw(Test2)];
 
-test_run($title, $path, $params, $owner, $out, \&extract_names);
+test_run_o($title, $path, $params, $owner, $out, \&extract_names);
 
 ############################################################
 $title = 'Exact IP search for single address';
@@ -251,7 +260,7 @@ $params = { search_ip1  => '10.2.2.0/24',
 
 $out = [qw(Test1 Test3 Test3a)];
 
-test_run($title, $path, $params, $owner, $out, \&extract_names);
+test_run_o($title, $path, $params, $owner, $out, \&extract_names);
 
 ############################################################
 $title = 'Search for tcp protocol';
@@ -264,7 +273,7 @@ $params = { search_proto => 'tcp',
 
 $out = [qw(T6_1 Test1 Test10 Test11 Test12 Test3 Test3a Test4 Test5)];
 
-test_run($title, $path, $params, $owner, $out, \&extract_names);
+test_run_o($title, $path, $params, $owner, $out, \&extract_names);
 
 ############################################################
 $title = 'Search for tcp port';
@@ -277,7 +286,7 @@ $params = { search_proto => 'tcp 82',
 
 $out = [qw(Test4 Test5)];
 
-test_run($title, $path, $params, $owner, $out, \&extract_names);
+test_run_o($title, $path, $params, $owner, $out, \&extract_names);
 
 ############################################################
 $title = 'Only find whole number';
@@ -290,7 +299,7 @@ $params = { search_proto => 'tcp 8',
 
 $out = [qw()];
 
-test_run($title, $path, $params, $owner, $out, \&extract_names);
+test_run_o($title, $path, $params, $owner, $out, \&extract_names);
 
 ############################################################
 $title = 'Search port/protocol number';
@@ -304,7 +313,7 @@ $params = { search_proto => '82',
 
 $out = [qw(Test10 Test11 Test4 Test5 Test6 Test7 Test8)];
 
-test_run($title, $path, $params, $owner, $out, \&extract_names);
+test_run_o($title, $path, $params, $owner, $out, \&extract_names);
 
 ############################################################
 $title = 'Search port number in range';
@@ -319,7 +328,7 @@ $params = { search_proto => '83',
 
 $out = [qw(T6_1 Test12 Test9)];
 
-test_run($title, $path, $params, $owner, $out, \&extract_names);
+test_run_o($title, $path, $params, $owner, $out, \&extract_names);
 
 ############################################################
 $title = 'Search port with modifier and source port';
@@ -332,7 +341,7 @@ $params = { search_proto => '69',
 
 $out = [qw(Test12 Test6)];
 
-test_run($title, $path, $params, $owner, $out, \&extract_names);
+test_run_o($title, $path, $params, $owner, $out, \&extract_names);
 
 ############################################################
 $title = 'Search port and not source port';
@@ -346,7 +355,7 @@ $params = { search_proto => '69',
 
 $out = [qw(Test12)];
 
-test_run($title, $path, $params, $owner, $out, \&extract_names);
+test_run_o($title, $path, $params, $owner, $out, \&extract_names);
 
 ############################################################
 $title = 'Search protocol modifier, ignore case';
@@ -359,7 +368,7 @@ $params = { search_proto => 'OneWay',
 
 $out = [qw(Test12)];
 
-test_run($title, $path, $params, $owner, $out, \&extract_names);
+test_run_o($title, $path, $params, $owner, $out, \&extract_names);
 
 ############################################################
 $title = 'Find icmp code when searching for number';
@@ -372,7 +381,7 @@ $params = { search_proto => '3',
 
 $out = [qw(Test12)];
 
-test_run($title, $path, $params, $owner, $out, \&extract_names);
+test_run_o($title, $path, $params, $owner, $out, \&extract_names);
 
 ############################################################
 $title = 'Find icmp type when searching for number';
@@ -385,7 +394,7 @@ $params = { search_proto => '13',
 
 $out = [qw(Test11 Test12)];
 
-test_run($title, $path, $params, $owner, $out, \&extract_names);
+test_run_o($title, $path, $params, $owner, $out, \&extract_names);
 
 ############################################################
 $title = 'Search for proto and exact IP';
@@ -400,7 +409,7 @@ $params = { search_ip1   => '10.2.2.0/24',
 
 $out = [qw(Test3)];
 
-test_run($title, $path, $params, $owner, $out, \&extract_names);
+test_run_o($title, $path, $params, $owner, $out, \&extract_names);
 
 ############################################################
 $title = 'Subnet IP search for single address';
@@ -414,7 +423,7 @@ $params = { search_ip1    => '10.2.2.0/25',
 
 $out = [qw(Test2 Test4 Test5 Test9)];
 
-test_run($title, $path, $params, $owner, $out, \&extract_names);
+test_run_o($title, $path, $params, $owner, $out, \&extract_names);
 
 ############################################################
 $title = 'Subnet IP search for single address and chosen network';
@@ -428,7 +437,7 @@ $params = { search_ip1      => '10.2.2.2',
 
 $out = [qw(Test4 Test9)];
 
-test_run($title, $path, $params, $owner, $out, \&extract_names);
+test_run_o($title, $path, $params, $owner, $out, \&extract_names);
 
 ############################################################
 $title = 'Supernet IP search for single address';
@@ -442,7 +451,7 @@ $params = { search_ip1      => '10.2.2.0/25',
 
 $out = [qw(Test1 Test3 Test3a Test6)];
 
-test_run($title, $path, $params, $owner, $out, \&extract_names);
+test_run_o($title, $path, $params, $owner, $out, \&extract_names);
 
 ############################################################
 $title = 'Supernet IP search for aggregate';
@@ -457,7 +466,7 @@ $params = { search_ip1      => '10.1.0.0/16',
 
 $out = [qw(Test2 Test5)];
 
-test_run($title, $path, $params, $owner, $out, \&extract_names);
+test_run_o($title, $path, $params, $owner, $out, \&extract_names);
 
 ############################################################
 $title = 'Supernet IP search finds all aggregates';
@@ -471,7 +480,7 @@ $params = { search_ip1      => '10.0.0.0/8',
 
 $out = [qw(Test7 Test8)];
 
-test_run($title, $path, $params, $owner, $out, \&extract_names);
+test_run_o($title, $path, $params, $owner, $out, \&extract_names);
 
 ############################################################
 $title = 'Supernet IP search for loopback';
@@ -485,7 +494,7 @@ $params = { search_ip1      => '10.3.3.3',
 
 $out = [qw(Test5)];
 
-test_run($title, $path, $params, $owner, $out, \&extract_names);
+test_run_o($title, $path, $params, $owner, $out, \&extract_names);
 
 ############################################################
 $title = 'Supernet IP search for unknown internet address';
@@ -499,7 +508,7 @@ $params = { search_ip1      => '9.9.9.9',
 
 $out = [qw(Test7)];
 
-test_run($title, $path, $params, $owner, $out, \&extract_names);
+test_run_o($title, $path, $params, $owner, $out, \&extract_names);
 
 ############################################################
 $title = 'Text search in rules and users';
@@ -512,7 +521,7 @@ $params = { search_ip1  => 'Sub',
 
 $out = [qw(Test1 Test10 Test11 Test12 Test2 Test3 Test3a)];
 
-test_run($title, $path, $params, $owner, $out, \&extract_names);
+test_run_o($title, $path, $params, $owner, $out, \&extract_names);
 
 ############################################################
 $title = 'Case sensitive text search in rules and users';
@@ -526,7 +535,7 @@ $params = { search_ip1            => 'KUNDE',
 
 $out = [qw(Test10 Test11 Test12)];
 
-test_run($title, $path, $params, $owner, $out, \&extract_names);
+test_run_o($title, $path, $params, $owner, $out, \&extract_names);
 
 ############################################################
 $title = 'Exact match for text search in rules and users';
@@ -541,7 +550,7 @@ $params = { search_ip1            => 'network:KUNDE',
 
 $out = [qw(Test10)];
 
-test_run($title, $path, $params, $owner, $out, \&extract_names);
+test_run_o($title, $path, $params, $owner, $out, \&extract_names);
 
 ############################################################
 $title = 'Text search for type in rules and users';
@@ -554,7 +563,7 @@ $params = { search_ip1  => 'any:',
 
 $out = [qw(Test2 Test5 Test6 Test8)];
 
-test_run($title, $path, $params, $owner, $out, \&extract_names);
+test_run_o($title, $path, $params, $owner, $out, \&extract_names);
 
 ############################################################
 $title = 'Text search in rule names';
@@ -567,7 +576,7 @@ $params = { search_string => 'Test3',
 
 $out = [qw( Test3 Test3a)];
 
-test_run($title, $path, $params, $owner, $out, \&extract_names);
+test_run_o($title, $path, $params, $owner, $out, \&extract_names);
 
 ############################################################
 $title = 'Text search in description of rules';
@@ -581,7 +590,7 @@ $params = { search_string  => 'foo',
 
 $out = [qw( Test2 Test4)];
 
-test_run($title, $path, $params, $owner, $out, \&extract_names);
+test_run_o($title, $path, $params, $owner, $out, \&extract_names);
 
 ############################################################
 $title = 'Show matching users of service, 2x ip';
@@ -598,7 +607,7 @@ $params = { service       => 'Test4',
 
 $out = [qw(host:B10 host:Range interface:u.Big host:k)];
 
-test_run($title, $path, $params, $owner, $out, \&extract_names);
+test_run_o($title, $path, $params, $owner, $out, \&extract_names);
 
 ############################################################
 $title = 'Show matching users of service, 2x ip, chosen networks';
@@ -615,7 +624,7 @@ $params = { service         => 'Test9',
 
 $out = [qw(host:B10)];
 
-test_run($title, $path, $params, $owner, $out, \&extract_names);
+test_run_o($title, $path, $params, $owner, $out, \&extract_names);
 
 ############################################################
 $title = 'Show matching users of service, proto + 2x ip';
@@ -631,7 +640,7 @@ $params = { service       => 'Test4',
 
 $out = [qw(host:B10 host:Range interface:u.Big)];
 
-test_run($title, $path, $params, $owner, $out, \&extract_names);
+test_run_o($title, $path, $params, $owner, $out, \&extract_names);
 
 ############################################################
 $title = 'Show matching rules with expanded users';
@@ -654,7 +663,7 @@ $out = [
          }
        ];
 
-test_run($title, $path, $params, $owner, $out, \&extract_records);
+test_run_o($title, $path, $params, $owner, $out, \&extract_records);
 
 ############################################################
 $title = 'Match only protocol in rules';
@@ -675,7 +684,7 @@ $out = [
     }
 ];
 
-test_run($title, $path, $params, $owner, $out, \&extract_records);
+test_run_o($title, $path, $params, $owner, $out, \&extract_records);
 
 ############################################################
 $title = 'Show matching rules of service with user -> user';
@@ -696,7 +705,7 @@ $out = [
          }
        ];
 
-test_run($title, $path, $params, $owner, $out, \&extract_records);
+test_run_o($title, $path, $params, $owner, $out, \&extract_records);
 
 ############################################################
 $title = 'Non-matching rules of service with user -> user';
@@ -710,7 +719,7 @@ $params = { service    => 'Test9',
 
 $out = [];
 
-test_run($title, $path, $params, $owner, $out, \&extract_records);
+test_run_o($title, $path, $params, $owner, $out, \&extract_records);
 
 ############################################################
 $title = 'Show services with rules of IP search';
@@ -740,7 +749,7 @@ $out = [
          }
        ];
 
-test_run($title, $path, $params, $owner, $out, \&extract_records);
+test_run_o($title, $path, $params, $owner, $out, \&extract_records);
 
 ############################################################
 done_testing;

@@ -8,7 +8,9 @@ use base ("Selenium::Chrome");
 use Selenium::Waiter qw/wait_until/;
 use Selenium::Remote::WDKeys;
 use Plack::Test;
-use PolicyWeb::Init qw( $port $SERVER $export_dir $home_dir $netspoc );
+use PolicyWeb::Init
+    qw( prepare_export prepare_runtime_base
+        $port $SERVER $export_dir $home_dir $netspoc );
 
 our @EXPORT = qw(
   login_as_guest
@@ -22,8 +24,8 @@ our @EXPORT = qw(
 
 sub getDriver {
 
-    PolicyWeb::Init::prepare_export();
-    PolicyWeb::Init::prepare_runtime();
+    prepare_export();
+    prepare_runtime_base();
 
     my $driver =
       PolicyWeb::Frontend->new(browser_name   => 'chrome',
@@ -99,29 +101,6 @@ sub login {
 sub login_as_guest {
     my $driver = shift;
     $driver->login('guest');
-}
-
-sub login_as_guest_and_choose_owner {
-    my ($driver, $owner) = @_;
-    $driver->login_as_guest();
-    $driver->choose_owner($owner);
-}
-
-sub choose_owner {
-    my ($driver, $owner) = @_;
-
-    # The two waits below are necessary to avoid a race condition.
-    # Without them, sometimes the combo box has not been rendered
-    # yet and an error that "triggerEl of undefined cannot be found"
-    # is raised.
-    my $window = wait_until { $driver->find_element('win_owner') };
-    my $owner_field;
-    wait_until {
-        $owner_field = $driver->find_child_element($window, 'combo_initial_owner-inputEl')
-    };
-    $owner_field->send_keys('x');
-    $owner_field->send_keys(KEYS->{'enter'});
-    # $driver->select_combobox_item('combo_initial_owner', $owner);
 }
 
 sub get_grid_cell_value_by_field_name {
