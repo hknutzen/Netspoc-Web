@@ -5,19 +5,13 @@
 use lib 't';
 use Selenium::Chrome;
 use PolicyWeb::Init qw/$SERVER $port/;
+use PolicyWeb::Frontend;
+use PolicyWeb::Diff qw/setup/;
 
-PolicyWeb::Init::prepare_export();
-PolicyWeb::Init::prepare_runtime_no_login();
-
-my $driver =
-  Selenium::Chrome->new(browser_name   => 'chrome',
-                        proxy          => { proxyType => 'direct', },
-                        base_url       => "http://$SERVER:$port",
-                        default_finder => 'id',
-                        javascript     => 1,
-                       );
+my $driver = PolicyWeb::Frontend::getDriver();
 
 $driver->get('index.html');
+PolicyWeb::Diff::setup($driver);
 
 eval {
     while (1) {
