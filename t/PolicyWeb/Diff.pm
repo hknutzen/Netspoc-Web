@@ -8,8 +8,7 @@ use PolicyWeb::CleanupDaily;
 use Selenium::Waiter qw/wait_until/;
 
 sub test {
-
-    my $driver = shift;
+    my ($driver) = @_;
 
     plan tests => 2;
 
@@ -28,11 +27,9 @@ sub test {
 }
 
 sub services {
-
-    my $driver = shift;
+    my ($driver) = @_;
 
     subtest "check services with diffrent policies" => sub {
-
         plan tests => 4;
 
         wait_until { $driver->find_element('btn_services_tab')->click };
@@ -71,11 +68,9 @@ sub services {
 }
 
 sub diff {
-
-    my $driver = shift;
+    my ($driver) = @_;
 
     subtest "check diff" => sub {
-
         plan tests => 6;
 
         $driver->find_element('btn_diff_tab')->click;
@@ -167,8 +162,7 @@ sub diff {
 }
 
 sub setup {
-
-    my $driver = shift;
+    my ($driver) = @_;
 
     my $export_dir = $driver->get_export_dir();
     my $home_dir   = $driver->get_home_dir();
@@ -208,7 +202,7 @@ s/service:Test11(.+\n)*\}\n/service:Test11 = {\n user = network:Sub;\n permit sr
 }
 
 sub fallback {
-    my $driver = shift;
+    my ($driver) = @_;
 
     $driver->find_element('list_history')->click;
 

@@ -56,20 +56,15 @@ sub test {
 }
 
 sub check_grid {
-
-    my $driver   = shift;
-    my $grid     = shift;
-    my @contains = @{ (shift) };
+  
+    my ($driver, $grid, $contains) = @_;
 
     my @list =
       $driver->find_child_elements($grid, '//table[contains(id, gridview)]',
                                    'xpath');
 
-    for (my $i = 0 ; $i < @contains ; $i++) {
-        my $check = grep { $_->get_text eq $contains[$i] } @list;
-        if (!$check) {
-            return 0;
-        }
+    for my $name (@$contains) {
+        grep { $_->get_text eq $name } @list or return 0;
     }
     return 1;
 }

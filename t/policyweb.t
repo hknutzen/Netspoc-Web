@@ -4,15 +4,15 @@
 # with possible arguments:
 #   login
 #   services
-#   own_networks
+#   networks
 #   entitlement
 
 use strict;
 use warnings;
 use lib 't';
 use Test::More;
+use Selenium::Remote::Driver;
 use Selenium::Remote::WDKeys;
-use Selenium::Chrome;
 use Selenium::Waiter qw/wait_until/;
 
 use PolicyWeb::Frontend;
@@ -22,8 +22,11 @@ use PolicyWeb::OwnNetworks;
 use PolicyWeb::Entitlement;
 use PolicyWeb::Diff;
 
-my $driver = PolicyWeb::Frontend::getDriver();
-# my $driver = PolicyWeb::Frontend::getBrowserstackyDriver();
+
+# 0 - Chrome
+# 1 - Internet Explorer 11.0
+my $driver = PolicyWeb::Frontend::getBrowserstackyDriver(1, \@ARGV);
+# my $driver = PolicyWeb::Frontend::getDriver();
 
 my %tests = (networks => \&PolicyWeb::OwnNetworks::test,
              services     => \&PolicyWeb::Service::test,
@@ -81,6 +84,9 @@ else {
 
 done_testing();
 
-if ($driver) { $driver->shutdown_binary; }
+# use quit for Selenium::Remote::Driver
+# use shutdown_binary for Selenium::Chrome
+if ($driver) { $driver->quit; }
+# if ($driver) { $driver->shutdown_binary; }
 
 exit 0;

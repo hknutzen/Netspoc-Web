@@ -4,7 +4,12 @@ package PolicyWeb::Frontend;
 use strict;
 use warnings;
 use Test::More;
-use base ("Selenium::Chrome");
+
+# Selenium interface version 1.30, some issues with browserstack on versions 1.31+
+use lib '/home/marker/Selenium-Remote-Driver/lib';
+use base qw(Selenium::Remote::Driver);
+# use base qw(Selenium::Chrome);
+
 use Selenium::Waiter qw/wait_until/;
 use Selenium::Remote::WDKeys;
 use Plack::Test;
@@ -42,32 +47,47 @@ sub getDriver {
     return $driver;
 }
 
+# 0 - Chrome
+# 1 - Internet Explorer 11.0
 sub getBrowserstackyDriver {
+    my ($browser, $ARGVref) = @_;
+    my $args = join(" ", @$ARGVref);
 
-
-    PolicyWeb::Init::prepare_export();
-    PolicyWeb::Init::prepare_runtime();
-
+    prepare_export();
+    prepare_runtime_base();
 
     #Input capabilities
-    my $extraCaps = {
-        "browser" => "Chrome",
-        "browser_version" => "73.0",
-        "os" => "Windows",
-        "os_version" => "10",
-        "resolution" => "1024x768",
-        "name" => "Chrome 73",
-        "browserstack.local" => "true"
-    };
+    my $extraCaps;
+    if($browser == 0){
+        $extraCaps = {
+            "browser" => "Chrome",
+            "browser_version" => "73.0",
+            "os" => "Windows",
+            "os_version" => "10",
+            "resolution" => "1024x768",
+            "name" => "$args",
+            "browserstack.local" => "true",
+            "browserstack.debug" => "true"
+        };
+    } else {
+        $extraCaps = {
+            "browser" => "IE",
+            "browser_version" => "11.0",
+            "os" => "Windows",
+            "os_version" => "10",
+            "resolution" => "1024x768",
+            "name" => "$args",
+            "browserstack.local" => "true",
+            "browserstack.debug" => "true"
+        };
+    }
 
     my $login = "leonarddietrich1";
     my $key = "9Ej447ymmjCW8Lzs2VsR";
     my $host = "$login:$key\@hub-cloud.browserstack.com";
 
     my $driver =
-      PolicyWeb::Frontend->new(browser_name   => 'chrome',
-                               proxy          => { proxyType => 'direct', },
-                               default_finder => 'id',
+      PolicyWeb::Frontend->new(default_finder => 'id',
                                javascript     => 1,
                                base_url       => "http://$SERVER:$port",
                                'remote_server_addr' => $host,
@@ -87,15 +107,13 @@ sub login {
     my ($driver, $name, $pass) = @_;
     return if !$name;
 
-    $driver->find_element('txtf_email');
-    $driver->send_keys_to_active_element($name);
+    wait_until { $driver->find_element('txtf_email') }->send_keys($name);
 
     if ($pass) {
-        $driver->find_element('txtf_password')->click;
-        $driver->send_keys_to_active_element($pass);
+        wait_until { $driver->find_element('txtf_password') }->send_keys($pass);
     }
 
-    $driver->find_element('btn_login')->click;
+    wait_until { $driver->find_element('btn_login')->click };
 }
 
 sub login_as_guest {
@@ -193,28 +211,21 @@ sub error {
 ';
 
 sub select_by_key {
-    my $driver     = shift;
-    my @grid_cells = @{ (shift) };
-    my $row        = shift;
-    my $offset     = shift;
-    my $key        = shift;
+    my ($driver, $grid_cells, $row, $offset, $key) = @_;
 
-    for (my $i = 0 ; $i < @grid_cells ; $i += $row) {
-        my $gird_key = $grid_cells[ $i + $offset ]->get_text;
-        if ($gird_key eq $key) {
-            $grid_cells[$i]->click;
+    for (my $i = 0 ; $i < @$grid_cells ; $i += $row) {
+        my $grid_key = $grid_cells->[ $i + $offset ]->get_text;
+        if ($grid_key eq $key) {
+            $grid_cells->[$i]->click;
             return;
         }
     }
     BAIL_OUT("$key not found");
 }
 
+# TODO: save text from elements, because get_text is requesting the strings everytime from the browser
 sub grid_contains {
-    my $driver      = shift;
-    my $grid_parent = ${ (shift) };
-    my $row         = ${ (shift) };
-    my $offset      = ${ (shift) };
-    my @search      = @{ (shift) };
+    my ($driver, $grid_parent, $row, $offset, $search) = @_;
 
     my @grid_cells =
       $driver->find_child_elements($grid_parent, 'x-grid-cell', 'class');
@@ -224,16 +235,16 @@ sub grid_contains {
         return 0;
     }
 
-    for (my $i = 0 ; $i < @search ; $i++) {
+    for (my $i = 0 ; $i < @$search ; $i++) {
         my $ok = 0;
         for (my $j = 0 ; $j < @grid_cells ; $j += $row) {
-            if ($grid_cells[ $j + $offset ]->get_text eq $search[$i]) {
+            if ($grid_cells[ $j + $offset ]->get_text eq $search->[$i]) {
                 $ok = 1;
             }
         }
         if (!$ok) {
             print "------------\n"
-              . $search[ $i + $offset ]
+              . $search->[ $i + $offset ]
               . "\n is not equal to any item:\n";
             for (my $i=0; $i<@grid_cells; $i+=$row) {
                 print "$i: ", $grid_cells[$i]->get_text;
@@ -246,18 +257,13 @@ sub grid_contains {
 }
 
 sub is_grid_in_order {
-    my $driver     = shift;
-    my @grid_cells = @{ (shift) };
-    my $row        = ${ (shift) };
-    my $offset     = ${ (shift) };
-    my $order      = ${ (shift) };
-    my $column     = ${ (shift) };
+    my ($driver, $grid_cells, $row, $offset, $order, $column) = @_;
 
-    for (my $i = $offset ; $i < @grid_cells ; $i += $row) {
+    for (my $i = $offset ; $i < @$grid_cells ; $i += $row) {
 
         #print "i: ".$i."\n";
-        my $a = $grid_cells[ $i + $column ]->get_text;
-        my $b = $grid_cells[ $i + $column - $row ]->get_text;
+        my $a = $grid_cells->[ $i + $column ]->get_text;
+        my $b = $grid_cells->[ $i + $column - $row ]->get_text;
         if (($a cmp $b) eq $order) {
             print "('$a' cmp '$b') ne '$order'\n";
             return 0;
@@ -269,8 +275,8 @@ sub is_grid_in_order {
 sub check_sytax_grid {
     my $driver     = shift;
     my @grid_cells = @{ (shift) };
-    my $row        = ${ (shift) };
-    my $offset     = ${ (shift) };
+    my $row        = shift;
+    my $offset     = shift;
     my @regex      = @{ (shift) };
 
     if (!scalar @grid_cells) {
@@ -307,34 +313,29 @@ sub check_sytax_grid {
 
 # check if order is correct after sorting them
 sub is_order_after_change {
-    my $driver     = shift;
-    my $grid       = ${ (shift) };
-    my $row        = ${ (shift) };
-    my $column     = ${ (shift) };
-    my @grid_heads = @{ (shift) };
-    my $offset     = ${ (shift) };
+    my ($driver, $grid, $row, $column, $grid_heads, $offset) = @_;
 
     # check if order is correct
     # first column
     my @grid_cells = $driver->find_child_elements($grid, 'x-grid-cell', 'class');
-    $driver->is_grid_in_order(\@grid_cells, \$row, \$row, \-1, \$column)
+    $driver->is_grid_in_order(\@grid_cells, $row, $row, -1, $column)
       || (return 0);
-    $grid_heads[ $column + $offset ]->click;
+    $grid_heads->[ $column + $offset ]->click;
 
     # grid has to be reloaded
     @grid_cells = $driver->find_child_elements($grid, 'x-grid-cell', 'class');
-    $driver->is_grid_in_order(\@grid_cells, \$row, \$row, \1, \$column)
+    $driver->is_grid_in_order(\@grid_cells, $row, $row, 1, $column)
       || (return 0);
 
     for (my $i = $column + 1 ; $i < $row ; $i++) {
-        $grid_heads[ $i + $offset ]->click;
+        $grid_heads->[ $i + $offset ]->click;
         @grid_cells = $driver->find_child_elements($grid, 'x-grid-cell', 'class');
-        $driver->is_grid_in_order(\@grid_cells, \$row, \$row, \-1, \$i)
+        $driver->is_grid_in_order(\@grid_cells, $row, $row, -1, $i)
           || (return 0);
 
-        $grid_heads[ $i + $offset ]->click;
+        $grid_heads->[ $i + $offset ]->click;
         @grid_cells = $driver->find_child_elements($grid, 'x-grid-cell', 'class');
-        $driver->is_grid_in_order(\@grid_cells, \$row, \$row, \1, \$i)
+        $driver->is_grid_in_order(\@grid_cells, $row, $row, 1, $i)
           || (return 0);
     }
     return 1;
