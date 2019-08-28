@@ -17,8 +17,7 @@ sub test {
 
             subtest "fail to login" => sub {
                 plan tests => 1;
-                # sleep 20;
-                # wait_until { $driver->send_keys_to_active_element('not_guest')};
+                
                 wait_until { $driver->find_element('txtf_email')->send_keys('not_guest') };
 
                 $driver->find_element('btn_login')->click;
@@ -31,8 +30,6 @@ sub test {
 
                 $driver->get('index.html');
 
-                # wait_until { $driver->find_element('txtf_email') };
-                # $driver->send_keys_to_active_element('guest');
                 wait_until { $driver->find_element('txtf_email')->send_keys('guest') };
 
                 wait_until { $driver->find_element('btn_login')->click };

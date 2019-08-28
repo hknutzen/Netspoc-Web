@@ -2,10 +2,13 @@
 # to test specific test in a specific order (login will be first anyway)
 # run 'perl t/policyweb.t'
 # with possible arguments:
+#   remotely    - testing with BrowserStack
+#   ie          - Internet Explorer 11.0
 #   login
 #   services
 #   networks
 #   entitlement
+#   diff
 
 use strict;
 use warnings;
@@ -22,19 +25,17 @@ use PolicyWeb::OwnNetworks;
 use PolicyWeb::Entitlement;
 use PolicyWeb::Diff;
 
-
-# 0 - Chrome
-# 1 - Internet Explorer 11.0
-my $driver = PolicyWeb::Frontend::getBrowserstackyDriver(1, \@ARGV);
-# my $driver = PolicyWeb::Frontend::getDriver();
-
 my %tests = (networks => \&PolicyWeb::OwnNetworks::test,
              services     => \&PolicyWeb::Service::test,
              entitlement  => \&PolicyWeb::Entitlement::test,
              diff         => \&PolicyWeb::Diff::test,
             );
 
+my $driver;
+
 if (!scalar @ARGV) {
+
+    $driver = PolicyWeb::Frontend::getDriver();
 
     plan tests => 6;
 
@@ -58,17 +59,35 @@ if (!scalar @ARGV) {
 }
 else {
 
-    plan tests => scalar @ARGV;
-
     my $with_login = 0;
+    my $with_browserstack = 0;
+    my $with_ie = 0;
 
     for (my $i = 0 ; $i < @ARGV ; $i++) {
         if ($ARGV[$i] eq "login") {
             $with_login = 1;
-            splice @ARGV, $i, 1;
-            last;
+            splice @ARGV, $i--, 1;
+        } elsif ($ARGV[$i] eq "remotely") {
+            $with_browserstack = 1;
+            splice @ARGV, $i--, 1;
+        } elsif ($ARGV[$i] eq "ie") {
+            $with_ie = 1;
+            splice @ARGV, $i--, 1;
         }
     }
+
+    if ($with_browserstack) {
+        # 0 - Chrome
+        # 1 - Internet Explorer 11.0
+        $driver = PolicyWeb::Frontend::getBrowserstackyDriver($with_ie, \@ARGV);
+    } else {
+        if ($with_ie) {
+            die "local testing with internet explorer not supported.\n";
+        }
+        $driver = PolicyWeb::Frontend::getDriver();
+    }
+
+    plan tests => scalar @ARGV + 1;
 
     if ($with_login) {
         subtest login => sub { PolicyWeb::Login::test($driver); };
