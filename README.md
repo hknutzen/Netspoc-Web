@@ -3,7 +3,7 @@ Netspoc-Web
 
 A multi user web frontend to view rules managed with Netspoc
 
-[![BrowserStack logo & link](./Browserstack-logo.svg)](https://www.browserstack.com/)
+<a href="https://www.browserstack.com/"><img src="./Browserstack-logo.svg" height="40"></a>
 
 **Important note:**
 
