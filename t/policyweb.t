@@ -87,7 +87,7 @@ else {
         $driver = PolicyWeb::Frontend::getDriver();
     }
 
-    plan tests => scalar @ARGV + 1;
+    plan tests => scalar @ARGV + $with_login;
 
     if ($with_login) {
         subtest login => sub { PolicyWeb::Login::test($driver); };
