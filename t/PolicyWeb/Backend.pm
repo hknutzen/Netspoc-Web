@@ -29,7 +29,7 @@ our $cookie;
 
 sub prepare_runtime {
 
-    prepare_runtime_base();
+    prepare_runtime_base(shift);
 
     # Login as guest
     test_psgi $app, sub {

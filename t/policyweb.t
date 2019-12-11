@@ -3,6 +3,7 @@
 # run 'perl t/policyweb.t'
 # with possible arguments:
 #   remotely    - testing with BrowserStack
+#   travis
 #   ie          - Internet Explorer 11.0
 #   login
 #   services
@@ -14,7 +15,6 @@ use strict;
 use warnings;
 use lib 't';
 use Test::More;
-use Selenium::Remote::Driver;
 use Selenium::Remote::WDKeys;
 use Selenium::Waiter qw/wait_until/;
 
@@ -25,7 +25,7 @@ use PolicyWeb::OwnNetworks;
 use PolicyWeb::Entitlement;
 use PolicyWeb::Diff;
 
-my %tests = (networks => \&PolicyWeb::OwnNetworks::test,
+my %tests = (networks     => \&PolicyWeb::OwnNetworks::test,
              services     => \&PolicyWeb::Service::test,
              entitlement  => \&PolicyWeb::Entitlement::test,
              diff         => \&PolicyWeb::Diff::test,
@@ -61,33 +61,52 @@ else {
 
     my $with_login = 0;
     my $with_browserstack = 0;
+    my $with_travis = 0;
+    # 0 - Chrome
+    # 1 - Internet Explorer 11.0
     my $with_ie = 0;
+    my @args = @ARGV;
 
-    for (my $i = 0 ; $i < @ARGV ; $i++) {
-        if ($ARGV[$i] eq "login") {
+    for (my $i = 0 ; $i < @args ; $i++) {
+        if ($args[$i] eq "login") {
             $with_login = 1;
-            splice @ARGV, $i--, 1;
-        } elsif ($ARGV[$i] eq "remotely") {
+            splice @args, $i--, 1;
+        } elsif ($args[$i] eq "remotely") {
             $with_browserstack = 1;
-            splice @ARGV, $i--, 1;
-        } elsif ($ARGV[$i] eq "ie") {
+            splice @args, $i--, 1;
+        } elsif ($args[$i] eq "travis") {
+            $with_travis = 1;
+            splice @args, $i--, 1;
+        }elsif ($args[$i] eq "ie") {
             $with_ie = 1;
-            splice @ARGV, $i--, 1;
+            splice @args, $i--, 1;
         }
     }
 
+    my $bstena;
+    if ($with_login) {
+        $bstena = "login ".join(' ', @args);
+    } elsif (scalar @args == 0) {
+        # no tests selected -> run all tests
+        $bstena = "login ".join(' ', keys %tests);
+        $with_login = 1;
+        @args = keys %tests;
+    } else {
+        $bstena = join(' ', @args);
+    }
+
     if ($with_browserstack) {
-        # 0 - Chrome
-        # 1 - Internet Explorer 11.0
-        $driver = PolicyWeb::Frontend::getBrowserstackyDriver($with_ie, \@ARGV);
+        $driver = PolicyWeb::Frontend::getBrowserstackyDriver($with_ie, $with_travis, $bstena);
     } else {
         if ($with_ie) {
-            die "local testing with internet explorer not supported.\n";
+            die "Local testing with Internet Explorer is not supported.\n";
+        } elsif ($with_travis) {
+            die "Not possible run test with Travis CI without BrowserStack.\n";
         }
         $driver = PolicyWeb::Frontend::getDriver();
     }
 
-    plan tests => scalar @ARGV + $with_login;
+    plan tests => scalar @args + $with_login;
 
     if ($with_login) {
         subtest login => sub { PolicyWeb::Login::test($driver); };
@@ -96,7 +115,7 @@ else {
         $driver->login_as_guest();
     }
 
-    for my $key (@ARGV) {
+    for my $key (@args) {
         subtest $key => sub { $tests{$key}->($driver); };
     }
 }

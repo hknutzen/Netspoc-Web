@@ -158,8 +158,10 @@ service:T6_1 = {
 END
 ############################################################
 
-prepare_export($data);
-prepare_runtime();
+print("====\n".join(' ',@ARGV)."\n");
+my $with_travis = @ARGV && $ARGV[0] eq "travis";
+prepare_export($with_travis, $data);
+prepare_runtime($with_travis, 1);
 
 my ($path, $params, $owner, $out, $title);
 $path = 'service_list';

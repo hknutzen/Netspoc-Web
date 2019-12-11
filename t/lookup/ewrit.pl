@@ -6,8 +6,8 @@ use lib 't';
 use Selenium::Chrome;
 use PolicyWeb::Init qw/prepare_export prepare_runtime_base $SERVER $port/;
 
-prepare_export();
-prepare_runtime_base();
+prepare_export(0);
+prepare_runtime_base(0);
 
 my $driver =
   Selenium::Chrome->new(browser_name   => 'chrome',

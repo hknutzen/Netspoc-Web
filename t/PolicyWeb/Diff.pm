@@ -194,7 +194,8 @@ s/service:Test11(.+\n)*\}\n/service:Test11 = {\n user = network:Sub;\n permit sr
     # new policy is from the actuall time
     $timestamp = time();
     my $policy_num = 2;
-    export_netspoc($netspoc, $export_dir, $policy_num++, $timestamp);
+    my $with_travis = @ARGV && $ARGV[0] eq "travis";
+    export_netspoc($with_travis, $netspoc, $export_dir, $policy_num++, $timestamp);
 
     $mail = cleanup_daily();
 

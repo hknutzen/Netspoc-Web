@@ -1,0 +1,49 @@
+language: perl
+perl:
+- '5.24'
+before_install:
+- cd ..
+- git clone https://github.com/hknutzen/Netspoc.git
+- export PERL5LIB=/home/travis/build/Leuchtstift/Netspoc/lib/
+- sudo apt update -y
+- sudo apt install apache2 -y
+- sudo apt install rcs -y
+- sudo systemctl start apache2
+install:
+- cpanm --notest CGI::Session
+- cpanm --notest Crypt::SaltedHash
+- cpanm --notest Digest::MD5
+- cpanm --notest Digest::SHA
+- cpanm --notest Encode
+- cpanm --notest File::Path
+- cpanm --notest File::Spec
+- cpanm --notest Getopt::Long
+- cpanm --notest HTML::Strip
+- cpanm --notest IPC::Run3
+- cpanm --notest JSON::XS
+- cpanm --notest List::Util
+- cpanm --notest Net::LDAP
+- cpanm --notest NetAddr::IP::Util
+- cpanm --notest parent
+- cpanm --notest Plack::Test::Server
+- cpanm --notest Plack::Middleware::XForwardedFor
+- cpanm --notest Regexp::IPv6
+- cpanm --notest String::MkPasswd
+- cpanm --notest Template
+- cpanm --notest Test::Selenium::Remote::Driver
+- cpanm --notest Test::More
+- cpanm --notest Test::Differences
+- cpanm --notest Text::Template
+- cpanm --notest Time::HiRes
+- cpanm --notest XML::XPath
+- cpanm --notest Cpanel::JSON::XS
+- cpanm --notest Selenium::Remote::Driver
+- cpanm --notest Sereal::Encoder
+before_script:
+- cd Netspoc-Web
+
+addons:
+  browserstack:
+    username: "leonarddietrich1"
+    access_key: 
+      secure: "esE+No00CAkr+Kdm5mmytnHz0D5uow7JtyGybu7UQRr07U6HKvX9vhxQg5T0CqhWJY7P0jbBUIG1esc20m+E1m3meHXvESwaZFFWLyxDZ0FfDDW1LJ3cryzDe9d11JfEpzgCUQkslLzLq6i2KPA03a3xbAfqhIMDGg7PlIgQwUE19ge2VKBNvh7LOkOJ9O1hHYaZAZwe4+ANwP8Ve5NSEMFq5+QiJ8kF6chdwmC/rJSKfXltfgHDtCOJJ2EIrdFYz+3LAg1EeOslR0ON0cF+4GXwmeJLdspoR07rQWdKHBtljOi9jFRKCBEqSDpvSHI2YE8Ec7qMI43FRl6WJvLL2Z+Zfy1HVDBkMmsqBSidCUd8dDJwGEZYXo/N27BkJijzfRkIPHdPdy0RTH/DoQywed1W8yPEWCG/diteDN2jiwocUPS/9Pb8N0NrfoqegdaKxsbYdLxePjbH1h7MW3qa2ittkLQ0KF3aoLOwLgeP9Z+4qpyzHh9jyQlPnbxle+ROP+WU2eYQ9kn2iYJi/tED09HryULHIr7sPz/sMnkehSpJNPqNTL99g/L7RK9KWPc2UfATGRUKFO+uHWmE1opQjoQNaNm+GUaMex0YhO5K2b5ZBBrvC72Hzh2gwzeTosbnOU4xskGKJ1itIYN4Rj/x3+pC22/rqaDRX6OMWAMa+48="

@@ -21,15 +21,19 @@ sub set_timestamp_of_files {
 }
 
 sub export_netspoc {
-    my ($input, $export_dir, $policy_num, $timestamp) = @_;
+    my ($travis, $input, $export_dir, $policy_num, $timestamp) = @_;
     my $policy = "p$policy_num";
     my ($in_fh, $filename) = tempfile(UNLINK => 1);
     print $in_fh $input;
     close $in_fh;
 
     my $policy_path = "$export_dir/$policy";
-    my $cmd =
-"perl /home/$ENV{USER}/Netspoc/bin/export-netspoc -quiet $filename $policy_path";
+    my $cmd; 
+    if ($travis) {
+        $cmd = "perl /home/travis/build/Leuchtstift/Netspoc/bin/export-netspoc -quiet $filename $policy_path";
+    } else {
+        $cmd = "perl /home/$ENV{USER}/Netspoc/bin/export-netspoc -quiet $filename $policy_path";
+    }
     run($cmd);
     system("echo '# $policy #' > $policy_path/POLICY") == 0 or die $!;
     system("cd $export_dir; ln -sfT $policy current") == 0  or die $!;

@@ -1,7 +1,7 @@
 # .proverc
 
 # start testing with recently failed
---state=save
+# --state=save
 
 # ctrl+c will still output test summary
 --trap

@@ -6,16 +6,16 @@ use warnings;
 use Test::More;
 
 # Selenium interface version 1.30, some issues with browserstack on versions 1.31+
-# use lib '/home/marker/Selenium-Remote-Driver/lib';
+use lib '/home/marker/Selenium-Remote-Driver/lib';
 use base qw(Selenium::Remote::Driver);
+
 # use base qw(Selenium::Chrome);
 
 use Selenium::Waiter qw/wait_until/;
 use Selenium::Remote::WDKeys;
 use Plack::Test;
-use PolicyWeb::Init
-    qw( prepare_export prepare_runtime_base
-        $port $SERVER $export_dir $home_dir $netspoc );
+use PolicyWeb::Init qw( prepare_export prepare_runtime_base
+  $port $SERVER $export_dir $home_dir $netspoc );
 
 our @EXPORT = qw(
   login_as_guest
@@ -29,8 +29,8 @@ our @EXPORT = qw(
 
 sub getDriver {
 
-    prepare_export();
-    prepare_runtime_base();
+    prepare_export(0);
+    prepare_runtime_base(0);
 
     my $driver =
       PolicyWeb::Frontend->new(browser_name   => 'chrome',
@@ -40,6 +40,7 @@ sub getDriver {
                                base_url       => "http://$SERVER:$port",
                               );
 
+    # $driver->debug_on;
     $driver->set_implicit_wait_timeout(200);
 
     $driver->get("index.html");
@@ -50,50 +51,62 @@ sub getDriver {
 # 0 - Chrome
 # 1 - Internet Explorer 11.0
 sub getBrowserstackyDriver {
-    my ($browser, $ARGVref) = @_;
-    my $args = join(" ", @$ARGVref);
+    my ($browser, $travis, $args) = @_;
 
-    prepare_export();
-    prepare_runtime_base();
-
-    #Input capabilities
-    my $extraCaps;
-    if($browser == 0){
-        $extraCaps = {
-            "browser" => "Chrome",
-            "browser_version" => "73.0",
-            "os" => "Windows",
-            "os_version" => "10",
-            "resolution" => "1024x768",
-            "name" => "$args",
-            "browserstack.local" => "true",
-            "browserstack.debug" => "true"
-        };
-    } else {
-        $extraCaps = {
-            "browser" => "IE",
-            "browser_version" => "11.0",
-            "os" => "Windows",
-            "os_version" => "10",
-            "resolution" => "1024x768",
-            "name" => "$args",
-            "browserstack.local" => "true",
-            "browserstack.debug" => "true"
-        };
-    }
+    prepare_export($travis);
+    prepare_runtime_base($travis);
 
     my $login = "leonarddietrich1";
-    my $key = "9Ej447ymmjCW8Lzs2VsR";
-    my $host = "$login:$key\@hub-cloud.browserstack.com";
+    my $key   = "9Ej447ymmjCW8Lzs2VsR";
+    my $host  = "$login:$key\@hub-cloud.browserstack.com";
 
-    my $driver =
-      PolicyWeb::Frontend->new(default_finder => 'id',
-                               javascript     => 1,
-                               base_url       => "http://$SERVER:$port",
-                               'remote_server_addr' => $host,
-                               'port' => '80',
-                               'extra_capabilities' => $extraCaps
-                              );
+    my $driver;
+
+    #Input capabilities
+    my $extraCaps = { "os"                 => "Windows",
+                      "os_version"         => "10",
+                      "resolution"         => "1024x768",
+                      "name"               => "$args",
+                      "browserstack.local" => "true",
+                      "browserstack.debug" => "true"
+                    };
+
+    # identifier for BrowserStackLocal is set by travis
+    if ($travis) {
+        $extraCaps-> {"browserstack.localIdentifier"} = $ENV{'BROWSERSTACK_LOCAL_IDENTIFIER'};
+    }
+
+    if ($browser == 0) {
+        $extraCaps-> {"browser"} = "Chrome";
+        $extraCaps-> {"browser_version"} = "76.0";
+
+        $driver = PolicyWeb::Frontend->new(browser_name   => $browser ? "" : 'chrome',
+                                           proxy          => { proxyType => 'direct', },
+                                           default_finder => 'id',
+                                           javascript     => 1,
+                                           base_url       => "http://$SERVER:$port",
+                                           'remote_server_addr' => $host,
+                                           'port'               => '80',
+                                           'extra_capabilities' => $extraCaps
+                                          );
+
+    }
+    else {
+        $extraCaps-> {"browser"} = "IE";
+        $extraCaps-> {"browser_version"} = "11.0";
+
+        $driver = PolicyWeb::Frontend->new(browser_name         => $browser ? "" : 'chrome',
+                                           default_finder       => 'id',
+                                           javascript           => 1,
+                                           base_url             => "http://$SERVER:$port",
+                                           'remote_server_addr' => $host,
+                                           'port'               => '80',
+                                           'extra_capabilities' => $extraCaps
+                                          );
+
+    }
+
+    # $driver->debug_on;
 
     $driver->set_implicit_wait_timeout(200);
 
@@ -246,7 +259,7 @@ sub grid_contains {
             print "------------\n"
               . $search->[ $i + $offset ]
               . "\n is not equal to any item:\n";
-            for (my $i=0; $i<@grid_cells; $i+=$row) {
+            for (my $i = 0 ; $i < @grid_cells ; $i += $row) {
                 print "$i: ", $grid_cells[$i]->get_text;
             }
             print "\n------------\n";
@@ -405,9 +418,9 @@ sub find_element_ok {
 
 sub set_export_dir {
     my ($driver, $set) = @_;
-    if (!$set) { print "no export directory given\n"; return; }
-    if (-d $set) { $export_dir = $set; }
-    else         { print "not a directory\n"; }
+    if   (!$set)   { print "no export directory given\n"; return; }
+    if   (-d $set) { $export_dir = $set; }
+    else           { print "not a directory\n"; }
     return;
 }
 
