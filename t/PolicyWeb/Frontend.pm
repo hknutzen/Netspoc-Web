@@ -5,8 +5,8 @@ use strict;
 use warnings;
 use Test::More;
 
-# Selenium interface version 1.30, some issues with browserstack on versions 1.31+
-use lib '/home/marker/Selenium-Remote-Driver/lib';
+# Selenium interface version 1.30, some issues with browserstack and chrome browser on versions 1.31+
+# use lib '~/Selenium-Remote-Driver/lib';
 use base qw(Selenium::Remote::Driver);
 
 # use base qw(Selenium::Chrome);
