@@ -9,10 +9,10 @@
 # Find oldest POLICY file of any owner.
 # Then clean up old toplevel files not referenced from files under RCS/owner.
 #
-# (C) 2014 by Heinz Knutzen     <heinz.knutzen@gmail.com>
-# 
+# (C) 2020 by Heinz Knutzen     <heinz.knutzen@gmail.com>
+#
 # https://github.com/hknutzen/Netspoc-Web
-# 
+#
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation, either version 3 of the License, or
@@ -62,7 +62,7 @@ outdate () {
     # Show two newest revisions older than $p_date.
     # First revision will be retained.
     # Next older revision will be removed.
-    line=$(rlog -d"$o_date>=" -zLT $file|
+    line=$(rlog -d"$o_date>=" -zLT $file 2>/dev/null|
         head -20|grep '^revision'|head -2|cut -d' ' -f2|paste -s -d' ')
     read o1_rev o_rev <<EOF
 $line
@@ -84,10 +84,10 @@ for dir in $RCS/owner/* ; do
     # Check if owner has already been deleted.
     # History can be removed if it wasn't changed since $old.
     c_dir=$(echo $dir|sed -e "s|$RCS|$current|")
-    if [ ! -d "$c_dir"  ] ; then 
+    if [ ! -d "$c_dir"  ] ; then
 
         # Find newest revision newer than $old_date
-        p_rev=$(rlog -d"$old_date<" -zLT $p_file|
+        p_rev=$(rlog -d"$old_date<" -zLT $p_file 2>/dev/null|
             head -14|tail -1|grep '^revision') || true
         if [ -z "$p_rev" ] ; then
 
@@ -99,7 +99,7 @@ for dir in $RCS/owner/* ; do
     fi
 
     # Find newest revision of POLICY older than $old_date.
-    p_rev=$(rlog -d"$old_date>=" -zLT $p_file|
+    p_rev=$(rlog -d"$old_date>=" -zLT $p_file 2>/dev/null|
         head -14|grep '^revision'|head -1|cut -d' ' -f2)
 
     # All revision are newer, leave unchanged.
