@@ -66,7 +66,7 @@ router:inet = {
  interface:Internet;
 }
 
-network:Internet = { ip = 0.0.0.0/0; }
+network:Internet = { ip = 0.0.0.0/0; has_subnets; }
 
 service:Test1 = {
  user = network:Sub;
