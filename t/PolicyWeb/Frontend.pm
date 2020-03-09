@@ -56,8 +56,8 @@ sub getBrowserstackyDriver {
     prepare_export($travis);
     prepare_runtime_base($travis);
 
-    my $login = "leonarddietrich1";
-    my $key   = "9Ej447ymmjCW8Lzs2VsR";
+    my $login = $ENV{'BROWSERSTACK_USER'};
+    my $key   = $ENV{'BROWSERSTACK_ACCESS_KEY'};
     my $host  = "$login:$key\@hub-cloud.browserstack.com";
 
     my $driver;
