@@ -40,6 +40,25 @@ our $export_dir;
 # Shared Netspoc configuration
 ############################################################
 our $netspoc = <<'END';
+owner:Axolotl = { admins = guest; }
+owner:Blutegel = { admins = guest; }
+owner:Chinchilla = { admins = guest; }
+owner:Dachs = { admins = guest; }
+owner:Eule = { admins = guest; }
+owner:Flamingo = { admins = guest; }
+owner:Gundi = { admins = guest; }
+owner:Hermelin = { admins = guest; }
+owner:Igeltanreks = { admins = guest; }
+owner:Josephinenlori = { admins = guest; }
+owner:Kondor = { admins = guest; }
+owner:Lemming = { admins = guest; }
+owner:Mungo = { admins = guest; }
+owner:Nerz = { admins = guest; }
+owner:Otter = { admins = guest; }
+owner:Python = { admins = guest; }
+owner:Qualle = { admins = guest; }
+owner:Regenwurm = { admins = guest; }
+owner:Steinbock = { admins = guest; }
 owner:x = { admins = guest; show_all; }
 owner:y = { admins = guest; }
 owner:z = { admins = guest; }
@@ -199,7 +218,7 @@ sub prepare_in_dir {
 }
 
 sub prepare_export {
-    my ($input) = @_;
+    my ($travis, $input) = @_;
     $input ||= $netspoc;
     my $in_dir = prepare_in_dir($input);
 
@@ -207,7 +226,12 @@ sub prepare_export {
     $counter++;
     $policy = "p$counter";
 
-    my $cmd = "/home/$ENV{USER}/Netspoc/bin/export-netspoc -quiet $in_dir $export_dir/$policy";
+    my $cmd;
+    if ($travis) {
+        $cmd = "/home/travis/build/Leuchtstift/Netspoc/bin/export-netspoc -quiet $in_dir $export_dir/$policy";
+    } else {
+        $cmd = "/home/$ENV{USER}/Netspoc/bin/export-netspoc -quiet $in_dir $export_dir/$policy";
+    }
     my ($stdout, $stderr);
     run3($cmd, \undef, \$stdout, \$stderr);
     my $status = $?;
@@ -237,6 +261,7 @@ our $app;
 my $server;
 
 sub prepare_runtime_base {
+    my $travis = shift;
 
     # Prepare config file for netspoc.psgi
     open(my $fh, '>', $conf_file) or die "Can't open $conf_file";
@@ -246,15 +271,29 @@ sub prepare_runtime_base {
     # netspoc.psgi searches config file in $HOME directory.
     local $ENV{HOME} = $home_dir;
     my $netspoc_psgi = do './bin/netspoc.psgi' or die "Couldn't parse PSGI file: $@";
-    $app = builder {
-        mount "/extjs4" =>
-          Plack::App::File->new(root => "/home/$ENV{USER}/htdocs/extjs4")->to_app;
-        mount "/silk-icons" =>
-          Plack::App::File->new(root => "/home/$ENV{USER}/htdocs/silk-icons")->to_app;
-        mount "/" =>
-          Plack::App::File->new(root => "/home/$ENV{USER}/Netspoc-Web")->to_app;
-        mount "/backend" => $netspoc_psgi;
-    };
+    
+    # different paths on travis vm
+    if ($travis) {
+        $app = builder {
+            mount "/extjs4" =>
+              Plack::App::File->new(root => "/home/travis/build/Leuchtstift/Netspoc-Web/htdocs/extjs4")->to_app;
+            mount "/silk-icons" =>
+              Plack::App::File->new(root => "/home/travis/build/Leuchtstift/Netspoc-Web/htdocs/silk-icons")->to_app;
+            mount "/" =>
+              Plack::App::File->new(root => "/home/travis/build/Leuchtstift/Netspoc-Web")->to_app;
+            mount "/backend" => $netspoc_psgi;
+        };
+    } else {
+        $app = builder {
+            mount "/extjs4" =>
+              Plack::App::File->new(root => "/home/$ENV{USER}/Netspoc-Web/htdocs/extjs4")->to_app;
+            mount "/silk-icons" =>
+              Plack::App::File->new(root => "/home/$ENV{USER}/Netspoc-Web/htdocs/silk-icons")->to_app;
+            mount "/" =>
+              Plack::App::File->new(root => "/home/$ENV{USER}/Netspoc-Web")->to_app;
+            mount "/backend" => $netspoc_psgi;
+        };
+    }
 
     $server = Plack::Test::Server->new($app);
     $port   = $server->port();

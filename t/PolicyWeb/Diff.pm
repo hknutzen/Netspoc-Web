@@ -8,8 +8,7 @@ use PolicyWeb::CleanupDaily;
 use Selenium::Waiter qw/wait_until/;
 
 sub test {
-
-    my $driver = shift;
+    my ($driver) = @_;
 
     plan tests => 2;
 
@@ -28,11 +27,9 @@ sub test {
 }
 
 sub services {
-
-    my $driver = shift;
+    my ($driver) = @_;
 
     subtest "check services with diffrent policies" => sub {
-
         plan tests => 4;
 
         wait_until { $driver->find_element('btn_services_tab')->click };
@@ -71,11 +68,9 @@ sub services {
 }
 
 sub diff {
-
-    my $driver = shift;
+    my ($driver) = @_;
 
     subtest "check diff" => sub {
-
         plan tests => 6;
 
         $driver->find_element('btn_diff_tab')->click;
@@ -111,6 +106,7 @@ sub diff {
         my @boundlists = $driver->find_elements('x-boundlist', 'class');
         my @histories;
         for (my $i = 0 ; $i < @boundlists ; $i++) {
+            # get_text is the only indicator for being displayed
             if ($boundlists[$i]->get_text) {
                 @histories =
                   $driver->find_child_elements($boundlists[$i], 'x-boundlist-item', 'class');
@@ -166,8 +162,7 @@ sub diff {
 }
 
 sub setup {
-
-    my $driver = shift;
+    my ($driver) = @_;
 
     my $export_dir = $driver->get_export_dir();
     my $home_dir   = $driver->get_home_dir();
@@ -199,7 +194,8 @@ s/service:Test11(.+\n)*\}\n/service:Test11 = {\n user = network:Sub;\n permit sr
     # new policy is from the actuall time
     $timestamp = time();
     my $policy_num = 2;
-    export_netspoc($netspoc, $export_dir, $policy_num++, $timestamp);
+    my $with_travis = @ARGV && $ARGV[0] eq "travis";
+    export_netspoc($with_travis, $netspoc, $export_dir, $policy_num++, $timestamp);
 
     $mail = cleanup_daily();
 
@@ -207,7 +203,7 @@ s/service:Test11(.+\n)*\}\n/service:Test11 = {\n user = network:Sub;\n permit sr
 }
 
 sub fallback {
-    my $driver = shift;
+    my ($driver) = @_;
 
     $driver->find_element('list_history')->click;
 

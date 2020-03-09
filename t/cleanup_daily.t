@@ -137,7 +137,8 @@ END
 
 # Set time to 1970, older than 1 year; will be removed from RCS.
 set_old_time();
-export_netspoc($netspoc, $export_dir, $policy_num++, $timestamp);
+my $with_travis = @ARGV && $ARGV[0] eq "travis";
+export_netspoc($with_travis, $netspoc, $export_dir, $policy_num++, $timestamp);
 
 $mail = cleanup_daily();
 
@@ -170,7 +171,7 @@ END
 inc_time_by_days(1);
 set_send_diff('x@example.com', [ 'x', 'y' ]);
 set_send_diff('y@example.com', [ 'x', 'y' ]);
-export_netspoc($netspoc, $export_dir, $policy_num++, $timestamp);
+export_netspoc($with_travis, $netspoc, $export_dir, $policy_num++, $timestamp);
 $mail = cleanup_daily();
 
 test_rlog($title, 'RCS/POLICY,v', <<END);
@@ -209,7 +210,7 @@ service:s1 = {
 END
 
 inc_time_by_days(1);
-export_netspoc($netspoc, $export_dir, $policy_num++, $timestamp);
+export_netspoc($with_travis, $netspoc, $export_dir, $policy_num++, $timestamp);
 $mail = cleanup_daily();
 
 test_rlog($title, 'RCS/POLICY,v', <<END);
@@ -298,7 +299,7 @@ $netspoc =~ s/owner = y;//;
 inc_time_by_days(1);
 set_send_diff('x@example.com', [ 'x', 'y' ]);
 set_send_diff('y@example.com', [ 'x', 'y' ]);
-export_netspoc($netspoc, $export_dir, $policy_num++, $timestamp);
+export_netspoc($with_travis, $netspoc, $export_dir, $policy_num++, $timestamp);
 $mail = cleanup_daily();
 eq_or_diff($mail, <<"END", "$title: mail");
 To: x\@example.com

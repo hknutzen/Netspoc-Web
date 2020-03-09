@@ -21,20 +21,20 @@ sub set_timestamp_of_files {
 }
 
 sub export_netspoc {
-    my ($input, $export_dir, $policy_num, $timestamp) = @_;
+    my ($travis, $input, $export_dir, $policy_num, $timestamp) = @_;
     my $policy = "p$policy_num";
     my ($in_fh, $filename) = tempfile(UNLINK => 1);
     print $in_fh $input;
     close $in_fh;
 
     my $policy_path = "$export_dir/$policy";
-    my $cmd =
-"perl /home/$ENV{USER}/Netspoc/bin/export-netspoc -quiet $filename $policy_path";
-    my ($stdout, $stderr);
-    run3($cmd, \undef, \$stdout, \$stderr);
-    my $status = $?;
-    $status == 0 or die "Export failed:\n$stderr\n";
-    $stderr and die "Unexpected output during export:\n$stderr\n";
+    my $cmd; 
+    if ($travis) {
+        $cmd = "perl /home/travis/build/Leuchtstift/Netspoc/bin/export-netspoc -quiet $filename $policy_path";
+    } else {
+        $cmd = "perl /home/$ENV{USER}/Netspoc/bin/export-netspoc -quiet $filename $policy_path";
+    }
+    run($cmd);
     system("echo '# $policy #' > $policy_path/POLICY") == 0 or die $!;
     system("cd $export_dir; ln -sfT $policy current") == 0  or die $!;
     set_timestamp_of_files($policy_path, $timestamp);
@@ -42,13 +42,7 @@ sub export_netspoc {
 
 sub cleanup_daily {
     my $cmd = "bin/cleanup_daily";
-    my ($stdout, $stderr);
-    run3($cmd, \undef, \$stdout, \$stderr);
-    my $status = $?;
-    $status == 0 or die "cleanup_daily failed:\n$stderr\n";
-    $stderr
-      and die "Unexpected output on STDERR during cleanup_daily:\n$stderr\n";
-    return $stdout;
+    return run($cmd);
 }
 
 sub run {
@@ -62,8 +56,10 @@ sub run {
         print "$cmd\n";
     }
     run3($cmd, \undef, \$stdout, \$stderr);
-    $stderr and die "Unexpected output during '$cmd':\n$stderr\n";
-    print "$stdout\n";
+    my $status = $?;
+    $status == 0 or die "'$cmd' failed:\n$stderr\n";
+    $stderr and die "Unexpected output on STDERR during '$cmd':\n$stderr\n";
+    return $stdout;
 }
 
 sub make_visible {
