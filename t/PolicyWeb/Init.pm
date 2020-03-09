@@ -228,7 +228,7 @@ sub prepare_export {
 
     my $cmd;
     if ($travis) {
-        $cmd = "/home/travis/build/Leuchtstift/Netspoc/bin/export-netspoc -quiet $in_dir $export_dir/$policy";
+        $cmd = "$ENV{TRAVIS_BUILD_DIR}/Netspoc/bin/export-netspoc -quiet $in_dir $export_dir/$policy";
     } else {
         $cmd = "/home/$ENV{USER}/Netspoc/bin/export-netspoc -quiet $in_dir $export_dir/$policy";
     }
@@ -268,32 +268,23 @@ sub prepare_runtime_base {
     print $fh $conf_data;
     close $fh;
 
+    # Different paths on travis vm.
+    # Read HOME, before it is overwritten below.
+    my $BUILD_DIR = $travis ? $ENV{TRAVIS_BUILD_DIR} : $ENV{HOME};
+
     # netspoc.psgi searches config file in $HOME directory.
     local $ENV{HOME} = $home_dir;
     my $netspoc_psgi = do './bin/netspoc.psgi' or die "Couldn't parse PSGI file: $@";
-    
-    # different paths on travis vm
-    if ($travis) {
-        $app = builder {
-            mount "/extjs4" =>
-              Plack::App::File->new(root => "/home/travis/build/Leuchtstift/Netspoc-Web/htdocs/extjs4")->to_app;
-            mount "/silk-icons" =>
-              Plack::App::File->new(root => "/home/travis/build/Leuchtstift/Netspoc-Web/htdocs/silk-icons")->to_app;
-            mount "/" =>
-              Plack::App::File->new(root => "/home/travis/build/Leuchtstift/Netspoc-Web")->to_app;
-            mount "/backend" => $netspoc_psgi;
-        };
-    } else {
-        $app = builder {
-            mount "/extjs4" =>
-              Plack::App::File->new(root => "/home/$ENV{USER}/Netspoc-Web/htdocs/extjs4")->to_app;
-            mount "/silk-icons" =>
-              Plack::App::File->new(root => "/home/$ENV{USER}/Netspoc-Web/htdocs/silk-icons")->to_app;
-            mount "/" =>
-              Plack::App::File->new(root => "/home/$ENV{USER}/Netspoc-Web")->to_app;
-            mount "/backend" => $netspoc_psgi;
-        };
-    }
+
+    $app = builder {
+        mount "/extjs4" =>
+            Plack::App::File->new(root => "$BUILD_DIR/Netspoc-Web/htdocs/extjs4")->to_app;
+        mount "/silk-icons" =>
+            Plack::App::File->new(root => "$BUILD_DIR/Netspoc-Web/htdocs/silk-icons")->to_app;
+        mount "/" =>
+            Plack::App::File->new(root => "$BUILD_DIR/Netspoc-Web")->to_app;
+        mount "/backend" => $netspoc_psgi;
+    };
 
     $server = Plack::Test::Server->new($app);
     $port   = $server->port();
