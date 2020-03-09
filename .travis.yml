@@ -2,9 +2,8 @@ language: perl
 perl:
 - '5.24'
 before_install:
-- cd ..
-- git clone https://github.com/hknutzen/Netspoc.git
-- export PERL5LIB=/home/travis/build/Leuchtstift/Netspoc/lib/
+- git clone --depth=1 https://github.com/hknutzen/Netspoc.git ~/Netspoc
+- export PERL5LIB=~/Netspoc/lib/
 - sudo apt update -y
 - sudo apt install apache2 -y
 - sudo apt install rcs -y
@@ -39,8 +38,6 @@ install:
 - cpanm --notest Cpanel::JSON::XS
 - cpanm --notest Selenium::Remote::Driver
 - cpanm --notest Sereal::Encoder
-before_script:
-- cd Netspoc-Web
 
 addons:
   browserstack:
