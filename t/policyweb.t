@@ -1,3 +1,4 @@
+#!perl
 
 # to test specific test in a specific order (login will be first anyway)
 # run 'perl t/policyweb.t'

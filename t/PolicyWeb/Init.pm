@@ -218,7 +218,7 @@ sub prepare_in_dir {
 }
 
 sub prepare_export {
-    my ($travis, $input) = @_;
+    my ($input) = @_;
     $input ||= $netspoc;
     my $in_dir = prepare_in_dir($input);
 
@@ -226,19 +226,15 @@ sub prepare_export {
     $counter++;
     $policy = "p$counter";
 
-    my $cmd;
-    if ($travis) {
-        $cmd = "$ENV{TRAVIS_BUILD_DIR}/Netspoc/bin/export-netspoc -quiet $in_dir $export_dir/$policy";
-    } else {
-        $cmd = "/home/$ENV{USER}/Netspoc/bin/export-netspoc -quiet $in_dir $export_dir/$policy";
-    }
+    my $export_cmd = "$ENV{HOME}/Netspoc/bin/export-netspoc";
+    my $cmd = "$export_cmd -quiet $in_dir $export_dir/$policy";
     my ($stdout, $stderr);
     run3($cmd, \undef, \$stdout, \$stderr);
     my $status = $?;
     $status == 0 or die "Export failed:\n$stderr\n";
     $stderr and die "Unexpected output during export:\n$stderr\n";
-    system "echo '# $policy #' > $export_dir/$policy/POLICY";
-    system "cd $export_dir; rm -f current; ln -s $policy current";
+    system("echo '# $policy #' > $export_dir/$policy/POLICY") == 0 or die $!;
+    system("cd $export_dir; rm -f current; ln -s $policy current") == 0 or die $!;
 }
 
 our $home_dir = tempdir(CLEANUP => 1);
@@ -261,7 +257,6 @@ our $app;
 my $server;
 
 sub prepare_runtime_base {
-    my $travis = shift;
 
     # Prepare config file for netspoc.psgi
     open(my $fh, '>', $conf_file) or die "Can't open $conf_file";
@@ -270,7 +265,7 @@ sub prepare_runtime_base {
 
     # Different paths on travis vm.
     # Read HOME, before it is overwritten below.
-    my $BUILD_DIR = $travis ? $ENV{TRAVIS_BUILD_DIR} : $ENV{HOME};
+    my $BUILD_DIR = $ENV{TRAVIS_BUILD_DIR} || "$ENV{HOME}/Netspoc-Web";
 
     # netspoc.psgi searches config file in $HOME directory.
     local $ENV{HOME} = $home_dir;
@@ -278,11 +273,11 @@ sub prepare_runtime_base {
 
     $app = builder {
         mount "/extjs4" =>
-            Plack::App::File->new(root => "$BUILD_DIR/Netspoc-Web/htdocs/extjs4")->to_app;
+            Plack::App::File->new(root => "$BUILD_DIR/htdocs/extjs4")->to_app;
         mount "/silk-icons" =>
-            Plack::App::File->new(root => "$BUILD_DIR/Netspoc-Web/htdocs/silk-icons")->to_app;
+            Plack::App::File->new(root => "$BUILD_DIR/htdocs/silk-icons")->to_app;
         mount "/" =>
-            Plack::App::File->new(root => "$BUILD_DIR/Netspoc-Web")->to_app;
+            Plack::App::File->new(root => "$BUILD_DIR")->to_app;
         mount "/backend" => $netspoc_psgi;
     };
 

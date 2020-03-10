@@ -29,8 +29,8 @@ our @EXPORT = qw(
 
 sub getDriver {
 
-    prepare_export(0);
-    prepare_runtime_base(0);
+    prepare_export();
+    prepare_runtime_base();
 
     my $driver =
       PolicyWeb::Frontend->new(browser_name   => 'chrome',
@@ -53,8 +53,8 @@ sub getDriver {
 sub getBrowserstackyDriver {
     my ($browser, $travis, $args) = @_;
 
-    prepare_export($travis);
-    prepare_runtime_base($travis);
+    prepare_export();
+    prepare_runtime_base();
 
     my $login = $ENV{'BROWSERSTACK_USER'};
     my $key   = $ENV{'BROWSERSTACK_ACCESS_KEY'};

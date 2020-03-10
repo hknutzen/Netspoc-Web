@@ -1,17 +1,18 @@
 package PolicyWeb::CleanupDaily;
 
+use strict;
+use warnings;
 use lib 'bin';
 use IPC::Run3;
 use File::Temp qw/ tempfile tempdir /;
 use File::Find;
 use Cwd 'abs_path';
 use Exporter;
-@ISA    = qw/ Exporter /;
-@EXPORT = qw/
+our @ISA    = qw/ Exporter /;
+our @EXPORT = qw/
   set_timestamp_of_files
   export_netspoc
   cleanup_daily
-  run
   make_visible
   /;
 
@@ -21,15 +22,15 @@ sub set_timestamp_of_files {
 }
 
 sub export_netspoc {
-    my ($travis, $input, $export_dir, $policy_num, $timestamp) = @_;
+    my ($input, $export_dir, $policy_num, $timestamp) = @_;
     my $policy = "p$policy_num";
     my ($in_fh, $filename) = tempfile(UNLINK => 1);
     print $in_fh $input;
     close $in_fh;
 
     my $policy_path = "$export_dir/$policy";
-    my $BUILD_DIR = $travis ? $ENV{TRAVIS_BUILD_DIR} : "/home/$ENV{USER}";
-    my $cmd = "perl $BUILD_DIR/Netspoc/bin/export-netspoc -quiet $filename $policy_path";
+    my $export_cmd = "$ENV{ORIG_HOME}/Netspoc/bin/export-netspoc";
+    my $cmd = "perl $export_cmd -quiet $filename $policy_path";
     run($cmd);
     system("echo '# $policy #' > $policy_path/POLICY") == 0 or die $!;
     system("cd $export_dir; ln -sfT $policy current") == 0  or die $!;
@@ -42,15 +43,8 @@ sub cleanup_daily {
 }
 
 sub run {
-    my $cmd     = shift;
-    my $comment = shift;
+    my ($cmd) = @_;
     my ($stdout, $stderr);
-    if ($comment) {
-        print "$comment\n$cmd\n";
-    }
-    else {
-        print "$cmd\n";
-    }
     run3($cmd, \undef, \$stdout, \$stderr);
     my $status = $?;
     $status == 0 or die "'$cmd' failed:\n$stderr\n";

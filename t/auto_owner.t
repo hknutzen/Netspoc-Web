@@ -45,9 +45,8 @@ END
 ############################################################
 
 print("====\n".join(' ',@ARGV)."\n");
-my $with_travis = @ARGV && $ARGV[0] eq "travis";
-prepare_export($with_travis, $netspoc);
-prepare_runtime($with_travis, 1);
+prepare_export($netspoc);
+prepare_runtime();
 
 my ($path, $out, $title);
 
@@ -76,7 +75,7 @@ service:s3b = {
  permit src = user; dst = network:n3; prt = tcp 80;
 }
 END
-prepare_export($with_travis, $netspoc);
+prepare_export($netspoc);
 
 $out = ['o3'];
 test_run($title, 'get_owner', {}, $out, \&extract_names);

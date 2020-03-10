@@ -159,9 +159,8 @@ END
 ############################################################
 
 print("====\n".join(' ',@ARGV)."\n");
-my $with_travis = @ARGV && $ARGV[0] eq "travis";
-prepare_export($with_travis, $data);
-prepare_runtime($with_travis, 1);
+prepare_export($data);
+prepare_runtime();
 
 my ($path, $params, $owner, $out, $title);
 $path = 'service_list';
