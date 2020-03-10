@@ -51,8 +51,10 @@ sub prepare {
     # Prepare config file used by cleanup_daily.
     write_file($conf_file, $conf_data);
 
+    # Add export-netspoc to PATH
+    $ENV{PATH} = "$ENV{HOME}/Netspoc/bin/:$ENV{PATH}";
+
     # Config file is searched in $HOME directory.
-    $ENV{ORIG_HOME} = $ENV{HOME};
     $ENV{HOME} = $home_dir;
 
     # Called scripts are searched in ~/NetspocWeb/bin/
