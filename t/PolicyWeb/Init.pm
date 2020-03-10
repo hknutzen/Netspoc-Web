@@ -217,6 +217,9 @@ sub prepare_in_dir {
     return $in_dir;
 }
 
+# Add export-netspoc to PATH
+$ENV{PATH} = "$ENV{HOME}/Netspoc/bin/:$ENV{PATH}";
+
 sub prepare_export {
     my ($input) = @_;
     $input ||= $netspoc;
@@ -226,8 +229,7 @@ sub prepare_export {
     $counter++;
     $policy = "p$counter";
 
-    my $export_cmd = "$ENV{HOME}/Netspoc/bin/export-netspoc";
-    my $cmd = "$export_cmd -quiet $in_dir $export_dir/$policy";
+    my $cmd = "export-netspoc -quiet $in_dir $export_dir/$policy";
     my ($stdout, $stderr);
     run3($cmd, \undef, \$stdout, \$stderr);
     my $status = $?;
