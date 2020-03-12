@@ -6,7 +6,7 @@ netspoc.psgi - A web frontend for Netspoc
 
 =head1 COPYRIGHT AND DISCLAIMER
 
-(C) 2018 by Heinz Knutzen     <heinz.knutzen@gmail.com>
+(C) 2020 by Heinz Knutzen     <heinz.knutzen@gmail.com>
             Daniel Brunkhorst <daniel.brunkhorst@web.de>
 
 https://github.com/hknutzen/Netspoc-Web
@@ -1525,21 +1525,24 @@ sub set_session_data {
 # Email -> Admin -> Owner
 ####################################################################
 
-# Find owners for user@domain or
+# Find combined owners for user@domain and
 # for wildcard [all]@domain which authorizes all users of domain.
 sub find_authorized_owners {
     my ($email) = @_;
     my $email2owners = $cache->load_json_current('email');
+    my @result;
+    my $wildcard = $email =~ s/^.*@/[all]@/r;
+    if (my $owners = $email2owners->{$wildcard}) {
+        @result = @$owners;
+    }
     if (my $owners = $email2owners->{$email}) {
-        return @{[ sort { lc($a) cmp lc($b) } @$owners ]};
+        @result = unique(@result, @$owners);
     }
-    else {
-        my $wildcard = $email =~ s/^.*@/[all]@/r;
-        if (my $owners = $email2owners->{$wildcard}) {
-            return @{[ sort { lc($a) cmp lc($b) } @$owners ]};
-        }
-    }
-    return ();
+
+    # Force list context for sort.
+    @result = sort { lc($a) cmp lc($b) } @result;
+
+    return @result;
 }
 
 sub check_email_authorization {
