@@ -1,5 +1,15 @@
 {{$NEXT}}
 
+ - Best matching owner is selected automatically on first login now.
+ - Selectable owners are combined from direct email and from wildcard
+   email address now. This allows to write smaller file 'email' during
+   export.
+ - Use nat_set instead of no_nat_set. Exported data currently contains both.
+ - STDERR of 'rlog' is ignored when using -d option.
+ - No longer sort 'prt' of rules, is already sorted during export.
+ - No longer support old attribute name 'srv' for 'prt' in exported data.
+ - Added automated tests.
+
 1.011     2018-07-05 10:23:30+02:00 Europe/Berlin
  - Changed HTTP-method from GET to POST for all backend-URLs.
  - Removed parameter "-export_ipv6" from export-netspoc-command
