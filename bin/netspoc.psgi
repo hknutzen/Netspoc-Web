@@ -196,43 +196,44 @@ sub load_cache {
     return $cache->load_cache_version($selected_history, $key, $context);
 }
 
-sub get_no_nat_set {
+sub get_nat_set {
     my ($owner) = @_;
-    return load_json("owner/$owner/no_nat_set");
+    return load_json("owner/$owner/nat_set");
 }
 
 sub name2ip {
-    my ($obj_name, $no_nat_set) = @_;
+    my ($obj_name, $nat_set) = @_;
     my $objects = load_json('objects');
     my $obj = $objects->{$obj_name};
-    if (my $href = $obj->{nat} and $no_nat_set) {
-	for my $tag (keys %$href) {
-	    next if $no_nat_set->{$tag};
-	    return $href->{$tag};
-	}
+    if (my $href = $obj->{nat}) {
+        for my $tag (keys %$href) {
+            if ($nat_set->{$tag}) {
+                return $href->{$tag};
+            }
+        }
     }
     return $obj->{ip};
 }
 
 sub get_nat_obj {
-    my ($obj_name, $no_nat_set) = @_;
+    my ($obj_name, $nat_set) = @_;
     my $objects = load_json('objects');
     my $obj = $objects->{$obj_name};
-    if (my $href = $obj->{nat} and $no_nat_set) {
-	for my $tag (keys %$href) {
-	    next if $no_nat_set->{$tag};
-	    my $nat_ip = $href->{$tag};
-	    $obj = { %$obj, ip => $nat_ip };
-            last;
-	}
+    if (my $href = $obj->{nat}) {
+        for my $tag (keys %$href) {
+            if ($nat_set->{$tag}) {
+                my $nat_ip = $href->{$tag};
+                return { %$obj, ip => $nat_ip };
+            }
+        }
     }
     return $obj;
 }
 
 sub get_nat_obj_list {
     my ($obj_names, $owner) = @_;
-    my $no_nat_set = get_no_nat_set($owner);
-    return [ map { get_nat_obj($_, $no_nat_set) } @$obj_names ];
+    my $nat_set = get_nat_set($owner);
+    return [ map { get_nat_obj($_, $nat_set) } @$obj_names ];
 }
 
 sub get_any {
@@ -337,7 +338,7 @@ sub adapt_name_ip_user {
     my $expand_users = $req->param('expand_users');
     my $disp_prop    = $req->param('display_property') || 'ip';
     my $owner        = $req->param('active_owner');
-    my $no_nat_set   = get_no_nat_set($owner);
+    my $nat_set      = get_nat_set($owner);
 
     # Untaint user input.
     $disp_prop =~ /^(?:name|ip)$/ or
@@ -351,7 +352,7 @@ sub adapt_name_ip_user {
     my $user_props;
     if ( $expand_users ) {
         if ($disp_prop eq 'ip') {
-            $user_props = sort_by_ip( [ map { name2ip($_, $no_nat_set) } @$user_names ] );
+            $user_props = sort_by_ip( [ map { name2ip($_, $nat_set) } @$user_names ] );
         }
         else {
             $user_props = $user_names;
@@ -360,8 +361,8 @@ sub adapt_name_ip_user {
     for my $rule ( @$rules ) {
         my ($src, $dst) = @{$rule}{qw(src dst)};
         if ($disp_prop eq 'ip') {
-            $src = sort_by_ip( [ map { name2ip($_, $no_nat_set) } @$src ] );
-            $dst = sort_by_ip( [ map { name2ip($_, $no_nat_set) } @$dst ] );
+            $src = sort_by_ip( [ map { name2ip($_, $nat_set) } @$src ] );
+            $dst = sort_by_ip( [ map { name2ip($_, $nat_set) } @$dst ] );
         }
         if ($expand_users) {
             has_user($rule, 'src') and $src = $user_props;
@@ -501,7 +502,7 @@ sub build_ip_hash {
     if (my $result = load_cache($cache_key)) {
         return $result;
     }
-    my $no_nat_set = get_no_nat_set($owner);
+    my $nat_set = get_nat_set($owner);
 
     my %ip_hash;
     my $objects = load_json('objects');
@@ -510,11 +511,12 @@ sub build_ip_hash {
         my $obj_ip;
 
         # Get NAT IP
-        if (my $href = $obj->{nat} and $no_nat_set) {
+        if (my $href = $obj->{nat}) {
             for my $tag (keys %$href) {
-                next if $no_nat_set->{$tag};
-                $obj_ip = $href->{$tag};
-                last;
+                if ($nat_set->{$tag}) {
+                    $obj_ip = $href->{$tag};
+                    last;
+                }
             }
             $obj_ip ||= $obj->{ip};
         }
