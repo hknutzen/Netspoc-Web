@@ -297,15 +297,6 @@ sub get_network_resources {
     return $data;
 }
 
-sub get_hosts {
-    my ($req, $session) = @_;
-    my $net_name = $req->param('network') or abort "Missing param 'network'";
-    my $owner = $req->param('active_owner');
-    my $assets = load_json("owner/$owner/assets");
-    my $child_names = $assets->{net2childs}->{$net_name};
-    return get_nat_obj_list($child_names, $owner);
-}
-
 ####################################################################
 # Services, rules, users
 ####################################################################
@@ -1977,7 +1968,6 @@ my %path2sub =
      get_rules     => [ \&get_rules,     { owner => 1, add_success => 1, } ],
      get_users     => [ \&get_users,     { owner => 1, add_success => 1, } ],
      get_networks  => [ \&get_networks,  { owner => 1, add_success => 1, } ],
-     get_hosts     => [ \&get_hosts,     { owner => 1, add_success => 1, } ],
      get_services_and_rules => [
 	 \&get_services_and_rules,       { owner => 1, add_success => 1, } ],
      get_network_resources => [
