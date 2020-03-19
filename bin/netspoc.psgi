@@ -236,14 +236,6 @@ sub get_nat_obj_list {
     return [ map { get_nat_obj($_, $nat_set) } @$obj_names ];
 }
 
-sub get_any {
-    my ($req, $session) = @_;
-    my $owner = $req->param('active_owner');
-    my $assets = load_json("owner/$owner/assets");
-    my $any_names = $assets->{any_list};
-    return get_nat_obj_list($any_names, $owner);
-}
-
 # Intersect chosen networks with all networks
 # within area of ownership.
 # Return untainted networks as array-ref.
