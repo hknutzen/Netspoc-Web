@@ -266,21 +266,23 @@ sub get_network_resources {
     my $data        = [];
 
     if ( $selected ) {
-	# Untaint: Intersect chosen networks with all networks
-	# within area of ownership.
-	my $network_names = untaint_networks( $selected, $assets );
 
+        # Untaint: Intersect chosen networks with all networks
+        # within area of ownership.
+        my $network_names = untaint_networks( $selected, $assets );
+
+        my $nat_set = get_nat_set($owner);
+        my $objects = load_json('objects');
       SERVICE:
         for my $net_name ( @{$network_names} ) {
             my $child_names = $assets->{net2childs}->{$net_name};
-            for my $child ( @{ get_nat_obj_list($child_names, $owner) } ) {
-
+            for my $name ( @$child_names ) {
                 push @$data, {
                     name        => $net_name,
-                    child_ip    => $child->{ip},
-                    child_name  => $child->{name},
+                    child_ip    => name2ip($name, $nat_set),
+                    child_name  => $name,
                     child_owner => {
-                        owner => $child->{owner},
+                        owner => $objects->{$name}->{owner},
                     }
                 };
             }
