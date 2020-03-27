@@ -57,7 +57,7 @@ sub prepare {
     # Config file is searched in $HOME directory.
     $ENV{HOME} = $home_dir;
 
-    # Called scripts are searched in ~/NetspocWeb/bin/
+    # Called scripts are searched in ~/Netspoc-Web/bin/
     make_visible($home_dir, 'bin');
 
     # Templates in subdirectory 'mail' are used in send_diff.pl

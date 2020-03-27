@@ -1,6 +1,6 @@
 #!/bin/sh
 
-# (C) 2018 by Heinz Knutzen     <heinz.knutzen@gmail.com>
+# (C) 2020 by Heinz Knutzen     <heinz.knutzen@gmail.com>
 #
 # https://github.com/hknutzen/Netspoc-Web
 #
@@ -17,6 +17,9 @@
 
 config=~/policyweb.conf
 link=current
+
+# Called scripts are searched in directory of current script.
+path=$(dirname $(readlink -f $0))
 
 # Abort on any untested error.
 set -e
@@ -47,7 +50,7 @@ if [ -f RCS/POLICY,v ] ; then
 
     # Mark each changed or newly created owner by copying the
     # topelevel POLICY file into the owners directory.
-    changed=$(~/NetspocWeb/bin/diff.pl . $prev_date $current)
+    changed=$($path/diff.pl . $prev_date $current)
     for owner in $changed; do
 
         # Copy current POLICY file to owner directory to mark change.
@@ -63,16 +66,16 @@ else
 fi
 
 # Add current version to RCS.
-~/NetspocWeb/bin/add_to_rcs $current RCS $version
+$path/add_to_rcs $current RCS $version
 
 # Send diff per mail
 if [ -n "$prev_date" ] ; then
     curr_date=$(rlog -zLT RCS/POLICY,v |grep date:|head -1|cut -d ' ' -f 2)
-    ~/NetspocWeb/bin/send_diff.pl $prev_date $curr_date
+    $path/send_diff.pl $prev_date $curr_date
 fi
 
 # Remove history from RCS.
-~/NetspocWeb/bin/cleanup_old_rcs $dir
+$path/cleanup_old_rcs $dir
 
 # Remove all policies older than current one.
 find . -maxdepth 1 -name 'p*' ! -name $current ! -newer $current | xargs rm -rf
@@ -81,7 +84,7 @@ find . -maxdepth 1 -name 'p*' ! -name $current ! -newer $current | xargs rm -rf
 # as admins or watchers in Netspoc.
 # Deletes user-file only if it is older than a week in order to make it possible
 # to revert errorneous recent changes to admins or watchers without anybody noticing.
-~/NetspocWeb/bin/del_obsolete_users.pl
+$path/del_obsolete_users.pl
 
 
 # Remove session files older than a year.

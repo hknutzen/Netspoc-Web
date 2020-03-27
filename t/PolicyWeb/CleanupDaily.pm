@@ -54,8 +54,8 @@ sub run {
 sub make_visible {
     my ($home_dir, $path) = @_;
     my $abs = abs_path($path) or die "Can't find '$path' directory: $!";
-    -d "$home_dir/NetspocWeb" or mkdir "$home_dir/NetspocWeb" or die $!;
-    symlink $abs, "$home_dir/NetspocWeb/$path" or die $!;
+    -d "$home_dir/Netspoc-Web" or mkdir "$home_dir/Netspoc-Web" or die $!;
+    symlink $abs, "$home_dir/Netspoc-Web/$path" or die $!;
 }
 
 1;
