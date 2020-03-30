@@ -38,6 +38,7 @@ router:u = {
 }
 network:Big = {
  ip = 10.1.0.0/16;
+ nat:inet = { ip = 1.1.0.0/16; }
  host:B10 = { ip = 10.1.0.10; owner = z; }
  host:Range = { range = 10.1.0.90-10.1.0.99; }
 }
@@ -63,7 +64,7 @@ any:DMZ10 = { ip = 10.0.0.0/8; link = network:DMZ; }
 
 router:inet = {
  interface:DMZ;
- interface:Internet;
+ interface:Internet = { bind_nat = inet; }
 }
 
 network:Internet = { ip = 0.0.0.0/0; has_subnets; }
@@ -158,7 +159,6 @@ service:T6_1 = {
 END
 ############################################################
 
-print("====\n".join(' ',@ARGV)."\n");
 prepare_export($data);
 prepare_runtime();
 
