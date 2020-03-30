@@ -73,11 +73,11 @@ sub postprocess_json {
 	    $data->{$name}->{name} = $name;
 	}
     }
-    elsif ($path =~ m/no_nat_set$/) {
+    elsif ($path =~ m|/nat_set$|) {
 
-	# Input: Array with no_nat_tags.
-	# Change array to hash.
-	$data = { map { $_ => 1 } @$data };
+        # Input: Array with nat_tags.
+        # Change array to hash.
+        $data = { map { $_ => 1 } @$data };
     }
     elsif ($path =~ m/service_lists$/) {
 
