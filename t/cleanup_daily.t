@@ -74,13 +74,6 @@ sub prepare {
 
 }
 
-sub set_send_diff {
-    my ($email, $owner_list) = @_;
-    my $store = User_Store::new($config, $email);
-    $store->param('send_diff', $owner_list);
-    $store->flush();
-}
-
 my $policy_num = 1;
 
 # Use simulated time to set timestamp for version controlled files.
@@ -99,6 +92,23 @@ sub inc_time_by_days {
 sub test_removed {
     my ($title, $path) = @_;
     ok(not(-e "$export_dir/$path"), "$title: removed $path");
+}
+
+sub set_send_diff {
+    my ($email, $owner_list) = @_;
+    my $store = User_Store::new($config, $email);
+    $store->param('send_diff', $owner_list);
+    $store->flush();
+    set_timestamp_of_files($user_dir, $timestamp);
+}
+
+sub test_user_ok {
+    my ($title, $email) = @_;
+    ok(-e "$user_dir/$email", "$title: has store $email");
+}
+sub test_user_removed {
+    my ($title, $email) = @_;
+    ok(not(-e "$user_dir/$email"), "$title: removed store $email");
 }
 
 sub test_rlog {
@@ -132,7 +142,7 @@ $title = 'Initial policy';
 ############################################################
 
 $netspoc = <<'END';
-owner:x = { admins = x@example.com, y@example.com; }
+owner:x = { admins = x@example.com; }
 network:n1 = {
  ip = 10.1.1.0/24; owner = x;
 }
@@ -159,7 +169,7 @@ $title = 'p2 add another owner';
 ############################################################
 
 $netspoc .= <<'END';
-owner:y = { admins = y@example.com; }
+owner:y = { admins = y@example.com; watchers = [all]@example.com; }
 network:n2 = { ip = 10.1.2.0/24; owner = y; }
 
 router:r1 = {
@@ -193,11 +203,11 @@ p2
 END
 test_removed($title, 'p1');
 eq_or_diff($mail, <<'END', "$title: mail");
-To: x@example.com
-Subject: Policy-Web: Diff für y wird nicht mehr versandt
+To: y@example.com
+Subject: Policy-Web: Diff für x wird nicht mehr versandt
 Content-Type: text/plain; charset=UTF-8
 
-Keine Berechtigung für Zugriff auf Owner 'y'.
+Keine Berechtigung für Zugriff auf Owner 'x'.
 END
 
 ############################################################
@@ -260,8 +270,8 @@ zwischen 1970-01-02 und 1970-01-03.
 Liste genutzter Dienste
  (+)
   s1
-To: y\@example.com
-Subject: Policy-Web: Diff für x, 1970-01-03
+To: x\@example.com
+Subject: Policy-Web: Diff für y, 1970-01-03
 Content-Type: text/plain; charset=UTF-8
 
 (+): etwas wurde hinzugefügt
@@ -269,10 +279,10 @@ Content-Type: text/plain; charset=UTF-8
 (!): etwas wurde geändert
  ➔ : trennt alten von neuem Wert
 
-Unterschiede für den Verantwortungsbereich x
+Unterschiede für den Verantwortungsbereich y
 zwischen 1970-01-02 und 1970-01-03.
 
-Liste genutzter Dienste
+Liste eigener Dienste
  (+)
   s1
 To: y\@example.com
@@ -301,8 +311,12 @@ $netspoc =~ s/owner = y;//;
 inc_time_by_days(1);
 set_send_diff('x@example.com', [ 'x', 'y' ]);
 set_send_diff('y@example.com', [ 'x', 'y' ]);
+set_send_diff('z@example.com', []);
 export_netspoc($netspoc, $export_dir, $policy_num++, $timestamp);
 $mail = cleanup_daily();
+test_user_ok($title, 'x@example.com');
+test_user_ok($title, 'y@example.com');
+test_user_removed($title, 'z@example.com');
 eq_or_diff($mail, <<"END", "$title: mail");
 To: x\@example.com
 Subject: Policy-Web: Diff für y wird nicht mehr versandt
@@ -310,43 +324,16 @@ Content-Type: text/plain; charset=UTF-8
 
 Owner 'y' existiert nicht mehr.
 To: y\@example.com
+Subject: Policy-Web: Diff für x wird nicht mehr versandt
+Content-Type: text/plain; charset=UTF-8
+
+Keine Berechtigung für Zugriff auf Owner 'x'.
+To: y\@example.com
 Subject: Policy-Web: Diff für y wird nicht mehr versandt
 Content-Type: text/plain; charset=UTF-8
 
 Owner 'y' existiert nicht mehr.
 To: x\@example.com
-Subject: Policy-Web: Diff für x, 1970-01-04
-Content-Type: text/plain; charset=UTF-8
-
-(+): etwas wurde hinzugefügt
-(-): etwas wurde entfernt
-(!): etwas wurde geändert
- ➔ : trennt alten von neuem Wert
-
-Unterschiede für den Verantwortungsbereich x
-zwischen 1970-01-03 und 1970-01-04.
-
-Objekte
- network:n2
-  owner
-  (-)
-Dienste
- s1
-  details
-   owner
-    (+)
-     :unknown
-    (-)
-     y
-  rules
-   1
-    dst
-     (!)
-      network:n2
-Liste genutzter Dienste
- (!)
-  s1
-To: y\@example.com
 Subject: Policy-Web: Diff für x, 1970-01-04
 Content-Type: text/plain; charset=UTF-8
 

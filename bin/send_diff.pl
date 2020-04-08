@@ -51,23 +51,28 @@ my $path = $config->{netspoc_data};
 my $cache = JSON_Cache->new(netspoc_data => $path, max_versions => 8);
 
 # Bestimme aktive owner und zugehörige User (= emails).
+# Untersuche, über welche Owner die User informiert werden wollen.
+# Das ist im User-Store im Attribut 'send_diff' gespeichert.
+my $users_dir = $config->{user_dir};
 my $email2owners = $cache->load_json_version($new_ver, 'email');
-my %owners;
 my %owner2send;
 
-for my $email (sort keys %$email2owners) {
-    my $owner_aref = $email2owners->{$email};
-    for my $owner (@$owner_aref) {
-        $owners{$owner} = $owner;
+opendir(my $dh, $users_dir) or exit;
+for my $email (sort readdir($dh)) {
+    $email =~ /[@]/ or next;
+    my $wildcard = $email =~ s/^.*@/[all]@/r;
+    my %valid;
+    if (my $owners = $email2owners->{$wildcard}) {
+        @valid{@$owners} = @$owners;
+    }
+    if (my $owners = $email2owners->{$email}) {
+        @valid{@$owners} = @$owners;
     }
 
     # Bestimme für jeden Benutzer die Owner,
     # über die er bei Änderungen informiert werden möchte.
-    my $store = User_Store::load($config, $email);
-    next if not $store;
-    my $send_aref = $store->param('send_diff');
-    next if not $send_aref;
-    my %valid = map { $_ => 1 } @$owner_aref;
+    my $store = User_Store::load($config, $email) or next;
+    my $send_aref = $store->param('send_diff') or next;
     my @send_ok = grep { $valid{$_} } @$send_aref;
     for my $owner (@send_ok) {
         push(@{ $owner2send{$owner} }, $email);
@@ -90,6 +95,7 @@ for my $email (sort keys %$email2owners) {
     }
     $store->param('send_diff', \@send_ok)
 }
+closedir($dh);
 
 my %replace = (
     '+' => '(+)',
@@ -121,14 +127,10 @@ sub convert {
 my %toplevel_sort = (objects => 1, services => 2, );
 
 # Vergleiche Dateien für jeden Owner.
-for my $owner (sort keys %owners) {
+for my $owner (sort keys %owner2send) {
 
-    # Gibt es Empfänger für die Diffs?
-    my $aref = $owner2send{$owner};
-    next if not $aref;
-
-    my $changes = Policy_Diff::compare($cache, $old_ver, $new_ver, $owner);
-    next if not $changes;
+    my $changes = Policy_Diff::compare($cache, $old_ver, $new_ver, $owner)
+        or next;
     my $diff = join("\n", map( { convert({ $_, $changes->{$_} }, -1) }
                                (sort { ($toplevel_sort{$a} || 999)
                                        <=>
@@ -136,7 +138,7 @@ for my $owner (sort keys %owners) {
                                 keys %$changes)));
 
     my $template = "$config->{mail_template}/diff";
-    for my $email (@$aref) {
+    for my $email (@{ $owner2send{$owner} }) {
         my $text = Template::get($template,
                                  { email   => $email,
                                    owner   => $owner,
