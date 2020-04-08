@@ -1840,7 +1840,7 @@ sub login {
 sub ldap_login {
     my ($req, $session) = @_;
     logout($req, $session);
-    my $email = ldap_check_pass_get_email($req);
+    my $email = lc ldap_check_pass_get_email($req);
     check_email_authorization($email);
     set_login($session, $email);
     my $app_url = $req->param('app') or abort "Missing param 'app'";
