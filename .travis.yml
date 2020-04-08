@@ -13,6 +13,8 @@ install:
 - cpanm --notest Crypt::SaltedHash
 - cpanm --notest Digest::MD5
 - cpanm --notest Digest::SHA
+- cpanm --notest Email::Simple
+- cpanm --notest Email::Stuffer
 - cpanm --notest Encode
 - cpanm --notest File::Path
 - cpanm --notest File::Spec

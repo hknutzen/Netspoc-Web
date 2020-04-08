@@ -11,7 +11,7 @@ use File::Temp qw/ tempfile tempdir /;
 use Cwd 'abs_path';
 use File::Find;
 use Plack::Test;
-use JSON;
+use MIME::Base64;
 use Load_Config;
 use User_Store;
 use PolicyWeb::CleanupDaily;
@@ -111,6 +111,27 @@ sub test_user_removed {
     ok(not(-e "$user_dir/$email"), "$title: removed store $email");
 }
 
+sub test_mail {
+    my ($title, $mail, $expected) = @_;
+
+    # Mail header have non deterministic order.
+    $mail =~ s/^(Subject: .*\r\n(?: .*?\r\n)?)(To: .*\r\n)/$2$1/gm;
+
+    my $filtered = '';
+  LINE:
+    for my $line (split /^/, $mail) {
+        for my $header
+            (qw(Date MIME-Version Content-Type Content-Transfer-Encoding))
+        {
+            next LINE if $line =~ /^$header: /;
+        }
+        $line =~ s/=[?]UTF-8[?]B[?](.*?)[?]=/"UTF-8:" . decode_base64($1)/e;
+        $line =~ s/\r\n/\n/;
+        $filtered .= $line;
+    }
+    eq_or_diff($filtered, $expected, "$title: mail");
+}
+
 sub test_rlog {
     my ($title, $path, $expected) = @_;
     my ($stdout, $stderr);
@@ -202,12 +223,12 @@ revision 1.1
 p2
 END
 test_removed($title, 'p1');
-eq_or_diff($mail, <<'END', "$title: mail");
+test_mail($title, $mail, <<'END');
 To: y@example.com
-Subject: Policy-Web: Diff für x wird nicht mehr versandt
-Content-Type: text/plain; charset=UTF-8
+Subject: UTF-8:Policy-Web: Diff für x wird nicht mehr
+ UTF-8: versandt
 
-Keine Berechtigung für Zugriff auf Owner 'x'.
+Keine Berechtigung f=C3=BCr Zugriff auf Owner 'x'.
 END
 
 ############################################################
@@ -254,47 +275,44 @@ revision 1.2
 p3
 END
 test_removed($title, 'p2');
-eq_or_diff($mail, <<"END", "$title: mail");
-To: x\@example.com
-Subject: Policy-Web: Diff für x, 1970-01-03
-Content-Type: text/plain; charset=UTF-8
+test_mail($title, $mail, <<'END');
+To: x@example.com
+Subject: UTF-8:Policy-Web: Diff für x, 1970-01-03
 
-(+): etwas wurde hinzugefügt
+(+): etwas wurde hinzugef=C3=BCgt
 (-): etwas wurde entfernt
-(!): etwas wurde geändert
- ➔ : trennt alten von neuem Wert
+(!): etwas wurde ge=C3=A4ndert
+ =E2=9E=94 : trennt alten von neuem Wert
 
-Unterschiede für den Verantwortungsbereich x
+Unterschiede f=C3=BCr den Verantwortungsbereich x
 zwischen 1970-01-02 und 1970-01-03.
 
 Liste genutzter Dienste
  (+)
   s1
-To: x\@example.com
-Subject: Policy-Web: Diff für y, 1970-01-03
-Content-Type: text/plain; charset=UTF-8
+To: x@example.com
+Subject: UTF-8:Policy-Web: Diff für y, 1970-01-03
 
-(+): etwas wurde hinzugefügt
+(+): etwas wurde hinzugef=C3=BCgt
 (-): etwas wurde entfernt
-(!): etwas wurde geändert
- ➔ : trennt alten von neuem Wert
+(!): etwas wurde ge=C3=A4ndert
+ =E2=9E=94 : trennt alten von neuem Wert
 
-Unterschiede für den Verantwortungsbereich y
+Unterschiede f=C3=BCr den Verantwortungsbereich y
 zwischen 1970-01-02 und 1970-01-03.
 
 Liste eigener Dienste
  (+)
   s1
-To: y\@example.com
-Subject: Policy-Web: Diff für y, 1970-01-03
-Content-Type: text/plain; charset=UTF-8
+To: y@example.com
+Subject: UTF-8:Policy-Web: Diff für y, 1970-01-03
 
-(+): etwas wurde hinzugefügt
+(+): etwas wurde hinzugef=C3=BCgt
 (-): etwas wurde entfernt
-(!): etwas wurde geändert
- ➔ : trennt alten von neuem Wert
+(!): etwas wurde ge=C3=A4ndert
+ =E2=9E=94 : trennt alten von neuem Wert
 
-Unterschiede für den Verantwortungsbereich y
+Unterschiede f=C3=BCr den Verantwortungsbereich y
 zwischen 1970-01-02 und 1970-01-03.
 
 Liste eigener Dienste
@@ -317,32 +335,31 @@ $mail = cleanup_daily();
 test_user_ok($title, 'x@example.com');
 test_user_ok($title, 'y@example.com');
 test_user_removed($title, 'z@example.com');
-eq_or_diff($mail, <<"END", "$title: mail");
+test_mail($title, $mail, <<"END");
 To: x\@example.com
-Subject: Policy-Web: Diff für y wird nicht mehr versandt
-Content-Type: text/plain; charset=UTF-8
+Subject: UTF-8:Policy-Web: Diff für y wird nicht mehr
+ UTF-8: versandt
 
 Owner 'y' existiert nicht mehr.
 To: y\@example.com
-Subject: Policy-Web: Diff für x wird nicht mehr versandt
-Content-Type: text/plain; charset=UTF-8
+Subject: UTF-8:Policy-Web: Diff für x wird nicht mehr
+ UTF-8: versandt
 
-Keine Berechtigung für Zugriff auf Owner 'x'.
+Keine Berechtigung f=C3=BCr Zugriff auf Owner 'x'.
 To: y\@example.com
-Subject: Policy-Web: Diff für y wird nicht mehr versandt
-Content-Type: text/plain; charset=UTF-8
+Subject: UTF-8:Policy-Web: Diff für y wird nicht mehr
+ UTF-8: versandt
 
 Owner 'y' existiert nicht mehr.
 To: x\@example.com
-Subject: Policy-Web: Diff für x, 1970-01-04
-Content-Type: text/plain; charset=UTF-8
+Subject: UTF-8:Policy-Web: Diff für x, 1970-01-04
 
-(+): etwas wurde hinzugefügt
+(+): etwas wurde hinzugef=C3=BCgt
 (-): etwas wurde entfernt
-(!): etwas wurde geändert
- ➔ : trennt alten von neuem Wert
+(!): etwas wurde ge=C3=A4ndert
+ =E2=9E=94 : trennt alten von neuem Wert
 
-Unterschiede für den Verantwortungsbereich x
+Unterschiede f=C3=BCr den Verantwortungsbereich x
 zwischen 1970-01-03 und 1970-01-04.
 
 Objekte

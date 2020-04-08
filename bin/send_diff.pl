@@ -27,6 +27,8 @@ use strict;
 use warnings;
 
 use utf8;
+use Email::Simple;
+use Email::Stuffer;
 use FindBin;
 use lib $FindBin::Bin;
 use Load_Config;
@@ -34,6 +36,7 @@ use User_Store;
 use Template;
 use JSON_Cache;
 use Policy_Diff;
+use open qw(:std :utf8);
 
 # Argument processing
 sub usage {
@@ -156,12 +159,16 @@ sub sendmail {
     my $sendmail = $config->{sendmail_command} or
         die "Missing config for: sendmail_command\n";
     my $from = $config->{noreply_address};
+    my $email = Email::Simple->new($text);
 
     # -t: read recipient address from mail text
     # -f: set sender address
     # -F: do not use sender full name
     open(my $mail, '|-', "$sendmail -t -F '' -f $from")
         or die "Can't open $sendmail: $!";
-    print $mail Encode::encode('UTF-8', $text);
+    print $mail Email::Stuffer->new({ to => $email->header('to'),
+                                      subject => $email->header('subject'),
+                                      text_body => $email->body(),
+                                    })->as_string();
     close $mail or warn "Can't close $sendmail: $!";
 }
