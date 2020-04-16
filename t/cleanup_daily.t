@@ -132,24 +132,18 @@ sub test_mail {
     eq_or_diff($filtered, $expected, "$title: mail");
 }
 
-sub test_rlog {
+sub test_history {
     my ($title, $path, $expected) = @_;
     my ($stdout, $stderr);
-    run3("rlog $export_dir/$path", \undef, \$stdout, \$stderr);
+    run3("cd $export_dir/history; ls -1d */$path", \undef, \$stdout, \$stderr);
     my $status = $?;
-    $status == 0 or die "rlog failed:\n$stderr\n";
-    $stderr and die "Unexpected output during rlog:\n$stderr\n";
+    $status == 0 or die "ls failed:\n$stderr\n";
+    $stderr and die "Unexpected output during ls:\n$stderr\n";
 
-    # Ignore header.
-    $stdout =~ s/^ .* \n init \n ----+ \n //xs;
+    # Only show found YYYY-MM-DD directories.
+    $stdout =~ s/^(\d\d\d\d-\d\d-\d\d).*/$1/gm;
 
-    # Ignore all dates.
-    $stdout =~ s/\n date: .*//xg;
-
-    # Ignore trailing line.
-    $stdout =~ s/ \n ====+ //x;
-
-    eq_or_diff($stdout, $expected, "$title: rlog $path");
+    eq_or_diff($stdout, $expected, "$title: $path");
 }
 
 # Prepare one for all tests.
@@ -175,15 +169,13 @@ export_netspoc($netspoc, $export_dir, $policy_num++, $timestamp);
 
 $mail = cleanup_daily();
 
-test_rlog($title, 'RCS/POLICY,v', <<"END");
-revision 1.1
-p1
+test_history($title, 'POLICY', <<"END");
+1970-01-01
 END
-test_rlog($title, 'RCS/owner/x/POLICY,v', <<"END");
-revision 1.1
-p1
+test_history($title, 'owner/x', <<"END");
+1970-01-01
 END
-eq_or_diff($mail, '', "$title: mail");
+test_mail($title, $mail, '');
 
 ############################################################
 $title = 'p2 add another owner';
@@ -207,20 +199,14 @@ set_send_diff('y@example.com', [ 'x', 'y' ]);
 export_netspoc($netspoc, $export_dir, $policy_num++, $timestamp);
 $mail = cleanup_daily();
 
-test_rlog($title, 'RCS/POLICY,v', <<END);
-revision 1.2
-p2
-----------------------------
-revision 1.1
-p1
+test_history($title, 'POLICY', <<END);
+1970-01-02
 END
-test_rlog($title, 'RCS/owner/x/POLICY,v', <<END);
-revision 1.1
-p1
+test_history($title, 'owner/x', <<END);
+1970-01-02
 END
-test_rlog($title, 'RCS/owner/y/POLICY,v', <<END);
-revision 1.1
-p2
+test_history($title, 'owner/y', <<END);
+1970-01-02
 END
 test_removed($title, 'p1');
 test_mail($title, $mail, <<'END');
@@ -246,33 +232,20 @@ inc_time_by_days(1);
 export_netspoc($netspoc, $export_dir, $policy_num++, $timestamp);
 $mail = cleanup_daily();
 
-test_rlog($title, 'RCS/POLICY,v', <<END);
-revision 1.3
-p3
+test_history($title, 'POLICY', <<END);
+1970-01-03
 END
-test_rlog($title, 'RCS/services,v', <<END);
-revision 1.2
-p3
+test_history($title, 'services', <<END);
+1970-01-03
 END
-test_rlog($title, 'RCS/objects,v', <<END);
-revision 1.2
-p2
+test_history($title, 'objects', <<END);
+1970-01-03
 END
-test_rlog($title, 'RCS/owner/x/POLICY,v', <<END);
-revision 1.2
-p3
+test_history($title, 'owner/x', <<END);
+1970-01-03
 END
-test_rlog($title, 'RCS/owner/x/assets,v', <<END);
-revision 1.2
-p2
-END
-test_rlog($title, 'RCS/owner/y/POLICY,v', <<END);
-revision 1.2
-p3
-END
-test_rlog($title, 'RCS/owner/y/service_lists,v', <<END);
-revision 1.2
-p3
+test_history($title, 'owner/y', <<END);
+1970-01-03
 END
 test_removed($title, 'p2');
 test_mail($title, $mail, <<'END');
