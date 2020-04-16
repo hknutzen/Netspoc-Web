@@ -107,8 +107,15 @@ my $config;
 sub get_policy_from_file {
     my ($policy_path) = @_;
     $policy_path .= "/POLICY";
-    my ($date, $time) = split(' ', qx(date -r $policy_path '+%F %R'));
-    my $policy = qx(cat $policy_path);
+    my $mtime = (stat($policy_path))[9];
+    my ($sec ,$min, $hour, $mday, $mon, $year) = localtime($mtime);
+    $mon += 1;
+    $year += 1900;
+    my $date = sprintf("%d-%.2d-%.2d", $year, $mon, $mday);
+    my $time = sprintf("%.2d:%.2d", $hour, $min);
+    open (my $fh, '<', $policy_path) or abort "Can't open $policy_path: $!";
+    my $policy = <$fh>;
+    close($fh);
     $policy =~ m/^# (\S+)/ or abort "Can't find policy name in $policy_path";
     $policy = $1;
     return {
