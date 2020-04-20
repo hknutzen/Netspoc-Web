@@ -1,5 +1,7 @@
 {{$NEXT}}
 
+1.012     2020-04-20 12:47:50+02:00 Europe/Berlin
+
  - Best matching owner is selected automatically on first login now.
  - Selectable owners are combined from direct email and from wildcard
    email address now. This allows to write smaller file 'email' during
