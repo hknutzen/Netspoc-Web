@@ -44,7 +44,6 @@ service:s3a = {
 END
 ############################################################
 
-print("====\n".join(' ',@ARGV)."\n");
 prepare_export($netspoc);
 prepare_runtime();
 

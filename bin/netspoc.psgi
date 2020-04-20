@@ -102,20 +102,34 @@ sub aref_delete {
 
 my $config;
 
-sub get_policy {
-
-    # Read modification date of and policy number from file current/POLICY
-    # Content is: # pnnnnn #...
-    my $policy_path = "$config->{netspoc_data}/current/POLICY";
-    my ($date, $time) = split(' ', qx(date -r $policy_path '+%F %R'));
-    my $policy = qx(cat $policy_path);
+# Read modification date of and policy number from file POLICY.
+# Content is: # pnnnnn #...
+sub get_policy_from_file {
+    my ($policy_path) = @_;
+    $policy_path .= "/POLICY";
+    my $mtime = (stat($policy_path))[9];
+    my ($sec ,$min, $hour, $mday, $mon, $year) = localtime($mtime);
+    $mon += 1;
+    $year += 1900;
+    my $date = sprintf("%d-%.2d-%.2d", $year, $mon, $mday);
+    my $time = sprintf("%.2d:%.2d", $hour, $min);
+    open (my $fh, '<', $policy_path) or abort "Can't open $policy_path: $!";
+    my $policy = <$fh>;
+    close($fh);
     $policy =~ m/^# (\S+)/ or abort "Can't find policy name in $policy_path";
     $policy = $1;
-    return [ { current => 1,
-	       policy => $policy,
-	       date => $date,
-	       time => $time,
-	   }];
+    return {
+        policy => $policy,
+        date => $date,
+        time => $time,
+    };
+}
+
+sub get_policy {
+    my $policy_path = "$config->{netspoc_data}/current";
+    my $entry = get_policy_from_file($policy_path);
+    $entry->{current} = 1;
+    return [ $entry ];
 }
 
 sub get_history {
@@ -125,34 +139,28 @@ sub get_history {
     my $current_policy = $current->{policy};
     my @result = ($current);
 
+    {
+        # Add data from directory "history",
+        # containing a subdirecory for each revision:
+        # 2020-04-08/
+        #    POLICY
+        #    owner/$owner/
+        # 2020-04-09/
+        #    POLICY
+        #    ...
+        # We take date, time from POLICY file.
+        my $hist_path = "$config->{netspoc_data}/history";
+        -d $hist_path or last;
+        my @changed = qx(cd $hist_path; ls -rd */owner/$owner/CHANGED);
+        for my $path (@changed) {
+            my ($dir) = $path =~ /^(\d\d\d\d-\d\d-\d\d)/ or next;
+            my $entry = get_policy_from_file("$hist_path/$dir");
 
-    # Add data from RCS rlog output.
-    # Parse lines of this format:
-    # ...
-    # ----------------------------
-    # revision 1.4  ...
-    # date: 2011-04-18 11:23:01+02; ...
-    # <one or more lines of log message>
-    # ----------------------------
-    # ...
-    # We take date, time and  first line of the log message.
-    my $RCS_path = "$config->{netspoc_data}/RCS/owner/$owner/POLICY,v";
-    if (-e $RCS_path) {
-	my @rlog = qx(rlog -zLT $RCS_path);
-
-	while (my $line = shift @rlog) {
-	    my($date, $time) = ($line =~ /^date: (\S+) (\d+:\d+)/) or next;
-	    my $policy = shift @rlog;
-	    chomp $policy;
-
-	    # If there wasn't added a new policy today, current policy
-	    # is available duplicate in RCS.
-	    next if $policy eq $current_policy;
-	    push(@result, { policy => $policy,
-			    date => $date,
-			    time => $time,
-			});
-	}
+            # If there wasn't added a new policy today, current policy
+            # is available duplicate in history.
+            next if $entry->{policy} eq $current_policy;
+            push(@result, $entry);
+        }
     }
     return \@result;
 }
@@ -1840,7 +1848,7 @@ sub login {
 sub ldap_login {
     my ($req, $session) = @_;
     logout($req, $session);
-    my $email = ldap_check_pass_get_email($req);
+    my $email = lc ldap_check_pass_get_email($req);
     check_email_authorization($email);
     set_login($session, $email);
     my $app_url = $req->param('app') or abort "Missing param 'app'";

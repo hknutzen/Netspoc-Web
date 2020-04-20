@@ -16,7 +16,6 @@
 # along with this program. If not, see <http://www.gnu.org/licenses/>.
 
 config=~/policyweb.conf
-link=current
 
 # Called scripts are searched in directory of current script.
 path=$(dirname $(readlink -f $0))
@@ -33,57 +32,49 @@ read_conf () {
 [ -f "$config" ] || abort "Can't read '$config'"
 dir=$(read_conf netspoc_data)
 cd $dir
-current=$(readlink $link) || abort "Can't read link $dir/current"
+current=$(readlink current) || abort "Can't read link $dir/current"
+curr_date=$(date -r $current/POLICY +%F)
+next=history/$curr_date
 
-version=$current
-mkdir -p RCS
+mkdir -p history
+previous=$(cd history; ls |tail -n 1)
 
-# Find and mark changed owners.
-if [ -f RCS/POLICY,v ] ; then
-
-    # Nothing to do, if current version has already been processed.
-    prev_ver=$(rlog RCS/POLICY,v |grep -A1 date:|head -2|grep -v date:)
-    [ $version = $prev_ver ] && exit
-
-    # Compare current version with latest checked in version.
-    prev_date=$(rlog -zLT RCS/POLICY,v |grep date:|head -1|cut -d ' ' -f 2)
-
-    # Mark each changed or newly created owner by copying the
-    # topelevel POLICY file into the owners directory.
-    changed=$($path/diff.pl . $prev_date $current)
-    for owner in $changed; do
-
-        # Copy current POLICY file to owner directory to mark change.
-        # Preserve date of file for RCS.
-        cp -p $current/POLICY $current/owner/$owner
-    done
+if [ -z "$previous" ] ; then
+    # Initial run of this script
+    # Mark all owners as changed on initial run.
+    changed=$(cd $current/owner; ls)
+elif [ -d $next ] ; then
+    # Nothing to do, if current day has already been processed.
+    exit
 else
-
-    # Mark all owners as changed on initial checkin.
-    for owner in $(cd $current/owner/ && ls) ; do
-        cp -p $current/POLICY $current/owner/$owner
-    done
+    # Find and mark changed owners.
+    # Compare current version with previous version.
+    changed=$($path/diff.pl . $previous $current)
 fi
 
-# Add current version to RCS.
-$path/add_to_rcs $current RCS $version
+# Copy current policy to history, preserve date.
+cp -pr $current $next
+
+# Mark owners that are changed.
+for owner in $changed; do
+    touch $next/owner/$owner/CHANGED
+done
 
 # Send diff per mail
-if [ -n "$prev_date" ] ; then
-    curr_date=$(rlog -zLT RCS/POLICY,v |grep date:|head -1|cut -d ' ' -f 2)
-    $path/send_diff.pl $prev_date $curr_date
+if [ -n "$previous" ] ; then
+    $path/send_diff.pl $previous $curr_date
 fi
 
-# Remove history from RCS.
-$path/cleanup_old_rcs $dir
+$path/cleanup_history $dir
 
-# Remove all policies older than current one.
+# Remove all policies from today, older than current one.
 find . -maxdepth 1 -name 'p*' ! -name $current ! -newer $current | xargs rm -rf
 
-# Remove users from /home/netspocweb/users if they are no longer known
-# as admins or watchers in Netspoc.
-# Deletes user-file only if it is older than a week in order to make it possible
-# to revert errorneous recent changes to admins or watchers without anybody noticing.
+# Remove user from /home/netspocweb/users if it is no longer known
+# as admin or watcher in Netspoc.
+# Delete file only if it is older than a week in order to make it possible
+# to revert erroeous recent changes to admins or watchers
+# without anybody noticing.
 $path/del_obsolete_users.pl
 
 

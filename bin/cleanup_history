@@ -1,0 +1,56 @@
+#!/bin/sh
+# cleanup-history
+# Remove directories in history that are older than $old.
+# Mark owners in remaining oldest directory as changed.
+#
+# (C) 2020 by Heinz Knutzen     <heinz.knutzen@gmail.com>
+#
+# https://github.com/hknutzen/Netspoc-Web
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+# GNU General Public License for more details.
+# You should have received a copy of the GNU General Public License
+# along with this program. If not, see <http://www.gnu.org/licenses/>.
+
+usage () { echo "Usage: $0 <export_dir>"; }
+
+# This must be understood by "date" command.
+old='1 year ago'
+export=$1
+history=$export/history
+current=$export/current
+
+# Abort on any untested error.
+set -e
+
+abort () { [ "$1" ] && echo "Error: $1"; usage; exit 1; }
+
+[ -d "$history" ] || abort "Missing history directory '$history'"
+[ -d "$current" ] || abort "Missing directory '$current'"
+
+old_sec=$(date -d "$old" +%s)
+
+while true; do
+
+    # Get oldest and second oldest directory
+    read d1 d2 <<EOF
+$(echo $history/*|head -n 2)
+EOF
+
+    [ -z "$d1" -o -z "$d2" ] && break
+    d1_sec=$(date -r $d1/POLICY +%s)
+    [ $old_sec -lt $d1_sec ] && break
+
+    # Mark owners in d2 as changed.
+    for dir in $(ls -d $d2/owner/*) ; do
+        touch $dir/CHANGED
+    done
+
+    rm -rf $d1
+done

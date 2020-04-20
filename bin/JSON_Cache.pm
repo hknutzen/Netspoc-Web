@@ -140,8 +140,9 @@ sub postprocess_json {
 
 # Parameters
 # - version,
-#   - a date YYYY-MM-DD to retrieve files of given date from RCS.
-#   - a policy pxxxx to retrive files from this sub directory
+#   - a date YYYY-MM-DD to retrieve files of given date from
+#     a sub directory in directory "history".
+#   - a policy pxxxx to retrive files from a sub directory
 # - path, pathname of file to retrieve.
 sub load_json_version {
     my ($self, $version, $path) = @_;
@@ -152,36 +153,24 @@ sub load_json_version {
 
     if (not exists $self->{cache}->{$version}->{$path}) {
         $self->clean_cache();
-        my $fh;
         my $dir = $self->{netspoc_data};
 
-        # Check out from RCS revision of some date.
+        # History of some date.
         if ($version =~ /^\d\d\d\d-\d\d-\d\d$/) {
-            my $cmd =
-                "co -q -p -d'$version 23:59' -zLT $dir/RCS/$path,v 2>/dev/null";
-            my $u8_cmd = Encode::encode('UTF-8', $cmd);
-
-            # Ignore error on access to unknown version, use empty data.
-            open($fh, '-|', $u8_cmd);
+            $dir = "$dir/history";
         }
 
-        # Get selected policy from today.
-        elsif ($version =~ /^p\d{1,8}$/) {
-            my $real_path = "$dir/$version/$path";
-            my $u8_real_path = Encode::encode('UTF-8', $real_path);
-            open ($fh, '<', $u8_real_path) or die "Can't open $real_path\n";
+        my $real_path = "$dir/$version/$path";
+        my $u8_real_path = Encode::encode('UTF-8', $real_path);
+        if (open (my $fh, '<', $u8_real_path)) {
+            local $/ = undef;
+            $data = from_json( <$fh> );
+            close($fh);
+            $data = $self->postprocess_json($path, $data);
         }
         else {
-            die "Internal: Invalid version requested";
+            $data = undef;
         }
-        {
-            local $/ = undef;
-
-            # Ignore JSON error if input was empty.
-            $data = eval { from_json( <$fh> ) };
-        }
-        close($fh);
-        $data = $self->postprocess_json($path, $data);
         $self->{cache}->{$version}->{$path} = $data;
     }
     else {

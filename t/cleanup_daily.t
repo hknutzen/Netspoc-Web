@@ -11,7 +11,7 @@ use File::Temp qw/ tempfile tempdir /;
 use Cwd 'abs_path';
 use File::Find;
 use Plack::Test;
-use JSON;
+use MIME::Base64;
 use Load_Config;
 use User_Store;
 use PolicyWeb::CleanupDaily;
@@ -74,13 +74,6 @@ sub prepare {
 
 }
 
-sub set_send_diff {
-    my ($email, $owner_list) = @_;
-    my $store = User_Store::new($config, $email);
-    $store->param('send_diff', $owner_list);
-    $store->flush();
-}
-
 my $policy_num = 1;
 
 # Use simulated time to set timestamp for version controlled files.
@@ -101,24 +94,56 @@ sub test_removed {
     ok(not(-e "$export_dir/$path"), "$title: removed $path");
 }
 
-sub test_rlog {
+sub set_send_diff {
+    my ($email, $owner_list) = @_;
+    my $store = User_Store::new($config, $email);
+    $store->param('send_diff', $owner_list);
+    $store->flush();
+    set_timestamp_of_files($user_dir, $timestamp);
+}
+
+sub test_user_ok {
+    my ($title, $email) = @_;
+    ok(-e "$user_dir/$email", "$title: has store $email");
+}
+sub test_user_removed {
+    my ($title, $email) = @_;
+    ok(not(-e "$user_dir/$email"), "$title: removed store $email");
+}
+
+sub test_mail {
+    my ($title, $mail, $expected) = @_;
+
+    # Mail header have non deterministic order.
+    $mail =~ s/^(Subject: .*\r\n(?: .*?\r\n)?)(To: .*\r\n)/$2$1/gm;
+
+    my $filtered = '';
+  LINE:
+    for my $line (split /^/, $mail) {
+        for my $header
+            (qw(Date MIME-Version Content-Type Content-Transfer-Encoding))
+        {
+            next LINE if $line =~ /^$header: /;
+        }
+        $line =~ s/=[?]UTF-8[?]B[?](.*?)[?]=/"UTF-8:" . decode_base64($1)/e;
+        $line =~ s/\r\n/\n/;
+        $filtered .= $line;
+    }
+    eq_or_diff($filtered, $expected, "$title: mail");
+}
+
+sub test_history {
     my ($title, $path, $expected) = @_;
     my ($stdout, $stderr);
-    run3("rlog $export_dir/$path", \undef, \$stdout, \$stderr);
+    run3("cd $export_dir/history; ls -1d */$path", \undef, \$stdout, \$stderr);
     my $status = $?;
-    $status == 0 or die "rlog failed:\n$stderr\n";
-    $stderr and die "Unexpected output during rlog:\n$stderr\n";
+    $status == 0 or die "ls failed:\n$stderr\n";
+    $stderr and die "Unexpected output during ls:\n$stderr\n";
 
-    # Ignore header.
-    $stdout =~ s/^ .* \n init \n ----+ \n //xs;
+    # Only show found YYYY-MM-DD directories.
+    $stdout =~ s/^(\d\d\d\d-\d\d-\d\d).*/$1/gm;
 
-    # Ignore all dates.
-    $stdout =~ s/\n date: .*//xg;
-
-    # Ignore trailing line.
-    $stdout =~ s/ \n ====+ //x;
-
-    eq_or_diff($stdout, $expected, "$title: rlog $path");
+    eq_or_diff($stdout, $expected, "$title: $path");
 }
 
 # Prepare one for all tests.
@@ -132,7 +157,7 @@ $title = 'Initial policy';
 ############################################################
 
 $netspoc = <<'END';
-owner:x = { admins = x@example.com, y@example.com; }
+owner:x = { admins = x@example.com; }
 network:n1 = {
  ip = 10.1.1.0/24; owner = x;
 }
@@ -144,22 +169,20 @@ export_netspoc($netspoc, $export_dir, $policy_num++, $timestamp);
 
 $mail = cleanup_daily();
 
-test_rlog($title, 'RCS/POLICY,v', <<"END");
-revision 1.1
-p1
+test_history($title, 'POLICY', <<"END");
+1970-01-01
 END
-test_rlog($title, 'RCS/owner/x/POLICY,v', <<"END");
-revision 1.1
-p1
+test_history($title, 'owner/x', <<"END");
+1970-01-01
 END
-eq_or_diff($mail, '', "$title: mail");
+test_mail($title, $mail, '');
 
 ############################################################
 $title = 'p2 add another owner';
 ############################################################
 
 $netspoc .= <<'END';
-owner:y = { admins = y@example.com; }
+owner:y = { admins = y@example.com; watchers = [all]@example.com; }
 network:n2 = { ip = 10.1.2.0/24; owner = y; }
 
 router:r1 = {
@@ -176,28 +199,22 @@ set_send_diff('y@example.com', [ 'x', 'y' ]);
 export_netspoc($netspoc, $export_dir, $policy_num++, $timestamp);
 $mail = cleanup_daily();
 
-test_rlog($title, 'RCS/POLICY,v', <<END);
-revision 1.2
-p2
-----------------------------
-revision 1.1
-p1
+test_history($title, 'POLICY', <<END);
+1970-01-02
 END
-test_rlog($title, 'RCS/owner/x/POLICY,v', <<END);
-revision 1.1
-p1
+test_history($title, 'owner/x', <<END);
+1970-01-02
 END
-test_rlog($title, 'RCS/owner/y/POLICY,v', <<END);
-revision 1.1
-p2
+test_history($title, 'owner/y', <<END);
+1970-01-02
 END
 test_removed($title, 'p1');
-eq_or_diff($mail, <<'END', "$title: mail");
-To: x@example.com
-Subject: Policy-Web: Diff für y wird nicht mehr versandt
-Content-Type: text/plain; charset=UTF-8
+test_mail($title, $mail, <<'END');
+To: y@example.com
+Subject: UTF-8:Policy-Web: Diff für x wird nicht mehr
+ UTF-8: versandt
 
-Keine Berechtigung für Zugriff auf Owner 'y'.
+Keine Berechtigung f=C3=BCr Zugriff auf Owner 'x'.
 END
 
 ############################################################
@@ -215,76 +232,60 @@ inc_time_by_days(1);
 export_netspoc($netspoc, $export_dir, $policy_num++, $timestamp);
 $mail = cleanup_daily();
 
-test_rlog($title, 'RCS/POLICY,v', <<END);
-revision 1.3
-p3
+test_history($title, 'POLICY', <<END);
+1970-01-03
 END
-test_rlog($title, 'RCS/services,v', <<END);
-revision 1.2
-p3
+test_history($title, 'services', <<END);
+1970-01-03
 END
-test_rlog($title, 'RCS/objects,v', <<END);
-revision 1.2
-p2
+test_history($title, 'objects', <<END);
+1970-01-03
 END
-test_rlog($title, 'RCS/owner/x/POLICY,v', <<END);
-revision 1.2
-p3
+test_history($title, 'owner/x', <<END);
+1970-01-03
 END
-test_rlog($title, 'RCS/owner/x/assets,v', <<END);
-revision 1.2
-p2
-END
-test_rlog($title, 'RCS/owner/y/POLICY,v', <<END);
-revision 1.2
-p3
-END
-test_rlog($title, 'RCS/owner/y/service_lists,v', <<END);
-revision 1.2
-p3
+test_history($title, 'owner/y', <<END);
+1970-01-03
 END
 test_removed($title, 'p2');
-eq_or_diff($mail, <<"END", "$title: mail");
-To: x\@example.com
-Subject: Policy-Web: Diff für x, 1970-01-03
-Content-Type: text/plain; charset=UTF-8
+test_mail($title, $mail, <<'END');
+To: x@example.com
+Subject: UTF-8:Policy-Web: Diff für x, 1970-01-03
 
-(+): etwas wurde hinzugefügt
+(+): etwas wurde hinzugef=C3=BCgt
 (-): etwas wurde entfernt
-(!): etwas wurde geändert
- ➔ : trennt alten von neuem Wert
+(!): etwas wurde ge=C3=A4ndert
+ =E2=9E=94 : trennt alten von neuem Wert
 
-Unterschiede für den Verantwortungsbereich x
+Unterschiede f=C3=BCr den Verantwortungsbereich x
 zwischen 1970-01-02 und 1970-01-03.
 
 Liste genutzter Dienste
  (+)
   s1
-To: y\@example.com
-Subject: Policy-Web: Diff für x, 1970-01-03
-Content-Type: text/plain; charset=UTF-8
+To: x@example.com
+Subject: UTF-8:Policy-Web: Diff für y, 1970-01-03
 
-(+): etwas wurde hinzugefügt
+(+): etwas wurde hinzugef=C3=BCgt
 (-): etwas wurde entfernt
-(!): etwas wurde geändert
- ➔ : trennt alten von neuem Wert
+(!): etwas wurde ge=C3=A4ndert
+ =E2=9E=94 : trennt alten von neuem Wert
 
-Unterschiede für den Verantwortungsbereich x
+Unterschiede f=C3=BCr den Verantwortungsbereich y
 zwischen 1970-01-02 und 1970-01-03.
 
-Liste genutzter Dienste
+Liste eigener Dienste
  (+)
   s1
-To: y\@example.com
-Subject: Policy-Web: Diff für y, 1970-01-03
-Content-Type: text/plain; charset=UTF-8
+To: y@example.com
+Subject: UTF-8:Policy-Web: Diff für y, 1970-01-03
 
-(+): etwas wurde hinzugefügt
+(+): etwas wurde hinzugef=C3=BCgt
 (-): etwas wurde entfernt
-(!): etwas wurde geändert
- ➔ : trennt alten von neuem Wert
+(!): etwas wurde ge=C3=A4ndert
+ =E2=9E=94 : trennt alten von neuem Wert
 
-Unterschiede für den Verantwortungsbereich y
+Unterschiede f=C3=BCr den Verantwortungsbereich y
 zwischen 1970-01-02 und 1970-01-03.
 
 Liste eigener Dienste
@@ -301,61 +302,37 @@ $netspoc =~ s/owner = y;//;
 inc_time_by_days(1);
 set_send_diff('x@example.com', [ 'x', 'y' ]);
 set_send_diff('y@example.com', [ 'x', 'y' ]);
+set_send_diff('z@example.com', []);
 export_netspoc($netspoc, $export_dir, $policy_num++, $timestamp);
 $mail = cleanup_daily();
-eq_or_diff($mail, <<"END", "$title: mail");
+test_user_ok($title, 'x@example.com');
+test_user_ok($title, 'y@example.com');
+test_user_removed($title, 'z@example.com');
+test_mail($title, $mail, <<"END");
 To: x\@example.com
-Subject: Policy-Web: Diff für y wird nicht mehr versandt
-Content-Type: text/plain; charset=UTF-8
+Subject: UTF-8:Policy-Web: Diff für y wird nicht mehr
+ UTF-8: versandt
 
 Owner 'y' existiert nicht mehr.
 To: y\@example.com
-Subject: Policy-Web: Diff für y wird nicht mehr versandt
-Content-Type: text/plain; charset=UTF-8
+Subject: UTF-8:Policy-Web: Diff für x wird nicht mehr
+ UTF-8: versandt
+
+Keine Berechtigung f=C3=BCr Zugriff auf Owner 'x'.
+To: y\@example.com
+Subject: UTF-8:Policy-Web: Diff für y wird nicht mehr
+ UTF-8: versandt
 
 Owner 'y' existiert nicht mehr.
 To: x\@example.com
-Subject: Policy-Web: Diff für x, 1970-01-04
-Content-Type: text/plain; charset=UTF-8
+Subject: UTF-8:Policy-Web: Diff für x, 1970-01-04
 
-(+): etwas wurde hinzugefügt
+(+): etwas wurde hinzugef=C3=BCgt
 (-): etwas wurde entfernt
-(!): etwas wurde geändert
- ➔ : trennt alten von neuem Wert
+(!): etwas wurde ge=C3=A4ndert
+ =E2=9E=94 : trennt alten von neuem Wert
 
-Unterschiede für den Verantwortungsbereich x
-zwischen 1970-01-03 und 1970-01-04.
-
-Objekte
- network:n2
-  owner
-  (-)
-Dienste
- s1
-  details
-   owner
-    (+)
-     :unknown
-    (-)
-     y
-  rules
-   1
-    dst
-     (!)
-      network:n2
-Liste genutzter Dienste
- (!)
-  s1
-To: y\@example.com
-Subject: Policy-Web: Diff für x, 1970-01-04
-Content-Type: text/plain; charset=UTF-8
-
-(+): etwas wurde hinzugefügt
-(-): etwas wurde entfernt
-(!): etwas wurde geändert
- ➔ : trennt alten von neuem Wert
-
-Unterschiede für den Verantwortungsbereich x
+Unterschiede f=C3=BCr den Verantwortungsbereich x
 zwischen 1970-01-03 und 1970-01-04.
 
 Objekte
