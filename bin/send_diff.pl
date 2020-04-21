@@ -6,7 +6,7 @@ send_diff.pl - Send email about changes to owner of Netspoc-Web
 
 =head1 COPYRIGHT AND DISCLAIMER
 
-(C) 2018 by Heinz Knutzen     <heinz.knutzen@gmail.com>
+(C) 2020 by Heinz Knutzen     <heinz.knutzen@gmail.com>
 
 https://github.com/hknutzen/Netspoc-Web
 
