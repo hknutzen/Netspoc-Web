@@ -6,7 +6,7 @@ diff.pl - Print names of owners that have changes.
 
 =head1 COPYRIGHT AND DISCLAIMER
 
-(C) 2016 by Heinz Knutzen     <heinz.knutzen@gmail.com>
+(C) 2020 by Heinz Knutzen     <heinz.knutzen@gmail.com>
             Daniel Brunkhorst <daniel.brunkhorst@web.de>
 
 https://github.com/hknutzen/Netspoc-Web
@@ -59,7 +59,7 @@ for my $aref (values %$email2owners) {
 for my $owner (sort keys %owners) {
 
     # Compare only, if history is available.
-    if (-d "$path/RCS/owner/$owner") {
+    if (-d "$path/history/$old_ver/owner/$owner") {
         Policy_Diff::compare($cache, $old_ver, $new_ver, $owner)
             or next;
     }
