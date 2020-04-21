@@ -39,8 +39,8 @@ old_sec=$(date -d "$old" +%s)
 while true; do
 
     # Get oldest and second oldest directory
-    read d1 d2 <<EOF
-$(echo $history/*|head -n 2)
+    read d1 d2 rest <<EOF
+$(echo $history/*)
 EOF
 
     [ -z "$d1" -o -z "$d2" ] && break
