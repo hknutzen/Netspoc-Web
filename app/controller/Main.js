@@ -216,27 +216,31 @@ Ext.define(
                 }
                 // Ask user to select one owner.
                 else {
-                    this.showSelectOwnerWindow();
+                    var href = location.href;
+                    var referrer = document.referrer;
+                    var ref = referrer ? referrer  :  href;
+                    var regex = /(.*)app\.html$/;
+                    var new_url = ref.replace(regex, "$1");
+                    if ( new_url ) {
+                        // Show Message that session is no longer valid
+                        Ext.MessageBox.show(
+                            {
+                                title   : 'Sitzung abgelaufen', 
+                                msg     : 'Bitte neu anmelden.',
+                                buttons : Ext.MessageBox.CANCEL,
+                                icon    : Ext.MessageBox.WARNING,
+                                buttonText : {
+                                    cancel : 'Weiter zum Login ...'
+                                },
+                                fn      : function() {
+                                    console.log("Redirect to " + new_url );
+                                    location.assign(new_url);
+                                }
+                            }
+                        );
+                    }
                 }
             }
-        },
-
-        showSelectOwnerWindow : function() {
-            var combo = Ext.create(
-                'PolicyWeb.view.combo.InitialOwnerCombo'
-            );
-            var win = Ext.create(
-                'Ext.window.Window',
-                {
-                    id          : 'win_owner',
-                    title       : 'Verantwortungsbereich ausw&auml;hlen',
-                    width       : 400,
-                    height      : 80,
-                    layout      : 'fit',
-                    bodyPadding : 10,
-                    items       : [ combo ]
-                }
-            ).show();
         },
 
         setOwner : function(owner) {
@@ -263,12 +267,6 @@ Ext.define(
         },
         onSetOwnerSuccess : function(records, options, success) {
             var owner_obj = options.owner;
-            var window = Ext.getCmp( 'win_owner' );
-
-            // Close window late, otherwise we get some extjs error.
-            if (window) {
-                window.close();
-            }
             this.setOwnerState(owner_obj);
         },
 

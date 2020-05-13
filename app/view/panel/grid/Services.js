@@ -25,13 +25,12 @@ Ext.define(
         controllers : [ 'Service' ],
         store       : 'Service',
         border      : false,
-        width       : 310,
+        width       : "20%",
         columns     : {
             items : [
                 { text : 'Dienstname',  dataIndex : 'name' }
             ],
             defaults : {
-                flex         : 1,
                 menuDisabled : true
             }
         },
