@@ -1,5 +1,17 @@
 {{$NEXT}}
 
+1.013     2020-04-20 20:05:35+02:00 Europe/Berlin
+
+ - History is stored no longer in RCS but in plain direcories.
+   This allows much faster access to old data.
+ - Email address received from LDAP is converted to lowercase.
+   Uppercase character prevented selection of correct owners.
+ - Correctly encode UTF-8 characters in mails about diffs.
+ - Adapted to changes for wildcard addresses in 'email':
+   - Mails about diffs are send also if wildcard address matches.
+   - User file is only deleted, if that email or matching wildcard address
+     can't access any owner.
+
 1.012     2020-04-20 12:47:50+02:00 Europe/Berlin
 
  - Best matching owner is selected automatically on first login now.
