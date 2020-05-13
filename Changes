@@ -1,5 +1,7 @@
 {{$NEXT}}
 
+1.014     2020-05-13 16:15:08+02:00 Europe/Berlin
+
  - Change size of service list from fixed width of 310 pixels
    to 20% of the available viewport space.
  - Get rid of owner selection window. If a wrong URL with app.html
