@@ -1,5 +1,12 @@
 {{$NEXT}}
 
+ - Change size of service list from fixed width of 310 pixels
+   to 20% of the available viewport space.
+ - Get rid of owner selection window. If a wrong URL with app.html
+   is called or a session has expired, the user is now redirected
+   to the login page instead of ending up in an endless loop of
+   being prompted to choose an owner.
+
 1.013     2020-04-20 20:05:35+02:00 Europe/Berlin
 
  - History is stored no longer in RCS but in plain direcories.
