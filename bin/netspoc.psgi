@@ -1845,6 +1845,28 @@ sub login {
     return $app_url;
 }
 
+sub login_vue {
+    my ($req, $session) = @_;
+    logout($req, $session);
+    my $email = $req->param('email') or abort "Missing param 'email'";
+    $email = lc $email;
+    check_email_authorization($email);
+
+    # User 'guest' needs no password.
+    if ($email ne 'guest') {
+        my $pass = $req->param('pass') or abort("Missing param 'pass'");
+        check_attack($req);
+        if (not check_password($email, $pass)) {
+            set_attack($req);
+            abort('Login failed');
+        }
+        clear_attack($req);
+    }
+
+    set_login($session, $email);
+    return;
+}
+
 sub ldap_login {
     my ($req, $session) = @_;
     logout($req, $session);
@@ -1945,6 +1967,8 @@ my %path2sub =
      ldap_login       => [ \&ldap_login,    { anon => 1, redir => 1,
                                               create_cookie => 1, } ],
      login            => [ \&login,         { anon => 1, redir => 1,
+                                              create_cookie => 1, } ],
+     login_vue        => [ \&login_vue,     { anon => 1,
                                               create_cookie => 1, } ],
      register         => [ \&register,      { anon => 1, html  => 1,
                                               create_cookie => 1, } ],
