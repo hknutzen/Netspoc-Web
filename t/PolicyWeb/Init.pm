@@ -229,7 +229,7 @@ sub prepare_export {
     $counter++;
     $policy = "p$counter";
 
-    my $cmd = "export-netspoc -quiet $in_dir $export_dir/$policy";
+    my $cmd = "export-netspoc --quiet $in_dir $export_dir/$policy";
     my ($stdout, $stderr);
     run3($cmd, \undef, \$stdout, \$stderr);
     my $status = $?;

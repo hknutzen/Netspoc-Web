@@ -29,7 +29,7 @@ sub export_netspoc {
     close $in_fh;
 
     my $policy_path = "$export_dir/$policy";
-    my $cmd = "export-netspoc -quiet $filename $policy_path";
+    my $cmd = "export-netspoc --quiet $filename $policy_path";
     run($cmd);
     system("echo '# $policy #' > $policy_path/POLICY") == 0 or die $!;
     system("cd $export_dir; ln -sfT $policy current") == 0  or die $!;
