@@ -134,7 +134,7 @@ for my $owner (sort keys %owner2send) {
 
     my $changes = Policy_Diff::compare($cache, $old_ver, $new_ver, $owner)
         or next;
-    my $diff = join("\n", map( { convert({ $_, $changes->{$_} }, -1) }
+    my $diff = join("\n", map( { convert({ $_ => $changes->{$_} }, -1) }
                                (sort { ($toplevel_sort{$a} || 999)
                                        <=>
                                        ($toplevel_sort{$b} || 999) }

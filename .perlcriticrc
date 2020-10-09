@@ -2,6 +2,7 @@
 severity = 4
 #verbose  = 8
 include = ProhibitUnusedVariables ProhibitMismatchedOperators ProhibitCaptureWithoutTest
+exclude = RequireFinalReturn
 
 [Subroutines::RequireFinalReturn]
 terminal_funcs = abort fatal_err internal_err

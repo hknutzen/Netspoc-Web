@@ -39,6 +39,7 @@ sub load {
     {
         local $/ = undef;
         $result = from_json(  <$fh>, { relaxed  => 1 } );
+        close $fh;
     }
     for my $key (keys %conf_keys) {
         $conf_keys{$key} eq ':REQUIRED' or next;

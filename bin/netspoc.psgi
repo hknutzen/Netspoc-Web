@@ -64,10 +64,12 @@ sub internal_err {
     abort "internal: $msg";
 }
 
+## no critic (RequireArgUnpacking)
 sub unique {
     my %seen;
     return grep { !$seen{$_}++ } @_;
 }
+## use critic
 
 sub intersect {
     my @non_compl = @_;
@@ -307,8 +309,7 @@ sub sort_by_ip {
     my ( $unsorted ) = @_;
     my %orig2int;
     map {
-        /^(\d+\.\d+\.\d+\.\d+)/;
-        my $ip = $1;
+        my ($ip) = /^(\d+\.\d+\.\d+\.\d+)/;
         # If ip contains something other than an IP, initialize it with
         # 255.255.255.255, so that it is sorted to the end.
         $ip ||= '255.255.255.255';
@@ -1565,7 +1566,7 @@ sub get_owner {
     # Automatically select owner with most number of own services.
     my $best_owner;
     my $max_size = 0;
-    for $owner (find_authorized_owners $session->param('email')) {
+    for my $owner (find_authorized_owners $session->param('email')) {
         my $service_lists = load_json("owner/$owner/service_lists");
         my $size = @{$service_lists->{owner}};
         if ($size > $max_size) {
