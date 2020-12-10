@@ -162,15 +162,12 @@ sub load_json_version {
 
         my $real_path = "$dir/$version/$path";
         my $u8_real_path = Encode::encode('UTF-8', $real_path);
-        if (open (my $fh, '<', $u8_real_path)) {
-            local $/ = undef;
-            $data = from_json( <$fh> );
-            close($fh);
-            $data = $self->postprocess_json($path, $data);
-        }
-        else {
-            $data = undef;
-        }
+        open (my $fh, '<', $u8_real_path) or
+            die "Can't open $real_path: $!";
+        local $/ = undef;
+        $data = from_json( <$fh> );
+        close($fh);
+        $data = $self->postprocess_json($path, $data);
         $self->{cache}->{$version}->{$path} = $data;
     }
     else {
