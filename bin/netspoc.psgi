@@ -177,13 +177,12 @@ sub select_history {
 
     # Read requested version date from cgi parameter.
     if ($selected_history = $req->param('history')) {
-	$history_needed or abort "Must not send parameter 'history'";
+        $history_needed or abort "Must not send parameter 'history'";
     }
 
     # Read current version tag from current/POLICY.
     else {
-	$history_needed and abort "Missing parameter 'history'";
-	$selected_history = current_policy();
+        $selected_history = current_policy();
     }
     return;
 }
@@ -211,10 +210,24 @@ sub get_nat_set {
     return load_json("owner/$owner/nat_set");
 }
 
+sub get_service {
+    my ($services, $name) = @_;
+    my $svc = $services->{$name} or
+        die "Can't access 'service:$name'";
+    return $svc;
+}
+
+sub get_object {
+    my ($objects, $name) = @_;
+    my $obj = $objects->{$name} or
+        die "Can't access '$name'";
+    return $obj;
+}
+
 sub name2ip {
     my ($obj_name, $nat_set) = @_;
     my $objects = load_json('objects');
-    my $obj = $objects->{$obj_name};
+    my $obj = get_object($objects, $obj_name);
     if (my $href = $obj->{nat}) {
         for my $tag (keys %$href) {
             if ($nat_set->{$tag}) {
@@ -228,7 +241,7 @@ sub name2ip {
 sub get_nat_obj {
     my ($obj_name, $nat_set) = @_;
     my $objects = load_json('objects');
-    my $obj = $objects->{$obj_name};
+    my $obj = get_object($objects, $obj_name);
     if (my $href = $obj->{nat}) {
         for my $tag (keys %$href) {
             if ($nat_set->{$tag}) {
@@ -292,7 +305,7 @@ sub get_network_resources {
                     child_ip    => name2ip($name, $nat_set),
                     child_name  => $name,
                     child_owner => {
-                        owner => $objects->{$name}->{owner},
+                        owner => get_object($objects, $name)->{owner},
                     }
                 };
             }
@@ -429,7 +442,7 @@ sub search_string {
             next;
         }
         if ( $req->param('search_in_desc') ) {
-            if ( my $desc = $services->{$sname}->{details}->{description} ) {
+            if ( my $desc = get_service($services, $sname)->{details}->{description} ) {
                 if ( $desc =~ $regex ) {
                     push @$result, $sname;
                     next;
@@ -501,7 +514,7 @@ sub build_ip_hash {
     my %ip_hash;
     my $objects = load_json('objects');
     for my $name (keys %$objects) {
-        my $obj = $objects->{$name};
+        my $obj = get_object($objects, $name);
         my $obj_ip;
 
         # Get NAT IP
@@ -600,7 +613,7 @@ sub build_ip_search_hash {
     my %matching_zones;
     my $add_matching_zone = sub {
         my ($name) = @_;
-        my $obj = $objects->{$name};
+        my $obj = get_object($objects, $name);
 
         # Ignore hosts, interfaces, but not loopback interfaces.
         if (my $zone = $obj->{zone}) {
@@ -632,7 +645,7 @@ sub build_ip_search_hash {
         elsif ($m1 < $m) {
             $super or next;
             match_ip($i, $i1, $m1) or next;
-            my $obj = $objects->{$name};
+            my $obj = get_object($objects, $name);
             if ($obj->{is_supernet}) {
                 push @supernets, $name;
                 next;
@@ -657,7 +670,7 @@ sub build_ip_search_hash {
         }
         else {
             for my $name (@supernets) {
-                my $obj = $objects->{$name};
+                my $obj = get_object($objects, $name);
                 my $zone = $obj->{zone};
                 if ($matching_zones{$zone}) {
                     $hash{$name} = 1;
@@ -826,7 +839,7 @@ sub select_services {
     for my $sname ( @$service_list ) {
 
         my $users = $sname2users->{$sname} || [];
-        my $rules = $services->{$sname}->{rules};
+        my $rules = get_service($services, $sname)->{rules};
 
         my $match_users = sub {
             my ($obj_hash) = @_;
@@ -910,7 +923,8 @@ sub service_list {
         # "disable_at".
         if ( $req->param('search_disable_at') ) {
             push @search_in, 'visible';
-            $result = [ grep { $services->{$_}->{details}->{disable_at} } @$result ];
+            $result =
+                [ grep { get_service($services, $_)->{details}->{disable_at} } @$result ];
         }
     }
 
@@ -925,7 +939,7 @@ sub service_list {
     $result = search_string($req, $result);
 
     return [ map {
-	my $hash = { name => $_, %{ $services->{$_}->{details}} };
+	my $hash = { name => $_, %{ get_service($services, $_)->{details}} };
 
 	# Create hash { name => .. } for each owner and sub_owner.
 	$hash->{owner} = [ map { { name => $_} } @{ $hash->{owner} } ];
@@ -1004,7 +1018,7 @@ sub get_matching_rules_and_users {
     my $owner       = $req->param('active_owner');
     my $services    = load_json('services');
     my $sname2users = load_json( "owner/$owner/users" );
-    my $rules       = $services->{$sname}->{rules};
+    my $rules       = get_service($services, $sname)->{rules};
     my $users       = $sname2users->{$sname} || [];
     if (my ($obj1_hash, $obj2_hash, $proto_checker) = gen_search_chosen($req)) {
         ($rules, $users) = select_rules_and_users($rules, $users,
@@ -1251,7 +1265,7 @@ sub send_user_task_mail {
         || 'Error: no business_unit defined.';
     my $users = get_users($req, $session);
     my $services = load_json("services");
-    my $srv_owners = $services->{$service}->{'details'}->{'owner'};
+    my $srv_owners = get_service($services, $service)->{details}->{owner};
 
     # Hash to fill template with data to send via sendmail.
     my $hash = {
@@ -1307,7 +1321,7 @@ sub generate_hash_from_json {
     my ( @actions, @sources, @dests, @protos );
     my $service = $req->param('service');
     my $services = load_json("services");
-    my $srv_owners = $services->{$service}->{'details'}->{'owner'};
+    my $srv_owners = get_service($services, $service)->{details}->{owner};
     my $object = $req->param('object');
     my $what = $req->param('what');
 
