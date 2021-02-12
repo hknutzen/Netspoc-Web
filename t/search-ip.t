@@ -105,9 +105,10 @@ service:Test5 = {
  permit src = user; dst = host:k; prt = tcp 82;
 }
 
+protocol:Test6 = udp 69:82; # Source port 69
 service:Test6 = {
  user = host:B10;
- permit src = user; dst = any:Kunde; prt = udp 69:82; # Source port 69
+ permit src = user; dst = any:Kunde; prt = protocol:Test6;
 }
 
 service:Test7 = {
