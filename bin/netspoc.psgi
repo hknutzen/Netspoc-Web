@@ -1990,6 +1990,8 @@ my %path2sub =
      # - create_cookie: create cookie if no cookie is available
      ldap_login       => [ \&ldap_login,    { anon => 1, redir => 1,
                                               create_cookie => 1, } ],
+     ldap_login_vue   => [ \&ldap_login_vue,{ anon => 1, add_success => 1,
+                                              create_cookie => 1, } ],
      login            => [ \&login,         { anon => 1, redir => 1,
                                               create_cookie => 1, } ],
      login_vue        => [ \&login_vue,     { anon => 1, add_success => 1,
