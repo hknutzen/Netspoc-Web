@@ -1892,6 +1892,15 @@ sub ldap_login {
     return $app_url;
 }
 
+sub ldap_login_vue {
+    my ($req, $session) = @_;
+    logout($req, $session);
+    my $email = lc ldap_check_pass_get_email($req);
+    check_email_authorization($email);
+    set_login($session, $email);
+    return;
+}
+
 sub ldap_check_pass_get_email {
     my ($req) = @_;
     my $user = $req->param('user') or abort "Missing param 'user'";
