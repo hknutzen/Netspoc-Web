@@ -1,5 +1,7 @@
 {{$NEXT}}
 
+1.015     2021-06-01 15:41:22+02:00 Europe/Berlin
+
  - Moved check for missing old version. Now also send_diff.pl handles missing version correctly.
  - Fix bug with IP and mask check (32 bit unsigned int for "&"-Operation)
  - Abort if JSON file can't be loaded.
