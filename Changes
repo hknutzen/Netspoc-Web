@@ -1,5 +1,11 @@
 {{$NEXT}}
 
+ - Moved check for missing old version. Now also send_diff.pl handles missing version correctly.
+ - Fix bug with IP and mask check (32 bit unsigned int for "&"-Operation)
+ - Abort if JSON file can't be loaded.
+ - Call perlcritic, fixed issues from critic
+ - Fix broken dokuwiki icon link.
+
 1.014     2020-05-13 16:15:08+02:00 Europe/Berlin
 
  - Change size of service list from fixed width of 310 pixels
