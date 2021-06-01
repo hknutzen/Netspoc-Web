@@ -6,7 +6,7 @@ diff.pl - Print names of owners that have changes.
 
 =head1 COPYRIGHT AND DISCLAIMER
 
-(C) 2020 by Heinz Knutzen     <heinz.knutzen@gmail.com>
+(C) 2021 by Heinz Knutzen     <heinz.knutzen@gmail.com>
             Daniel Brunkhorst <daniel.brunkhorst@web.de>
 
 https://github.com/hknutzen/Netspoc-Web
