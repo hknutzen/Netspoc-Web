@@ -1,7 +1,7 @@
 
 =head1 COPYRIGHT AND DISCLAIMER
 
-(C) 2014 by Heinz Knutzen     <heinz.knutzen@gmail.com>
+(C) 2020 by Heinz Knutzen     <heinz.knutzen@gmail.com>
 
 https://github.com/hknutzen/Netspoc-Web
 
@@ -217,10 +217,17 @@ sub compare {
         v2 => $v2,
         diff_cache => {},
     };
+    my $cache_path = $cache->{netspoc_data};
     for my $what ( qw(service_lists users) ) {
         my $path = "owner/$owner/$what";
 
-        my $old_data = $cache->load_json_version($v1, $path);
+        # Load old version only, if available.
+        my $old_data;
+        if ($v1 !~ /^\d\d\d\d-\d\d-\d\d$/ ||
+            -f "$cache_path/history/$v1/$path") {
+
+            $old_data = $cache->load_json_version($v1, $path);
+        }
         my $new_data = $cache->load_json_version($v2, $path);
 
         my $sub = $path2diff{$what} or die;

@@ -57,13 +57,8 @@ for my $aref (values %$email2owners) {
 
 # Compare files for each owner.
 for my $owner (sort keys %owners) {
-
-    # Compare only, if history is available.
-    if (-d "$path/history/$old_ver/owner/$owner") {
-        Policy_Diff::compare($cache, $old_ver, $new_ver, $owner)
-            or next;
-    }
-
     # Mark new or changed owner as changed.
-    print "$owner\n";
+    if (Policy_Diff::compare($cache, $old_ver, $new_ver, $owner)) {
+        print "$owner\n";
+    }
 }
