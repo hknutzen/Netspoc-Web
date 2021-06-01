@@ -647,7 +647,6 @@ Ext.define(
                 sc.getSearchParams()
             );
 
-            // FOO
             graph_window.on(
                 'beforeshow',
                 function () {
@@ -711,7 +710,6 @@ Ext.define(
                 }
             );
 
-            // FOO
             graph_window.on(
                 'show',
                 function () {
@@ -928,7 +926,7 @@ Ext.define(
             var panel   = this.getAddUserFormPanel();
             var form    = panel.getForm();
             if ( form.isValid() ) {
-                // FOO
+
                 // get business unit from combo box
                 var bu_combo = panel.down('combo');
                 var business_unit = bu_combo.getRawValue() || 'Unbekannt';
@@ -966,7 +964,7 @@ Ext.define(
                                 mask = cidr2mask( mask );
                                 num_mask = ip2numeric( mask );
                                 res_ip = num_ip & num_mask;
-                                if ( res_ip !== num_ip ) {
+                                if ( (new Uint32Array([res_ip]))[0] !== num_ip ) {
                                     valid_mask = false;
                                     msg = "IP passt nicht zur Maske! Falls Maske richtig " +
                                         "sollte die IP lauten: " + numeric2ip( res_ip );
@@ -978,7 +976,7 @@ Ext.define(
                                 // mask is in dot notation
                                 num_mask = ip2numeric( mask );
                                 res_ip = num_ip & num_mask;
-                                if ( res_ip !== num_ip) {
+                                if ( (new Uint32Array([res_ip]))[0] !== num_ip) {
                                     valid_mask = false;
                                     msg = "IP passt nicht zur Maske! Falls Maske richtig " +
                                         "sollte die IP lauten: " + numeric2ip( res_ip );
