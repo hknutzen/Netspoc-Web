@@ -577,7 +577,7 @@ sub build_ip_search_hash {
     my ($ip, $mask, $sub, $super, $owner) = @_;
 
     my $len;
-    if(!$mask) {
+    if(not defined $mask) {
         $len = 32;
     }
     elsif ($mask =~ /\D/) {

@@ -265,6 +265,19 @@ $out = [qw(Test1 Test3 Test3a)];
 test_run_o($title, $path, $params, $owner, $out, \&extract_names);
 
 ############################################################
+$title = 'Exact IP search for internet or non matching aggregate';
+############################################################
+
+$params = { search_ip1  => '0.0.0.0/0',
+            search_own  => 1,
+            search_used => 1,
+          };
+
+$out = [qw(Test5 Test6 Test7)];
+
+test_run_o($title, $path, $params, $owner, $out, \&extract_names);
+
+############################################################
 $title = 'Search for tcp protocol';
 ############################################################
 
