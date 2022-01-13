@@ -576,7 +576,7 @@ sub build_ip_search_hash {
         $len = 32;
     }
     elsif ($mask =~ /\D/) {
-        $len = mask2prefix(ip2int($mask)) or
+        defined($len = mask2prefix(ip2int($mask))) or
             abort "Invalid netmask '$mask'";
     }
     elsif ($mask > 32) {
