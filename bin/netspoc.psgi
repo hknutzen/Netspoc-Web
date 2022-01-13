@@ -538,13 +538,8 @@ sub build_ip_hash {
         # Missing mask (at most hosts and interfaces).
         if ($obj_ip !~ m'/') {
 
-            # Missing mask at aggregate with ip 0.
-            if ($obj_ip eq '0.0.0.0') {
-                $ip_hash{$name} = { ip1 => 0, mask => 0 };
-            }
-
             # Handle range.
-            elsif ($obj_ip =~ /-/) {
+            if ($obj_ip =~ /-/) {
                 my ($ip1, $ip2) = split /-/, $obj_ip;
                 my $i1 = ip2int($ip1);
                 my $i2 = ip2int($ip2);
