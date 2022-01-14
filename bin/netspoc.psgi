@@ -759,12 +759,12 @@ sub build_proto_checker {
 # If both are given,
 # 1. search for ip1 in rules and ip2 in users
 # 2. search for ip2 in rules and ip1 in users
-# ip1 and ip2 can have an ip or (later) string value.
+# ip1 and ip2 can have an ip or string value.
 # ip is
 # - single ip adress
 # - ip address followed by mask or prefix len
 #   delimiter is slash or single blank.
-# Later: - string value to search in object names.
+# - string value to search in object names.
 #
 # Algorithm:
 # 1. Build ip1_hash with names of objects matching ip1
