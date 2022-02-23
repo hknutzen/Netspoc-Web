@@ -1,7 +1,7 @@
 
 =head1 COPYRIGHT AND DISCLAIMER
 
-(C) 2018 by Heinz Knutzen     <heinz.knutzen@gmail.com>
+(C) 2022 by Heinz Knutzen     <heinz.knutzen@gmail.com>
             Daniel Brunkhorst <daniel.brunkhorst@web.de>
 
 https://github.com/hknutzen/Netspoc-Web
@@ -178,11 +178,8 @@ sub load_json_version {
 
 sub load_json_current {
     my ($self, $path) = @_;
-    my $policy_path = "$self->{netspoc_data}/current/POLICY";
-    my $policy = qx(cat $policy_path);
-    $policy =~ m/^# (\S+)/ or
-        die "Internal: Can't find policy name in $policy_path";
-    $policy = $1;
+    my $link = "$self->{netspoc_data}/current";
+    my $policy = readlink $link or die "Can't read symlink $link";
     return $self->load_json_version($policy, $path);
 }
 
