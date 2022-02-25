@@ -348,7 +348,7 @@ sub adapt_name_ip_user {
     my $nat_set      = get_nat_set($owner);
 
     # Untaint user input.
-    $disp_prop =~ /^(?:name|ip)$/ or
+    $disp_prop =~ /^(?:name|ip|ip_and_name)$/ or
         abort "Unknown display property '$disp_prop'";
 
     # Rules reference objects by name.
@@ -356,31 +356,55 @@ sub adapt_name_ip_user {
     # - names substituted by objects
     # - IP addresses in object with NAT applied.
     my @result;
-    my $user_props;
+    my $user_props_name;
+    my $user_props_ip;
     if ( $expand_users ) {
         if ($disp_prop eq 'ip') {
-            $user_props = sort_by_ip( [ map { name2ip($_, $nat_set) } @$user_names ] );
+            $user_props_ip = sort_by_ip( [ map { name2ip($_, $nat_set) } @$user_names ] );
+        } elsif ($disp_prop eq 'ip_and_name') {
+            $user_props_ip = sort_by_ip( [ map { name2ip($_, $nat_set) } @$user_names ] );
+            $user_props_name = $user_names;
         }
         else {
-            $user_props = $user_names;
+            $user_props_name = $user_names;
         }
     }
     for my $rule ( @$rules ) {
         my ($src, $dst) = @{$rule}{qw(src dst)};
-        if ($disp_prop eq 'ip') {
-            $src = sort_by_ip( [ map { name2ip($_, $nat_set) } @$src ] );
-            $dst = sort_by_ip( [ map { name2ip($_, $nat_set) } @$dst ] );
+        my ($src_ip, $dst_ip);
+        my $copy = {};
+        if ($disp_prop =~ /^(?:ip|ip_and_name)$/) {
+            $src_ip = sort_by_ip( [ map { name2ip($_, $nat_set) } @$src ] );
+            $dst_ip = sort_by_ip( [ map { name2ip($_, $nat_set) } @$dst ] );
         }
         if ($expand_users) {
-            has_user($rule, 'src') and $src = $user_props;
-            has_user($rule, 'dst') and $dst = $user_props;
+            if ($disp_prop =~ /^(?:ip|ip_and_name)$/) {
+                has_user($rule, 'src') and $src_ip = $user_props_ip;
+                has_user($rule, 'dst') and $dst_ip = $user_props_ip;
+                has_user($rule, 'src') and $src = $user_props_name;
+                has_user($rule, 'dst') and $dst = $user_props_name;
+            } else {
+                has_user($rule, 'src') and $src = $user_props_name;
+                has_user($rule, 'dst') and $dst = $user_props_name;
+            }
         }
-        my $copy =  {
+
+        $copy = {
             action   => $rule->{action},
-            src      => $src,
-            dst      => $dst,
             prt      => $rule->{prt},
         };
+        if ($disp_prop eq 'ip') {
+            $copy->{src} = $src_ip;
+            $copy->{dst} = $dst_ip;
+        } elsif ($disp_prop eq 'ip_and_name') {
+            $copy->{src_name} = $src;
+            $copy->{dst_name} = $dst;
+            $copy->{src_ip} = $src_ip;
+            $copy->{dst_ip} = $dst_ip;
+        } else {
+            $copy->{src} = $src;
+            $copy->{dst} = $dst;
+        }
         $copy->{has_user} = $rule->{has_user} if !$expand_users;
         push @result, $copy;
 
