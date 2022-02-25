@@ -53,7 +53,12 @@ else
 fi
 
 # Copy current policy to history, preserve date.
-cp -pr $current $next
+# Try to create hard links to files from previous day.
+mkdir $next
+rsync -c -a --no-times --link-dest $dir/history/$previous $current/* $next
+# Orignal time stamp of this file must be preserved,
+# because this time value is shown to user.
+touch -r $current/POLICY $next/POLICY
 
 # Mark owners that are changed.
 for owner in $changed; do
@@ -73,7 +78,7 @@ find . -maxdepth 1 -name 'p*' ! -name $current ! -newer $current | xargs rm -rf
 # Remove user from /home/netspocweb/users if it is no longer known
 # as admin or watcher in Netspoc.
 # Delete file only if it is older than a week in order to make it possible
-# to revert erroeous recent changes to admins or watchers
+# to revert erroneous recent changes to admins or watchers
 # without anybody noticing.
 $path/del_obsolete_users.pl
 

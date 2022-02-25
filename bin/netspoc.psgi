@@ -562,13 +562,8 @@ sub build_ip_hash {
         # Missing mask (at most hosts and interfaces).
         if ($obj_ip !~ m'/') {
 
-            # Missing mask at aggregate with ip 0.
-            if ($obj_ip eq '0.0.0.0') {
-                $ip_hash{$name} = { ip1 => 0, mask => 0 };
-            }
-
             # Handle range.
-            elsif ($obj_ip =~ /-/) {
+            if ($obj_ip =~ /-/) {
                 my ($ip1, $ip2) = split /-/, $obj_ip;
                 my $i1 = ip2int($ip1);
                 my $i2 = ip2int($ip2);
@@ -601,11 +596,11 @@ sub build_ip_search_hash {
     my ($ip, $mask, $sub, $super, $owner) = @_;
 
     my $len;
-    if(!$mask) {
+    if(not defined $mask) {
         $len = 32;
     }
     elsif ($mask =~ /\D/) {
-        $len = mask2prefix(ip2int($mask)) or
+        defined($len = mask2prefix(ip2int($mask))) or
             abort "Invalid netmask '$mask'";
     }
     elsif ($mask > 32) {
@@ -788,12 +783,12 @@ sub build_proto_checker {
 # If both are given,
 # 1. search for ip1 in rules and ip2 in users
 # 2. search for ip2 in rules and ip1 in users
-# ip1 and ip2 can have an ip or (later) string value.
+# ip1 and ip2 can have an ip or string value.
 # ip is
 # - single ip adress
 # - ip address followed by mask or prefix len
 #   delimiter is slash or single blank.
-# Later: - string value to search in object names.
+# - string value to search in object names.
 #
 # Algorithm:
 # 1. Build ip1_hash with names of objects matching ip1

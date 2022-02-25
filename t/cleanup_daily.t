@@ -163,7 +163,7 @@ network:n1 = {
 }
 END
 
-# Set time to 1970, older than 1 year; will be removed from RCS.
+# Set time to 1970, older than 1 year; will be removed from history.
 set_old_time();
 export_netspoc($netspoc, $export_dir, $policy_num++, $timestamp);
 
