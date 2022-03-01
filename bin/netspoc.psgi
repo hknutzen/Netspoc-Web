@@ -408,7 +408,8 @@ sub adapt_name_ip_user {
             $copy->{dst} = $dst;
         }
         $copy->{has_user} = $rule->{has_user} if !$expand_users;
-        $copy->{$rule->{has_user}} = [] if !$expand_users;
+        $copy->{$rule->{has_user}} = []
+            if (!$expand_users && $rule->{has_user} ne 'both');
         push @result, $copy;
 
     }
