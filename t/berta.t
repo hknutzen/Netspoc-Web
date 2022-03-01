@@ -17,12 +17,14 @@ owner:o1 = { admins = guest; }
 
 network:n1 = { ip = 10.1.1.0/24; owner = o1; }
 network:n2 = { ip = 10.1.2.0/24; owner = o1; }
+network:n3 = { ip = 10.1.3.0/24; owner = o1; }
 
 router:r1 = {
  managed;
  model = ASA;
  interface:n1 = { ip = 10.1.1.1; hardware = n1; }
  interface:n2 = { ip = 10.1.2.1; hardware = n2; }
+ interface:n3 = { ip = 10.1.3.1; hardware = n3; }
 }
 
 service:s1 = {
@@ -32,6 +34,10 @@ service:s1 = {
 service:s2 = {
  user = network:n1;
  permit src = network:n2; dst = user; prt = tcp 80;
+}
+service:s3 = {
+ user = network:n1;
+ permit src = network:n2,network:n3; dst = user; prt = tcp 80;
 }
 END
 ############################################################
@@ -102,23 +108,26 @@ $title = 'Display prop "ip_and_name"';
 $out = [
    {
      action => 'permit',
-     src_name => [
-       'network:n2'
-     ],
-     src_ip => [
-       '10.1.2.0/255.255.255.0'
-     ],
+     src => [
+         {
+             ip => '10.1.2.0/255.255.255.0',
+             name => 'network:n2',
+         },
+         {
+             ip => '10.1.3.0/255.255.255.0',
+             name => 'network:n3',
+         }
+         ],
      has_user => 'dst',
      prt => [
-       'tcp 80'
-     ],
-     dst_name => [],
-     dst_ip => [],
+         'tcp 80'
+         ],
+     dst => []
    }
     ];
 
 $opt = {
-    service => "s2",
+    service => "s3",
     has_user => "dst",
     active_owner => "o1",
     display_property => "ip_and_name",
@@ -133,26 +142,30 @@ $title = 'Display prop "ip_and_name" with "expand_users"';
 $out = [
     {
         action => 'permit',
-        src_name => [
-            'network:n2'
-            ],
-        src_ip => [
-            '10.1.2.0/255.255.255.0'
+        src => [
+            {
+                ip => '10.1.2.0/255.255.255.0',
+                name => 'network:n2',
+            },
+            {
+                ip => '10.1.3.0/255.255.255.0',
+                name => 'network:n3',
+            }
             ],
         prt => [
             'tcp 80'
             ],
-        dst_name => [
-            'network:n1'
-            ],
-        dst_ip => [
-            '10.1.1.0/255.255.255.0'
-            ],
+        dst => [
+            {
+                ip => '10.1.1.0/255.255.255.0',
+                name => 'network:n1',
+            }
+            ]
     }
     ];
 
 $opt = {
-    service => "s2",
+    service => "s3",
     has_user => "dst",
     active_owner => "o1",
     display_property => "ip_and_name",

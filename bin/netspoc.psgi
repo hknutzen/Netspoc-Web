@@ -397,15 +397,18 @@ sub adapt_name_ip_user {
             $copy->{src} = $src_ip;
             $copy->{dst} = $dst_ip;
         } elsif ($disp_prop eq 'ip_and_name') {
-            $copy->{src_name} = $src;
-            $copy->{dst_name} = $dst;
-            $copy->{src_ip} = $src_ip;
-            $copy->{dst_ip} = $dst_ip;
+            for (my $i = 0; $i <= $#$src; $i++) {
+                $src->[$i] and $copy->{src}->[$i]->{name} = $src->[$i];
+                $dst->[$i] and $copy->{dst}->[$i]->{name} = $dst->[$i];
+                $src_ip->[$i] and $copy->{src}->[$i]->{ip} = $src_ip->[$i];
+                $dst_ip->[$i] and $copy->{dst}->[$i]->{ip} = $dst_ip->[$i];
+            }
         } else {
             $copy->{src} = $src;
             $copy->{dst} = $dst;
         }
         $copy->{has_user} = $rule->{has_user} if !$expand_users;
+        $copy->{$rule->{has_user}} = [] if !$expand_users;
         push @result, $copy;
 
     }
