@@ -397,7 +397,10 @@ sub adapt_name_ip_user {
             $copy->{src} = $src_ip;
             $copy->{dst} = $dst_ip;
         } elsif ($disp_prop eq 'ip_and_name') {
-            for (my $i = 0; $i <= $#$src; $i++) {
+            my $src_idx = scalar(@$src);
+            my $dst_idx = scalar(@$dst);
+            my $bigger_index = $src_idx > $dst_idx ? $src_idx : $dst_idx;
+            for (my $i = 0; $i <= $bigger_index; $i++) {
                 $src->[$i] and $copy->{src}->[$i]->{name} = $src->[$i];
                 $dst->[$i] and $copy->{dst}->[$i]->{name} = $dst->[$i];
                 $src_ip->[$i] and $copy->{src}->[$i]->{ip} = $src_ip->[$i];
