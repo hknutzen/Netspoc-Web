@@ -39,6 +39,10 @@ service:s3 = {
  user = network:n1;
  permit src = network:n2,network:n3; dst = user; prt = tcp 80;
 }
+service:s4 = {
+ user = network:n1;
+ permit src = user; dst = network:n2,network:n3; prt = tcp 80;
+}
 END
 ############################################################
 
@@ -102,7 +106,7 @@ test_run($title, 'get_rules', $opt, $out, \&extract_records);
 
 
 ############################################################
-$title = 'Display prop "ip_and_name"';
+$title = 'Display prop "ip_and_name", has_user => dst';
 ############################################################
 
 $out = [
@@ -134,6 +138,38 @@ $opt = {
 };
 test_run($title, 'get_rules', $opt, $out, \&extract_records);
 
+############################################################
+$title = 'Display prop "ip_and_name", has_user => src';
+############################################################
+
+$out = [
+   {
+     action => 'permit',
+     dst => [
+         {
+             ip => '10.1.2.0/255.255.255.0',
+             name => 'network:n2',
+         },
+         {
+             ip => '10.1.3.0/255.255.255.0',
+             name => 'network:n3',
+         }
+         ],
+     has_user => 'src',
+     prt => [
+         'tcp 80'
+         ],
+     src => []
+   }
+    ];
+
+$opt = {
+    service => "s4",
+    has_user => "src",
+    active_owner => "o1",
+    display_property => "ip_and_name",
+};
+test_run($title, 'get_rules', $opt, $out, \&extract_records);
 
 ############################################################
 $title = 'Display prop "ip_and_name" with "expand_users"';
