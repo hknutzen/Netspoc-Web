@@ -318,21 +318,6 @@ sub get_network_resources {
 # Services, rules, users
 ####################################################################
 
-sub sort_by_ip {
-    my ( $unsorted ) = @_;
-    my %orig2int;
-    map {
-        my ($ip) = /^(\d+\.\d+\.\d+\.\d+)/;
-        # If ip contains something other than an IP, initialize it with
-        # 255.255.255.255, so that it is sorted to the end.
-        $ip ||= '255.255.255.255';
-        $orig2int{$_} = ip2int($ip);
-    } @$unsorted;
-
-    my @sorted = sort { $orig2int{$a} <=> $orig2int{$b} } keys %orig2int;
-    return \@sorted;
-}
-
 sub has_user {
     my ( $rule, $what ) = @_;
     return $rule->{has_user} eq $what || $rule->{has_user} eq 'both' ;
@@ -360,9 +345,9 @@ sub adapt_name_ip_user {
     my $user_props_ip;
     if ( $expand_users ) {
         if ($disp_prop eq 'ip') {
-            $user_props_ip = sort_by_ip( [ map { name2ip($_, $nat_set) } @$user_names ] );
+            $user_props_ip = [ map { name2ip($_, $nat_set) } @$user_names ];
         } elsif ($disp_prop eq 'ip_and_name') {
-            $user_props_ip = sort_by_ip( [ map { name2ip($_, $nat_set) } @$user_names ] );
+            $user_props_ip = [ map { name2ip($_, $nat_set) } @$user_names ];
             $user_props_name = $user_names;
         }
         else {
@@ -374,8 +359,8 @@ sub adapt_name_ip_user {
         my ($src_ip, $dst_ip);
         my $copy = {};
         if ($disp_prop =~ /^(?:ip|ip_and_name)$/) {
-            $src_ip = sort_by_ip( [ map { name2ip($_, $nat_set) } @$src ] );
-            $dst_ip = sort_by_ip( [ map { name2ip($_, $nat_set) } @$dst ] );
+            $src_ip = [ map { name2ip($_, $nat_set) } @$src ];
+            $dst_ip = [ map { name2ip($_, $nat_set) } @$dst ];
         }
         if ($expand_users) {
             if ($disp_prop =~ /^(?:ip|ip_and_name)$/) {
