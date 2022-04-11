@@ -276,17 +276,16 @@ sub get_networks {
     my $assets = load_json("owner/$owner/assets");
     my $network_names = $assets->{network_list};
     if ( $chosen ) {
-	$network_names = untaint_networks( $chosen, $assets );
+        $network_names = untaint_networks( $chosen, $assets );
     }
     return get_nat_obj_list( $network_names, $owner );
 }
 
-sub get_network_resources {
-    my ($req, $session) = @_;
-    my $owner       = $req->param('active_owner');
-    my $selected    = $req->param('selected_networks');
-    my $assets      = load_json("owner/$owner/assets");
-    my $data        = [];
+sub get_network_resources_for_networks {
+    my ($req, $session, $selected) = @_;
+    my $owner  = $req->param('active_owner');
+    my $assets = load_json("owner/$owner/assets");
+    my $data   = [];
 
     if ( $selected ) {
 
@@ -312,6 +311,43 @@ sub get_network_resources {
         }
     }
     return $data;
+}
+
+sub get_network_resources {
+    my ($req, $session) = @_;
+    my $selected = $req->param('selected_networks');
+    return get_network_resources_for_networks($req, $session, $selected);
+}
+
+sub get_networks_and_resources {
+    my ($req, $session) = @_;
+    my $owner = $req->param('active_owner');
+    my $networks = get_networks($req, $session);
+    my $nets_as_csv = join(',', map { $_->{name} } @$networks );
+    my $net2data;
+    map { $net2data->{$_->{name}} = {
+        ip => $_->{ip},
+        owner => $_->{owner}
+          }
+    } @$networks;
+    my @data = sort { $a->{name} cmp $b->{name} } @{get_network_resources_for_networks($req, $session, $nets_as_csv)};
+    for my $net ( @data ) {
+        my $child = {
+            ip => $net->{child_ip},
+            name => $net->{child_name},
+            owner => $net->{child_owner}->{owner},
+        };
+        push @{$net2data->{$net->{name}}->{children}}, $child;
+    }
+    my @result = map {
+        {
+            name     => $_,
+            ip       => $net2data->{$_}->{ip},
+            owner    => $net2data->{$_}->{owner},
+            children => $net2data->{$_}->{children},
+        }
+    } sort keys %$net2data;
+    return \@result;
 }
 
 ####################################################################
@@ -2031,6 +2067,7 @@ my %path2sub =
      get_rules     => [ \&get_rules,     { owner => 1, add_success => 1, } ],
      get_users     => [ \&get_users,     { owner => 1, add_success => 1, } ],
      get_networks  => [ \&get_networks,  { owner => 1, add_success => 1, } ],
+     get_networks_and_resources => [ \&get_networks_and_resources,  { owner => 1, add_success => 1, } ],
      get_services_and_rules => [
 	 \&get_services_and_rules,       { owner => 1, add_success => 1, } ],
      get_network_resources => [

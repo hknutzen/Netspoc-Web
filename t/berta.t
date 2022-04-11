@@ -15,7 +15,11 @@ use PolicyWeb::Backend
 my $netspoc = <<'END';
 owner:o1 = { admins = guest; }
 
-network:n1 = { ip = 10.1.1.0/24; owner = o1; }
+network:n1 = {
+  ip = 10.1.1.0/24;
+  owner = o1;
+  host:host_in_n1 = { ip = 10.1.1.2; }
+}
 network:n2 = { ip = 10.1.2.0/24; owner = o1; }
 network:n3 = { ip = 10.1.3.0/24; owner = o1; }
 
@@ -208,6 +212,60 @@ $opt = {
     expand_users => 1
 };
 test_run($title, 'get_rules', $opt, $out, \&extract_records);
+
+
+############################################################
+$title = 'Test get_networks_and_resources';
+############################################################
+
+$out = [
+    {
+        name => 'network:n1',
+        ip => '10.1.1.0/255.255.255.0',
+        owner => 'o1',
+        children => [
+            {
+                ip => '10.1.1.2',
+                name => 'host:host_in_n1',
+                owner => 'o1'
+            },
+            {
+                ip => '10.1.1.1',
+                name => 'interface:r1.n1',
+                owner => undef
+            }
+            ]
+    },
+    {
+        name => 'network:n2',
+        ip => '10.1.2.0/255.255.255.0',
+        owner => 'o1',
+        children => [
+            {
+                ip => '10.1.2.1',
+                name => 'interface:r1.n2',
+                owner => undef
+            }
+            ]
+    },
+    {
+        name => 'network:n3',
+        ip => '10.1.3.0/255.255.255.0',
+        owner => 'o1',
+        children => [
+            {
+                ip => '10.1.3.1',
+                name => 'interface:r1.n3',
+                owner => undef
+            }
+            ]
+    }
+    ];
+
+$opt = {
+    active_owner => "o1",
+};
+test_run($title, 'get_networks_and_resources', $opt, $out, \&extract_records);
 
 
 
