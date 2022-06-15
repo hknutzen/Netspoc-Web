@@ -35,6 +35,24 @@ Ext.apply(
         },
         none: function(s) {
             return germanize(s);
+        },
+        asIP : function(value){
+            // Add sortType "asIP" that converts IP addresses to
+            // a numerical value which makes them sortable.
+            var m1 = /-/;
+            var m2 = /\//;
+            var array;
+            if ( value.match(m1) ) {
+                array = value.split('-');
+                return ip2numeric( array[0] );
+            }
+            else if ( value.match(m2) ) {
+                array = value.split('/');
+                return ip2numeric( array[0] );
+            }
+            else {
+                return ip2numeric( value );
+            }
         }
     }
 );
@@ -130,29 +148,6 @@ Ext.application(
                                'Diff', 'Account' ],
 
 	init : function() {
-            // Add sortType "asIP" that converts IP addresses to
-            // a numerical value which makes them sortable.
-            Ext.apply(
-                Ext.data.SortTypes, {
-                    asIP : function(value){
-                        // Sort IP address numerically.
-                        var m1 = /-/;
-                        var m2 = /\//;
-                        var array;
-                        if ( value.match(m1) ) {
-                            array = value.split('-');
-                            return ip2numeric( array[0] );
-                        }
-                        else if ( value.match(m2) ) {
-                            array = value.split('/');
-                            return ip2numeric( array[0] );
-                        }
-                        else {
-                            return ip2numeric( value );
-                        }
-                    }
-                }
-            );
             /*
              * Credit for the following fix goes to "rixo" on stackoverflow:
              * https://stackoverflow.com/questions/20636777/ext-js-tabpanel-rendering-infinite-grid-too-quickly#answer-20654251

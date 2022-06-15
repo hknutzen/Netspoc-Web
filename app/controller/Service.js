@@ -1318,6 +1318,16 @@ Ext.define(
                     );
                 }
                 var rules = this.getRulesStore();
+                var fields = rules.model.getFields();
+                if ( newVal === true ) {
+                    fields[3].sortType = "asUCText";
+                    fields[4].sortType = "asUCText";
+                }
+                else {
+                    fields[3].sortType = "asIP";
+                    fields[4].sortType = "asIP";
+                }
+                rules.model.setFields(fields);
                 rules.load( { params : params } );
                 var users = this.getUsersStore();
                 users.load( { params : params } );

@@ -27,8 +27,10 @@ Ext.define(
               width    : 0.25,
               sortType : 'asIP'
             },
-            { name    : 'child_name',
-              header  : 'Name' },
+            { name     : 'child_name',
+              header   : 'Name',
+              sortType : 'asUCText'
+            },
             { name    : 'child_owner', 
               header  : 'Verantwortungsbereich',
               width   : 0.25,
