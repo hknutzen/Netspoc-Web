@@ -17,12 +17,28 @@ along with this program. If not, see <http://www.gnu.org/licenses/>.
 */
 
 var bold_user = function ( node, what ) {
+    var data = what === 'src' ?  node.src : node.dst;
     if ( node.has_user === what || node.has_user === 'both' ) {
         return '<span style="font-weight:bold;">User</span>';
     }
     else {
-        return what === 'src' ?  node.src.join( '<br>' ) :
-            node.dst.join( '<br>' );
+        var first = data[0];
+        var m1 = /[A-Za-z]/;
+        if (first.match(m1) ) {
+            return data.sort(function (a, b) {
+                                 return a.toLowerCase().localeCompare(b.toLowerCase());
+                             }).join( '<br>' );
+        }
+        else {
+            data.sort(
+                (a, b) => {
+                    const num1 = Number(a.split(".").map((num) => (`000${num}`).slice(-3) ).join(""));
+                    const num2 = Number(b.split(".").map((num) => (`000${num}`).slice(-3) ).join(""));
+                    return num1-num2;
+                }
+            );
+            return data.join('<br>');
+        }
     }
 };
 
@@ -33,13 +49,19 @@ Ext.define(
         fields : [
             { name : 'has_user', mapping : 'hasuser'  },
             { name : 'action',   mapping : 'action'  },
-            { name : 'src',      mapping : function( node ) {
-                  return bold_user( node, 'src' );
-              }
+            {
+                name     : 'src',
+                sortType : "asIP",
+                mapping  : function( node ) {
+                    return bold_user( node, 'src' );
+                }
             },
-            { name : 'dst',      mapping : function( node ) {
-                  return bold_user( node, 'dst' );
-              }
+            {
+                name     : 'dst',
+                sortType : "asIP",
+                mapping  : function( node ) {
+                    return bold_user( node, 'dst' );
+                }
             },
             { name : 'prt',      mapping : function( node ) {
                   return node.prt.join( '<br>' );

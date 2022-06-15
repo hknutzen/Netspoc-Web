@@ -1319,7 +1319,7 @@ Ext.define(
                 }
                 var rules = this.getRulesStore();
                 var fields = rules.model.getFields();
-                if ( newVal === true ) {
+                if ( params.display_property === "name" && newVal === true ) {
                     fields[3].sortType = "asUCText";
                     fields[4].sortType = "asUCText";
                 }
