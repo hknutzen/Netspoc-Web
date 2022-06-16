@@ -1,5 +1,10 @@
 {{$NEXT}}
 
+ - Fix bug in own nework resources: sort by IP
+ - Fix sorting of resources in source and dest of rules. If IPs are displayed,
+   they get sorted as IPs and if names of objects are displayed, they get
+   sorted ASCII-betically.
+
 1.015     2021-06-01 15:41:22+02:00 Europe/Berlin
 
  - Moved check for missing old version. Now also send_diff.pl handles missing version correctly.
