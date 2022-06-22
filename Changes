@@ -1,5 +1,7 @@
 {{$NEXT}}
 
+1.016     2022-06-22 17:14:07+02:00 Europe/Berlin
+
  - Fix bug in own nework resources: sort by IP
  - Fix sorting of resources in source and dest of rules. If IPs are displayed,
    they get sorted as IPs and if names of objects are displayed, they get
