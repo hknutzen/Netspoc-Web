@@ -4,6 +4,7 @@
  - Fix sorting of resources in source and dest of rules. If IPs are displayed,
    they get sorted as IPs and if names of objects are displayed, they get
    sorted ASCII-betically.
+ - Change webpage title from Netspoc to Policy-Web
 
 1.015     2021-06-01 15:41:22+02:00 Europe/Berlin
 
