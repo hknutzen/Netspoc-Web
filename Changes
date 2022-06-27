@@ -1,5 +1,8 @@
 {{$NEXT}}
 
+ - Fix sorting of IP ranges.
+ - Fix sorting of IPs in user details tab.
+
 1.016     2022-06-22 17:14:07+02:00 Europe/Berlin
 
  - Fix bug in own nework resources: sort by IP
