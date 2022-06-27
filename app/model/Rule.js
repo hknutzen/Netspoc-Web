@@ -16,6 +16,25 @@ You should have received a copy of the GNU General Public License
 along with this program. If not, see <http://www.gnu.org/licenses/>.
 */
 
+var as_ip = function(value){
+    // Add sortType "asIP" that converts IP addresses to
+    // a numerical value which makes them sortable.
+    var m1 = /-/;
+    var m2 = /\//;
+    var array;
+    if ( value.match(m1) ) {
+        array = value.split('-');
+        return ip2numeric( array[0] );
+    }
+    else if ( value.match(m2) ) {
+        array = value.split('/');
+        return ip2numeric( array[0] );
+    }
+    else {
+        return ip2numeric( value );
+    }
+};
+
 var bold_user = function ( node, what ) {
     var data = what === 'src' ?  node.src : node.dst;
     if ( node.has_user === what || node.has_user === 'both' ) {
@@ -31,10 +50,8 @@ var bold_user = function ( node, what ) {
         }
         else {
             data.sort(
-                (a, b) => {
-                    const num1 = Number(a.split(".").map((num) => (`000${num}`).slice(-3) ).join(""));
-                    const num2 = Number(b.split(".").map((num) => (`000${num}`).slice(-3) ).join(""));
-                    return num1-num2;
+                function(a, b) {
+                    return as_ip(a) - as_ip(b);
                 }
             );
             return data.join('<br>');
