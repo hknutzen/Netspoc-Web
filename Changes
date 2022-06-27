@@ -1,5 +1,7 @@
 {{$NEXT}}
 
+1.017     2022-06-27 17:43:23+02:00 Europe/Berlin
+
  - Fix sorting of IP ranges.
  - Fix sorting of IPs in user details tab.
 
