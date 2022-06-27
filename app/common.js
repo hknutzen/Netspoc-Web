@@ -57,6 +57,28 @@ function captureEvents(observable) {
     );          
 }
 
+// Return a numerical value for an IP, which makes them sortable.
+// If a mask is present, just the numeric value of the network
+// base address is returnd.
+// If it is a range, then the numerical value of the lower end
+// of the range is returned.
+function as_ip( value ) {
+    var m1 = /-/;
+    var m2 = /\//;
+    var array;
+    if ( value.match(m1) ) {
+        array = value.split('-');
+        return ip2numeric( array[0] );
+    }
+    else if ( value.match(m2) ) {
+        array = value.split('/');
+        return ip2numeric( array[0] );
+    }
+    else {
+        return ip2numeric( value );
+    }
+};
+
 function ip2numeric( dot ) {
     var rex = /[a-zA-Z]/;
     var d;
