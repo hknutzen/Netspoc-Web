@@ -57,9 +57,13 @@ function captureEvents(observable) {
     );          
 }
 
+function uniquify(arr){
+    return arr.filter((e,i)=> arr.indexOf(e) >= i)
+}
+
 // Return a numerical value for an IP, which makes them sortable.
 // If a mask is present, just the numeric value of the network
-// base address is returnd.
+// base address is returned.
 // If it is a range, then the numerical value of the lower end
 // of the range is returned.
 function as_ip( value ) {

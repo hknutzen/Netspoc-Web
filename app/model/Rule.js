@@ -30,12 +30,13 @@ var bold_user = function ( node, what ) {
                              }).join( '<br>' );
         }
         else {
-            data.sort(
+            var copy = uniquify(data);
+            copy.sort(
                 function(a, b) {
                     return as_ip(a) - as_ip(b);
                 }
             );
-            return data.join('<br>');
+            return copy.join('<br>');
         }
     }
 };
