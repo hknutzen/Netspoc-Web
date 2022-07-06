@@ -1,5 +1,7 @@
 {{$NEXT}}
 
+1.018     2022-07-06 13:25:37+02:00 Europe/Berlin
+
  - Avoid multiplication of same IP-addresses of any-objects
 
 1.017     2022-06-27 17:43:23+02:00 Europe/Berlin
