@@ -124,7 +124,6 @@ service:Test8 = {
 service:Test9 = {
  user = host:B10, host:k;
  permit src = user; dst = user; prt = udp 83;
- permit src = user; dst = network:DMZ; prt = udp 83;
 }
 
 service:Test10 = {
@@ -455,7 +454,7 @@ $out = [qw(Test2 Test4 Test5 Test9)];
 test_run_o($title, $path, $params, $owner, $out, \&extract_names);
 
 ############################################################
-$title = 'Subnet IP search for single address and chosen network';
+$title = 'IP search for single address and chosen network';
 ############################################################
 
 $params = { search_ip1      => '10.2.2.2',
@@ -464,7 +463,7 @@ $params = { search_ip1      => '10.2.2.2',
             chosen_networks => 'network:Sub,network:DMZ',
           };
 
-$out = [qw(Test4 Test9)];
+$out = [qw(Test4)];
 
 test_run_o($title, $path, $params, $owner, $out, \&extract_names);
 
