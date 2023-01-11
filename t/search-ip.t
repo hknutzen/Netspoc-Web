@@ -60,14 +60,27 @@ network:KUNDE1 = { ip = 10.2.4.0/24; owner = y; host:K1 = { ip = 10.2.4.4; } }
 any:Kunde = { link = network:Kunde; }
 
 network:DMZ = { ip = 10.9.9.0/24; }
-any:DMZ10 = { ip = 10.0.0.0/8; link = network:DMZ; }
 
-router:inet = {
- interface:DMZ;
- interface:Internet = { bind_nat = inet; }
+router:FW = {
+ managed;
+ model = IOS;
+ interface:DMZ = { ip = 10.9.9.2; hardware = DMZ; }
+ interface:Internet = { negotiated; hardware = Internet; bind_nat = inet; }
 }
 
-network:Internet = { ip = 0.0.0.0/0; has_subnets; }
+network:Internet = {
+ ip = 0.0.0.0/0;
+ has_subnets;
+ host:INTERNET_192_53_103_103 = { ip = 192.53.103.103; }
+}
+
+router:ext = {
+ interface:Internet;
+ interface:extern;
+}
+
+network:extern = { ip = 1.2.0.0/16; }
+any:extern_1-8 = { ip = 1.0.0.0/8; link = network:extern; }
 
 service:Test1 = {
  user = network:Sub;
@@ -118,13 +131,12 @@ service:Test7 = {
 
 service:Test8 = {
  user = host:B10;
- permit src = user; dst = any:DMZ10; prt = udp 82;
+ permit src = user; dst = any:extern_1-8; prt = udp 82;
 }
 
 service:Test9 = {
  user = host:B10, host:k;
  permit src = user; dst = user; prt = udp 83;
- permit src = user; dst = network:DMZ; prt = udp 83;
 }
 
 service:Test10 = {
@@ -141,6 +153,12 @@ protocol:tftp = udp 69, oneway;
 service:Test12 = {
  user = network:Sub;
  permit src = user; dst = network:KUNDE1; prt = tcp 80-85, protocol:tftp, icmp 3/13;
+}
+service:NTP = {
+ user = interface:FW.Internet;
+ permit src = host:INTERNET_192_53_103_103;
+        dst = user;
+        prt = udp 123;
 }
 --ipv6
 area:all-ipv6 = { owner = x; anchor = network:n3; }
@@ -288,6 +306,21 @@ $params = { search_ip1  => '0.0.0.0/0.0.0.0',
           };
 
 $out = [qw(Test5 Test6 Test7)];
+
+test_run_o($title, $path, $params, $owner, $out, \&extract_names);
+
+############################################################
+$title = 'Subnet IP search for interface of internet with negotiated address';
+############################################################
+
+$params = { search_ip1  => '0.0.0.0/0',
+            search_ip2  => '192.53.0.0/16',
+            search_own  => 1,
+            search_used => 1,
+            search_subnet => 1,
+          };
+
+$out = [qw(NTP)];
 
 test_run_o($title, $path, $params, $owner, $out, \&extract_names);
 
@@ -455,7 +488,7 @@ $out = [qw(Test2 Test4 Test5 Test9)];
 test_run_o($title, $path, $params, $owner, $out, \&extract_names);
 
 ############################################################
-$title = 'Subnet IP search for single address and chosen network';
+$title = 'IP search for single address and chosen network';
 ############################################################
 
 $params = { search_ip1      => '10.2.2.2',
@@ -464,7 +497,7 @@ $params = { search_ip1      => '10.2.2.2',
             chosen_networks => 'network:Sub,network:DMZ',
           };
 
-$out = [qw(Test4 Test9)];
+$out = [qw(Test4)];
 
 test_run_o($title, $path, $params, $owner, $out, \&extract_names);
 
@@ -501,7 +534,7 @@ test_run_o($title, $path, $params, $owner, $out, \&extract_names);
 $title = 'Supernet IP search finds all aggregates';
 ############################################################
 
-$params = { search_ip1      => '10.0.0.0/8',
+$params = { search_ip1      => '1.0.0.0/8',
             search_supernet => 1,
             search_own      => 1,
             search_used     => 1,
@@ -755,7 +788,7 @@ $title = 'Show services with rules of IP search';
 ############################################################
 $path = 'get_services_and_rules';
 
-$params = { search_ip1      => '10.0.0.0/8',
+$params = { search_ip1      => '1.0.0.0/8',
             search_supernet => 1,
             search_own      => 1,
             search_used     => 1,
@@ -770,7 +803,7 @@ $out = [
            src      => ['User']
          },
          { action   => 'permit',
-           dst      => ['10.0.0.0/255.0.0.0'],
+           dst      => ['1.0.0.0/255.0.0.0'],
            has_user => 'src',
            proto    => ['udp 82'],
            service  => 'Test8',

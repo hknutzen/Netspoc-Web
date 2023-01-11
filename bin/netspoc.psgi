@@ -686,11 +686,16 @@ sub build_ip_search_hash {
         if ($m1 == $m) {
             $i1 == $i or next;
 
-            # Add exact matchi
+            # Interface with negotiated IP has IP/mask of its network.
+            # Find only, if subnets are searched.
+            next if $name =~ /^interface:/ and not $sub and $m1 != 0xffffffff;
+
+            # Add exact matching object.
             $add_matching_zone->($name) if $super;
         }
         elsif ($m1 < $m) {
             $super or next;
+            next if $name =~ /^interface:/;
             match_ip($i, $i1, $m1) or next;
             my $obj = get_object($objects, $name);
             if ($obj->{is_supernet}) {
