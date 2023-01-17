@@ -1,5 +1,7 @@
 {{$NEXT}}
 
+1.019     2023-01-17 19:51:14+01:00 Europe/Berlin
+
  - Fix: empty User breaks display of selected service
  - Fixed search of interface with negotiated address
  - user-user rule with other rule is no longer valid
