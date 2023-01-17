@@ -1,5 +1,10 @@
 {{$NEXT}}
 
+ - Fix: empty User breaks display of selected service
+ - Fixed search of interface with negotiated address
+ - user-user rule with other rule is no longer valid
+ - Accept also prefixlen in IPv4 adresses
+
 1.018     2022-07-06 13:25:37+02:00 Europe/Berlin
 
  - Avoid multiplication of same IP-addresses of any-objects
