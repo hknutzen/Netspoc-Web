@@ -23,6 +23,9 @@ var bold_user = function ( node, what ) {
     }
     else {
         var first = data[0];
+        if ( first === undefined ) {
+            return '';
+        }
         var m1 = /[A-Za-z]/;
         if (first.match(m1) ) {
             return data.sort(function (a, b) {
@@ -31,6 +34,9 @@ var bold_user = function ( node, what ) {
         }
         else {
             var copy = uniquify(data);
+            if ( copy === undefined || copy.length < 1) {
+                return '';
+            }
             copy.sort(
                 function(a, b) {
                     return as_ip(a) - as_ip(b);
