@@ -796,14 +796,14 @@ $params = { search_ip1      => '1.0.0.0/8',
 
 $out = [
          { action   => 'permit',
-           dst      => ['0.0.0.0/0.0.0.0'],
+           dst      => ['0.0.0.0/0'],
            has_user => 'src',
            proto    => ['udp 82'],
            service  => 'Test7',
            src      => ['User']
          },
          { action   => 'permit',
-           dst      => ['1.0.0.0/255.0.0.0'],
+           dst      => ['1.0.0.0/8'],
            has_user => 'src',
            proto    => ['udp 82'],
            service  => 'Test8',
