@@ -60,11 +60,11 @@ sub test_own_networks_grid {
 
         # check form
         my @regex = ('(1\d\d|\d\d|\d)\.(1\d\d|\d\d|\d)\.(1\d\d|\d\d|\d)\.(1\d\d|\d\d|\d)',
-                     '(network)|(interface):\.*', 'x|y|z'
+                     '(network)|(interface):\.*', 'x|y|z|Mungo|Nerz|Otter|Kondor'
                     );
 
-        ok($driver->check_sytax_grid(\@networks_grid_cells, 4, 1, \@regex),
-            "own networks grid looks fine");
+        ok($driver->check_syntax_grid(\@networks_grid_cells, 4, 1, \@regex),
+            "check own networks grid");
 
         # find grid head
         my @grid_heads =
@@ -144,7 +144,7 @@ sub test_resources_grid {
         # reload grid
         @resources_grid_cells =
           $driver->find_child_elements($resources_grid, 'x-grid-cell', 'class');
-        ok($driver->check_sytax_grid(\@resources_grid_cells, 3, 0, \@res_reg),
+        ok($driver->check_syntax_grid(\@resources_grid_cells, 3, 0, \@res_reg),
             "resources grids looks fine");
 
         $driver->find_child_element($resources_grid,
@@ -240,7 +240,9 @@ sub test_selection_and_services {
           $driver->find_child_elements($driver->find_element('pnl_services'),
                                        'x-grid-cell', 'class');
 
-        ok((scalar @service_grid == 12), "found services:\tall 12");
+        my $nr_of_services = scalar @service_grid;
+        my $expected_nr = 14;
+        ok( $nr_of_services == $expected_nr, "found services:\tall $expected_nr");
 
         $driver->find_element('btn_own_networks_tab')->click;
     };
