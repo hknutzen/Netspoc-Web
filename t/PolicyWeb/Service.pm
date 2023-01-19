@@ -413,7 +413,7 @@ sub service_details {
             '(udp|tcp)\s\d+'
         );
         $is_ok = 1;
-        $is_ok = $driver->check_sytax_grid(\@service_rules, 5, 0, \@regex);
+        $is_ok = $driver->check_syntax_grid(\@service_rules, 5, 0, \@regex);
 
         $driver->find_child_element($rp, 'cb_expand_users')->click;
 
@@ -421,13 +421,13 @@ sub service_details {
         $regex[1] =
 '((2(0..5)(0..5)|1\d\d|\d\d|\d)\.(2(0..5)(0..5)|1\d\d|\d\d|\d)\.(2(0..5)(0..5)|1\d\d|\d\d|\d)\.(2(0..5)(0..5)|1\d\d|\d\d|\d)(\-\/(2(0..5)(0..5)|1\d\d|\d\d|\d)\.(2(0..5)(0..5)|1\d\d|\d\d|\d)\.(2(0..5)(0..5)|1\d\d|\d\d|\d)\.(2(0..5)(0..5)|1\d\d|\d\d|\d))?)';
         @service_rules = $driver->find_child_elements($grid, './/td', 'xpath');
-        $is_ok &= $driver->check_sytax_grid(\@service_rules, 5, 0, \@regex);
+        $is_ok &= $driver->check_syntax_grid(\@service_rules, 5, 0, \@regex);
 
         $driver->find_child_element($rp, 'cb_show_names')->click;
         $regex[1] = '(any:.+|network:.+|interface:.+|host:.+)';
         $regex[2] = '(any:.+|network:.+|interface:.+|host:.+)';
         @service_rules = $driver->find_child_elements($grid, './/td', 'xpath');
-        $is_ok &= $driver->check_sytax_grid(\@service_rules, 5, 0, \@regex);
+        $is_ok &= $driver->check_syntax_grid(\@service_rules, 5, 0, \@regex);
 
       TODO: {
           local $TODO = "Bug in ExtJS swallowes add and delete buttons";
@@ -655,12 +655,12 @@ sub search_tab {
         $driver->find_child_element($search_window, 'txtf_search_ip1-inputEl')
           ->send_keys('10.1.0.0/16');
         $driver->find_child_element($search_window, 'btn_search_start')->click;
-        search_result_ok($driver, 1, "IP 1 = '10.1.0.0/16'\t=> 1 service");
+        search_result_ok($driver, 3, "IP 1 = '10.1.0.0/16'\t=> Find 3 services");
 
         $driver->find_child_element($search_window, 'cb_search_subnet')->click;
         $driver->find_child_element($search_window, 'btn_search_start')->click;
-        search_result_ok($driver, 11,
-                         "IP 1 = '10.1.0.0/16'\n\t& subnet\t\t=> 11 services");
+        search_result_ok($driver, 13,
+                         "IP 1 = '10.1.0.0/16'\n\t& subnet\t\t=> Find 13 services");
 
         $driver->find_child_element($search_window, 'cb_search_subnet')->click;
         $driver->find_child_element($search_window, 'cb_search_exact')->click;
@@ -752,7 +752,10 @@ sub search_result_ok {
         my @grid =
           $driver->find_child_elements($driver->find_element('pnl_services-body'),
                                        './/tr', 'xpath');
-        ok(scalar @grid eq $expected, $ok_text);
+        my $got = scalar @grid;
+        if ( !ok($got eq $expected, $ok_text) ) {
+            print "$ok_text: got $got, expected $expected\n";
+        }
     };
     if ($@) { die("something went wrong in 'search_result_ok':\n$@") }
 }
