@@ -285,12 +285,13 @@ sub is_grid_in_order {
     return 1;
 }
 
-sub check_sytax_grid {
+sub check_syntax_grid {
     my $driver     = shift;
     my @grid_cells = @{ (shift) };
     my $row        = shift;
     my $offset     = shift;
     my @regex      = @{ (shift) };
+    my $cells = scalar @grid_cells;
 
     if (!scalar @grid_cells) {
         print "grid is empty!\n";
@@ -300,14 +301,13 @@ sub check_sytax_grid {
         print "no regular expressions given!\n";
         return 0;
     }
-    elsif (scalar @grid_cells % $row != 0) {
-        print
-"row seems to contain different amount of elements than stated! (expected $row elements per row)\n";
+    elsif ($cells % $row != 0) {
+        print "row contains $cells elements, expected $row elements\n";
         return 0;
     }
     elsif ($row < $offset + scalar @regex) {
         my $not_testet = $offset + scalar @regex - $row;
-        print "Regular expressions($not_testet) are not beein testet:\n";
+        print "Regular expressions($not_testet) are not being testet:\n";
         for (my $i = $row - $offset ; $i < @regex ; $i++) {
             print "i=$i\t$regex[$i]\n";
         }
@@ -316,7 +316,9 @@ sub check_sytax_grid {
 
     for (my $i = $offset ; $i < @grid_cells ; $i += $row) {
         for (my $j = 0 ; $j < scalar @regex ; $j++) {
-            if (!eval { $grid_cells[ $i + $j ]->get_text =~ /$regex[$j]/ }) {
+            my $cell_content = $grid_cells[ $i + $j ]->get_text;
+            if (!eval { $cell_content =~ /$regex[$j]/ }) {
+                print "$cell_content does not match " . $regex[$j];
                 return 0;
             }
         }
