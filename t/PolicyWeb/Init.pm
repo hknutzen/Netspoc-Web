@@ -89,11 +89,19 @@ router:asa = {
  interface:KUNDE  = { ip = 10.2.3.1; hardware = inside; }
  interface:KUNDE1 = { ip = 10.2.4.1; hardware = inside; }
  interface:DMZ    = { ip = 10.9.9.1; hardware = dmz; }
+ interface:KUNDE_N1 = { ip = 10.2.5.1; hardware = inside; }
+ interface:KUNDE_N2 = { ip = 10.2.6.1; hardware = inside; }
+ interface:KUNDE_N3 = { ip = 10.2.7.1; hardware = inside; }
+ interface:KUNDE_N4 = { ip = 10.2.8.1; hardware = inside; }
 }
 
 network:Kunde  = { ip = 10.2.2.0/24; owner = y; host:k  = { ip = 10.2.2.2; } }
 network:KUNDE  = { ip = 10.2.3.0/24; owner = y; host:K  = { ip = 10.2.3.3; } }
 network:KUNDE1 = { ip = 10.2.4.0/24; owner = y; host:K1 = { ip = 10.2.4.4; } }
+network:KUNDE_N1 = { ip = 10.2.5.0/24; owner = Mungo; host:M1 = { ip = 10.2.5.5; } }
+network:KUNDE_N2 = { ip = 10.2.6.0/24; owner = Nerz; host:N1 = { ip = 10.2.6.6; } }
+network:KUNDE_N3 = { ip = 10.2.7.0/24; owner = Otter; host:O1 = { ip = 10.2.7.7; } }
+network:KUNDE_N4 = { ip = 10.2.8.0/24; owner = Kondor; host:Ko1 = { ip = 10.2.8.8; } }
 any:Kunde = { link = network:Kunde; }
 
 network:DMZ = { ip = 10.9.9.0/24; }
@@ -171,6 +179,16 @@ service:Test10 = {
 service:Test11 = {
  user = network:Sub;
  permit src = user; dst = network:KUNDE1; prt = tcp 84;
+}
+
+service:Test20 = {
+ user = network:KUNDE_N1, network:KUNDE_N2, network:KUNDE_N3;
+ permit src = user; dst = network:Big; prt = tcp 84;
+}
+
+service:Test21 = {
+ user = network:KUNDE_N1, network:KUNDE_N2, network:KUNDE_N3;
+ permit src = user; dst = network:Big; prt = tcp 999;
 }
 
 END
