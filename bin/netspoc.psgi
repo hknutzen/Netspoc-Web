@@ -6,7 +6,7 @@ netspoc.psgi - A web frontend for Netspoc
 
 =head1 COPYRIGHT AND DISCLAIMER
 
-(C) 2022 by Heinz Knutzen     <heinz.knutzen@gmail.com>
+(C) 2023 by Heinz Knutzen     <heinz.knutzen@gmail.com>
             Daniel Brunkhorst <daniel.brunkhorst@web.de>
 
 https://github.com/hknutzen/Netspoc-Web
@@ -609,9 +609,9 @@ sub build_ip_hash {
 
         # Network or (matching) aggregate.
         else {
-            my ($ip, $mask) = split '/', $obj_ip;
+            my ($ip, $len) = split '/', $obj_ip;
             my $i1 = ip2int($ip);
-            my $m1 = $mask =~ /\D/ ? ip2int($mask) : prefix2mask($mask);
+            my $m1 = prefix2mask($len);
             $ip_hash{$name} = { ip1 => $i1, mask => $m1 };
         }
     }
