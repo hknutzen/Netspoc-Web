@@ -1,5 +1,8 @@
 {{$NEXT}}
 
+ - Aggregate IP addresses in services overview, too
+
+
 1.019     2023-01-17 19:51:14+01:00 Europe/Berlin
 
  - Fix: empty User breaks display of selected service
