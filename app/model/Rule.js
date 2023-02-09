@@ -1,5 +1,5 @@
 /*
-(C) 2014 by Daniel Brunkhorst <daniel.brunkhorst@web.de>
+(C) 2023 by Daniel Brunkhorst <daniel.brunkhorst@posteo.de>
             Heinz Knutzen     <heinz.knutzen@gmail.com>
 
 https://github.com/hknutzen/Netspoc-Web
@@ -16,61 +16,33 @@ You should have received a copy of the GNU General Public License
 along with this program. If not, see <http://www.gnu.org/licenses/>.
 */
 
-var bold_user = function ( node, what ) {
-    var data = what === 'src' ?  node.src : node.dst;
-    if ( node.has_user === what || node.has_user === 'both' ) {
-        return '<span style="font-weight:bold;">User</span>';
-    }
-    else {
-        var first = data[0];
-        if ( first === undefined ) {
-            return '';
-        }
-        var m1 = /[A-Za-z]/;
-        if (first.match(m1) ) {
-            return data.sort(function (a, b) {
-                                 return a.toLowerCase().localeCompare(b.toLowerCase());
-                             }).join( '<br>' );
-        }
-        else {
-            var copy = uniquify(data);
-            if ( copy === undefined || copy.length < 1) {
-                return '';
-            }
-            copy.sort(
-                function(a, b) {
-                    return as_ip(a) - as_ip(b);
-                }
-            );
-            return copy.join('<br>');
-        }
-    }
-};
-
+// bold_user is defined in common.js, since it is used in
+// AllServices.js, too (follow DRY principle).
 Ext.define(
     'PolicyWeb.model.Rule',
     {
-        extend : 'PolicyWeb.model.Netspoc',
-        fields : [
-            { name : 'has_user', mapping : 'hasuser'  },
-            { name : 'action',   mapping : 'action'  },
+        extend: 'PolicyWeb.model.Netspoc',
+        fields: [
+            { name: 'has_user', mapping: 'hasuser' },
+            { name: 'action', mapping: 'action' },
             {
-                name     : 'src',
-                sortType : "asIP",
-                mapping  : function( node ) {
-                    return bold_user( node, 'src' );
+                name: 'src',
+                sortType: "asIP",
+                mapping: function (node) {
+                    return bold_user(node, 'src');
                 }
             },
             {
-                name     : 'dst',
-                sortType : "asIP",
-                mapping  : function( node ) {
-                    return bold_user( node, 'dst' );
+                name: 'dst',
+                sortType: "asIP",
+                mapping: function (node) {
+                    return bold_user(node, 'dst');
                 }
             },
-            { name : 'prt',      mapping : function( node ) {
-                  return node.prt.join( '<br>' );
-              }
+            {
+                name: 'prt', mapping: function (node) {
+                    return node.prt.join('<br>');
+                }
             }
         ]
     }
