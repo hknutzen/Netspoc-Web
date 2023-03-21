@@ -83,7 +83,6 @@ $out = [
 
 $opt = {
     service => "s1",
-    has_user => "src",
     active_owner => "o1",
     display_property => "ip",
 };
@@ -132,7 +131,6 @@ $out = [
 
 $opt = {
     service => "s2",
-    has_user => "dst",
     active_owner => "o1",
     display_property => "name",
 };
@@ -166,7 +164,6 @@ $out = [
 
 $opt = {
     service => "s3",
-    has_user => "dst",
     active_owner => "o1",
     display_property => "ip_and_name",
 };
@@ -199,7 +196,6 @@ $out = [
 
 $opt = {
     service => "s4",
-    has_user => "src",
     active_owner => "o1",
     display_property => "ip_and_name",
 };
@@ -236,7 +232,6 @@ $out = [
 
 $opt = {
     service => "s3",
-    has_user => "dst",
     active_owner => "o1",
     display_property => "ip_and_name",
     expand_users => 1
