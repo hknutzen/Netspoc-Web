@@ -374,66 +374,37 @@ sub adapt_name_ip_user {
 
     # Rules reference objects by name.
     # Build copy with
-    # - names substituted by objects
+    # - names substituted by either $ip or { name => $name, ip => $ip }
     # - IP addresses in object with NAT applied.
     my @result;
-    my $user_props_name;
-    my $user_props_ip;
-    if ( $expand_users ) {
-        if ($disp_prop eq 'ip') {
-            $user_props_ip = [ map { name2ip($_, $nat_set) } @$user_names ];
-        } elsif ($disp_prop eq 'ip_and_name') {
-            $user_props_ip = [ map { name2ip($_, $nat_set) } @$user_names ];
-            $user_props_name = $user_names;
-        }
-        else {
-            $user_props_name = $user_names;
-        }
-    }
     for my $rule ( @$rules ) {
         my ($src, $dst) = @{$rule}{qw(src dst)};
-        my ($src_ip, $dst_ip);
-        my $copy = {};
-        if ($disp_prop =~ /^(?:ip|ip_and_name)$/) {
-            $src_ip = [ map { name2ip($_, $nat_set) } @$src ];
-            $dst_ip = [ map { name2ip($_, $nat_set) } @$dst ];
-        }
         if ($expand_users) {
-            if ($disp_prop =~ /^(?:ip|ip_and_name)$/) {
-                has_user($rule, 'src') and $src_ip = $user_props_ip;
-                has_user($rule, 'dst') and $dst_ip = $user_props_ip;
-                has_user($rule, 'src') and $src = $user_props_name;
-                has_user($rule, 'dst') and $dst = $user_props_name;
+            has_user($rule, 'src') and $src = $user_names;
+            has_user($rule, 'dst') and $dst = $user_names;
+        }
+        my $get_val = sub {
+            my ($names) = @_;
+            if ($disp_prop eq 'ip') {
+                # Remove duplicate IP addresses.
+                return [ unique map { name2ip($_, $nat_set) } @$names ];
+            } elsif ($disp_prop eq 'ip_and_name') {
+                return [ map { { name => $_, ip => name2ip($_, $nat_set) } }
+                         @$names ];
             } else {
-                has_user($rule, 'src') and $src = $user_props_name;
-                has_user($rule, 'dst') and $dst = $user_props_name;
+                return $names
             }
-        }
-
-        $copy = {
-            action   => $rule->{action},
-            prt      => $rule->{prt},
         };
-        if ($disp_prop eq 'ip') {
-            $copy->{src} = $src_ip;
-            $copy->{dst} = $dst_ip;
-        } elsif ($disp_prop eq 'ip_and_name') {
-            my $src_idx = scalar(@$src);
-            my $dst_idx = scalar(@$dst);
-            my $bigger_index = $src_idx > $dst_idx ? $src_idx : $dst_idx;
-            for (my $i = 0; $i <= $bigger_index; $i++) {
-                $src->[$i] and $copy->{src}->[$i]->{name} = $src->[$i];
-                $dst->[$i] and $copy->{dst}->[$i]->{name} = $dst->[$i];
-                $src_ip->[$i] and $copy->{src}->[$i]->{ip} = $src_ip->[$i];
-                $dst_ip->[$i] and $copy->{dst}->[$i]->{ip} = $dst_ip->[$i];
-            }
-        } else {
-            $copy->{src} = $src;
-            $copy->{dst} = $dst;
+        my $copy = {
+            action => $rule->{action},
+            src    => $get_val->($src),
+            dst    => $get_val->($dst),
+            prt    => $rule->{prt},
+        };
+        if (not $expand_users) {
+            $copy->{has_user} = $rule->{has_user};
+            $copy->{$rule->{has_user}} = [] if  $rule->{has_user} ne 'both';
         }
-        $copy->{has_user} = $rule->{has_user} if !$expand_users;
-        $copy->{$rule->{has_user}} = []
-            if (!$expand_users && $rule->{has_user} ne 'both');
         push @result, $copy;
 
     }
