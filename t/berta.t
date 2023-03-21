@@ -210,28 +210,32 @@ $out = [
         action => 'permit',
         src => [
             {
-                ip => '10.1.2.0/24',
-                name => 'network:n2',
+                ip => '10.1.0.0/16',
+                name => 'any:[ip=10.1.0.0/16 & network:n1]',
             },
             {
-                ip => '10.1.3.0/24',
-                name => 'network:n3',
-            }
+                ip => '10.1.0.0/16',
+                name => 'any:[ip=10.1.0.0/16 & network:n2]',
+            },
             ],
         prt => [
             'tcp 80'
             ],
         dst => [
             {
-                ip => '10.1.1.0/24',
-                name => 'network:n1',
-            }
+                ip => '10.4.0.0/16',
+                name => 'any:[ip=10.4.0.0/16 & network:n3]',
+            },
+            {
+                ip => '10.4.0.0/16',
+                name => 'any:[ip=10.4.0.0/16 & network:n4]',
+            },
             ]
     }
     ];
 
 $opt = {
-    service => "s3",
+    service => "s5",
     active_owner => "o1",
     display_property => "ip_and_name",
     expand_users => 1
