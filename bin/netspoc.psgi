@@ -962,13 +962,11 @@ sub service_list {
     $result = search_string($req, $result);
 
     return [ map {
-	my $hash = { name => $_, %{ get_service($services, $_)->{details}} };
+        my $hash = { name => $_, %{ get_service($services, $_)->{details}} };
 
-	# Create hash { name => .. } for each owner and sub_owner.
-	$hash->{owner} = [ map { { name => $_} } @{ $hash->{owner} } ];
-	$hash->{sub_owner} and
-            $hash->{sub_owner} = { name => $hash->{sub_owner} };
-	$hash;
+        # Create hash { name => .. } for each owner.
+        $hash->{owner} = [ map { { name => $_} } @{ $hash->{owner} } ];
+        $hash;
     } @$result ];
 }
 

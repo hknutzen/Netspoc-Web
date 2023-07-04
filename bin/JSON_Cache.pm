@@ -1,7 +1,7 @@
 
 =head1 COPYRIGHT AND DISCLAIMER
 
-(C) 2022 by Heinz Knutzen     <heinz.knutzen@gmail.com>
+(C) 2023 by Heinz Knutzen     <heinz.knutzen@gmail.com>
             Daniel Brunkhorst <daniel.brunkhorst@web.de>
 
 https://github.com/hknutzen/Netspoc-Web
@@ -97,8 +97,7 @@ sub postprocess_json {
 	# { s1 => {
 	#      details => {
 	#           description => "Text",
-	#           owner => [owner1, .. ] | [":unknown"],
-	#           sub_owners => [ owner2, ..] },
+	#           owner => [owner1, .. ] | [":unknown"] },
 	#      rules => [
 	#        { src => [ object_names, ..],
 	#          dst => [ object_names, ..],

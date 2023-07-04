@@ -1,7 +1,7 @@
 
 =head1 COPYRIGHT AND DISCLAIMER
 
-(C) 2021 by Heinz Knutzen     <heinz.knutzen@gmail.com>
+(C) 2023 by Heinz Knutzen     <heinz.knutzen@gmail.com>
 
 https://github.com/hknutzen/Netspoc-Web
 
@@ -33,8 +33,7 @@ use Algorithm::Diff;
 my %lookup = ( src => 'objects', dst => 'objects', );
 
 # Die Werte der angegebenen Keys nicht untersuchen.
-my %ignore = map { $_ => 1 }
-qw(hash has_user name nat is_supernet sub_owners zone);
+my %ignore = map { $_ => 1 } qw(hash has_user name nat is_supernet zone);
 
 sub compare_global {
     my ($state, $path, $key) = @_;
