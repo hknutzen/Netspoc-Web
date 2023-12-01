@@ -22,6 +22,7 @@ network:n1 = {
 }
 network:n2 = { ip = 10.1.2.0/24; owner = o1; }
 network:n3 = { ip = 10.1.3.0/24; owner = o1; }
+network:n4 = { ip = 10.1.4.0/24; }
 
 router:r1 = {
  managed;
@@ -29,6 +30,7 @@ router:r1 = {
  interface:n1 = { ip = 10.1.1.1; hardware = n1; }
  interface:n2 = { ip = 10.1.2.1; hardware = n2; }
  interface:n3 = { ip = 10.1.3.1; hardware = n3; }
+ interface:n4 = { ip = 10.1.4.1; hardware = n4; }
 }
 
 service:s1 = {
@@ -46,6 +48,12 @@ service:s3 = {
 service:s4 = {
  user = network:n1;
  permit src = user; dst = network:n2,network:n3; prt = tcp 80;
+}
+service:s5 = {
+ user = any:[ip = 10.1.0.0/16 & network:n1, network:n2];
+ permit src = user;
+        dst = any:[ip = 10.4.0.0/16 & network:n3,network:n4];
+        prt = tcp 80;
 }
 END
 ############################################################
@@ -75,11 +83,32 @@ $out = [
 
 $opt = {
     service => "s1",
-    has_user => "src",
     active_owner => "o1",
     display_property => "ip",
 };
 test_run($title, 'get_rules', $opt, $out, \&extract_records);
+
+############################################################
+$title = 'Display prop "ip", expand user, remove duplicates';
+############################################################
+
+$out = [
+   {
+     action => 'permit',
+     src => [ '10.1.0.0/16' ],
+     dst => [ '10.4.0.0/16' ],
+     prt => [ 'tcp 80' ],
+   }
+    ];
+
+$opt = {
+    service => "s5",
+    active_owner => "o1",
+    display_property => "ip",
+    expand_users => 1,
+};
+test_run($title, 'get_rules', $opt, $out, \&extract_records);
+
 
 
 ############################################################
@@ -102,7 +131,6 @@ $out = [
 
 $opt = {
     service => "s2",
-    has_user => "dst",
     active_owner => "o1",
     display_property => "name",
 };
@@ -136,7 +164,6 @@ $out = [
 
 $opt = {
     service => "s3",
-    has_user => "dst",
     active_owner => "o1",
     display_property => "ip_and_name",
 };
@@ -169,7 +196,6 @@ $out = [
 
 $opt = {
     service => "s4",
-    has_user => "src",
     active_owner => "o1",
     display_property => "ip_and_name",
 };
@@ -184,29 +210,32 @@ $out = [
         action => 'permit',
         src => [
             {
-                ip => '10.1.2.0/24',
-                name => 'network:n2',
+                ip => '10.1.0.0/16',
+                name => 'any:[ip=10.1.0.0/16 & network:n1]',
             },
             {
-                ip => '10.1.3.0/24',
-                name => 'network:n3',
-            }
+                ip => '10.1.0.0/16',
+                name => 'any:[ip=10.1.0.0/16 & network:n2]',
+            },
             ],
         prt => [
             'tcp 80'
             ],
         dst => [
             {
-                ip => '10.1.1.0/24',
-                name => 'network:n1',
-            }
+                ip => '10.4.0.0/16',
+                name => 'any:[ip=10.4.0.0/16 & network:n3]',
+            },
+            {
+                ip => '10.4.0.0/16',
+                name => 'any:[ip=10.4.0.0/16 & network:n4]',
+            },
             ]
     }
     ];
 
 $opt = {
-    service => "s3",
-    has_user => "dst",
+    service => "s5",
     active_owner => "o1",
     display_property => "ip_and_name",
     expand_users => 1
