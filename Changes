@@ -1,5 +1,7 @@
 {{$NEXT}}
 
+ - Always return has_user in get_rules and get_services_and_rules.
+
 1.020     2023-02-09 14:05:52+01:00 Europe/Berlin
 
  - Aggregate IP addresses in services overview, too
