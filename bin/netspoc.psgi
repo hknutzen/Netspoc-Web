@@ -400,6 +400,7 @@ sub adapt_name_ip_user {
             src    => $get_val->($src),
             dst    => $get_val->($dst),
             prt    => $rule->{prt},
+            has_user => "",
         };
         if (not $expand_users) {
             $copy->{has_user} = $rule->{has_user};
