@@ -1,49 +1,55 @@
-<head>
-<title>Policy-Web</title>
-<style type="text/css">
- body {font-family:sans-serif;}
- fieldset {background-color:AliceBlue;border:2px solid steelblue;}
- .small {font-size:small;}
- #links {float:left;}
- #rechts {float:right;}
- #unten {clear:both}
-</style>
-<link rel="icon" type="image/vnd.microsoft.icon" href="resources/images/policyweb.ico">
-</head>
+<!doctype html>
+<html lang="de">
+	<head>
+		<meta charset="UTF-8" />
+		<title>Policy-Web</title>
+		<style type="text/css">
+			 body {font-family:sans-serif;}
+			 fieldset {background-color:AliceBlue;border:2px solid steelblue;}
+			 .small {font-size:small;}
+			 #links {float:left;}
+			 #rechts {float:right;}
+			 #unten {clear:both}
+		</style>
+		<link rel="icon" type="image/vnd.microsoft.icon" href="resources/images/policyweb.ico">
+	</head>
 
-<body onload="document.getElementsByName('email')[0].focus();">
-<div id="links"><h1>Policy-Web</h1></div>
+	<body onload="document.getElementsByName('email')[0].focus();">
+		<div id="links"><h1>Policy-Web</h1></div>
 
-<form action="backend/login" method="post" id="rechts">
-  <fieldset>
-    <legend class="small">Anmelden</legend>
-    <input name="app" type="hidden" value="../app.html"/>
-    <label for="email">Email:
-      <input id=txtf_email name="email" type="text" size="30"/></label>
-    <label for="pass">Kennwort:
-      <input id=txtf_password name="pass" type="password" size="15"/></label>
-    <input id=btn_login type="submit" value="Login"/>
-    <p>
-      <div id="rechts" class="small">
-        Neues <a href="passwd.html">Kennwort anfordern</a></div>
-      <div class="small">
-        Für Dataport Mitarbeiter<br>
-        <a href="ldap-login.html">Anmeldung über Verzeichnisdienst</a></div>
-  </fieldset>
-</form>
+		<form action="backend/login" method="post" id="rechts">
+		  <fieldset>
+			<legend class="small">Anmelden</legend>
+			<input name="app" type="hidden" value="../app.html"/>
+			<label for="email">Email:
+			  <input id=txtf_email name="email" type="text" size="30"/></label>
+			<label for="pass">Kennwort:
+			  <input id=txtf_password name="pass" type="password" size="15"/></label>
+			<input id=btn_login type="submit" value="Login"/>
+			<p>
+			  <div id="rechts" class="small">
+				Neues <a href="passwd.html">Kennwort anfordern</a></div>
+			  <div class="small">
+				Für Dataport Mitarbeiter<br>
+				<a href="ldap-login.html">Anmeldung über Verzeichnisdienst</a></div>
+		  </fieldset>
+		</form>
 
-<p id="unten">
-  Hier geht es zur
-  <a href="/pwdoku/index.html">
-    Dokumentation
-  </a>.
-<p>
-  Lesen Sie unten die Neuigkeiten oder
-  <a href="/pwdoku/neuigkeiten/index.html">auf der entsprechenden Seite der Dokumentation</a>.
+		<p id="unten">
+		  Hier geht es zur
+		  <a href="/pwdoku/index.html">
+			Dokumentation
+		  </a>.
+		</p>
+		<p>
+			Lesen Sie unten die Neuigkeiten oder
+			<a href="/pwdoku/neuigkeiten/index.html">auf der entsprechenden Seite der Dokumentation</a>.
+			
+			<iframe src="/pwdoku/neuigkeiten/index.html" width="100%" height="74%" frameborder=0>
+			</iframe>
+		</p>
 
-  <iframe src="/pwdoku/neuigkeiten/index.html" width="100%" height="74%" frameborder=0>
-  </iframe>
-</p>
+	</body>
 
-</body>
+</html>
 
