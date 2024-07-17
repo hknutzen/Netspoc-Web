@@ -25,20 +25,25 @@ our @EXPORT = qw(
   numeric2ip
   error
   getDriver
-  );
+);
 
 sub getDriver {
 
     prepare_export();
     prepare_runtime_base();
+    $ENV{PATH} =
+        '/opt/chrome/linux-126.0.6478.126/chrome-linux64/:'
+      . '/opt/chromedriver/linux-126.0.6478.126/chromedriver-linux64/:'
+      . $ENV{PATH};
 
-    my $driver =
-      PolicyWeb::Frontend->new(browser_name   => 'chrome',
-                               proxy          => { proxyType => 'direct', },
-                               default_finder => 'id',
-                               javascript     => 1,
-                               base_url       => "http://$SERVER:$port",
-                              );
+    my $driver = PolicyWeb::Frontend->new(
+        browser_name   => 'chrome',
+        version        => '126.0.6478.126',
+        proxy          => { proxyType => 'direct', },
+        default_finder => 'id',
+        javascript     => 1,
+        base_url       => "http://$SERVER:$port",
+    );
 
     # $driver->debug_on;
     $driver->set_implicit_wait_timeout(200);
@@ -51,7 +56,7 @@ sub getDriver {
 # 0 - Chrome
 # 1 - Internet Explorer 11.0
 sub getBrowserstackyDriver {
-    my ($browser, $travis, $args) = @_;
+    my ( $browser, $travis, $args ) = @_;
 
     prepare_export();
     prepare_runtime_base();
@@ -63,46 +68,50 @@ sub getBrowserstackyDriver {
     my $driver;
 
     #Input capabilities
-    my $extraCaps = { "os"                 => "Windows",
-                      "os_version"         => "10",
-                      "resolution"         => "1024x768",
-                      "name"               => "$args",
-                      "browserstack.local" => "true",
-                      "browserstack.debug" => "true"
-                    };
+    my $extraCaps = {
+        "os"                 => "Windows",
+        "os_version"         => "10",
+        "resolution"         => "1024x768",
+        "name"               => "$args",
+        "browserstack.local" => "true",
+        "browserstack.debug" => "true"
+    };
 
     # identifier for BrowserStackLocal is set by travis
     if ($travis) {
-        $extraCaps-> {"browserstack.localIdentifier"} = $ENV{'BROWSERSTACK_LOCAL_IDENTIFIER'};
+        $extraCaps->{"browserstack.localIdentifier"} =
+          $ENV{'BROWSERSTACK_LOCAL_IDENTIFIER'};
     }
 
-    if ($browser == 0) {
-        $extraCaps-> {"browser"} = "Chrome";
-        $extraCaps-> {"browser_version"} = "76.0";
+    if ( $browser == 0 ) {
+        $extraCaps->{"browser"}         = "Chrome";
+        $extraCaps->{"browser_version"} = "76.0";
 
-        $driver = PolicyWeb::Frontend->new(browser_name   => $browser ? "" : 'chrome',
-                                           proxy          => { proxyType => 'direct', },
-                                           default_finder => 'id',
-                                           javascript     => 1,
-                                           base_url       => "http://$SERVER:$port",
-                                           'remote_server_addr' => $host,
-                                           'port'               => '80',
-                                           'extra_capabilities' => $extraCaps
-                                          );
+        $driver = PolicyWeb::Frontend->new(
+            browser_name         => $browser ? "" : 'chrome',
+            proxy                => { proxyType => 'direct', },
+            default_finder       => 'id',
+            javascript           => 1,
+            base_url             => "http://$SERVER:$port",
+            'remote_server_addr' => $host,
+            'port'               => '80',
+            'extra_capabilities' => $extraCaps
+        );
 
     }
     else {
-        $extraCaps-> {"browser"} = "IE";
-        $extraCaps-> {"browser_version"} = "11.0";
+        $extraCaps->{"browser"}         = "IE";
+        $extraCaps->{"browser_version"} = "11.0";
 
-        $driver = PolicyWeb::Frontend->new(browser_name         => $browser ? "" : 'chrome',
-                                           default_finder       => 'id',
-                                           javascript           => 1,
-                                           base_url             => "http://$SERVER:$port",
-                                           'remote_server_addr' => $host,
-                                           'port'               => '80',
-                                           'extra_capabilities' => $extraCaps
-                                          );
+        $driver = PolicyWeb::Frontend->new(
+            browser_name         => $browser ? "" : 'chrome',
+            default_finder       => 'id',
+            javascript           => 1,
+            base_url             => "http://$SERVER:$port",
+            'remote_server_addr' => $host,
+            'port'               => '80',
+            'extra_capabilities' => $extraCaps
+        );
 
     }
 
@@ -117,7 +126,7 @@ sub getBrowserstackyDriver {
 
 # tries to login with given username and password
 sub login {
-    my ($driver, $name, $pass) = @_;
+    my ( $driver, $name, $pass ) = @_;
     return if !$name;
 
     wait_until { $driver->find_element('txtf_email') }->send_keys($name);
@@ -135,39 +144,41 @@ sub login_as_guest {
 }
 
 sub get_grid_cell_value_by_field_name {
-    my ($driver, $grid_id, $row, $field_name) = @_;
+    my ( $driver, $grid_id, $row, $field_name ) = @_;
     my $script =
-      "return Ext.getCmp(\"$grid_id\").getStore().getAt($row).get('$field_name');";
+"return Ext.getCmp(\"$grid_id\").getStore().getAt($row).get('$field_name');";
     return $driver->execute_script($script);
 }
 
 sub get_grid_cell_value_by_row_and_column_index {
-    my ($driver, $grid_id, $row, $col) = @_;
+    my ( $driver, $grid_id, $row, $col ) = @_;
     my $script =
 "return Ext.getCmp(\"$grid_id\").headerCt.columnManager.columns[$col].dataIndex;";
     my $field_name = $driver->execute_script($script);
-    return $driver->get_grid_cell_value_by_field_name($grid_id, $row, $field_name);
+    return $driver->get_grid_cell_value_by_field_name( $grid_id, $row,
+        $field_name );
 }
 
 sub select_grid_row_by_index {
-    my ($driver, $id, $row_index) = @_;
+    my ( $driver, $id, $row_index ) = @_;
 }
 
 sub select_grid_row_by_content {
-    my ($driver, $id, $to_match) = @_;
+    my ( $driver, $id, $to_match ) = @_;
 }
 
 sub select_combobox_item {
-    my ($driver, $combo_id, $item) = @_;
+    my ( $driver, $combo_id, $item ) = @_;
 
-    my $combo_query = "Ext.ComponentQuery.query(\"combobox[id='$combo_id']\")[0]";
+    my $combo_query =
+      "Ext.ComponentQuery.query(\"combobox[id='$combo_id']\")[0]";
     my $combo_trigger_id = "return " . $combo_query . ".triggerEl.first().id";
     my $dropdown_id      = "return " . $combo_query . ".picker.id";
 
     my $id_string = $driver->execute_script($combo_trigger_id);
 
 #$driver->click_element_ok($id_string, 'id', "Clicked on owner combo open trigger");
-    $driver->find_element($id_string, 'id')->click;
+    $driver->find_element( $id_string, 'id' )->click;
 
     my $list_id = $driver->execute_script($dropdown_id);
 
@@ -178,10 +189,10 @@ sub select_combobox_item {
       . "')]//li[contains(text(),'"
       . $item . "')]";
 
-#Select the dropdown item
-#$driver->click_element_ok($li, 'xpath', "Selected item $item from combo box");
+ #Select the dropdown item
+ #$driver->click_element_ok($li, 'xpath', "Selected item $item from combo box");
 
-    $driver->find_element($li, 'xpath')->click;
+    $driver->find_element( $li, 'xpath' )->click;
 }
 
 # Convert IP address to numerical value.
@@ -189,7 +200,7 @@ sub ip2numeric {
     $_ = shift;
 
     if (m/\G(\d+)\.(\d+)\.(\d+)\.(\d+)/gc) {
-        if ($1 > 255 or $2 > 255 or $3 > 255 or $4 > 255) {
+        if ( $1 > 255 or $2 > 255 or $3 > 255 or $4 > 255 ) {
             error("Invalid IP address");
         }
         return unpack 'N', pack 'C4', $1, $2, $3, $4;
@@ -224,11 +235,11 @@ sub error {
 ';
 
 sub select_by_key {
-    my ($driver, $grid_cells, $row, $offset, $key) = @_;
+    my ( $driver, $grid_cells, $row, $offset, $key ) = @_;
 
-    for (my $i = 0 ; $i < @$grid_cells ; $i += $row) {
+    for ( my $i = 0 ; $i < @$grid_cells ; $i += $row ) {
         my $grid_key = $grid_cells->[ $i + $offset ]->get_text;
-        if ($grid_key eq $key) {
+        if ( $grid_key eq $key ) {
             $grid_cells->[$i]->click;
             return;
         }
@@ -238,28 +249,28 @@ sub select_by_key {
 
 # TODO: save text from elements, because get_text is requesting the strings everytime from the browser
 sub grid_contains {
-    my ($driver, $grid_parent, $row, $offset, $search) = @_;
+    my ( $driver, $grid_parent, $row, $offset, $search ) = @_;
 
     my @grid_cells =
-      $driver->find_child_elements($grid_parent, 'x-grid-cell', 'class');
+      $driver->find_child_elements( $grid_parent, 'x-grid-cell', 'class' );
 
-    if (!scalar @grid_cells) {
+    if ( !scalar @grid_cells ) {
         print "grid is empty\n";
         return 0;
     }
 
-    for (my $i = 0 ; $i < @$search ; $i++) {
+    for ( my $i = 0 ; $i < @$search ; $i++ ) {
         my $ok = 0;
-        for (my $j = 0 ; $j < @grid_cells ; $j += $row) {
-            if ($grid_cells[ $j + $offset ]->get_text eq $search->[$i]) {
+        for ( my $j = 0 ; $j < @grid_cells ; $j += $row ) {
+            if ( $grid_cells[ $j + $offset ]->get_text eq $search->[$i] ) {
                 $ok = 1;
             }
         }
-        if (!$ok) {
+        if ( !$ok ) {
             print "------------\n"
               . $search->[ $i + $offset ]
               . "\n is not equal to any item:\n";
-            for (my $i = 0 ; $i < @grid_cells ; $i += $row) {
+            for ( my $i = 0 ; $i < @grid_cells ; $i += $row ) {
                 print "$i: ", $grid_cells[$i]->get_text;
             }
             print "\n------------\n";
@@ -270,14 +281,16 @@ sub grid_contains {
 }
 
 sub is_grid_in_order {
-    my ($driver, $grid_cells, $row, $offset, $order, $column) = @_;
+    my ( $driver, $grid_cells, $row, $offset, $order, $column ) = @_;
 
-    for (my $i = $offset ; $i < @$grid_cells ; $i += $row) {
+    for ( my $i = $offset ; $i < @$grid_cells ; $i += $row ) {
 
-        #print "i: ".$i."\n";
+        #print "i: " . $i . "\n";
         my $a = $grid_cells->[ $i + $column ]->get_text;
         my $b = $grid_cells->[ $i + $column - $row ]->get_text;
-        if (($a cmp $b) eq $order) {
+
+        #print "COMP: $a  cmp  $b \n";
+        if ( ( $a cmp $b ) eq $order ) {
             print "('$a' cmp '$b') ne '$order'\n";
             return 0;
         }
@@ -291,33 +304,33 @@ sub check_syntax_grid {
     my $row        = shift;
     my $offset     = shift;
     my @regex      = @{ (shift) };
-    my $cells = scalar @grid_cells;
+    my $cells      = scalar @grid_cells;
 
-    if (!scalar @grid_cells) {
+    if ( !scalar @grid_cells ) {
         print "grid is empty!\n";
         return 0;
     }
-    elsif (!scalar @regex) {
+    elsif ( !scalar @regex ) {
         print "no regular expressions given!\n";
         return 0;
     }
-    elsif ($cells % $row != 0) {
+    elsif ( $cells % $row != 0 ) {
         print "row contains $cells elements, expected $row elements\n";
         return 0;
     }
-    elsif ($row < $offset + scalar @regex) {
+    elsif ( $row < $offset + scalar @regex ) {
         my $not_testet = $offset + scalar @regex - $row;
         print "Regular expressions($not_testet) are not being testet:\n";
-        for (my $i = $row - $offset ; $i < @regex ; $i++) {
+        for ( my $i = $row - $offset ; $i < @regex ; $i++ ) {
             print "i=$i\t$regex[$i]\n";
         }
         return 0;
     }
 
-    for (my $i = $offset ; $i < @grid_cells ; $i += $row) {
-        for (my $j = 0 ; $j < scalar @regex ; $j++) {
+    for ( my $i = $offset ; $i < @grid_cells ; $i += $row ) {
+        for ( my $j = 0 ; $j < scalar @regex ; $j++ ) {
             my $cell_content = $grid_cells[ $i + $j ]->get_text;
-            if (!eval { $cell_content =~ /$regex[$j]/ }) {
+            if ( !eval { $cell_content =~ /$regex[$j]/ } ) {
                 print "$cell_content does not match " . $regex[$j];
                 return 0;
             }
@@ -328,30 +341,33 @@ sub check_syntax_grid {
 
 # check if order is correct after sorting them
 sub is_order_after_change {
-    my ($driver, $grid, $row, $column, $grid_heads, $offset) = @_;
+    my ( $driver, $grid, $row, $column, $grid_heads, $offset ) = @_;
 
     # check if order is correct
     # first column
-    my @grid_cells = $driver->find_child_elements($grid, 'x-grid-cell', 'class');
-    $driver->is_grid_in_order(\@grid_cells, $row, $row, -1, $column)
-      || (return 0);
+    my @grid_cells =
+      $driver->find_child_elements( $grid, 'x-grid-cell', 'class' );
+    $driver->is_grid_in_order( \@grid_cells, $row, $row, -1, $column )
+      || ( return 0 );
     $grid_heads->[ $column + $offset ]->click;
 
     # grid has to be reloaded
-    @grid_cells = $driver->find_child_elements($grid, 'x-grid-cell', 'class');
-    $driver->is_grid_in_order(\@grid_cells, $row, $row, 1, $column)
-      || (return 0);
+    @grid_cells = $driver->find_child_elements( $grid, 'x-grid-cell', 'class' );
+    $driver->is_grid_in_order( \@grid_cells, $row, $row, 1, $column )
+      || ( return 0 );
 
-    for (my $i = $column + 1 ; $i < $row ; $i++) {
+    for ( my $i = $column + 1 ; $i < $row ; $i++ ) {
         $grid_heads->[ $i + $offset ]->click;
-        @grid_cells = $driver->find_child_elements($grid, 'x-grid-cell', 'class');
-        $driver->is_grid_in_order(\@grid_cells, $row, $row, -1, $i)
-          || (return 0);
+        @grid_cells =
+          $driver->find_child_elements( $grid, 'x-grid-cell', 'class' );
+        $driver->is_grid_in_order( \@grid_cells, $row, $row, -1, $i )
+          || ( return 0 );
 
         $grid_heads->[ $i + $offset ]->click;
-        @grid_cells = $driver->find_child_elements($grid, 'x-grid-cell', 'class');
-        $driver->is_grid_in_order(\@grid_cells, $row, $row, 1, $i)
-          || (return 0);
+        @grid_cells =
+          $driver->find_child_elements( $grid, 'x-grid-cell', 'class' );
+        $driver->is_grid_in_order( \@grid_cells, $row, $row, 1, $i )
+          || ( return 0 );
     }
     return 1;
 }
@@ -359,8 +375,8 @@ sub is_order_after_change {
 # if element position is out of view, but the window is scollable
 # move_click will scroll to the element and click it
 sub move_click {
-    my ($driver, $e) = @_;
-    $driver->mouse_move_to_location(element => $e);
+    my ( $driver, $e ) = @_;
+    $driver->mouse_move_to_location( element => $e );
     $driver->click;
 }
 
@@ -370,12 +386,12 @@ sub comp_array {
     my @a      = @{ (shift) };
     my @b      = @{ (shift) };
 
-    if (scalar @a != scalar @b) {
+    if ( scalar @a != scalar @b ) {
         print "size a(", scalar @a, ") != size b(", scalar @b, ")\n";
         return 0;
     }
-    for (my $i = 0 ; $i < @a ; $i++) {
-        if ($a[$i] ne $b[$i]) {
+    for ( my $i = 0 ; $i < @a ; $i++ ) {
+        if ( $a[$i] ne $b[$i] ) {
             print "$a[$i] ne $b[$i]\n";
             return 0;
         }
@@ -385,15 +401,15 @@ sub comp_array {
 
 # nur zum gucken
 sub print_table {
-    my ($driver, $origin, $empty) = @_;
+    my ( $driver, $origin, $empty ) = @_;
 
-    my @table = $driver->find_child_elements($origin, './/*', 'xpath');
+    my @table = $driver->find_child_elements( $origin, './/*', 'xpath' );
 
-    if (!$empty) {
+    if ( !$empty ) {
         @table = grep { $_->get_text =~ /(.|\s)*\S(.|\s)*/ } @table;
     }
     print "-----\ntable size: " . scalar @table . "\n";
-    for (my $i = 0 ; $i < @table ; $i++) {
+    for ( my $i = 0 ; $i < @table ; $i++ ) {
         print "->\t$i: $table[$i]\n";
         print $table[$i]->get_text . "\n";
     }
@@ -407,22 +423,22 @@ sub find_element_ok {
     my $hit       = 0;
 
     eval {
-        if (scalar @_ == 1) {
+        if ( scalar @_ == 1 ) {
             $hit = $driver->find_element(shift);
         }
-        elsif (scalar @_ == 2) {
-            $hit = $driver->find_element(shift, shift);
+        elsif ( scalar @_ == 2 ) {
+            $hit = $driver->find_element( shift, shift );
         }
     };
     if ($@) { print "$@\n"; }
-    return ok($hit, $ok_string);
+    return ok( $hit, $ok_string );
 }
 
 sub set_export_dir {
-    my ($driver, $set) = @_;
-    if   (!$set)   { print "no export directory given\n"; return; }
-    if   (-d $set) { $export_dir = $set; }
-    else           { print "not a directory\n"; }
+    my ( $driver, $set ) = @_;
+    if   ( !$set )   { print "no export directory given\n"; return; }
+    if   ( -d $set ) { $export_dir = $set; }
+    else             { print "not a directory\n"; }
     return;
 }
 

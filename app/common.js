@@ -39,36 +39,47 @@ if (!Array.prototype.filter) {
     };
 }
 
-function bold_user(node, what) {
-    var data = what === 'src' ? node.src : node.dst;
-    if (node.has_user === what || node.has_user === 'both') {
-        return '<span style="font-weight:bold;">User</span>';
+function userstring_or_data(data) {
+    var first = data[0];
+    if (first === undefined) {
+        return '';
+    }
+    var m1 = /[A-Za-z]/;
+    if (first.match(m1)) {
+        return data.sort(function (a, b) {
+            return a.toLowerCase().localeCompare(b.toLowerCase());
+        }).join('<br>');
     }
     else {
-        var first = data[0];
-        if (first === undefined) {
+        var copy = uniquify(data);
+        if (copy === undefined || copy.length < 1) {
             return '';
         }
-        var m1 = /[A-Za-z]/;
-        if (first.match(m1)) {
-            return data.sort(function (a, b) {
-                return a.toLowerCase().localeCompare(b.toLowerCase());
-            }).join('<br>');
+        copy.sort(
+            function (a, b) {
+                return as_ip(a) - as_ip(b);
+            }
+        );
+        return copy.join('<br>');
+    }
+}
+
+function bold_user(node, what) {
+    var data = what === 'src' ? node.src : node.dst;
+    var cb = Ext.ComponentQuery.query("#cb_expand_users")
+    var exp_usr = cb[0].getValue()
+    if (exp_usr === false) {
+        if (node.has_user === what || node.has_user === 'both') {
+            return '<span style="font-weight:bold;">User</span>'
         }
         else {
-            var copy = uniquify(data);
-            if (copy === undefined || copy.length < 1) {
-                return '';
-            }
-            copy.sort(
-                function (a, b) {
-                    return as_ip(a) - as_ip(b);
-                }
-            );
-            return copy.join('<br>');
+            return userstring_or_data(data)
         }
     }
-};
+    else {
+        return userstring_or_data(data)
+    }
+}
 
 function trim(str) {
     return str.replace(/^\s+|\s+$/g, "");

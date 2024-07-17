@@ -17,7 +17,7 @@ use HTTP::Request::Common;
 use Plack::Builder;
 
 require Exporter;
-our @ISA    = qw(Exporter);
+our @ISA = qw(Exporter);
 
 our @EXPORT_OK = qw(
   prepare_export
@@ -29,7 +29,7 @@ our @EXPORT_OK = qw(
   $export_dir
   $home_dir
   $netspoc
-  );
+);
 
 our $SERVER = "127.0.0.1";
 our $port;
@@ -168,7 +168,6 @@ service:Test8 = {
 service:Test9 = {
  user = host:B10, host:k;
  permit src = user; dst = user; prt = udp 83;
- permit src = user; dst = network:DMZ; prt = udp 83;
 }
 
 service:Test10 = {
@@ -194,7 +193,7 @@ service:Test21 = {
 END
 ############################################################
 
-$export_dir = tempdir(CLEANUP => 1);
+$export_dir = tempdir( CLEANUP => 1 );
 
 sub prepare_in_dir {
     my ($input) = @_;
@@ -204,7 +203,7 @@ sub prepare_in_dir {
     # followed by a filename.
     # If no filenames are given, a single file named STDIN is used.
     my $delim = qr/^-+[ ]*(\S+)[ ]*\n/m;
-    my @input = split($delim, $input);
+    my @input = split( $delim, $input );
     my $first = shift @input;
 
     # Input does't start with filename.
@@ -214,21 +213,21 @@ sub prepare_in_dir {
             BAIL_OUT("Only a single input block expected");
             return;
         }
-        @input = ('STDIN', $first);
+        @input = ( 'STDIN', $first );
     }
-    my $in_dir = tempdir(CLEANUP => 1);
+    my $in_dir = tempdir( CLEANUP => 1 );
     while (@input) {
         my $path = shift @input;
         my $data = shift @input;
-        if (file_name_is_absolute $path) {
+        if ( file_name_is_absolute $path) {
             BAIL_OUT("Unexpected absolute path '$path'");
             return;
         }
-        my (undef, $dir, $file) = splitpath($path);
-        my $full_dir = catdir($in_dir, $dir);
+        my ( undef, $dir, $file ) = splitpath($path);
+        my $full_dir = catdir( $in_dir, $dir );
         make_path($full_dir);
-        my $full_path = catfile($full_dir, $file);
-        open(my $in_fh, '>', $full_path) or die "Can't open $path: $!\n";
+        my $full_path = catfile( $full_dir, $file );
+        open( my $in_fh, '>', $full_path ) or die "Can't open $path: $!\n";
         print $in_fh $data;
         close $in_fh;
     }
@@ -243,21 +242,22 @@ sub prepare_export {
     $input ||= $netspoc;
     my $in_dir = prepare_in_dir($input);
 
-    my($counter) = $policy =~ /^p(\d+)/;
+    my ($counter) = $policy =~ /^p(\d+)/;
     $counter++;
     $policy = "p$counter";
 
     my $cmd = "export-netspoc --quiet $in_dir $export_dir/$policy";
-    my ($stdout, $stderr);
-    run3($cmd, \undef, \$stdout, \$stderr);
+    my ( $stdout, $stderr );
+    run3( $cmd, \undef, \$stdout, \$stderr );
     my $status = $?;
     $status == 0 or die "Export failed:\n$stderr\n";
     $stderr and die "Unexpected output during export:\n$stderr\n";
     system("echo '# $policy #' > $export_dir/$policy/POLICY") == 0 or die $!;
-    system("cd $export_dir; rm -f current; ln -s $policy current") == 0 or die $!;
+    system("cd $export_dir; rm -f current; ln -s $policy current") == 0
+      or die $!;
 }
 
-our $home_dir = tempdir(CLEANUP => 1);
+our $home_dir = tempdir( CLEANUP => 1 );
 my $conf_file = "$home_dir/policyweb.conf";
 my $conf_data = <<END;
 {
@@ -279,7 +279,7 @@ my $server;
 sub prepare_runtime_base {
 
     # Prepare config file for netspoc.psgi
-    open(my $fh, '>', $conf_file) or die "Can't open $conf_file";
+    open( my $fh, '>', $conf_file ) or die "Can't open $conf_file";
     print $fh $conf_data;
     close $fh;
 
@@ -289,15 +289,16 @@ sub prepare_runtime_base {
 
     # netspoc.psgi searches config file in $HOME directory.
     local $ENV{HOME} = $home_dir;
-    my $netspoc_psgi = do './bin/netspoc.psgi' or die "Couldn't parse PSGI file: $@";
+    my $netspoc_psgi = do './bin/netspoc.psgi'
+      or die "Couldn't parse PSGI file: $@";
 
     $app = builder {
         mount "/extjs4" =>
-            Plack::App::File->new(root => "$BUILD_DIR/htdocs/extjs4")->to_app;
+          Plack::App::File->new( root => "$BUILD_DIR/htdocs/extjs4" )->to_app;
         mount "/silk-icons" =>
-            Plack::App::File->new(root => "$BUILD_DIR/htdocs/silk-icons")->to_app;
-        mount "/" =>
-            Plack::App::File->new(root => "$BUILD_DIR")->to_app;
+          Plack::App::File->new( root => "$BUILD_DIR/htdocs/silk-icons" )
+          ->to_app;
+        mount "/" => Plack::App::File->new( root => "$BUILD_DIR" )->to_app;
         mount "/backend" => $netspoc_psgi;
     };
 

@@ -718,10 +718,11 @@ $params = { service          => 'Test4',
           };
 
 $out = [
-         { action => 'permit',
-           dst    => ['host:k'],
-           prt    => ['tcp 81'],
-           src    => ['host:B10']
+         { action   => 'permit',
+           dst      => ['host:k'],
+           has_user => 'src',
+           prt      => ['tcp 81'],
+           src      => ['host:B10']
          }
        ];
 
@@ -739,10 +740,11 @@ $params = { service          => 'Test4',
           };
 
 $out = [
-    {  action => 'permit',
-       dst    => ['host:k'],
-       prt    => ['tcp 81'],
-       src => [ 'host:B10', 'host:Range', 'host:k', 'interface:u.Big', 'network:DMZ' ]
+    {  action   => 'permit',
+       dst      => ['host:k'],
+       has_user => 'src',
+       prt      => ['tcp 81'],
+       src      => [ 'host:B10', 'host:Range', 'host:k', 'interface:u.Big', 'network:DMZ' ]
     }
 ];
 
@@ -760,10 +762,16 @@ $params = { service    => 'Test9',
 
 $out = [
          { action   => 'permit',
-           dst      => [],
+           dst      => [
+             '10.2.2.2',
+             '10.1.0.10'
+           ],
            has_user => 'both',
            prt      => ['udp 83'],
-           src      => []
+           src      => [
+             '10.2.2.2',
+             '10.1.0.10'
+           ]
          }
        ];
 
