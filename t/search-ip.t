@@ -762,16 +762,10 @@ $params = { service    => 'Test9',
 
 $out = [
          { action   => 'permit',
-           dst      => [
-             '10.2.2.2',
-             '10.1.0.10'
-           ],
+           dst      => [],
            has_user => 'both',
            prt      => ['udp 83'],
-           src      => [
-             '10.2.2.2',
-             '10.1.0.10'
-           ]
+           src      => []
          }
        ];
 
