@@ -1,5 +1,7 @@
 {{$NEXT}}
 
+1.022     2024-08-14 15:55:18+02:00 Europe/Berlin
+
  - Fix bug with has_user and expand_rules handling
    introduced in previous commits
 
