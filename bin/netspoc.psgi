@@ -362,9 +362,10 @@ sub has_user {
 # Substitute 'users' keyword by ip or name of users.
 sub adapt_name_ip_user {
     my ( $req, $rules, $user_names ) = @_;
-    my $disp_prop = $req->param('display_property') || 'ip';
-    my $owner     = $req->param('active_owner');
-    my $nat_set   = get_nat_set($owner);
+    my $expand_users = $req->param('expand_users');
+    my $disp_prop    = $req->param('display_property') || 'ip';
+    my $owner        = $req->param('active_owner');
+    my $nat_set      = get_nat_set($owner);
 
     # Untaint user input.
     $disp_prop =~ /^(?:name|ip|ip_and_name)$/
@@ -377,8 +378,10 @@ sub adapt_name_ip_user {
     my @result;
     for my $rule (@$rules) {
         my ( $src, $dst ) = @{$rule}{qw(src dst)};
-        has_user( $rule, 'src' ) and $src = $user_names;
-        has_user( $rule, 'dst' ) and $dst = $user_names;
+        if ($expand_users) {
+            has_user( $rule, 'src' ) and $src = $user_names;
+            has_user( $rule, 'dst' ) and $dst = $user_names;
+        }
         my $get_val = sub {
             my ($names) = @_;
             if ( $disp_prop eq 'ip' ) {
