@@ -1,5 +1,8 @@
 {{$NEXT}}
 
+ - Fix bug with has_user and expand_rules handling
+   introduced in previous commits
+
 1.021     2024-07-17 19:12:29+02:00 Europe/Berlin
 
  - Always return has_user in get_rules and get_services_and_rules.
