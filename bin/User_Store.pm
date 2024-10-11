@@ -1,48 +1,67 @@
-
-=head1 COPYRIGHT AND DISCLAIMER
-
-(C) 2017 by Heinz Knutzen     <heinz.knutzen@gmail.com>
-
-https://github.com/hknutzen/Netspoc-Web
-
-This program is free software: you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
-This program is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-GNU General Public License for more details.
-You should have received a copy of the GNU General Public License
-along with this program. If not, see <http://www.gnu.org/licenses/>.
-
-=cut
-
 package User_Store;
 
 use strict;
 use warnings;
-use CGI::Session;
-use CGI::Session::Driver::file;
+use Carp;
+use Fcntl qw(:flock);
+use JSON;
+use open qw(:std :utf8);
 
-# User data is stored with CGI::Session using email as ID.
+use CGI_Store;
+
 sub new {
     my ($config, $email) = @_;
-    $CGI::Session::Driver::file::FileName = "%s";
-    return(CGI::Session->new ('driver:file;id:static', $email,
-                              { Directory=> $config->{user_dir} })
-           or abort(CGI::Session->errstr()));
+    my $path = "$config->{user_dir}/$email";
+    my $store = {};
+    my $obj = bless({ store => $store, path => $path });
+    if (open(my $fh, '<', $path)) {
+        flock($fh, LOCK_SH) or croak("couldn't lock '$path': $!");
+        local $/ = undef;
+        my $data = <$fh>;
+        close($fh);
+        # Read old format of CGI::Session.
+        if ($data =~ /^\$D =/) {
+            my $old = CGI_Store::load($config, $email);
+            for my $key (qw(hash old_hash send_diff)) {
+                if (defined(my $v = $old->param($key))) {
+                    $store->{$key} = $v;
+                }
+            }
+            # Overwrite with new JSON format.
+            $obj->flush();
+        }
+        else {
+            $obj->{store} = from_json($data);
+        }
+    }
+    return $obj;
 }
 
-sub load {
-    my ($config, $email) = @_;
-    $CGI::Session::Driver::file::FileName = "%s";
-    return CGI::Session->load ('driver:file;id:static', $email,
-                               { Directory=> $config->{user_dir} },
+sub load { new(@_); }
 
-                               # Set undocumented parameter 'read_only',
-                               # to not update atime when reading.
-                               1);
+sub param {
+    my ($self, $key, $val) = @_;
+    if (@_ eq 2) {
+        return $self->{store}->{$key};
+    }
+    $self->{store}->{$key} = $val;
+    $self->flush();
+}
+
+sub clear {
+    my ($self, $key) = @_;
+    delete $self->{store}->{$key};
+    $self->flush();
+}
+
+sub flush {
+    my ($self) = @_;
+    my $json = to_json($self->{store});
+    my $path = $self->{path};
+    open(my $fh, '>', $path) or croak "couldn't open $path: $!";
+    flock($fh, LOCK_EX) or croak("couldn't lock '$path': $!");
+    print($fh $json);
+    close($fh);
 }
 
 1;
