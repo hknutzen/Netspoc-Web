@@ -263,6 +263,7 @@ END
 # $pid and $chld_in need to be global, otherwise the test-server
 # would get deleted after prepare_runtime_base has finished.
 my $pid;
+# Server will wait for EOF on $chld_in and then exit.
 my $chld_in;
 
 sub prepare_runtime_base {
@@ -275,11 +276,11 @@ sub prepare_runtime_base {
     # netspoc.psgi searches config file in $HOME directory.
     local $ENV{HOME} = $home_dir;
 
-    # Autmatically clean up child process after it has finished.
-    $SIG{CHLD}='IGNORE';
+    # Automatically clean up child process after it has finished.
+    #$SIG{CHLD}='IGNORE';
 
-    $pid = open2(my $chld_out, $chld_in, './bin/test-server.pl') or
-        die "test-server failed: $!";
+    my $cmd = 'bin/test-server.pl';
+    $pid = open2(my $chld_out, $chld_in, $cmd) or die "Can't start $cmd: $!";
     $port = <$chld_out>;
     chomp $port;
 }
