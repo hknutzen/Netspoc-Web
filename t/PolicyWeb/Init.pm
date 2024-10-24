@@ -1,20 +1,12 @@
-
 package PolicyWeb::Init;
 
 use strict;
-
-use Test::More;
-use Test::Differences;
-use lib 'bin';
+use warnings;
+use IPC::Open2;
 use IPC::Run3;
 use File::Temp qw/tempfile tempdir/;
-use Plack::Test::Server;
 use File::Spec::Functions qw/ file_name_is_absolute splitpath catdir catfile /;
 use File::Path 'make_path';
-use Plack::App::File;
-use JSON;
-use HTTP::Request::Common;
-use Plack::Builder;
 
 require Exporter;
 our @ISA = qw(Exporter);
@@ -22,7 +14,6 @@ our @ISA = qw(Exporter);
 our @EXPORT_OK = qw(
   prepare_export
   prepare_runtime_base
-  $app
   $port
   $policy
   $SERVER
@@ -269,12 +260,10 @@ my $conf_data = <<END;
 }
 END
 
-our $cookie;
-our $app;
-
-# $server needs to be global, otherwise the plack server
-# would get deleted after prepare_runtime_base
-my $server;
+# $pid and $chld_in need to be global, otherwise the test-server
+# would get deleted after prepare_runtime_base has finished.
+my $pid;
+my $chld_in;
 
 sub prepare_runtime_base {
 
@@ -283,33 +272,16 @@ sub prepare_runtime_base {
     print $fh $conf_data;
     close $fh;
 
-    # Different paths on travis vm.
-    # Read HOME, before it is overwritten below.
-    my $BUILD_DIR = $ENV{TRAVIS_BUILD_DIR} || "$ENV{HOME}/Netspoc-Web";
-
     # netspoc.psgi searches config file in $HOME directory.
     local $ENV{HOME} = $home_dir;
-    my $netspoc_psgi = do './bin/netspoc.psgi'
-      or die "Couldn't parse PSGI file: $@";
 
-    $app = builder {
-        mount "/extjs4" =>
-          Plack::App::File->new( root => "$BUILD_DIR/htdocs/extjs4" )->to_app;
-        mount "/silk-icons" =>
-          Plack::App::File->new( root => "$BUILD_DIR/htdocs/silk-icons" )
-          ->to_app;
-        mount "/" => Plack::App::File->new( root => "$BUILD_DIR" )->to_app;
-        mount "/backend" => $netspoc_psgi;
-    };
+    # Autmatically clean up child process after it has finished.
+    $SIG{CHLD}='IGNORE';
 
-    $server = Plack::Test::Server->new($app);
-    $port   = $server->port();
-}
-
-#__PACKAGE__::init();
-
-sub init {
-
+    $pid = open2(my $chld_out, $chld_in, './bin/test-server.pl') or
+        die "test-server failed: $!";
+    $port = <$chld_out>;
+    chomp $port;
 }
 
 1;
