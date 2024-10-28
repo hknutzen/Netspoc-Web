@@ -394,14 +394,33 @@ sub service_details {
 
         ok( $details->get_text =~ 'Name:\sBeschreibung:\sVerantwortung:',
             "found panel:\tservice details" );
+        my @pseudo_input = $driver->find_child_elements( $details,
+            './/input[contains(@id, "inputEl")]', 'xpath' );
+        use Data::Dumper;
+
+#Dass die inputs "hidden" sind, ist hier das Problem!
+#Eventuelle Lösung: execute_script
+#https://stackoverflow.com/questions/19385721/how-to-get-hidden-values-in-webdriver-using-javascript
+#String script =
+#  "return document.getElementById('code').getAttribute('value');";
+#String value =
+#  ( (JavascriptExecutor) driver ) . executeScript(script) . toString();
+# Deshalb diese lokale Funktion. Wir gehen über Javascript, statt
+# get_value auf das Element anzuwenden.
+        my $get_val = sub {
+            my ($index) = @_;
+            my $id      = $pseudo_input[$index]->get_attribute("id");
+            my $script  = q{
+              var arg1 = arguments[0];
+              var elem = window.document.getElementById(arg1);
+              return elem.value;
+            };
+            return $driver->execute_script( $script, $id );
+        };
+        ok( $get_val->(0) eq 'Test4',    "Name:\t\tTest4" );
+        ok( $get_val->(1) eq 'Your foo', "Beschreibung:\tYour foo" );
 
 =head
-        my @pseudo_input = $driver->find_child_elements( $details,
-            './/input[not(contains(@id, "hidden"))]', 'xpath' );
-
-        ok( $pseudo_input[0]->get_value eq 'Test4', "Name:\t\tTest4" );
-        ok( $pseudo_input[1]->get_value eq 'Your foo',
-            "Beschreibung:\tYour foo" );
         ok( $pseudo_input[2]->get_value eq 'y', "Verantwortung:\ty" );
         $driver->find_child_element( $details,
             'btn_switch_service_responsibility' )->click;
@@ -409,9 +428,9 @@ sub service_details {
             $pseudo_input[2]->get_value eq 'z',
             "responsibility changed from y to z"
         );
-        #####
-
 =cut
+
+        #####
 
         my $grid = $driver->find_child_element( $rp, 'grid_rules' );
         my @gch  = $driver->find_child_elements(

@@ -2,7 +2,7 @@
 =head1 COPYRIGHT AND DISCLAIMER
 
 (C) 2014 by Heinz Knutzen     <heinz.knutzen@gmail.com>
- 
+
 https://github.com/hknutzen/Netspoc-Web
 
 This program is free software: you can redistribute it and/or modify
@@ -30,7 +30,7 @@ use open IN => ':utf8';
 
 sub read_file {
     my ($file) = @_;
-    open(my $fh, '<', $file) or croak "Can't open $file: $!";
+    open( my $fh, '<', $file ) or croak "Can't open $file: $!";
     local $/ = undef;
     my $text = <$fh>;
     close $fh;
@@ -40,18 +40,18 @@ sub read_file {
 # Do simple variable substitution.
 # Use syntax of template toolkit.
 sub process {
-    my ($text, $vars) = @_;
-    while (my ($key, $value) = each %$vars) {
-	$text =~ s/\[% $key %\]/$value/g;
+    my ( $text, $vars ) = @_;
+    while ( my ( $key, $value ) = each %$vars ) {
+        $text =~ s/\[% $key %\]/$value/g;
     }
     return $text;
 }
 
 sub get {
-    my ($file, $vars ) = @_;
+    my ( $file, $vars ) = @_;
     my $text = read_file($file);
-    $text = process($text, $vars);
+    $text = process( $text, $vars );
     return $text;
-}					 
+}
 
 1;
