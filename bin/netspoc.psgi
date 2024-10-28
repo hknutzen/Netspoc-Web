@@ -2075,6 +2075,7 @@ my %path2sub = (
             anon          => 1,
             add_success   => 1,
             create_cookie => 1,
+            err_status    => 401,
         }
     ],
     register => [
@@ -2238,8 +2239,9 @@ sub handle_request {
             $res->body($body);
         }
         else {
+            my $status = $flags->{err_status} || 500;
             my $result = { success => JSON::false, msg => $msg };
-            $res->status(500);
+            $res->status($status);
             $res->content_type('text/x-json');
             $res->body( encode_json($result) . "\n" );
         }
