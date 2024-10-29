@@ -463,7 +463,8 @@ Ext.define(
             return;
         }
         this.getController('Main').closeOpenWindows();
-        service.set('all_owners', service.get('owner'));
+        var all_owners = service.get('owner') || [];
+        service.set('all_owners', all_owners);
 
         // Load details form with values from selected record.
         var form = this.getServiceDetailsForm();
