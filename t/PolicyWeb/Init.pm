@@ -4,7 +4,7 @@ use strict;
 use warnings;
 use IPC::Open2;
 use IPC::Run3;
-use File::Temp qw/tempfile tempdir/;
+use File::Temp            qw/tempfile tempdir/;
 use File::Spec::Functions qw/ file_name_is_absolute splitpath catdir catfile /;
 use File::Path 'make_path';
 
@@ -26,6 +26,7 @@ our $SERVER = "127.0.0.1";
 our $port;
 our $policy = 'p0';
 our $export_dir;
+$ENV{NETSPOC_WEB_SRC_DIR} = $ENV{HOME} . '/Netspoc-Web';
 
 ############################################################
 # Shared Netspoc configuration
@@ -263,6 +264,7 @@ END
 # $pid and $chld_in need to be global, otherwise the test-server
 # would get deleted after prepare_runtime_base has finished.
 my $pid;
+
 # Server will wait for EOF on $chld_in and then exit.
 my $chld_in;
 
@@ -280,7 +282,7 @@ sub prepare_runtime_base {
     #$SIG{CHLD}='IGNORE';
 
     my $cmd = 'bin/test-server.pl';
-    $pid = open2(my $chld_out, $chld_in, $cmd) or die "Can't start $cmd: $!";
+    $pid  = open2( my $chld_out, $chld_in, $cmd ) or die "Can't start $cmd: $!";
     $port = <$chld_out>;
     chomp $port;
 }
