@@ -79,10 +79,6 @@ Ext.define(
             ref: 'ownerField'
         },
         {
-            selector: 'serviceview  button[iconCls="icon-delete"]',
-            ref: 'deleteFromUserButton'
-        },
-        {
             selector: '#ownerEmails',
             ref: 'ownerEmails'
         },
@@ -160,12 +156,6 @@ Ext.define(
                 'servicerules actioncolumn': {
                     addobjecttorule: this.onAddObjectToRule,
                     deleteobjectfromrule: this.onDeleteObjectFromRule
-                },
-                'serviceview button[iconCls=icon-add]': {
-                    click: this.onAddUserClick
-                },
-                'serviceview button[iconCls=icon-delete]': {
-                    click: this.onDeleteUserClick
                 },
                 'serviceusers': {
                     select: this.onUserDetailsSelected
@@ -247,17 +237,11 @@ Ext.define(
                 var grid = this.getServicesGrid();
                 var sv = this.getServiceView();
                 var cardpanel = sv.down('cardprintactive');
-                var add_button = cardpanel.query('button[iconCls=icon-add]')[0];
-                var del_button = cardpanel.query('button[iconCls=icon-delete]')[0];
                 if (count === 0) {
                     this.clearDetails();
-                    add_button.disable();
-                    del_button.disable();
                 }
                 else {
                     this.getServicesGrid().select0();
-                    add_button.enable();
-                    del_button.enable();
                 }
                 // Display nr of services in header.
                 grid.getView().getHeaderCt().getHeaderAtIndex(0).setText(
@@ -308,16 +292,6 @@ Ext.define(
 
     onBeforeActivate: function () {
         this.loadServiceStoreWithParams();
-    },
-
-    onAddUserClick: function () {
-        add_user_window = Ext.create('PolicyWeb.view.window.AddUser');
-        add_user_window.show();
-    },
-
-    onDeleteUserClick: function () {
-        del_user_window = Ext.create('PolicyWeb.view.window.DeleteUser');
-        del_user_window.show();
     },
 
     onDeleteObjectFromRule: function (view, rowIndex, colIndex, item, e,

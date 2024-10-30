@@ -23,111 +23,102 @@ var print_window;
 Ext.define(
     'PolicyWeb.view.Service',
     {
-        extend  : 'Ext.container.Container',
-        alias   : 'widget.serviceview',
-        border  : false,
-        layout  : {
-            type  : 'hbox',
-            align : 'stretch'
+        extend: 'Ext.container.Container',
+        alias: 'widget.serviceview',
+        border: false,
+        layout: {
+            type: 'hbox',
+            align: 'stretch'
         },
 
-        initComponent : function() {
+        initComponent: function () {
             this.items = [
                 this.buildServiceListPanel(),
                 this.buildServicePropertiesView()
             ];
             this.callParent(arguments);
         },
-        
-        buildServiceListPanel : function() {
+
+        buildServiceListPanel: function () {
             return {
-              xtype : 'servicelist'
+                xtype: 'servicelist'
             };
         },
 
-        buildServicePropertiesView : function() {
+        buildServicePropertiesView: function () {
             var details = this.buildServiceDetailsView();
-            var user    = this.buildServiceUserView();
+            var user = this.buildServiceUserView();
             var srv_props = Ext.create(
-                'PolicyWeb.view.panel.card.PrintActive', 
+                'PolicyWeb.view.panel.card.PrintActive',
                 {
-                    id           : "pnl_service_details",
-                    flex         : 7,
-                    activeItem   : 0,
-                    layoutConfig : {
-                        deferredRender : false,
-                        // Sonst wird der Container mit 'trigger' 
+                    id: "pnl_service_details",
+                    flex: 7,
+                    activeItem: 0,
+                    layoutConfig: {
+                        deferredRender: false,
+                        // Sonst wird der Container mit 'trigger'
                         // bei multi Owner nicht korrekt angezeigt,
-                        // wenn man zwischen User und Details 
+                        // wenn man zwischen User und Details
                         // wechselt.
-                        layoutOnCardChange : true
+                        layoutOnCardChange: true
                     },
-                    dockedItems  : [
+                    dockedItems: [
                         {
-                            xtype : 'toolbar',
-                            dock  : 'top',
-                            items : [
-                                {   
-                                    id            : 'btn_service_details',
-                                    text          : 'Details zum Dienst',
-                                    toggleGroup   : 'polDVGrp',
-                                    enableToggle  : true,
-                                    pressed       : true
+                            xtype: 'toolbar',
+                            dock: 'top',
+                            items: [
+                                {
+                                    id: 'btn_service_details',
+                                    text: 'Details zum Dienst',
+                                    toggleGroup: 'polDVGrp',
+                                    enableToggle: true,
+                                    pressed: true
                                 },
                                 '-',
-                                {   
-                                    id           : 'btn_service_user',
-                                    text         : 'Benutzer (User) des Dienstes',
-                                    toggleGroup  : 'polDVGrp',
-                                    enableToggle : true
+                                {
+                                    id: 'btn_service_user',
+                                    text: 'Benutzer (User) des Dienstes',
+                                    toggleGroup: 'polDVGrp',
+                                    enableToggle: true
                                 },
                                 '->',
                                 {
-                                    id      : 'btn_print_rules',
-                                    xtype   : 'printbutton',
-                                    tooltip : 'Druckansicht für Regeln oder User des aktuell ausgewählten Dienstes'
+                                    id: 'btn_print_rules',
+                                    xtype: 'printbutton',
+                                    tooltip: 'Druckansicht für Regeln oder User des aktuell ausgewählten Dienstes'
                                 }
                             ]
                         },
                         {
-                            xtype : 'toolbar',
-                            dock  : 'top',
-                            items : [
-                                {   
-                                    id           : 'btn_service_user_add',
-                                    iconCls      : 'icon-add'
-                                },
-                                {   
-                                    id           : 'btn_service_user_del',
-                                    iconCls      : 'icon-delete'
-                                },
-                                '-',
+                            xtype: 'toolbar',
+                            dock: 'top',
+                            items: [
                                 {
-                                    xtype    : 'checkbox',
-                                    id       : 'cb_expand_users',
-                                    name     : 'expand_users',
-                                    boxLabel : 'User expandieren'
+                                    xtype: 'checkbox',
+                                    id: 'cb_expand_users',
+                                    name: 'expand_users',
+                                    boxLabel: 'User expandieren'
                                 },
                                 {
-                                    id       : 'cb_show_names',
-                                    xtype    : 'checkbox',
-                                    name     : 'display_property',
-                                    boxLabel : 'Namen statt IPs'
+                                    id: 'cb_show_names',
+                                    xtype: 'checkbox',
+                                    name: 'display_property',
+                                    boxLabel: 'Namen statt IPs'
                                 },
-                                {   
-                                    id        : 'cb_filter_search',
-                                    xtype     : 'checkbox',
-                                    name      : 'filter_rules',
-                                    boxLabel  : 'Filtern nach Suche',
-                                    checked   : true,
-                                    disabled  : true,
-                                    listeners : {
-                                        afterrender: function(c) {
+                                {
+                                    id: 'cb_filter_search',
+                                    xtype: 'checkbox',
+                                    name: 'filter_rules',
+                                    boxLabel: 'Filtern nach Suche',
+                                    checked: true,
+                                    disabled: true,
+                                    listeners: {
+                                        afterrender: function (c) {
                                             Ext.create(
                                                 'Ext.tip.ToolTip', {
-                                                    target : c.getEl(),
-                                                    html   : 'Alle Regeln oder nur zum Suchergebnis passende anzeigen' 
-                                                }
+                                                target: c.getEl(),
+                                                html: 'Alle Regeln oder nur zum Suchergebnis passende anzeigen'
+                                            }
                                             );
                                         }
                                     }
@@ -135,7 +126,7 @@ Ext.define(
                             ]
                         }
                     ],
-                    items : [
+                    items: [
                         details,
                         user
                     ]
@@ -144,78 +135,78 @@ Ext.define(
             return srv_props;
         },
 
-        buildServiceUserView : function() {
+        buildServiceUserView: function () {
             return {
-                layout : 'border',
-                items  : [
+                layout: 'border',
+                items: [
                     this.buildUserView(),
                     this.buildUserEmails()
                 ]
             };
         },
 
-        buildUserView : function() {
+        buildUserView: function () {
             return Ext.create(
                 'PolicyWeb.view.panel.grid.Users',
                 {
-                    region : 'center'
+                    region: 'center'
                 }
             );
         },
-        
-        buildUserEmails : function() {
+
+        buildUserEmails: function () {
             var store = Ext.create(
                 'PolicyWeb.store.Emails'
             );
             return Ext.create(
                 'PolicyWeb.view.panel.grid.Emails',
                 {
-                    region : 'south',
-                    id     : 'userEmails',
-                    store  : store
+                    region: 'south',
+                    id: 'userEmails',
+                    store: store
                 }
             );
         },
 
-        buildServiceDetails : function() {
+        buildServiceDetails: function () {
             return Ext.create(
                 'PolicyWeb.view.panel.form.ServiceDetails',
                 {
-                    region : 'north'
+                    region: 'north'
                 }
             );
         },
 
-        buildServiceRules : function() {
+        buildServiceRules: function () {
             return Ext.create(
                 'PolicyWeb.view.panel.grid.Rules',
                 {
-                    id        : 'grid_rules',
-                    region    : 'center',
-                    printview : function () {
-                        this.fireEvent( 'printrules' );
+                    id: 'grid_rules',
+                    region: 'center',
+                    printview: function () {
+                        this.fireEvent('printrules');
                     }
                 }
             );
         },
 
-        buildServiceEmails : function() {
+        buildServiceEmails: function () {
             return Ext.create(
                 'PolicyWeb.view.panel.grid.Emails',
                 {
-                    region : 'south',
-                    id     : 'ownerEmails'
+                    region: 'south',
+                    id: 'ownerEmails'
                 }
             );
         },
 
-        buildServiceDetailsView : function() {
+        buildServiceDetailsView: function () {
             var details = this.buildServiceDetails();
-            var rules   = this.buildServiceRules();
-            var emails  = this.buildServiceEmails();
+            var rules = this.buildServiceRules();
+            var emails = this.buildServiceEmails();
             return {
-                layout : 'border',
-                items  : [
+                layout: 'border',
+                items: [
                     details,
                     rules,
                     emails

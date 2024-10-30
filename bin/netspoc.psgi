@@ -1518,22 +1518,6 @@ sub set_diff_mail {
 }
 
 ####################################################################
-# Deal with IE compatibility mode
-####################################################################
-
-# Get compat_msg from session if present.
-sub get_compat_msg_mode {
-    my ( $req, $session ) = @_;
-    my $value = $session->param('ignore_compat_msg');
-    if ($value) {
-        return [ { ignore_compat_msg => $value } ];
-    }
-    else {
-        return [];
-    }
-}
-
-####################################################################
 # Data for about dialog
 ####################################################################
 
@@ -1544,29 +1528,11 @@ sub get_about_info {
     return Template::get( $config->{about_info_template}, $vars );
 }
 
-sub get_business_units {
-    my ( $req, $session ) = @_;
-
-    my $file = $config->{business_units};
-    open( my $fh, '<', $file ) or abort "Can't open $file: $!";
-    my @lines = <$fh>;
-    close $fh;
-    my $result;
-    for my $item (@lines) {
-        chomp $item;
-        push @$result, { name => $item };
-    }
-    return $result;
-}
-
 ####################################################################
 # Save session data
 ####################################################################
 
-my %saveparam = (
-    owner             => 1,
-    ignore_compat_msg => 1
-);
+my %saveparam = ( owner => 1 );
 
 sub set_session_data {
     my ( $req, $session ) = @_;
@@ -2095,15 +2061,12 @@ my %path2sub = (
             err_status => 500
         }
     ],
-    get_policy     => [ \&get_policy, { anon        => 1, add_success => 1, } ],
-    logout         => [ \&logout,     { add_success => 1, } ],
-    get_owner      => [ \&get_owner,  { add_success => 1, } ],
-    get_owners     => [ \&get_owners, { add_success => 1, } ],
-    set            => [ \&set_session_data, { add_success => 1, } ],
-    get_about_info => [ \&get_about_info,   { owner       => 1, html => 1 } ],
-    get_compat_msg_mode => [ \&get_compat_msg_mode, { add_success => 1, } ],
-    get_business_units  =>
-      [ \&get_business_units, { owner => 1, add_success => 1 } ],
+    get_policy => [ \&get_policy, { anon        => 1, add_success => 1, } ],
+    logout     => [ \&logout,     { add_success => 1, } ],
+    get_owner  => [ \&get_owner,  { add_success => 1, } ],
+    get_owners => [ \&get_owners, { add_success => 1, } ],
+    set        => [ \&set_session_data, { add_success => 1, } ],
+    get_about_info  => [ \&get_about_info,  { owner => 1, html        => 1 } ],
     get_history     => [ \&get_history,     { owner => 1, add_success => 1, } ],
     service_list    => [ \&service_list,    { owner => 1, add_success => 1, } ],
     get_admins      => [ \&get_admins,      { owner => 1, add_success => 1, } ],

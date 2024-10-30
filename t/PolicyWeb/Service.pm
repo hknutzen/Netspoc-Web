@@ -56,7 +56,7 @@ sub check_service_buttons {
     my $is_ok = 1;
 
     subtest "check service buttons" => sub {
-        plan tests => 11;
+        plan tests => 9;
 
         # check buttons on left panel
         $is_ok &= ok( $driver->find_child_element( $lp, 'btn_own_services' ),
@@ -82,12 +82,6 @@ sub check_service_buttons {
         );
         $is_ok &= ok( $driver->find_child_element( $rp, 'btn_print_rules', ),
             "found button:\tprint rules" );
-        $is_ok &=
-          ok( $driver->find_child_element( $rp, 'btn_service_user_add' ),
-            "found button:\tadd user to service" );
-        $is_ok &=
-          ok( $driver->find_child_element( $rp, 'btn_service_user_del' ),
-            "found button:\tdelete user from service" );
     };
     return $is_ok;
 }
