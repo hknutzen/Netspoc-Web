@@ -257,7 +257,6 @@ my $conf_data = <<END;
  "user_dir"             : "$home_dir/users",
  "session_dir"          : "$home_dir/sessions",
  "noreply_address"      : "noreply",
- "business_units"       : "",
 }
 END
 
