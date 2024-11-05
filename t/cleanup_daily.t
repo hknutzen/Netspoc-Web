@@ -27,7 +27,6 @@ my $conf_data  = <<"END";
  "session_dir"        : "$home_dir/sessions",
  "noreply_address"    : "noreply",
  "sendmail_command"   : "$home_dir/sendmail",
- "business_units"       : "",
 }
 END
 
