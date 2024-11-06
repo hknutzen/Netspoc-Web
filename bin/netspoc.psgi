@@ -1324,41 +1324,10 @@ sub send_user_task_mail {
     send_template_mail( $req, $session, $template, $hash );
 }
 
-sub send_delete_user_task_mail {
-    my ( $req, $session ) = @_;
-    my $template = 'task_delete_object_from_user.tmpl';
-    send_user_task_mail( $req, $session, $template );
-}
-
-sub send_add_user_task_mail {
-    my ( $req, $session ) = @_;
-    my $template = 'task_add_object_to_user.tmpl';
-    send_user_task_mail( $req, $session, $template );
-}
-
 sub service_users {
     my ( $req, $session ) = @_;
     my $users = get_users( $req, $session );
     return [ map { { name => $_->{ip} . "\t" . $_->{name} } } @{$users} ];
-}
-
-sub send_add_to_rule_task_mail {
-    my ( $req, $session ) = @_;
-    my $template = 'task_add_object_to_rule.tmpl';
-    if ( $req->method eq "POST" ) {
-        my $hash = generate_hash_from_json($req);
-        send_template_mail( $req, $session, $template, $hash );
-    }
-}
-
-sub send_del_from_rule_task_mail {
-    my ( $req, $session ) = @_;
-    my $service  = $req->param('service');
-    my $template = 'task_delete_from_rule.tmpl';
-    if ( $req->method eq "POST" ) {
-        my $hash = generate_hash_from_json($req);
-        send_template_mail( $req, $session, $template, $hash );
-    }
 }
 
 sub generate_hash_from_json {
@@ -2093,14 +2062,6 @@ my %path2sub = (
     service_users    => [ \&service_users, { owner => 1, add_success => 1, } ],
     admin_or_watcher =>
       [ \&admin_or_watcher, { owner => 1, add_success => 1, } ],
-    send_add_user_task_mail =>
-      [ \&send_add_user_task_mail, { owner => 1, add_success => 1, } ],
-    send_delete_user_task_mail =>
-      [ \&send_delete_user_task_mail, { owner => 1, add_success => 1, } ],
-    send_add_to_rule_task_mail =>
-      [ \&send_add_to_rule_task_mail, { owner => 1, add_success => 1, } ],
-    send_del_from_rule_task_mail =>
-      [ \&send_del_from_rule_task_mail, { owner => 1, add_success => 1, } ],
 );
 
 # Change 'param' method of Plack::Request.
