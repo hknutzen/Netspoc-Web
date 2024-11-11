@@ -2,3 +2,6 @@ policyweb-*
 .tidyall.d
 .prove
 .vscode
+*~
+go/cmd/*/*
+!go/cmd/*/*.go

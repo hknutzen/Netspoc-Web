@@ -256,7 +256,7 @@ my $conf_data = <<END;
  "netspoc_data"         : "$export_dir",
  "user_dir"             : "$home_dir/users",
  "session_dir"          : "$home_dir/sessions",
- "noreply_address"      : "noreply",
+ "noreply_address"      : "noreply"
 }
 END
 
@@ -280,7 +280,7 @@ sub prepare_runtime_base {
     # Automatically clean up child process after it has finished.
     #$SIG{CHLD}='IGNORE';
 
-    my $cmd = 'bin/test-server.pl';
+    my $cmd = 'bin/test-server';
     $pid  = open2( my $chld_out, $chld_in, $cmd ) or die "Can't start $cmd: $!";
     $port = <$chld_out>;
     chomp $port;

@@ -1514,6 +1514,14 @@ sub set_session_data {
     return [];
 }
 
+sub get_session_data {
+    my ( $req, $session ) = @_;
+    return {
+        logged_in => $session->param('logged_in') ? JSON::true : JSON::false,
+        email => $session->param('email'),
+        owner => $session->param('owner'),
+    };
+}
 ####################################################################
 # Email -> Admin -> Owner
 ####################################################################
@@ -2030,6 +2038,7 @@ my %path2sub = (
             err_status => 500
         }
     ],
+    get_session_data => [ \&get_session_data, { anon => 1, } ],
     get_policy => [ \&get_policy, { anon        => 1, add_success => 1, } ],
     logout     => [ \&logout,     { add_success => 1, } ],
     get_owner  => [ \&get_owner,  { add_success => 1, } ],
