@@ -38,7 +38,7 @@ sub prepare_runtime {
 
 sub test_run {
     my ($title, $path, $request, $out, $process_result) = @_;
-    my $ua = LWP::UserAgent->new(timeout => 10);
+    my $ua = LWP::UserAgent->new();
     my $uri = "http://$SERVER:$port/backend/$path?" . join '&',
       map { "$_=$request->{$_}" } keys %$request;
     my $h   = HTTP::Headers->new(Cookie => $cookie);

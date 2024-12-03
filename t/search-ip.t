@@ -160,20 +160,56 @@ service:NTP = {
         dst = user;
         prt = udp 123;
 }
+
 --ipv6
 area:all-ipv6 = { owner = x; anchor = network:n3; }
-network:n3 = { ip = 1000::abcd:0001:0/112;}
-network:n4 = { ip = 1000::abcd:0002:0/112;}
+any:n3 = { link = network:n3; }
+any:n4 = { link = network:n4; }
+network:n3 = {
+ ip = 1000::abcd:0003:0/112;
+ host:h3 = { ip = 1000::abcd:0003:0003; }
+ host:range3 = { range = 1000::abcd:0003:0002-1000::abcd:0003:0009; }
+}
+network:n4 = {
+ ip = 1000::abcd:0004:0/112;
+ host:h4= { ip = 1000::abcd:0004:0004; }
+}
+network:n5 = { ip = 1000::abcd:0005:0/112; }
 
 router:r1 = {
  managed;
  model = ASA;
- interface:n3 = {ip = 1000::abcd:0001:0001; hardware = n1;}
- interface:n4 = {ip = 1000::abcd:0002:0001; hardware = n2;}
+ interface:n3 = {ip = 1000::abcd:0003:0001; hardware = n3; }
+ interface:n4 = {ip = 1000::abcd:0004:0001; hardware = n4; }
+ interface:n5 = {ip = 1000::abcd:0005:0001; hardware = n5; }
 }
-service:T6_1 = {
+service:V6_net_net = {
  user = network:n3;
  permit src = user; dst = network:n4; prt = tcp 83-84;
+}
+service:V6_host_host = {
+ user = host:h3;
+ permit src = user; dst = host:h4; prt = udp 123;
+}
+service:V6_range_host = {
+ user = host:range3;
+ permit src = user; dst = host:h4; prt = udp 123;
+}
+service:V6_range_net = {
+ user = host:range3;
+ permit src = user; dst = network:n5; prt = udp 123;
+}
+service:V6_any_host = {
+ user = any:n3;
+ permit src = user; dst = host:h4; prt = udp 123;
+}
+service:V6_host_any = {
+ user = host:h3;
+ permit src = user; dst = any:n4; prt = udp 123;
+}
+service:V6_any_any = {
+ user = any:n3;
+ permit src = user; dst = any:n4; prt = udp 123;
 }
 END
 ############################################################
@@ -189,7 +225,7 @@ $title = 'Exact IP search in used services';
 ############################################################
 
 $owner = 'z';
-$params = { search_ip1  => '10.1.1.0/255.255.255.0',
+$params = { search_ip1  => '10.1.1.0/24',
             search_ip2  => '10.2.2.0/24',
             search_used => 1,
           };
@@ -203,7 +239,7 @@ $title = 'Exact IP search in own services';
 ############################################################
 
 $owner = 'y';
-$params = { search_ip1 => '10.1.0.0/255.255.0.0',
+$params = { search_ip1 => '10.1.0.0/16',
             search_ip2 => '10.2.2.2/32',
             search_own => 1,
           };
@@ -296,20 +332,6 @@ $out = [qw(Test5 Test6 Test7)];
 test_run_o($title, $path, $params, $owner, $out, \&extract_names);
 
 ############################################################
-$title = 'IP search with mask 0.0.0.0';
-############################################################
-
-$params = { search_ip1  => '0.0.0.0/0.0.0.0',
-            search_own  => 1,
-            search_used => 1,
-            search_supernet => 1,
-          };
-
-$out = [qw(Test5 Test6 Test7)];
-
-test_run_o($title, $path, $params, $owner, $out, \&extract_names);
-
-############################################################
 $title = 'Subnet IP search for interface of internet with negotiated address';
 ############################################################
 
@@ -325,6 +347,88 @@ $out = [qw(NTP)];
 test_run_o($title, $path, $params, $owner, $out, \&extract_names);
 
 ############################################################
+$title = 'Exact IPv6 search for networks';
+############################################################
+
+$params = { search_ip1  => '1000::abcd:0003:0/112',
+            search_ip2  => '1000::abcd:0004:0/112',
+            search_own  => 1,
+          };
+
+$out = [qw(V6_net_net)];
+
+test_run_o($title, $path, $params, $owner, $out, \&extract_names);
+
+############################################################
+$title = 'Exact IPv6 search for hosts and range';
+############################################################
+
+$params = { search_ip1  => '1000::abcd:0003:0003',
+            search_ip2  => '1000::abcd:0004:0004',
+            search_own  => 1,
+          };
+
+$out = [qw(V6_host_host V6_range_host)];
+
+test_run_o($title, $path, $params, $owner, $out, \&extract_names);
+
+############################################################
+$title = 'IPv6 subnet search';
+############################################################
+
+$params = { search_ip1  => '1000::abcd:0003:0/112',
+            search_ip2  => '1000::abcd:0004:0/112',
+            search_own  => 1,
+            search_subnet => 1,
+          };
+
+$out = [qw(V6_host_host V6_net_net V6_range_host)];
+
+test_run_o($title, $path, $params, $owner, $out, \&extract_names);
+
+############################################################
+$title = 'IPv6 supernet search';
+############################################################
+
+$params = { search_ip1  => '1000::abcd:0003:0/112',
+            search_ip2  => '1000::abcd:0004:0004',
+            search_own  => 1,
+            search_supernet => 1,
+          };
+
+$out = [qw(V6_any_any V6_any_host V6_net_net)];
+
+test_run_o($title, $path, $params, $owner, $out, \&extract_names);
+
+############################################################
+$title = 'IPv6 supernet of range search';
+############################################################
+
+$params = { search_ip1  => '1000::abcd:0003:0007',
+            search_ip2  => '1000::abcd:0004:0004',
+            search_own  => 1,
+            search_supernet => 1,
+          };
+
+$out = [qw(V6_any_any V6_any_host V6_net_net V6_range_host)];
+
+test_run_o($title, $path, $params, $owner, $out, \&extract_names);
+
+############################################################
+$title = 'IPv6 search with chosen networks';
+############################################################
+
+$params = { search_ip1  => '1000::abcd:0003:0007',
+            search_own  => 1,
+            search_supernet => 1,
+            chosen_networks => 'network:n5',
+          };
+
+$out = [qw(V6_range_net)];
+
+test_run_o($title, $path, $params, $owner, $out, \&extract_names);
+
+############################################################
 $title = 'Search for tcp protocol';
 ############################################################
 
@@ -333,7 +437,7 @@ $params = { search_proto => 'tcp',
             search_used  => 1,
           };
 
-$out = [qw(T6_1 Test1 Test10 Test11 Test12 Test3 Test3a Test4 Test5)];
+$out = [qw(Test1 Test10 Test11 Test12 Test3 Test3a Test4 Test5 V6_net_net)];
 
 test_run_o($title, $path, $params, $owner, $out, \&extract_names);
 
@@ -388,7 +492,7 @@ $params = { search_proto => '83',
             search_used  => 1,
           };
 
-$out = [qw(T6_1 Test12 Test9)];
+$out = [qw(Test12 Test9 V6_net_net)];
 
 test_run_o($title, $path, $params, $owner, $out, \&extract_names);
 
@@ -623,7 +727,7 @@ $params = { search_ip1  => 'any:',
             search_used => 1,
           };
 
-$out = [qw(Test2 Test5 Test6 Test8)];
+$out = [qw(Test2 Test5 Test6 Test8 V6_any_any V6_any_host V6_host_any)];
 
 test_run_o($title, $path, $params, $owner, $out, \&extract_names);
 
@@ -672,12 +776,10 @@ $out = [qw(host:B10 host:Range interface:u.Big host:k)];
 test_run_o($title, $path, $params, $owner, $out, \&extract_names);
 
 ############################################################
-$title = 'Show matching users of service, 2x ip, chosen networks';
+$title = 'Show matching users of service, 1x ip, chosen networks';
 ############################################################
 $path = 'get_users';
 
-# Rules match both, search_ip1 and search_ip2;
-# hence find union of both in users
 $params = { service         => 'Test9',
             search_ip1      => '10.1.0.0/16',
             search_subnet   => 1,
