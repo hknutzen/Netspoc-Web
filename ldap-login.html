@@ -1,87 +1,136 @@
+<!doctype html>
+<html lang="de">
+
 <head>
-<title>Policy-Web</title>
-<style type="text/css">
- body {font-family:sans-serif;}
- fieldset {background-color:AliceBlue;border:2px solid steelblue;}
- .bluebox {background-color:AliceBlue;border:2px solid steelblue;padding:15px}
- .small {font-size:small;}
- #links {float:left;}
- #rechts {float:right;}
- #unten {clear:both}
-</style>
-<link rel="icon" type="image/vnd.microsoft.icon" href="resources/images/policyweb.ico">
+	<meta charset="UTF-8" />
+	<title>Policy-Web</title>
+	<style type="text/css">
+		body,
+		html {
+			width: 100%;
+			height: 100%;
+			margin: 0;
+			padding: 0;
+		}
+
+		.flex-container {
+			display: flex;
+			flex-direction: column;
+			height: 44%;
+			width: 99%;
+		}
+
+		body {
+			font-family: sans-serif;
+		}
+
+		fieldset {
+			background-color: AliceBlue;
+			border: 2px solid steelblue;
+		}
+
+		.bluebox {
+			background-color: AliceBlue;
+			border: 2px solid steelblue;
+			padding: 15px
+		}
+
+		.small {
+			font-size: small;
+		}
+
+		#links {
+			float: left;
+		}
+
+		#rechts {
+			float: right;
+		}
+
+		#unten {
+			clear: both
+		}
+	</style>
+	<link rel="icon" type="image/vnd.microsoft.icon" href="resources/images/policyweb.ico">
 </head>
 
 <body onload="document.getElementsByName('user')[0].focus();">
-<div id="links"><h1>Policy-Web</h1></div>
+	<div id="links">
+		<h1>Policy-Web</h1>
+	</div>
 
-<form action="backend/ldap_login" method="post" id="rechts">
-  <fieldset>
-   <legend class="small">Anmeldung über Verzeichnisdienst</legend>
-   <input name="app" type="hidden" value="../app.html"/>
-   <label for="user">Benutzer:
-     <input name="user" type="text" size="15"/></label>
-   <label for="pass">Kennwort:
-     <input name="pass" type="password" size="15"/></label>
-   <input type="submit" value="Login"/>
+	<form action="backend/ldap_login" method="post" id="rechts">
+		<fieldset>
+			<legend class="small">Anmeldung über Verzeichnisdienst</legend>
+			<input name="app" type="hidden" value="../app.html" />
+			<label for="user">Benutzer:
+				<input name="user" type="text" size="15" /></label>
+			<label for="pass">Kennwort:
+				<input name="pass" type="password" size="15" /></label>
+			<input type="submit" value="Login" />
 
 
 
-  </fieldset>
-</form>
+		</fieldset>
+	</form>
 
-<p id="unten">
-	Hier geht es zur
-	<a href="/pwdoku/index.html">
-		Dokumentation
-	</a>.
-<p>
-	Lesen Sie unten die Neuigkeiten oder
-	<a href="/pwdoku/neuigkeiten/index.html">auf der entsprechenden Seite der Dokumentation</a>.
+	<p id="unten">
+		Hier geht es zur
+		<a href="/pwdoku/index.html">
+			Dokumentation
+		</a>.
+	<p>
+		Lesen Sie unten die Neuigkeiten oder
+		<a href="/pwdoku/neuigkeiten/index.html">auf der entsprechenden Seite der Dokumentation</a>.
+	</p>
+	<div class="bluebox">
+		Liebe Kolleginnen und Kollegen!
 
-<div class="bluebox">
-	Liebe Kolleginnen und Kollegen!
+		<br><br>
+		Es gibt ein neues Werkzeug im Netspoc-Umfeld:
+		<a href="https://lninfo.landsh.de/netvis/">Netvis (https://lninfo.landsh.de/netvis/)</a>
+		<br><br>
+		Damit lassen sich Topologien visualisieren. Diese Visualisierungen lassen sich sogar speichern,
+		wieder laden und an Koleginnen versenden. Probiert es doch einfach mal aus!
 
-	<br><br>
-	Es gibt ein neues Werkzeug im Netspoc-Umfeld:
-	<a href="https://lninfo.landsh.de/netvis/">Netvis (https://lninfo.landsh.de/netvis/)</a>
-	<br><br>
-	Damit lassen sich Topologien visualisieren. Diese Visualisierungen lassen sich sogar speichern,
-	wieder laden und an Koleginnen versenden. Probiert es doch einfach mal aus!
+		<br><br>
+		<br><br>
+		Es gibt außerdem eine neue Policy-Web-Version.
+		<br><br>
+		Die Funktionalität entspricht weitestgehend der alten Policy-Web-Version, jedoch ist das "Look and feel"
+		deutlich
+		moderner (und das Javascript-Framework für das Frontend ist nicht mehr ExtJs, sondern Vue.js).
+		Hinzu kommt lediglich der native Export in Excel und in PDF statt der bisherigen HTML-Druckansicht.
+		<br><br>
+		Es handelt sich um eine frühe Beta-Version mit noch einigen rauen Ecken und Kanten.
+		Dennoch möchten wir Euch die neue Version schon mal an die Hand geben, um sie auszuprobieren und Feedback und
+		Bug-Reports zu geben.
+		<br><br>
+		<strong> Wichtig: Diese frühe Version ist (vorerst) nur für Dataport intern. Deshalb ist dieser Hinweis auch auf
+			der
+			Anmeldeseite über Verzeichnisdienst angesiedelt und nicht auf der Email-Anmeldeseite. Bitte diesen Link
+			nicht an
+			Kunden weitergeben! </strong>
+		<br><br>
+		Link zum neuen Policy-Web:
 
-	<br><br>
-	<br><br>
-	Es gibt außerdem eine neue Policy-Web-Version.
-	<br><br>
-	Die Funktionalität entspricht weitestgehend der alten Policy-Web-Version, jedoch ist das "Look and feel" deutlich
-	moderner (und das Javascript-Framework für das Frontend ist nicht mehr ExtJs, sondern Vue.js).
-	Hinzu kommt lediglich der native Export in Excel und in PDF statt der bisherigen HTML-Druckansicht.
-	<br><br>
-	Es handelt sich um eine frühe Beta-Version mit noch einigen rauen Ecken und Kanten.
-	Dennoch möchten wir Euch die neue Version schon mal an die Hand geben, um sie auszuprobieren und Feedback und
-	Bug-Reports zu geben.
-	<br><br>
-	<strong> Wichtig: Diese frühe Version ist (vorerst) nur für Dataport intern. Deshalb ist dieser Hinweis auch auf der
-		Anmeldeseite über Verzeichnisdienst angesiedelt und nicht auf der Email-Anmeldeseite. Bitte diesen Link nicht an
-		Kunden weitergeben! </strong>
-	<br><br>
-	Link zum neuen Policy-Web:
+		<a href="https://lninfo.landsh.de/netspocvue/">https://lninfo.landsh.de/netspocvue/</a>
 
-	<a href="https://lninfo.landsh.de/netspocvue/">https://lninfo.landsh.de/netspocvue/</a>
+		<br><br>
+		Bis die gröbsten Fehler bereinigt sind, wird es einen Parallel-Betrieb des alten und des neuen Policy-Web geben.
+		<br><br>
+		Für das Melden eines Fehlers und Verbesserungsvorschläge bitte direkt einen "Issue" eröffnen auf (<strong>das
+			ist
+			ein von jedem einsehbares öffentliches Repository, also in den Issues bitte auf keinen Fall Dataport-Interna
+			wie
+			IP-Adressen, Dienst- oder Verfahrensnamen oder Namen von Personen verwenden!</strong>):
+		<br><br>
+		<a href="https://github.com/orrence/Netspoc-Vue/issues/">https://github.com/orrence/Netspoc-Vue/issues/</a>
+		<br><br>
+	</div>
 
-	<br><br>
-	Bis die gröbsten Fehler bereinigt sind, wird es einen Parallel-Betrieb des alten und des neuen Policy-Web geben.
-	<br><br>
-	Für das Melden eines Fehlers und Verbesserungsvorschläge bitte direkt einen "Issue" eröffnen auf (<strong>das ist
-		ein von jedem einsehbares öffentliches Repository, also in den Issues bitte auf keinen Fall Dataport-Interna wie
-		IP-Adressen, Dienst- oder Verfahrensnamen oder Namen von Personen verwenden!</strong>):
-	<br><br>
-	<a href="https://github.com/orrence/Netspoc-Vue/issues/">https://github.com/orrence/Netspoc-Vue/issues/</a>
-	<br><br>
-
-</div>
-
-<iframe src="/pwdoku/neuigkeiten/index.html" width="100%" height="74%" frameborder=0>
-</iframe>
+	<iframe src="/pwdoku/neuigkeiten/index.html" class="flex-container"></iframe>
 
 </body>
+
+</html>
