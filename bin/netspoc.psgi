@@ -1271,59 +1271,6 @@ sub get_connection_overview {
     }
 }
 
-################################################################################
-#
-# Task Email Workflow
-#
-################################################################################
-
-sub send_template_mail {
-    my ( $req, $session, $template, $hash ) = @_;
-    my $filename = $config->{template_path} . '/' . $template;
-    my $email    = session_email( $req, $session );
-    $hash->{email} = $email;
-    my $text = fill_in_file( $filename, HASH => $hash );
-
-    my $sendmail = $config->{sendmail_command};
-
-    # -t: read recipient address from mail text
-    # -f: set sender address
-    # -F: don't use sender full name
-    open( my $mail, '|-', "$sendmail -t -F '' -f $config->{noreply_address}" )
-      or internal_err "Can't open $sendmail: $!";
-    print $mail $text;
-
-    #print $mail Encode::encode('UTF-8', $text);
-    close $mail or warn "Can't close $sendmail: $!\n";
-    return [];
-}
-
-sub send_user_task_mail {
-    my ( $req, $session, $template ) = @_;
-    my $service          = $req->param('service');
-    my $user_object_name = $req->param('user_object_name')
-      || '<< Name wird ggf. vom Netzbetrieb oder '
-      . 'Dienstanbieter vergeben >>';
-    my $user_object_ip = $req->param('user_object_ip')
-      || 'Error: empty IP! (form validation failed!?)';
-    my $business_unit = $req->param('business_unit')
-      || 'Error: no business_unit defined.';
-    my $users      = get_users( $req, $session );
-    my $services   = load_json("services");
-    my $srv_owners = get_service( $services, $service )->{details}->{owner};
-
-    # Hash to fill template with data to send via sendmail.
-    my $hash = {
-        service          => $service,
-        srv_owners       => $srv_owners,
-        user_object_name => $user_object_name,
-        user_object_ip   => $user_object_ip,
-        users            => $users,
-        business_unit    => $business_unit
-    };
-    send_template_mail( $req, $session, $template, $hash );
-}
-
 sub service_users {
     my ( $req, $session ) = @_;
     my $users = get_users( $req, $session );
@@ -1518,8 +1465,8 @@ sub get_session_data {
     my ( $req, $session ) = @_;
     return {
         logged_in => $session->param('logged_in') ? JSON::true : JSON::false,
-        email => $session->param('email'),
-        owner => $session->param('owner'),
+        email     => $session->param('email'),
+        owner     => $session->param('owner'),
     };
 }
 ####################################################################

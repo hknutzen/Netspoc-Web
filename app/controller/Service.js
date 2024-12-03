@@ -153,10 +153,6 @@ Ext.define(
                 'servicerules': {
                     printrules: this.onPrintRules
                 },
-                'servicerules actioncolumn': {
-                    addobjecttorule: this.onAddObjectToRule,
-                    deleteobjectfromrule: this.onDeleteObjectFromRule
-                },
                 'serviceusers': {
                     select: this.onUserDetailsSelected
                 },
@@ -180,34 +176,6 @@ Ext.define(
                 },
                 'serviceview > grid button[iconCls="icon-map"]': {
                     click: this.onClickOverviewButton
-                },
-                'adduserwindow > form button[text="Auftrag per Mail senden"]': {
-                    click: this.onSendAddUserTaskAsMail
-                },
-                'adduserwindow > form textfield': {
-                    specialkey: this.onSpecialKey
-                },
-                'adduserwindow': {
-                    beforeshow: this.onAddUserWindowBeforeShow,
-                    show: this.onAddUserWindowShow
-                },
-                'deluserwindow': {
-                    afterrender: this.onAfterDelUserWindowRender
-                },
-                'deluserwindow > form button[text="Auftrag per Mail senden"]': {
-                    click: this.onSendDelUserTaskAsMail
-                },
-                'addtorulewindow': {
-                    show: this.onAddToRuleWindowShow
-                },
-                'addtorulewindow > form textfield': {
-                    specialkey: this.onSpecialKey
-                },
-                'addtorulewindow > form button[text="Auftrag per Mail senden"]': {
-                    click: this.onSendAddToRuleTaskAsMail
-                },
-                'delfromrulewindow > form button[text="Auftrag per Mail senden"]': {
-                    click: this.onSendDelFromRuleTaskAsMail
                 },
                 'searchwindow > panel button[toggleGroup="navGrp"]': {
                     click: this.onNavButtonClick
@@ -268,13 +236,6 @@ Ext.define(
                 // only show buttons for own services.
                 var grid = this.getRulesGrid();
                 var relation = this.getCurrentRelation();
-                var ac = grid.down('actioncolumn');
-                if (relation === 'owner' && appstate.isAdmin()) {
-                    ac.show();
-                }
-                else {
-                    ac.hide();
-                }
             },
             this
         );
@@ -305,7 +266,6 @@ Ext.define(
         var rules_grid = this.getRulesGrid();
         var rules_store = rules_grid.getStore();
         var rec = rules_store.getAt(rowIndex);
-        del_from_rule_window = Ext.create('PolicyWeb.view.window.DeleteFromRule');
         var controller = PolicyWeb.getApplication().getController('Service');
 
         del_from_rule_window.on(
@@ -354,35 +314,6 @@ Ext.define(
             }
         );
         del_from_rule_window.show();
-    },
-
-    onAddObjectToRule: function (view, rowIndex, colIndex, item, e,
-        record, row, action) {
-        add_to_rule_window = Ext.create('PolicyWeb.view.window.AddToRule');
-        var grid = add_to_rule_window.down('servicerules');
-        var store = grid.getStore();
-        store.on(
-            'load',
-            function () {
-                if (rowIndex > 0) {
-                    var count = store.getTotalCount();
-                    store.removeAt(0, rowIndex);
-                    store.removeAt(1, count - rowIndex);
-                }
-                var rec = store.getAt(0);
-                var controller = PolicyWeb.getApplication().getController('Service');
-                controller.disableUserRadios(add_to_rule_window, rec);
-            }
-        );
-        store.load(
-            {
-                params: {
-                    service: this.getSelectedServiceName()
-                }
-            }
-        );
-        add_to_rule_window.show();
-        grid.down('actioncolumn').hide();
     },
 
     disableUserRadios: function (window, rec) {
@@ -880,222 +811,6 @@ Ext.define(
         }
     },
 
-    onSendAddUserTaskAsMail: function () {
-        var store = this.getStore('SendNewUserTaskMail');
-        var service = this.getSelectedServiceName();
-        var panel = this.getAddUserFormPanel();
-        var form = panel.getForm();
-        if (form.isValid()) {
-
-            // get business unit from combo box
-            var bu_combo = panel.down('combo');
-            var business_unit = bu_combo.getRawValue() || 'Unbekannt';
-            var tfs = panel.query('textfield');
-            var user_object_ip = tfs[0].getValue();
-            var user_object_name = tfs[2].getValue();
-            var params = {
-                service: service,
-                user_object_name: user_object_name,
-                user_object_ip: user_object_ip,
-                business_unit: business_unit
-            };
-
-            // Further evaluate form data. Check for valid IP address.
-            var array = user_object_ip.split('/');
-            var ip = array[0];
-            var mask = array[1];
-            var rex = /\./;
-            var valid_mask = true;
-            var valid_ip = isIPv4Address(ip);
-            var num_mask;
-            var num_ip = ip2numeric(ip);
-            var msg;
-            var res_ip;
-            if (valid_ip) {
-                if (mask) {
-                    if (!rex.test(mask)) {
-                        if (mask < 1 || mask > 32) {
-                            valid_mask = false;
-                            msg = "CIDR Maske \"" + mask +
-                                "\" außerhalb des gültigen Bereichs: 0 <= Maske <= 32!";
-                        }
-                        else {
-                            // Valid CIDR mask, now check if it fits IP.
-                            mask = cidr2mask(mask);
-                            num_mask = ip2numeric(mask);
-                            res_ip = num_ip & num_mask;
-                            if ((new Uint32Array([res_ip]))[0] !== num_ip) {
-                                valid_mask = false;
-                                msg = "IP passt nicht zur Maske! Falls Maske richtig " +
-                                    "sollte die IP lauten: " + numeric2ip(res_ip);
-                            }
-                        }
-                    }
-                    else {
-                        if (isIPv4Address(mask)) {
-                            // mask is in dot notation
-                            num_mask = ip2numeric(mask);
-                            res_ip = num_ip & num_mask;
-                            if ((new Uint32Array([res_ip]))[0] !== num_ip) {
-                                valid_mask = false;
-                                msg = "IP passt nicht zur Maske! Falls Maske richtig " +
-                                    "sollte die IP lauten: " + numeric2ip(res_ip);
-                            }
-                        }
-                        else {
-                            valid_mask = false;
-                            msg = "Ungültige Maske: " + mask;
-                        }
-                    }
-                }
-            }
-            else {
-                msg = "Bei \"" + ip + "\" handelt es sich nicht um eine gültige IP-Adresse!";
-            }
-
-            if (valid_ip && valid_mask) {
-                store.load({ params: params });
-                add_user_window.close();
-            }
-            else {
-                Ext.MessageBox.alert('Netzmaske passt nicht zu IP', msg);
-            }
-        }
-    },
-
-    onSendDelUserTaskAsMail: function () {
-        var store = this.getStore('SendDeleteUserTaskMail');
-        var service = this.getSelectedServiceName();
-        var panel = this.getDelUserFormPanel();
-        var form = panel.getForm();
-        if (form.isValid()) {
-            var combos = panel.query('combo');
-            var value = combos[0].getValue();
-            var array = value.split("\t");
-            var user_object_ip = array[0];
-            var user_object_name = array[1];
-            var params = {
-                service: service,
-                user_object_name: user_object_name,
-                user_object_ip: user_object_ip
-            };
-            store.load({ params: params });
-            del_user_window.close();
-        }
-    },
-
-    onSendAddToRuleTaskAsMail: function () {
-        var panel = this.getAddToRuleFormPanel();
-        var form = panel.getForm();
-        var store, record, data;
-        if (form.isValid()) {
-            store = panel.down('grid').getStore();
-            record = store.getAt(0);
-            data = Ext.encode(
-                {
-                    action: record.get('action'),
-                    src: record.get('src'),
-                    dst: record.get('dst'),
-                    prt: record.get('prt')
-                }
-            );
-
-            var new_object = panel.query('textfield')[0].getValue();
-
-            Ext.Ajax.request(
-                {
-                    url: 'backend/send_add_to_rule_task_mail',
-                    method: 'POST',
-                    jsonData: data,
-                    params: {
-                        service: this.getSelectedServiceName(),
-                        history: appstate.getHistory(),
-                        active_owner: appstate.getOwner(),
-                        what: panel.down('radio').getGroupValue(),
-                        object: new_object
-                    },
-                    success: function (response) {
-                        add_to_rule_window.close();
-                    },
-                    failure: function (response) {
-                    }
-                }
-            );
-        }
-    },
-
-    onSendDelFromRuleTaskAsMail: function () {
-        var panel = this.getDelFromRuleFormPanel();
-        var form = panel.getForm();
-        var fieldset = panel.down('fieldset');
-        var title = fieldset.title;
-        var re = /Objekt aus Regel Nr\.(\d+)/;
-        var index = title.match(re)[1];
-        if (index === undefined) {
-            alert('Unable to determine index of rule');
-        }
-        if (form.isValid()) {
-            var delete_from = panel.down('radio').getGroupValue();
-            var combo = panel.down('combo');
-            if (combo.getStore().data.length > 1) {
-                var record = this.getRulesStore().getAt(index - 1);
-                var selected = combo.getValue();
-                var data = Ext.encode(
-                    {
-                        action: record.get('action'),
-                        src: record.get('src'),
-                        dst: record.get('dst'),
-                        prt: record.get('prt')
-                    }
-                );
-                Ext.Ajax.request(
-                    {
-                        url: 'backend/send_del_from_rule_task_mail',
-                        method: 'POST',
-                        jsonData: data,
-                        params: {
-                            service: this.getSelectedServiceName(),
-                            history: appstate.getHistory(),
-                            active_owner: appstate.getOwner(),
-                            object: selected,
-                            what: delete_from
-                        },
-                        success: function (response) {
-                            del_from_rule_window.close();
-                        },
-                        failure: function (response) {
-                        }
-                    }
-                );
-            }
-            else {
-                Ext.Msg.show(
-                    {
-                        title: 'Auftrag ungültig',
-                        msg: '"' + delete_from + '" hat nur ein Element, welches folglich nicht gelöscht werden kann!',
-                        buttons: Ext.Msg.OK,
-                        icon: Ext.Msg.ERROR
-                    }
-                );
-            }
-        }
-    },
-
-    onAfterDelUserWindowRender: function (window) {
-        var service = this.getSelectedServiceName();
-        var params = {
-            service: service
-        };
-        var combo = window.down('combo');
-        var store = combo.getStore();
-        store.on(
-            'beforeload',
-            function (store, operation, eOpts) {
-                operation.params = params;
-            }
-        );
-    },
-
     onServiceDetailsButtonClick: function (button, event, eOpts) {
         // We have two buttons: "Details zum Dienst"
         // and "Benutzer (User) des Dienstes".
@@ -1217,21 +932,6 @@ Ext.define(
         if (e.getKey() == e.ENTER) {
             button.fireEvent('click', button);
         }
-    },
-
-    onAddUserWindowBeforeShow: function (au_window) {
-        var service = this.getSelectedServiceName();
-        au_window.setTitle('Benutzer("User") hinzufügen für "' + service + '"');
-    },
-
-    onAddUserWindowShow: function (au_window) {
-        var tf = au_window.query('textfield:first');
-        tf[0].focus(true, 20);
-    },
-
-    onAddToRuleWindowShow: function (a2r_window) {
-        var tf = a2r_window.query('textfield:first');
-        tf[0].focus(true, 20);
     },
 
     onSearchWindowTabchange: function (tab_panel, new_card, old_card) {

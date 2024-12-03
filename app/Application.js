@@ -90,8 +90,6 @@ Ext.require([
     'PolicyWeb.store.DiffGetMail',
     'PolicyWeb.store.DiffTree',
     'PolicyWeb.store.OverviewOwnResources',
-    'PolicyWeb.store.SendNewUserTaskMail',
-    'PolicyWeb.store.SendDeleteUserTaskMail',
     'PolicyWeb.store.Supervisors',
     'PolicyWeb.store.SupervisorEmails',
     'PolicyWeb.store.Watchers',

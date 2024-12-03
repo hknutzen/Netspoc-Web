@@ -19,58 +19,38 @@ along with this program. If not, see <http://www.gnu.org/licenses/>.
 Ext.define(
     'PolicyWeb.view.panel.grid.Rules',
     {
-        extend      : 'PolicyWeb.view.panel.grid.Abstract',
-        alias       : 'widget.servicerules',
-        controllers : [ 'Service' ],
-        store       : 'Rules',
-        forceFit    : true,
-        flex        : 2,
-        border      : false,
-        columns     : [
+        extend: 'PolicyWeb.view.panel.grid.Abstract',
+        alias: 'widget.servicerules',
+        controllers: ['Service'],
+        store: 'Rules',
+        forceFit: true,
+        flex: 2,
+        border: false,
+        columns: [
             {
-                header    : 'Aktion',
-                dataIndex : 'action',
-                flex      : 2,
-                fixed     : true
+                header: 'Aktion',
+                dataIndex: 'action',
+                flex: 2,
+                fixed: true
             },
             {
-                header    : 'Quelle',
-                flex      : 5,
-                dataIndex : 'src'
+                header: 'Quelle',
+                flex: 5,
+                dataIndex: 'src'
             },
             {
-                header    : 'Ziel',
-                flex      : 5,
-                dataIndex : 'dst'
+                header: 'Ziel',
+                flex: 5,
+                dataIndex: 'dst'
             },
             {
-                header    : 'Protokoll',
-                flex      : 2,
-                dataIndex : 'prt'
+                header: 'Protokoll',
+                flex: 2,
+                dataIndex: 'prt'
             },
-            {
-                xtype : 'actioncolumn',
-                width : 36,
-                items : [
-                    {
-                        icon    : '/silk-icons/add.png',
-                        tooltip : 'Objekt zu Regel hinzufügen',
-                        handler: function(view, rowIndex, colIndex, item, e, record, row) {
-                            this.fireEvent('addobjecttorule', view, rowIndex, colIndex, item, e, record, row, 'add');
-                        }
-                    },
-                    {
-                        icon    : '/silk-icons/delete.png',
-                        tooltip : 'Objekt aus Regel entfernen',
-                        handler: function(view, rowIndex, colIndex, item, e, record, row) {
-                            this.fireEvent('deleteobjectfromrule', view, rowIndex, colIndex, item, e, record, row, 'delete');
-                        }
-                    }
-                ]
-            }
         ],
-        defaults : {
-            menuDisabled : true
+        defaults: {
+            menuDisabled: true
         }
     }
 );
