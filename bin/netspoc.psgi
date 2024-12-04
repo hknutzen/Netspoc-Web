@@ -1949,6 +1949,7 @@ my %path2sub = (
             anon          => 1,
             add_success   => 1,
             create_cookie => 1,
+            err_status    => 401,
         }
     ],
     login => [
