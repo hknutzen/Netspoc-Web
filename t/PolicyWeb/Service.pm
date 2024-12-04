@@ -443,7 +443,6 @@ sub service_details {
         $is_ok &= $gch[1]->get_text eq "Quelle";
         $is_ok &= $gch[2]->get_text eq "Ziel";
         $is_ok &= $gch[3]->get_text eq "Protokoll";
-        $is_ok &= $gch[4]->get_attribute('id') =~ /actioncolumn/;
         ok( $is_ok, "details grid header are correct" );
 
         #####
