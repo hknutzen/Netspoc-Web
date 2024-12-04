@@ -46,9 +46,7 @@ Ext.define(
     extend: 'Ext.app.Controller',
     views: ['panel.form.ServiceDetails'],
     models: ['Service', 'Overview'],
-    stores: ['Service', 'AllServices', 'Rules', 'Users',
-        'SendNewUserTaskMail'
-    ],
+    stores: ['Service', 'AllServices', 'Rules', 'Users'],
     refs: [
         {
             selector: 'mainview > panel',
