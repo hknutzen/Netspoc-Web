@@ -225,19 +225,6 @@ Ext.define(
             this
         );
 
-        var rulesstore = this.getRulesStore();
-        rulesstore.on('load',
-            function (rstore) {
-
-                // Only show buttons to change rule if user is admin
-                // and not watcher for current owner. And
-                // only show buttons for own services.
-                var grid = this.getRulesGrid();
-                var relation = this.getCurrentRelation();
-            },
-            this
-        );
-
         appstate.addListener(
             'changed',
             function () {
