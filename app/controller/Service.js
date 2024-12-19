@@ -242,15 +242,10 @@ Ext.define(
             'changed',
             function () {
                 if (appstate.getInitPhase()) { return; }
-                appstate.setAdmin(false);
-                this.onBeforeActivate();
+                this.loadServiceStoreWithParams();
             },
             this
         );
-    },
-
-    onBeforeActivate: function () {
-        this.loadServiceStoreWithParams();
     },
 
     onDeleteObjectFromRule: function (view, rowIndex, colIndex, item, e,

@@ -243,36 +243,6 @@ Ext.define(
 
         appstate.setInitPhase(false);
 
-        // Determine and remember if an admin or a watcher
-        // is logged in.
-        Ext.Ajax.request(
-            {
-                url: 'backend/admin_or_watcher',
-                //method   : 'POST',
-                params: {
-                    history: appstate.getHistory(),
-                    active_owner: appstate.getOwner()
-                },
-                success: function (response) {
-                    var obj = Ext.decode(response.responseText);
-                    if (obj.data === 'admin') {
-                        appstate.setAdmin(true);
-                    }
-                },
-                failure: function (response) {
-                    var msg = "Admin oder Watcher Status konnte nicht ermittelt werden. Bitte wenden Sie sich an die Administratoren von Policy-Web.";
-                    Ext.MessageBox.show(
-                        {
-                            title: 'Fehler',
-                            msg: msg,
-                            buttons: Ext.MessageBox.OK,
-                            icon: Ext.MessageBox.ERROR
-                        });
-                }
-            }
-        );
-
-
         // Set combo without loading the store.
         var ownercombo = this.getOwnerCombo();
         ownercombo.setValue(appstate.getOwner());
