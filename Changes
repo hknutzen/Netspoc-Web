@@ -1,5 +1,7 @@
 {{$NEXT}}
 
+1.023     2025-01-10 16:34:10+01:00 Europe/Berlin
+
  - Introduce a go backend server. Will migrate backend to this
    go server step by step.
 
