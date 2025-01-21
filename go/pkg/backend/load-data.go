@@ -252,7 +252,7 @@ func (c *cache) loadEmails(version, owner string) []emailEntry {
 func (c *cache) loadWatchers(version, owner string) []emailEntry {
 	entry := c.getOwnerEntry(version, owner)
 	if entry.watchers == nil {
-		c.readOwnerPart(version, owner, "emails", &entry.watchers)
+		c.readOwnerPart(version, owner, "watchers", &entry.watchers)
 	}
 	return entry.watchers
 }
@@ -260,7 +260,7 @@ func (c *cache) loadWatchers(version, owner string) []emailEntry {
 func (c *cache) loadExtendedBy(version, owner string) []string {
 	entry := c.getOwnerEntry(version, owner)
 	if entry.extendedBy == nil {
-		c.readOwnerPart(version, owner, "emails", &entry.extendedBy)
+		c.readOwnerPart(version, owner, "extended_by", &entry.extendedBy)
 	}
 	return entry.extendedBy
 }
