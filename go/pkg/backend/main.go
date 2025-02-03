@@ -34,6 +34,7 @@ func MainHandler() http.Handler {
 	mux.HandleFunc("/get_admins", s.getAdmins)
 	mux.HandleFunc("/get_watchers", s.getWatchers)
 	mux.HandleFunc("/get_admins_watchers", s.getAdminsWatchers)
+	mux.HandleFunc("/get_rules", s.getRules)
 	mux.Handle("/", httputil.NewSingleHostReverseProxy(perlServer))
 	return handlers.RecoveryHandler( /*handlers.PrintRecoveryStack(true)*/ )(mux)
 }
