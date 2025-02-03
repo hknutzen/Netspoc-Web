@@ -31,6 +31,7 @@ func MainHandler() http.Handler {
 	}
 	mux := http.NewServeMux()
 	mux.HandleFunc("/service_list", s.serviceList)
+	mux.HandleFunc("/get_rules", s.getRules)
 	mux.Handle("/", httputil.NewSingleHostReverseProxy(perlServer))
 	return handlers.RecoveryHandler( /*handlers.PrintRecoveryStack(true)*/ )(mux)
 }
