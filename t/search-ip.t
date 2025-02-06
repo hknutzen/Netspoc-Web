@@ -161,27 +161,27 @@ service:NTP = {
         prt = udp 123;
 }
 
---ipv6
+
 area:all-ipv6 = { owner = x; anchor = network:n3; }
 any:n3 = { link = network:n3; }
 any:n4 = { link = network:n4; }
 network:n3 = {
- ip = 1000::abcd:0003:0/112;
- host:h3 = { ip = 1000::abcd:0003:0003; }
- host:range3 = { range = 1000::abcd:0003:0002-1000::abcd:0003:0009; }
+ ip6 = 1000::abcd:0003:0/112;
+ host:h3 = { ip6 = 1000::abcd:0003:0003; }
+ host:range3 = { range6 = 1000::abcd:0003:0002-1000::abcd:0003:0009; }
 }
 network:n4 = {
- ip = 1000::abcd:0004:0/112;
- host:h4= { ip = 1000::abcd:0004:0004; }
+ ip6 = 1000::abcd:0004:0/112;
+ host:h4= { ip6 = 1000::abcd:0004:0004; }
 }
-network:n5 = { ip = 1000::abcd:0005:0/112; }
+network:n5 = { ip6 = 1000::abcd:0005:0/112; }
 
 router:r1 = {
  managed;
  model = ASA;
- interface:n3 = {ip = 1000::abcd:0003:0001; hardware = n3; }
- interface:n4 = {ip = 1000::abcd:0004:0001; hardware = n4; }
- interface:n5 = {ip = 1000::abcd:0005:0001; hardware = n5; }
+ interface:n3 = {ip6 = 1000::abcd:0003:0001; hardware = n3; }
+ interface:n4 = {ip6 = 1000::abcd:0004:0001; hardware = n4; }
+ interface:n5 = {ip6 = 1000::abcd:0005:0001; hardware = n5; }
 }
 service:V6_net_net = {
  user = network:n3;
