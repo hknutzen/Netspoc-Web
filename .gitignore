@@ -5,3 +5,4 @@ policyweb-*
 *~
 go/cmd/*/*
 !go/cmd/*/*.go
+!go/cmd/*/testdata
