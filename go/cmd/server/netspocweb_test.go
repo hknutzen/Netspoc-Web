@@ -1,4 +1,4 @@
-package main
+package backend
 
 import (
 	"net/http"
@@ -17,8 +17,8 @@ import (
 type descr struct {
 	Title    string
 	Netspoc  string
-	Out      string
 	URL      string
+	Job      string
 	Response string
 	Status   int
 }
@@ -33,7 +33,7 @@ func TestJobCheck(t *testing.T) {
 			}
 			for _, d := range l {
 				t.Run(d.Title, func(t *testing.T) {
-					testHandleFunc(t, d, "/api-job-check", apiJobCheckHandler)
+					testHandleFunc(t, d, "/get_rules", mux)
 				})
 			}
 		})
@@ -46,17 +46,9 @@ func testHandleFunc(t *testing.T, d descr,
 	workDir := t.TempDir()
 	os.Chdir(workDir)
 	os.Setenv("HOME", workDir)
-	setEnvPath("KMSPOC", "netspoc")
 	testtxt.PrepareInDir(t, "netspoc", "INPUT", d.Netspoc)
 	runCmd(t, "export-netspoc -q netspoc export")
 	os.WriteFile("export/POLICY", []byte("# p1 #\n"), 0444)
-	setEnvPath("KMPOLWEB", "export")
-	os.Mkdir("kmdata", 0777)
-	setEnvPath("KMDATA", "kmdata")
-	os.Mkdir("kmconfig", 0777)
-	setEnvPath("KMCONFIG", "kmconfig")
-	testtxt.PrepareInDir(t, "kmconfig", "x", d.KMConfig)
-	runCmd(t, "kmprep")
 	req := httptest.NewRequest(http.MethodPost, url, strings.NewReader(d.Job))
 	resp := httptest.NewRecorder()
 	handler(resp, req)

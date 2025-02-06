@@ -45,6 +45,29 @@ service:s5 = {
 =END=
 
 ############################################################
+
+=TITLE=GO-TEST Display prop ip
+=NETSPOC=
+[[topo]]
+=JOB=
+{
+  "params": {
+    service => "s1",
+    active_owner => "o1",
+    display_property => "ip",
+  }
+}
+=RESPONSE=
+{
+    action   => 'permit',
+    dst      => ['10.1.1.0/24'],
+    has_user => 'src',
+    prt      => ['tcp 80'],
+    src      => []
+}
+=STATUS=200
+
+############################################################
 =TITLE=Ignore job with unknown method
 =NETSPOC=
 [[topo]]
