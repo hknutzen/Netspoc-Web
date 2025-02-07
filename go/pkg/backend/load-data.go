@@ -6,6 +6,7 @@ import (
 	"os"
 	"path/filepath"
 	"slices"
+	"sync"
 	"time"
 )
 
@@ -29,16 +30,21 @@ along with this program. If not, see <http://www.gnu.org/licenses/>.
 */
 
 type cache struct {
+	sync.Mutex
 	maxVersions int
 	netspocDir  string
 	entries     map[string]*netspocData
 }
 type netspocData struct {
-	accessed time.Time
-	email    map[string][]string // Map email address to selectable owners.
-	objects  map[string]*object
-	services map[string]*service
-	owners   map[string]*ownerData
+	accessed   time.Time
+	email      map[string][]string // Map email address to selectable owners.
+	emailMu    sync.Mutex
+	objects    map[string]*object
+	objectsMu  sync.Mutex
+	services   map[string]*service
+	servicesMu sync.Mutex
+	owners     map[string]*ownerData
+	ownersMu   sync.Mutex
 }
 type object struct {
 	name       string
@@ -65,15 +71,22 @@ type rule struct {
 	Prt     []string
 }
 type ownerData struct {
-	assets *assets
+	assets   *assets
+	assetsMu sync.Mutex
 	// Active NAT tags of this owner.
-	natSet map[string]bool
+	natSet   map[string]bool
+	natSetMu sync.Mutex
 	// Mapping from service to service users of this owner.
-	users        map[string][]string
-	serviceLists *serviceLists
-	emails       []emailEntry
-	watchers     []emailEntry
-	extendedBy   []string
+	users          map[string][]string
+	usersMu        sync.Mutex
+	serviceLists   *serviceLists
+	serviceListsMu sync.Mutex
+	emails         []emailEntry
+	emailsMu       sync.Mutex
+	watchers       []emailEntry
+	watchersMu     sync.Mutex
+	extendedBy     []string
+	extendedByMu   sync.Mutex
 }
 type assets struct {
 	networkList []string
@@ -119,10 +132,14 @@ func (c *cache) clean() {
 }
 
 func (c *cache) getCacheEntry(version string) *netspocData {
+	c.Lock()
+	defer c.Unlock()
 	entry, found := c.entries[version]
 	if !found {
 		c.clean()
-		entry = &netspocData{}
+		entry = &netspocData{
+			owners: make(map[string]*ownerData),
+		}
 		c.entries[version] = entry
 	}
 	// Set last access time for data of this version.
@@ -132,11 +149,9 @@ func (c *cache) getCacheEntry(version string) *netspocData {
 
 func (c *cache) getOwnerEntry(version, owner string) *ownerData {
 	entry := c.getCacheEntry(version)
+	entry.ownersMu.Lock()
+	defer entry.ownersMu.Unlock()
 	m := entry.owners
-	if m == nil {
-		m = make(map[string]*ownerData)
-		entry.owners = m
-	}
 	oEntry := m[owner]
 	if oEntry == nil {
 		oEntry = &ownerData{}
@@ -153,6 +168,8 @@ func (c *cache) loadEmail2Owners() map[string][]string {
 	}
 	policy := filepath.Base(dir)
 	entry := c.getCacheEntry(policy)
+	entry.emailMu.Lock()
+	defer entry.emailMu.Unlock()
 	if entry.email == nil {
 		c.readPart(policy, "email", &entry.email)
 	}
@@ -161,6 +178,8 @@ func (c *cache) loadEmail2Owners() map[string][]string {
 
 func (c *cache) loadObjects(version string) map[string]*object {
 	entry := c.getCacheEntry(version)
+	entry.objectsMu.Lock()
+	defer entry.objectsMu.Unlock()
 	if entry.objects == nil {
 		c.readPart(version, "objects", &entry.objects)
 		// Fill attribute 'name' of each object.
@@ -173,6 +192,8 @@ func (c *cache) loadObjects(version string) map[string]*object {
 
 func (c *cache) loadServices(version string) map[string]*service {
 	entry := c.getCacheEntry(version)
+	entry.servicesMu.Lock()
+	defer entry.servicesMu.Unlock()
 	if entry.services == nil {
 		c.readPart(version, "services", &entry.services)
 	}
@@ -181,6 +202,8 @@ func (c *cache) loadServices(version string) map[string]*service {
 
 func (c *cache) loadAssets(version, owner string) *assets {
 	entry := c.getOwnerEntry(version, owner)
+	entry.assetsMu.Lock()
+	defer entry.assetsMu.Unlock()
 	if entry.assets == nil {
 		var origAssets struct {
 			Anys map[string]struct {
@@ -201,6 +224,8 @@ func (c *cache) loadAssets(version, owner string) *assets {
 
 func (c *cache) loadNATSet(version, owner string) map[string]bool {
 	entry := c.getOwnerEntry(version, owner)
+	entry.natSetMu.Lock()
+	defer entry.natSetMu.Unlock()
 	if entry.natSet == nil {
 		var origNAT []string
 		c.readOwnerPart(version, owner, "nat_set", &origNAT)
@@ -216,6 +241,8 @@ func (c *cache) loadNATSet(version, owner string) map[string]bool {
 
 func (c *cache) loadServiceLists(version, owner string) *serviceLists {
 	entry := c.getOwnerEntry(version, owner)
+	entry.serviceListsMu.Lock()
+	defer entry.serviceListsMu.Unlock()
 	if entry.serviceLists == nil {
 		c.readOwnerPart(version, owner, "service_lists", &entry.serviceLists)
 		// Add map with all accessible service names.
@@ -235,6 +262,8 @@ func (c *cache) loadServiceLists(version, owner string) *serviceLists {
 
 func (c *cache) loadUsers(version, owner string) map[string][]string {
 	entry := c.getOwnerEntry(version, owner)
+	entry.usersMu.Lock()
+	defer entry.usersMu.Unlock()
 	if entry.users == nil {
 		c.readOwnerPart(version, owner, "users", &entry.users)
 	}
@@ -243,6 +272,8 @@ func (c *cache) loadUsers(version, owner string) map[string][]string {
 
 func (c *cache) loadEmails(version, owner string) []emailEntry {
 	entry := c.getOwnerEntry(version, owner)
+	entry.emailsMu.Lock()
+	defer entry.emailsMu.Unlock()
 	if entry.emails == nil {
 		c.readOwnerPart(version, owner, "emails", &entry.emails)
 	}
@@ -251,6 +282,8 @@ func (c *cache) loadEmails(version, owner string) []emailEntry {
 
 func (c *cache) loadWatchers(version, owner string) []emailEntry {
 	entry := c.getOwnerEntry(version, owner)
+	entry.watchersMu.Lock()
+	defer entry.watchersMu.Unlock()
 	if entry.watchers == nil {
 		c.readOwnerPart(version, owner, "watchers", &entry.watchers)
 	}
@@ -259,6 +292,8 @@ func (c *cache) loadWatchers(version, owner string) []emailEntry {
 
 func (c *cache) loadExtendedBy(version, owner string) []string {
 	entry := c.getOwnerEntry(version, owner)
+	entry.extendedByMu.Lock()
+	defer entry.extendedByMu.Unlock()
 	if entry.extendedBy == nil {
 		c.readOwnerPart(version, owner, "extended_by", &entry.extendedBy)
 	}
