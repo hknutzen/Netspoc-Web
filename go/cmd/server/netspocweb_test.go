@@ -1,4 +1,4 @@
-package backend
+package main
 
 import (
 	"net/http"
@@ -23,7 +23,7 @@ type descr struct {
 	Status   int
 }
 
-func TestJobCheck(t *testing.T) {
+func TestNetspocWeb(t *testing.T) {
 	dataFiles, _ := filepath.Glob("testdata/*.t")
 	for _, file := range dataFiles {
 		t.Run(path.Base(file), func(t *testing.T) {
