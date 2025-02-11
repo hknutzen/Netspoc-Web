@@ -28,11 +28,13 @@ func getNatObjList(s *state, objNames []string, owner string, history string) []
 	for _, objName := range objNames {
 		obj := getNatObj(s, objName, natSet, history)
 		objMap := jsonMap{
-			"name": obj,
+			"name":  objName,
+			"ip":    obj.IP,
+			"owner": obj.Owner,
+			"nat":   obj.NAT,
 		}
 		result = append(result, objMap)
 	}
-	//fmt.Fprintf(os.Stderr, "objList=%v\n", result)
 	return result
 }
 
