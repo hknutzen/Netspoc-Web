@@ -30,7 +30,7 @@ func getSession(r *http.Request) *session {
 		panic(err)
 	}
 	defer resp.Body.Close()
-	body, err := io.ReadAll(resp.Body)
+	body, _ := io.ReadAll(resp.Body)
 	var s session
 	if err := json.Unmarshal(body, &s); err != nil {
 		abort("while decoding result of 'get_session_data': %v\n%s", err, body)

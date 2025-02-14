@@ -66,5 +66,3 @@ service:s5 = {
     src      => []
 }
 =STATUS=200
-
-#test_run( $title, 'get_rules', $opt, $out, \&extract_records );

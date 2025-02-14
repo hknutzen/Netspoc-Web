@@ -228,12 +228,10 @@ func name2IP(s *state, version string, objName string, natSet map[string]bool) s
 		abort("Unknown object '%s'", objName)
 	}
 	objNat := obj.NAT
-	if objNat == nil {
-		for tag := range objNat {
-			if natSet[tag] {
-				obj.IP = objNat[tag]
-				return obj.IP
-			}
+	for tag := range objNat {
+		if natSet[tag] {
+			obj.IP = objNat[tag]
+			return obj.IP
 		}
 	}
 	return obj.IP
