@@ -46,23 +46,18 @@ service:s5 = {
 
 ############################################################
 
-=TITLE=GO-TEST Display prop ip
+=TITLE=Display prop ip
 =NETSPOC=
 [[topo]]
-=JOB=
-{
-  "params": {
-    service => "s1",
-    active_owner => "o1",
-    display_property => "ip",
-  }
-}
+=PARAMS=service=s1&active_owner=o1&history=p1&display_property=ip
 =RESPONSE=
-{
-    action   => 'permit',
-    dst      => ['10.1.1.0/24'],
-    has_user => 'src',
-    prt      => ['tcp 80'],
-    src      => []
-}
+[
+  {
+      "action"   : "permit",
+      "dst"      : ["10.1.1.0/24"],
+      "has_user" : "src",
+      "prt"      : ["tcp 80"],
+      "src"      : []
+  }
+]
 =STATUS=200

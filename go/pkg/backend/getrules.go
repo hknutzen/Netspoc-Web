@@ -13,6 +13,9 @@ func (s *state) getRules(w http.ResponseWriter, r *http.Request) {
 	history := r.FormValue("history")
 	owner := r.FormValue("active_owner")
 	service := r.FormValue("service")
+	if history == "" {
+		abort("Missing parameter history")
+	}
 	if service == "" {
 		abort("Missing parameter service")
 	}

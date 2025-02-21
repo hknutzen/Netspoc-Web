@@ -1,7 +1,8 @@
 package testbackend
 
 import (
-	"fmt"
+	"bytes"
+	"encoding/json"
 	"io"
 	"net/http"
 	"net/http/httptest"
@@ -20,10 +21,12 @@ type descr struct {
 	Title    string
 	Netspoc  string
 	URL      string
-	Job      string
+	Params   string
 	Response string
 	Status   int
 }
+
+type jsonMap map[string]any
 
 func TestNetspocWeb(t *testing.T) {
 
@@ -32,21 +35,19 @@ func TestNetspocWeb(t *testing.T) {
 	workDir := t.TempDir()
 	os.Setenv("HOME", workDir)
 
-	// Mux has to be created with original home directory
+	// Write policyweb.conf file in new HOME directory.
+	// This has to be done before GetMux() is called, so that
+	// the config file is read by the Perl test-server that is
+	// started in GetMux().
+	PrepareConfig(workDir)
+
+	// Mux has to be created with original home directory.
 	// The new temp directory is saved as HOME env var.
 	mux, perlCmd, perlStdin := GetMux(originalHome)
 
 	// Read test files before changing work directory.
 	dataFiles, _ := filepath.Glob("testdata/*.t")
 
-	// Write policyweb.conf file in new HOME directory.
-	PrepareConfig(workDir)
-
-	// Perform login
-	loginUrl := "/backend/login?email=guest&app=../app.html"
-	resp := httptest.NewRecorder()
-	mux.ServeHTTP(resp, httptest.NewRequest(http.MethodPost, loginUrl, nil))
-	fmt.Fprintf(os.Stderr, "Login : %v\n", resp)
 	// Run tests
 	for _, file := range dataFiles {
 		t.Run(path.Base(file), func(t *testing.T) {
@@ -73,44 +74,60 @@ func testHandleFunc(t *testing.T, d descr,
 	home := os.Getenv("HOME")
 	netspocDir := filepath.Join(home, "netspoc")
 	exportDir := filepath.Join(home, "export")
-	fmt.Fprint(os.Stderr, "netspocDir : ", netspocDir, "\n")
-	fmt.Fprint(os.Stderr, "exportDir : ", exportDir, "\n")
+
 	// Do export-netspoc
 	testtxt.PrepareInDir(t, netspocDir, "INPUT", d.Netspoc)
-	//system("echo '# $policy #' > $export_dir/$policy/POLICY") == 0 or die $!;
-	//system("cd $export_dir; rm -f current; ln -s $policy current") == 0
 	runCmd(t, "export-netspoc -q "+netspocDir+" "+exportDir+"/"+policy)
 	os.WriteFile(exportDir+"/"+policy+"/POLICY", []byte("# "+policy+" #\n"), 0444)
 	os.Remove(exportDir + "/current")
 	os.Symlink(policy, exportDir+"/current")
-	printFile(exportDir + "/" + policy + "/email")
-	printFile(home + "/policyweb.conf")
 
-	// Call given URL and handle response
-	req := httptest.NewRequest(http.MethodPost, url, strings.NewReader(d.Job))
+	// Perform login
+	loginUrl := "/backend/login?email=guest&app=../app.html"
+	req := httptest.NewRequest(http.MethodPost, loginUrl, strings.NewReader(""))
 	resp := httptest.NewRecorder()
 	handler(resp, req)
+	cookies := resp.Result().Cookies()
+
+	// Call given URL and handle response
+	//
+	req = httptest.NewRequest(http.MethodPost, url+"?"+d.Params, nil)
+	// Add cookies of login request.
+	for _, c := range cookies {
+		req.AddCookie(c)
+	}
+	resp = httptest.NewRecorder()
+	handler(resp, req)
+	body, _ := io.ReadAll(resp.Body)
+	type jsonData struct {
+		Success    bool
+		TotalCount int
+		Records    json.RawMessage
+	}
+	var data jsonData
+	json.Unmarshal(body, &data)
 	if resp.Code != d.Status {
 		t.Errorf("Want status '%d', got '%d'", d.Status, resp.Code)
 	}
-	if diff := cmp.Diff(d.Response, resp.Body.String()); diff != "" {
-		t.Error(diff)
-	}
+	jsonEq(t, d.Response, data.Records)
 }
 
-func printFile(fileStr string) {
-	file, err := os.Open(fileStr)
-	if err != nil {
-		panic(err)
-	}
-	defer func() {
-		if err = file.Close(); err != nil {
-			panic(err)
+func jsonEq(t *testing.T, expected string, got []byte) {
+	normalize := func(d []byte) string {
+		var v interface{}
+		if err := json.Unmarshal(d, &v); err != nil {
+			t.Fatal(err)
 		}
-	}()
-
-	b, err := io.ReadAll(file)
-	fmt.Fprintf(os.Stderr, "File : %s\n", b)
+		var b bytes.Buffer
+		enc := json.NewEncoder(&b)
+		enc.SetEscapeHTML(false)
+		enc.SetIndent("", " ")
+		enc.Encode(v)
+		return b.String()
+	}
+	if d := cmp.Diff(normalize([]byte(expected)), normalize(got)); d != "" {
+		t.Error(d)
+	}
 }
 
 func runCmd(t *testing.T, line string) {
@@ -119,9 +136,4 @@ func runCmd(t *testing.T, line string) {
 	if out, err := cmd.CombinedOutput(); err != nil {
 		t.Fatalf("Command failed: %q: %v", line, string(out))
 	}
-}
-
-func setEnvPath(name, dir string) {
-	abs, _ := filepath.Abs(dir)
-	os.Setenv(name, abs)
 }

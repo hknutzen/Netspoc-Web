@@ -6,6 +6,7 @@ import (
 	"net/http/httptest"
 	"net/url"
 	"os"
+	"strings"
 
 	"github.com/hknutzen/Netspoc-Web/go/pkg/testbackend"
 )
@@ -13,9 +14,8 @@ import (
 // Start Go test server on arbitrary port.
 func main() {
 
-	home := os.Getenv("HOME")
-	fmt.Fprintf(os.Stderr, "HOME: %s\n", home)
-	mux, perlCmd, perlStdin := testbackend.GetMux(home)
+	homeDir := strings.TrimSuffix(os.Getenv("NETSPOC_WEB_SRC_DIR"), "Netspoc-Web")
+	mux, perlCmd, perlStdin := testbackend.GetMux(homeDir)
 	ts := httptest.NewServer(mux)
 
 	// Print port number to STDOUT.

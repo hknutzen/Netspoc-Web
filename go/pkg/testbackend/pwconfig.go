@@ -13,7 +13,7 @@ func PrepareConfig(homeDir string) {
 "netspoc_data" : "%s",
 "user_dir" : "%s",
 "session_dir" : "%s",
-"noreply_address" : "noreply",
+"noreply_address" : "noreply"
 }
 `, filepath.Join(homeDir, "export"), filepath.Join(homeDir, "users"), filepath.Join(homeDir, "sessions")))
 	fname := filepath.Join(homeDir, "policyweb.conf")
