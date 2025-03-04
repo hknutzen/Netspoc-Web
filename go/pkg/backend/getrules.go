@@ -189,7 +189,7 @@ func adaptNameIPUser(s *state, r *http.Request, rules []*rule, userNames []strin
 			for _, name := range names {
 				res = append(res, name2IP(s, history, name, natSet))
 			}
-			return res
+			return slices.Compact(res)
 		} else if dispProp == "ip_and_name" {
 			res := jsonMap{}
 			for _, name := range names {

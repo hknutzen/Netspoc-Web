@@ -26,8 +26,6 @@ type descr struct {
 	Status   int
 }
 
-type jsonMap map[string]any
-
 func TestNetspocWeb(t *testing.T) {
 
 	// We need the original HOME to find the bin-directory.

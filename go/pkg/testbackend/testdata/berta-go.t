@@ -61,3 +61,140 @@ service:s5 = {
   }
 ]
 =STATUS=200
+
+############################################################
+
+=TITLE=Display prop "ip", expand user, remove duplicates
+
+=NETSPOC=
+[[topo]]
+=PARAMS=service=s5&active_owner=o1&history=p1&display_property=ip&expand_users=1
+=RESPONSE=
+[
+    {
+        "action"   : "permit",
+        "src"      : ["10.1.0.0/16"],
+        "dst"      : ["10.4.0.0/16"],
+        "has_user" : "src",
+        "prt"      : ["tcp 80"]
+    }
+]
+=STATUS=200
+
+############################################################
+=TITLE=Display prop "name"
+
+=NETSPOC=
+[[topo]]
+=PARAMS=service=s2&active_owner=o1&history=p1&display_property=name
+=RESPONSE=
+[
+    {
+        "action"   : "permit",
+        "src"      : ["network:n2"],
+        "has_user" : "dst",
+        "prt"      : ["tcp 80"],
+        "dst"      : []
+    }
+]
+=STATUS=200
+
+############################################################
+
+=TITLE=Display prop "ip_and_name", has_user => dst
+
+=NETSPOC=
+[[topo]]
+=PARAMS=service=s3&active_owner=o1&history=p1&display_property=ip_and_name
+=RESPONSE=
+[
+   {
+     "action" : "permit",
+     "src" : [
+         {
+            "ip"   : "10.1.2.0/24",
+            "name" : "network:n2"
+         },
+         {
+            "ip"   : "10.1.3.0/24",
+            "name" : "network:n3"
+         }
+     ],
+     "has_user" : "dst",
+     "prt" : [
+        "tcp 80"
+     ],
+     "dst" : []
+   }
+]
+=STATUS=200
+
+############################################################
+
+=TITLE=Display prop "ip_and_name", has_user => src
+
+=NETSPOC=
+[[topo]]
+=PARAMS=service=s4&active_owner=o1&history=p1&display_property=ip_and_name
+=RESPONSE=
+[
+   {
+     "action" : "permit",
+     "dst" : [
+         {
+             "ip" : "10.1.2.0/24",
+             "name" : "network:n2"
+         },
+         {
+             "ip" : "10.1.3.0/24",
+             "name" : "network:n3"
+         }
+     ],
+     "has_user" : "src",
+     "prt" : [
+         "tcp 80"
+         ],
+     "src" : []
+   }
+]
+=STATUS=200
+
+############################################################
+
+
+=TITLE=Display prop "ip_and_name" with "expand_users"
+
+=NETSPOC=
+[[topo]]
+=PARAMS=service=s5&active_owner=o1&history=p1&display_property=ip_and_name&expand_users=1
+=RESPONSE=
+[
+    {
+      "action" : "permit",
+      "src" : [
+          {
+              "ip"   : "10.1.0.0/16",
+              "name" : "any:[ip=10.1.0.0/16 & network:n1]"
+          },
+          {
+              "ip"   : "10.1.0.0/16",
+              "name" : "any:[ip=10.1.0.0/16 & network:n2]"
+          }
+      ],
+      "prt" : [
+          "tcp 80"
+      ],
+      "dst" : [
+          {
+            "ip"   : "10.4.0.0/16",
+            "name" : "any:[ip=10.4.0.0/16 & network:n3]"
+          },
+          {
+            "ip"   : "10.4.0.0/16",
+            "name" : "any:[ip=10.4.0.0/16 & network:n4]"
+          }
+      ],
+      "has_user" : "src"
+    }
+]
+=STATUS=200
