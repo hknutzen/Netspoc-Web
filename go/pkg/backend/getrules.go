@@ -191,12 +191,14 @@ func adaptNameIPUser(s *state, r *http.Request, rules []*rule, userNames []strin
 			}
 			return slices.Compact(res)
 		} else if dispProp == "ip_and_name" {
-			res := jsonMap{}
+			var result []map[string]string
 			for _, name := range names {
-				res["name"] = name
-				res["ip"] = name2IP(s, history, name, natSet)
+				m := make(map[string]string)
+				m["name"] = name
+				m["ip"] = name2IP(s, history, name, natSet)
+				result = append(result, m)
 			}
-			return res
+			return result
 		} else {
 			return names
 		}
