@@ -55,7 +55,7 @@ func TestNetspocWeb(t *testing.T) {
 			}
 			for _, d := range l {
 				t.Run(d.Title, func(t *testing.T) {
-					testHandleFunc(t, d, "/backend/get_rules", mux.ServeHTTP)
+					testHandleFunc(t, d, "/backend/"+d.URL, mux.ServeHTTP)
 				})
 			}
 		})

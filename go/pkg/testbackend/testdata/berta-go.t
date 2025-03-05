@@ -49,6 +49,7 @@ service:s5 = {
 =TITLE=Display prop ip
 =NETSPOC=
 [[topo]]
+=URL=get_rules
 =PARAMS=service=s1&active_owner=o1&history=p1&display_property=ip
 =RESPONSE=
 [
@@ -68,6 +69,7 @@ service:s5 = {
 
 =NETSPOC=
 [[topo]]
+=URL=get_rules
 =PARAMS=service=s5&active_owner=o1&history=p1&display_property=ip&expand_users=1
 =RESPONSE=
 [
@@ -86,6 +88,7 @@ service:s5 = {
 
 =NETSPOC=
 [[topo]]
+=URL=get_rules
 =PARAMS=service=s2&active_owner=o1&history=p1&display_property=name
 =RESPONSE=
 [
@@ -105,6 +108,7 @@ service:s5 = {
 
 =NETSPOC=
 [[topo]]
+=URL=get_rules
 =PARAMS=service=s3&active_owner=o1&history=p1&display_property=ip_and_name
 =RESPONSE=
 [
@@ -135,6 +139,7 @@ service:s5 = {
 
 =NETSPOC=
 [[topo]]
+=URL=get_rules
 =PARAMS=service=s4&active_owner=o1&history=p1&display_property=ip_and_name
 =RESPONSE=
 [
@@ -166,6 +171,7 @@ service:s5 = {
 
 =NETSPOC=
 [[topo]]
+=URL=get_rules
 =PARAMS=service=s5&active_owner=o1&history=p1&display_property=ip_and_name&expand_users=1
 =RESPONSE=
 [
