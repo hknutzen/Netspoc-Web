@@ -1,5 +1,5 @@
 /*
-(C) 2023 by Daniel Brunkhorst <daniel.brunkhorst@posteo.de>
+(C) 2025 by Daniel Brunkhorst <daniel.brunkhorst@posteo.de>
             Heinz Knutzen     <heinz.knutzen@gmail.com>
 
 https://github.com/hknutzen/Netspoc-Web
@@ -15,7 +15,6 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program. If not, see <http://www.gnu.org/licenses/>.
 */
-
 
 // bold_user is defined in common.js, since it is used in
 // Rule.js, too (follow DRY principle).
@@ -39,10 +38,10 @@ Ext.define(
                 }
             },
             {
-                name: 'proto',
-                mapping: function (node) {
-                    return node.proto.join('<br>');
-                }
+                name: 'prt',
+            },
+            {
+                name: 'proto'
             }
         ]
     }
