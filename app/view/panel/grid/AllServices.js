@@ -1,5 +1,5 @@
 /*
-(C) 2014 by Daniel Brunkhorst <daniel.brunkhorst@web.de>
+(C) 2025 by Daniel Brunkhorst <daniel.brunkhorst@posteo.de>
             Heinz Knutzen     <heinz.knutzen@gmail.com>
 
 https://github.com/hknutzen/Netspoc-Web
@@ -16,40 +16,49 @@ You should have received a copy of the GNU General Public License
 along with this program. If not, see <http://www.gnu.org/licenses/>.
 */
 
+function prtOrProto(value, meta, record) {
+    var protoData = record.get('proto') || [];
+    var prtData = record.get('prt') || [];
+    var allData = protoData.concat(prtData);
+    return allData.join('<br>');
+};
+
 Ext.define(
     'PolicyWeb.view.panel.grid.AllServices',
     {
-        extend      : 'PolicyWeb.view.panel.grid.Abstract',
-        alias       : 'widget.allservices',
-        controllers : [ 'Service' ],
-        store       : 'AllServices',
-        forceFit    : true,
-        border      : false,
-        features    : [
+        extend: 'PolicyWeb.view.panel.grid.Abstract',
+        alias: 'widget.allservices',
+        controllers: ['Service'],
+        store: 'AllServices',
+        forceFit: true,
+        border: false,
+        features: [
             {
-                groupHeaderTpl    : 'Dienst: {name} ({[values.children.length]} Regel{[(values.children.length) > 1 ? "n" : ""]})',
-                ftype             : 'grouping',
-                hideGroupedHeader : true
+                groupHeaderTpl: 'Dienst: {name} ({[values.children.length]} Regel{[(values.children.length) > 1 ? "n" : ""]})',
+                ftype: 'grouping',
+                hideGroupedHeader: true
             }
         ],
-        columns     : {
-            items : [
-                { text            : 'Dienstname',
-                  dataIndex       : 'service'
+        columns: {
+            items: [
+                {
+                    text: 'Dienstname',
+                    dataIndex: 'service'
                 },
-                { text : 'Aktion',     dataIndex : 'action', flex : 1 },
-                { text : 'Quelle',     dataIndex : 'src'     },
-                { text : 'Ziel',       dataIndex : 'dst'     },
-                { text : 'Protokoll',  dataIndex : 'proto'   }
+                { text: 'Aktion', dataIndex: 'action', flex: 1 },
+                { text: 'Quelle', dataIndex: 'src' },
+                { text: 'Ziel', dataIndex: 'dst' },
+                { text: 'Protokoll', renderer: prtOrProto }
             ],
-            defaults : {
-                flex         : 2,
-                menuDisabled : true
+            defaults: {
+                flex: 2,
+                menuDisabled: true
             }
         },
-        tbar : [
-            { xtype : 'printbutton' }
+        tbar: [
+            { xtype: 'printbutton' }
         ]
     }
 );
+
 
