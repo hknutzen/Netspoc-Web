@@ -64,11 +64,12 @@ type service struct {
 	Rules []*rule
 }
 type rule struct {
-	HasUser string `json:"has_user"`
-	Action  string
-	Src     []string
-	Dst     []string
-	Prt     []string
+	Service string   `json:"service,omitempty"` // Needed for grouping in frontend.
+	HasUser string   `json:"has_user"`
+	Action  string   `json:"action"`
+	Src     []string `json:"src"`
+	Dst     []string `json:"dst"`
+	Prt     []string `json:"prt"`
 }
 type ownerData struct {
 	assets   *assets
