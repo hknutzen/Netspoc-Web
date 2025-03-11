@@ -33,9 +33,11 @@ func (s *state) getNetworkResourcesForNetworks(r *http.Request, selected string)
 				obj := getObject(objects, childName)
 				entry := jsonMap{
 					"name":       networkName,
-					"childIP":    name2IP(s, history, childName, natSet),
-					"childName":  childName,
-					"childOwner": obj.Owner,
+					"child_ip":   name2IP(s, history, childName, natSet),
+					"child_name": childName,
+					"child_owner": map[string]string{
+						"owner": obj.Owner,
+					},
 				}
 				data = append(data, entry)
 			}
@@ -83,9 +85,9 @@ func (s *state) getNetworksAndResources(w http.ResponseWriter, r *http.Request) 
 	}
 	for _, resource := range data {
 		child := jsonMap{
-			"ip":    resource["childIP"],
-			"name":  resource["childName"],
-			"owner": resource["childOwner"],
+			"ip":    resource["child_ip"],
+			"name":  resource["child_name"],
+			"owner": resource["child_owner"].(map[string]string)["owner"],
 		}
 		name := resource["name"].(string)
 		network := net2data[name]

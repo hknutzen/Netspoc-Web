@@ -37,6 +37,7 @@ func MainHandler() http.Handler {
 	mux.HandleFunc("/get_rules", s.getRules)
 	mux.HandleFunc("/get_users", s.getUsers)
 	mux.HandleFunc("/get_services_and_rules", s.getServicesAndRules)
+	mux.HandleFunc("/get_network_resources", s.getNetworkResources)
 	mux.HandleFunc("/get_networks_and_resources", s.getNetworksAndResources)
 	mux.Handle("/", httputil.NewSingleHostReverseProxy(perlServer))
 	return handlers.RecoveryHandler( /*handlers.PrintRecoveryStack(true)*/ )(mux)
