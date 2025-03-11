@@ -166,7 +166,6 @@ service:s5 = {
 
 ############################################################
 
-
 =TITLE=Display prop "ip_and_name" with "expand_users"
 
 =NETSPOC=
@@ -201,6 +200,60 @@ service:s5 = {
           }
       ],
       "has_user" : "src"
+    }
+]
+=STATUS=200
+
+############################################################
+
+=TITLE=Test get_networks_and_resources
+
+=NETSPOC=
+[[topo]]
+=URL=get_networks_and_resources
+=PARAMS=active_owner=o1&history=p1
+=RESPONSE=
+[
+    {
+        "name"     : "network:n1",
+        "ip"       : "10.1.1.0/24",
+        "owner"    : "o1",
+        "children" : [
+            {
+                "ip"    : "10.1.1.2",
+                "name"  : "host:host_in_n1",
+                "owner" : "o1"
+            },
+            {
+                "ip"    : "10.1.1.1",
+                "name"  : "interface:r1.n1",
+                "owner" : ""
+            }
+        ]
+    },
+    {
+        "name"     : "network:n2",
+        "ip"       : "10.1.2.0/24",
+        "owner"    : "o1",
+        "children" : [
+            {
+                "ip"    : "10.1.2.1",
+                "name"  : "interface:r1.n2",
+                "owner" : ""
+            }
+        ]
+    },
+    {
+        "name"     : "network:n3",
+        "ip"       : "10.1.3.0/24",
+        "owner"    : "o1",
+        "children" : [
+            {
+                "ip"    : "10.1.3.1",
+                "name"  : "interface:r1.n3",
+                "owner" : ""
+            }
+        ]
     }
 ]
 =STATUS=200
