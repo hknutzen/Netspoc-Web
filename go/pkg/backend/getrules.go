@@ -13,6 +13,9 @@ func (s *state) getRules(w http.ResponseWriter, r *http.Request) {
 	history := r.FormValue("history")
 	owner := r.FormValue("active_owner")
 	service := r.FormValue("service")
+	if history == "" {
+		abort("Missing parameter history")
+	}
 	if service == "" {
 		abort("Missing parameter service")
 	}
@@ -186,14 +189,16 @@ func adaptNameIPUser(s *state, r *http.Request, rules []*rule, userNames []strin
 			for _, name := range names {
 				res = append(res, name2IP(s, history, name, natSet))
 			}
-			return res
+			return slices.Compact(res)
 		} else if dispProp == "ip_and_name" {
-			res := jsonMap{}
+			var result []map[string]string
 			for _, name := range names {
-				res["name"] = name
-				res["ip"] = name2IP(s, history, name, natSet)
+				m := make(map[string]string)
+				m["name"] = name
+				m["ip"] = name2IP(s, history, name, natSet)
+				result = append(result, m)
 			}
-			return res
+			return result
 		} else {
 			return names
 		}
@@ -228,12 +233,10 @@ func name2IP(s *state, version string, objName string, natSet map[string]bool) s
 		abort("Unknown object '%s'", objName)
 	}
 	objNat := obj.NAT
-	if objNat == nil {
-		for tag := range objNat {
-			if natSet[tag] {
-				obj.IP = objNat[tag]
-				return obj.IP
-			}
+	for tag := range objNat {
+		if natSet[tag] {
+			obj.IP = objNat[tag]
+			return obj.IP
 		}
 	}
 	return obj.IP
