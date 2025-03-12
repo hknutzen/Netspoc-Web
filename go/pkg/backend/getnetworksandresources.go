@@ -6,7 +6,12 @@ import (
 	"slices"
 )
 
-func (s *state) getNetworks(r *http.Request) []jsonMap {
+func (s *state) getNetworks(w http.ResponseWriter, r *http.Request) {
+	networks := s.generateNetworks(r)
+	writeRecords(w, networks)
+}
+
+func (s *state) generateNetworks(r *http.Request) []jsonMap {
 	owner := r.FormValue("active_owner")
 	chosen := r.FormValue("chosen_networks")
 	history := r.FormValue("history")
@@ -62,7 +67,7 @@ func (s *state) getNetworksAndResources(w http.ResponseWriter, r *http.Request) 
 		w.WriteHeader(http.StatusUnauthorized)
 		return
 	}
-	networks := s.getNetworks(r)
+	networks := s.generateNetworks(r)
 	netsAsCSV := ""
 	for _, network := range networks {
 		netsAsCSV += network["name"].(string) + ","
