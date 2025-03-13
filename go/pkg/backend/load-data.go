@@ -48,11 +48,11 @@ type netspocData struct {
 }
 type object struct {
 	name       string
-	IP         string
-	NAT        map[string]string
-	Zone       string
-	IsSupernet int `json:"is_supernet"`
-	Owner      string
+	IP         string            `json:"ip"`
+	NAT        map[string]string `json:"nat"`
+	Zone       string            `json:"zone"`
+	IsSupernet int               `json:"is_supernet,omitempty"`
+	Owner      string            `json:"owner"`
 }
 type service struct {
 	Details *struct {
