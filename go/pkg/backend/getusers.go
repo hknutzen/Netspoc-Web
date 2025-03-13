@@ -12,12 +12,6 @@ func (s *state) getUsers(w http.ResponseWriter, r *http.Request) {
 	history := r.FormValue("history")
 	owner := r.FormValue("active_owner")
 	service := r.FormValue("service")
-	if service == "" {
-		abort("Missing parameter service")
-	}
-	if owner == "" {
-		abort("Missing parameter active_owner")
-	}
 	_, users := getMatchingRulesAndUsers(s, r, service)
 	writeRecords(w, getNatObjList(s, users, owner, history))
 }

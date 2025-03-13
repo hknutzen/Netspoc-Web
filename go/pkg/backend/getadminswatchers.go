@@ -13,9 +13,6 @@ func (s *state) getAdminsWatchers(w http.ResponseWriter, r *http.Request) {
 	}
 	history := r.FormValue("history")
 	owner := r.FormValue("owner")
-	if owner == "" {
-		abort("Missing parameter owner")
-	}
 	watchers := s.loadWatchers(history, owner)
 	admins := s.loadEmails(history, owner)
 	combined := slices.Concat(watchers, admins)
