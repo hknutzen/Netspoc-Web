@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net/http"
 	"net/netip"
+	"reflect"
 	"regexp"
 	"slices"
 	"sort"
@@ -462,12 +463,17 @@ func intersect(s1, s2 []string) []string {
 	return result
 }
 
-func writeRecords(w http.ResponseWriter, records []jsonMap) {
+func writeRecords(w http.ResponseWriter, records any) {
+	data := jsonMap{
+		"success": true,
+	}
+	if v := reflect.ValueOf(records); v.Kind() == reflect.Slice {
+		data["records"] = records
+		data["totalCount"] = v.Len()
+	} else {
+		data["data"] = records
+	}
 	enc := json.NewEncoder(w)
 	enc.SetIndent("", " ")
-	enc.Encode(jsonMap{
-		"records":    records,
-		"totalCount": len(records),
-		"success":    true,
-	})
+	enc.Encode(data)
 }
