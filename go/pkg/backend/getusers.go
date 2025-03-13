@@ -16,18 +16,12 @@ func (s *state) getUsers(w http.ResponseWriter, r *http.Request) {
 	writeRecords(w, getNatObjList(s, users, owner, history))
 }
 
-func getNatObjList(s *state, objNames []string, owner string, history string) []jsonMap {
-	var result []jsonMap
+func getNatObjList(s *state, objNames []string, owner string, history string) []*object {
+	var result []*object
 	natSet := s.loadNATSet(history, owner)
 	for _, objName := range objNames {
 		obj := getNatObj(s, objName, natSet, history)
-		objMap := jsonMap{
-			"name":  objName,
-			"ip":    obj.IP,
-			"owner": obj.Owner,
-			"nat":   obj.NAT,
-		}
-		result = append(result, objMap)
+		result = append(result, obj)
 	}
 	return result
 }

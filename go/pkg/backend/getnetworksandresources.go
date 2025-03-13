@@ -11,7 +11,7 @@ func (s *state) getNetworks(w http.ResponseWriter, r *http.Request) {
 	writeRecords(w, networks)
 }
 
-func (s *state) generateNetworks(r *http.Request) []jsonMap {
+func (s *state) generateNetworks(r *http.Request) []*object {
 	owner := r.FormValue("active_owner")
 	chosen := r.FormValue("chosen_networks")
 	history := r.FormValue("history")
@@ -70,7 +70,7 @@ func (s *state) getNetworksAndResources(w http.ResponseWriter, r *http.Request) 
 	networks := s.generateNetworks(r)
 	netsAsCSV := ""
 	for _, network := range networks {
-		netsAsCSV += network["name"].(string) + ","
+		netsAsCSV += network.name + ","
 	}
 	type Network struct {
 		Name     string    `json:"name"`
@@ -81,10 +81,10 @@ func (s *state) getNetworksAndResources(w http.ResponseWriter, r *http.Request) 
 	data := s.getNetworkResourcesForNetworks(r, netsAsCSV)
 	net2data := make(map[string]Network)
 	for _, network := range networks {
-		net2data[network["name"].(string)] = Network{
-			Name:     network["name"].(string),
-			IP:       network["ip"].(string),
-			Owner:    network["owner"].(string),
+		net2data[network.name] = Network{
+			Name:     network.name,
+			IP:       network.IP,
+			Owner:    network.Owner,
 			Children: []jsonMap{},
 		}
 	}
