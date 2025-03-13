@@ -172,6 +172,9 @@ func adaptNameIPUser(s *state, r *http.Request, rules []*rule, userNames []strin
 	expandUsers := r.FormValue("expand_users")
 	owner := r.FormValue("active_owner")
 	dispProp := r.FormValue("display_property")
+	if dispProp == "" {
+		dispProp = "ip"
+	}
 	natSet := s.loadNATSet(history, owner)
 
 	getVal := func(names []string) any {
