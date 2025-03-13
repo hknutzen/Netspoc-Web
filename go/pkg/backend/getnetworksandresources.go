@@ -70,7 +70,7 @@ func (s *state) getNetworksAndResources(w http.ResponseWriter, r *http.Request) 
 	networks := s.generateNetworks(r)
 	netsAsCSV := ""
 	for _, network := range networks {
-		netsAsCSV += network.name + ","
+		netsAsCSV += network.Name + ","
 	}
 	type Network struct {
 		Name     string    `json:"name"`
@@ -81,8 +81,8 @@ func (s *state) getNetworksAndResources(w http.ResponseWriter, r *http.Request) 
 	data := s.getNetworkResourcesForNetworks(r, netsAsCSV)
 	net2data := make(map[string]Network)
 	for _, network := range networks {
-		net2data[network.name] = Network{
-			Name:     network.name,
+		net2data[network.Name] = Network{
+			Name:     network.Name,
 			IP:       network.IP,
 			Owner:    network.Owner,
 			Children: []jsonMap{},

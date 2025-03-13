@@ -47,7 +47,7 @@ type netspocData struct {
 	ownersMu   sync.Mutex
 }
 type object struct {
-	name       string
+	Name       string            `json:"name"`
 	IP         string            `json:"ip"`
 	NAT        map[string]string `json:"nat"`
 	Zone       string            `json:"zone"`
@@ -185,7 +185,7 @@ func (c *cache) loadObjects(version string) map[string]*object {
 		c.readPart(version, "objects", &entry.objects)
 		// Fill attribute 'name' of each object.
 		for name, object := range entry.objects {
-			object.name = name
+			object.Name = name
 		}
 	}
 	return entry.objects
