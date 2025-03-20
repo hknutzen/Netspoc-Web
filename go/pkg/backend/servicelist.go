@@ -17,10 +17,10 @@ import (
 
 type jsonMap map[string]any
 
-func (s *state) serviceList(w http.ResponseWriter, r *http.Request) {
+func (s *state) generateServiceList(w http.ResponseWriter, r *http.Request) []jsonMap {
 	if !loggedIn(r) {
 		w.WriteHeader(http.StatusUnauthorized)
-		return
+		return []jsonMap{}
 	}
 	history := r.FormValue("history")
 	owner := r.FormValue("active_owner")
@@ -74,6 +74,11 @@ func (s *state) serviceList(w http.ResponseWriter, r *http.Request) {
 		j["owner"] = l
 		records = append(records, j)
 	}
+	return records
+}
+
+func (s *state) serviceList(w http.ResponseWriter, r *http.Request) {
+	records := s.generateServiceList(w, r)
 	writeRecords(w, records)
 }
 

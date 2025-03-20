@@ -47,12 +47,12 @@ type netspocData struct {
 	ownersMu   sync.Mutex
 }
 type object struct {
-	name       string
-	IP         string
-	NAT        map[string]string
-	Zone       string
-	IsSupernet int `json:"is_supernet"`
-	Owner      string
+	Name       string            `json:"name"`
+	IP         string            `json:"ip"`
+	NAT        map[string]string `json:"nat"`
+	Zone       string            `json:"zone"`
+	IsSupernet int               `json:"is_supernet,omitempty"`
+	Owner      string            `json:"owner"`
 }
 type service struct {
 	Details *struct {
@@ -64,11 +64,12 @@ type service struct {
 	Rules []*rule
 }
 type rule struct {
-	HasUser string `json:"has_user"`
-	Action  string
-	Src     []string
-	Dst     []string
-	Prt     []string
+	Service string   `json:"service,omitempty"` // Needed for grouping in frontend.
+	HasUser string   `json:"has_user"`
+	Action  string   `json:"action"`
+	Src     []string `json:"src"`
+	Dst     []string `json:"dst"`
+	Prt     []string `json:"prt"`
 }
 type ownerData struct {
 	assets   *assets
@@ -184,7 +185,7 @@ func (c *cache) loadObjects(version string) map[string]*object {
 		c.readPart(version, "objects", &entry.objects)
 		// Fill attribute 'name' of each object.
 		for name, object := range entry.objects {
-			object.name = name
+			object.Name = name
 		}
 	}
 	return entry.objects

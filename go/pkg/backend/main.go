@@ -15,7 +15,7 @@ type state struct {
 	config *config
 }
 
-func MainHandler() http.Handler {
+func getMux() *http.ServeMux {
 	cfg := loadConfig()
 	s := &state{
 		config: cfg,
@@ -31,8 +31,21 @@ func MainHandler() http.Handler {
 	}
 	mux := http.NewServeMux()
 	mux.HandleFunc("/service_list", s.serviceList)
+	mux.HandleFunc("/get_admins", s.getAdmins)
+	mux.HandleFunc("/get_watchers", s.getWatchers)
+	mux.HandleFunc("/get_admins_watchers", s.getAdminsWatchers)
+	mux.HandleFunc("/get_rules", s.getRules)
+	mux.HandleFunc("/get_users", s.getUsers)
+	mux.HandleFunc("/get_services_and_rules", s.getServicesAndRules)
+	mux.HandleFunc("/get_networks", s.getNetworks)
+	mux.HandleFunc("/get_network_resources", s.getNetworkResources)
+	mux.HandleFunc("/get_networks_and_resources", s.getNetworksAndResources)
 	mux.Handle("/", httputil.NewSingleHostReverseProxy(perlServer))
-	return handlers.RecoveryHandler( /*handlers.PrintRecoveryStack(true)*/ )(mux)
+	return mux
+}
+
+func MainHandler() http.Handler {
+	return handlers.RecoveryHandler( /*handlers.PrintRecoveryStack(true)*/ )(getMux())
 }
 
 func abort(format string, args ...interface{}) {
