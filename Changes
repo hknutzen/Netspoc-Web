@@ -1,5 +1,12 @@
 {{$NEXT}}
 
+ - Migrated several URLs from Perl to golang
+ - Use attributes ip6, range6 for IPv6 objects
+ - Created go-test-framework
+ - Migrated berta.t-tests to golang
+ - Got rid of "proto" attribute for protocols (now "prt")
+ - Run go- and Perl-tests on test, build and release
+
 1.023     2025-01-10 16:34:10+01:00 Europe/Berlin
 
  - Introduce a go backend server. Will migrate backend to this
