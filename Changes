@@ -1,5 +1,7 @@
 {{$NEXT}}
 
+1.024     2025-03-20 17:46:53+01:00 Europe/Berlin
+
  - Migrated several URLs from Perl to golang
  - Use attributes ip6, range6 for IPv6 objects
  - Created go-test-framework
