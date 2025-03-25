@@ -1,6 +1,6 @@
 {{$NEXT}}
 
-- Fix bug introduced in go-backend (disabled field
+ - Fix bug introduced in go-backend (disabled field
   changed to int)
 
 1.024     2025-03-20 17:46:53+01:00 Europe/Berlin
