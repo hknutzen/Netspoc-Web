@@ -1,5 +1,7 @@
 {{$NEXT}}
 
+1.025     2025-03-25 09:24:50+01:00 Europe/Berlin
+
  - Fix bug introduced in go-backend (disabled field
   changed to int)
 
