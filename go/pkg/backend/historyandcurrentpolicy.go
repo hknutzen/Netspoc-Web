@@ -17,10 +17,15 @@ func (s *state) getHistoryParamOrCurrentPolicy(r *http.Request) string {
 }
 
 func (s *state) currentPolicy(r *http.Request) string {
-	return s.getPolicy()[0]["policy"]
+	return s.readPolicy()[0]["policy"]
 }
 
-func (s *state) getPolicy() []map[string]string {
+func (s *state) getPolicy(w http.ResponseWriter, r *http.Request) {
+	p := s.readPolicy()
+	writeRecords(w, p)
+}
+
+func (s *state) readPolicy() []map[string]string {
 	var result []map[string]string
 	policyPath := s.config.NetspocData + "/current"
 	entry, err := getPolicyFromFile(policyPath)
