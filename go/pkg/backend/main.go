@@ -41,6 +41,7 @@ func getMux() *http.ServeMux {
 	mux.HandleFunc("/get_network_resources", s.getNetworkResources)
 	mux.HandleFunc("/get_networks_and_resources", s.getNetworksAndResources)
 	mux.HandleFunc("/get_policy", s.getPolicy)
+	mux.HandleFunc("/get_history", s.getHistory)
 	mux.Handle("/", httputil.NewSingleHostReverseProxy(perlServer))
 	return mux
 }
