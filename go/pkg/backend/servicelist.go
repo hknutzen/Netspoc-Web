@@ -22,7 +22,7 @@ func (s *state) generateServiceList(w http.ResponseWriter, r *http.Request) []js
 		w.WriteHeader(http.StatusUnauthorized)
 		return []jsonMap{}
 	}
-	history := r.FormValue("history")
+	history := s.getHistoryParamOrCurrentPolicy(r)
 	owner := r.FormValue("active_owner")
 	relation := r.FormValue("relation")
 	serviceLists := s.loadServiceLists(history, owner)
