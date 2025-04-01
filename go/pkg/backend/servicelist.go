@@ -91,7 +91,7 @@ func (s *state) selectChosenNetworks(svcNames []string, r *http.Request,
 func (s *state) selectServices(svcNames []string, r *http.Request,
 	m1, m2 map[string]bool, protoMatcher func(string) bool,
 ) []string {
-	history := r.FormValue("history")
+	history := s.getHistoryParamOrCurrentPolicy(r)
 	owner := r.FormValue("active_owner")
 	services := s.loadServices(history)
 	sname2users := s.loadUsers(history, owner)
@@ -170,7 +170,7 @@ func (s *state) getChosenNetworks(r *http.Request) map[string]bool {
 	if chosen == "" {
 		return nil
 	}
-	history := r.FormValue("history")
+	history := s.getHistoryParamOrCurrentPolicy(r)
 	owner := r.FormValue("active_owner")
 	assets := s.loadAssets(history, owner)
 	netNames := untaintNetworks(chosen, assets)
@@ -235,7 +235,7 @@ func (s *state) buildSearchMap(r *http.Request, key string) map[string]bool {
 
 func (s *state) buildTextSearchMap(r *http.Request, search string,
 ) map[string]bool {
-	history := r.FormValue("history")
+	history := s.getHistoryParamOrCurrentPolicy(r)
 	objects := s.loadObjects(history)
 	matcher := getStringMatcher(r, search)
 
@@ -260,7 +260,7 @@ func (s *state) buildIPSearchMap(r *http.Request, p netip.Prefix,
 		return nil
 	}
 
-	history := r.FormValue("history")
+	history := s.getHistoryParamOrCurrentPolicy(r)
 	owner := r.FormValue("active_owner")
 	super := r.FormValue("search_supernet") != ""
 	objects := s.loadObjects(history)
@@ -417,7 +417,7 @@ func (s *state) selectStringSearch(svcNames []string, r *http.Request,
 	if search == "" {
 		return svcNames
 	}
-	history := r.FormValue("history")
+	history := s.getHistoryParamOrCurrentPolicy(r)
 	services := s.loadServices(history)
 	inDesc := r.FormValue("search_in_desc") != ""
 	matcher := getStringMatcher(r, search)

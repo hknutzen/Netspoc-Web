@@ -14,7 +14,7 @@ func (s *state) getNetworks(w http.ResponseWriter, r *http.Request) {
 func (s *state) generateNetworks(r *http.Request) []*object {
 	owner := r.FormValue("active_owner")
 	chosen := r.FormValue("chosen_networks")
-	history := r.FormValue("history")
+	history := s.getHistoryParamOrCurrentPolicy(r)
 	assets := s.loadAssets(history, owner)
 	networkNames := assets.networkList
 	if chosen != "" {
@@ -27,7 +27,7 @@ func (s *state) getNetworkResourcesForNetworks(r *http.Request, selected string)
 	var data []jsonMap
 	if selected != "" {
 		owner := r.FormValue("active_owner")
-		history := r.FormValue("history")
+		history := s.getHistoryParamOrCurrentPolicy(r)
 		assets := s.loadAssets(history, owner)
 		networkNames := untaintNetworks(selected, assets)
 		natSet := s.loadNATSet(history, owner)

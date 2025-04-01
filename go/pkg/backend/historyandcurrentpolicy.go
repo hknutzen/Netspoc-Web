@@ -13,12 +13,12 @@ import (
 func (s *state) getHistoryParamOrCurrentPolicy(r *http.Request) string {
 	history := r.FormValue("history")
 	if history == "" {
-		return s.currentPolicy(r)
+		return s.currentPolicy()
 	}
 	return history
 }
 
-func (s *state) currentPolicy(r *http.Request) string {
+func (s *state) currentPolicy() string {
 	return s.readPolicy()[0]["policy"]
 }
 

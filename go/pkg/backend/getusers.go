@@ -9,7 +9,7 @@ func (s *state) getUsers(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusUnauthorized)
 		return
 	}
-	history := r.FormValue("history")
+	history := s.getHistoryParamOrCurrentPolicy(r)
 	owner := r.FormValue("active_owner")
 	service := r.FormValue("service")
 	_, users := getMatchingRulesAndUsers(s, r, service)

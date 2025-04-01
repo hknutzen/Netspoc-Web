@@ -10,7 +10,7 @@ func (s *state) getRules(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusUnauthorized)
 		return
 	}
-	history := r.FormValue("history")
+	history := s.getHistoryParamOrCurrentPolicy(r)
 	owner := r.FormValue("active_owner")
 	service := r.FormValue("service")
 	serviceLists := s.loadServiceLists(history, owner)
@@ -27,7 +27,7 @@ func expandRules(s *state, r *http.Request, service string) []jsonMap {
 
 func getMatchingRulesAndUsers(s *state, r *http.Request, service string) ([]*rule, []string) {
 	owner := r.FormValue("active_owner")
-	history := r.FormValue("history")
+	history := s.getHistoryParamOrCurrentPolicy(r)
 	services := s.loadServices(history)
 	sname2users := s.loadUsers(history, owner)
 	rules := services[service].Rules
@@ -168,7 +168,7 @@ Substitute 'users' keyword by ip or name of users.
 */
 func adaptNameIPUser(s *state, r *http.Request, rules []*rule, userNames []string) []jsonMap {
 	result := []jsonMap{}
-	history := r.FormValue("history")
+	history := s.getHistoryParamOrCurrentPolicy(r)
 	expandUsers := r.FormValue("expand_users")
 	owner := r.FormValue("active_owner")
 	dispProp := r.FormValue("display_property")

@@ -11,7 +11,7 @@ func (s *state) getAdminsWatchers(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusUnauthorized)
 		return
 	}
-	history := r.FormValue("history")
+	history := s.getHistoryParamOrCurrentPolicy(r)
 	owner := r.FormValue("owner")
 	watchers := s.loadWatchers(history, owner)
 	admins := s.loadEmails(history, owner)
