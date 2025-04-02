@@ -57,8 +57,8 @@ type object struct {
 type service struct {
 	Details *struct {
 		Description string
-		Disabled    int
-		DisableAt   string `json:"disable_at"`
+		Disabled    string `json:"disabled,omitempty"`
+		DisableAt   string `json:"disable_at,omitempty"`
 		Owner       []string
 	}
 	Rules []*rule
