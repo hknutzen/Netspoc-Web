@@ -65,8 +65,12 @@ func (s *state) generateServiceList(w http.ResponseWriter, r *http.Request) []js
 		j["name"] = name
 		d := services[name].Details
 		j["description"] = d.Description
-		j["disabled"] = d.Disabled
-		j["disable_at"] = d.DisableAt
+		if d.DisableAt != "" {
+			j["disable_at"] = d.DisableAt
+		}
+		if d.Disabled != "" {
+			j["disabled"] = d.Disabled
+		}
 		var l []jsonMap
 		for _, o := range d.Owner {
 			l = append(l, jsonMap{"name": o})
