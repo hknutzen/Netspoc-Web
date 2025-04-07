@@ -68,7 +68,7 @@ func (s *state) generateServiceList(w http.ResponseWriter, r *http.Request) []js
 		if d.DisableAt != "" {
 			j["disable_at"] = d.DisableAt
 		}
-		if d.Disabled != "" {
+		if d.Disabled != 0 {
 			j["disabled"] = d.Disabled
 		}
 		var l []jsonMap
