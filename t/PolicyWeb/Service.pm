@@ -124,7 +124,7 @@ sub check_own_services_grid {
         $is_ok &= $driver->is_grid_in_order( \@grid, 1, 1, -1, 0 );
         $driver->move_to( element => $grid_head );
         sleep
-          2;   # without 1sec sleep cursor clicks on info window from tab button
+          4;   # without 1sec sleep cursor clicks on info window from tab button
         $driver->click;
         @grid =
           $driver->find_child_elements( $lp,
