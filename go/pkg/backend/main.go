@@ -52,7 +52,7 @@ func getMux() *http.ServeMux {
 	defaultMux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		if h, pattern := needsLoginMux.Handler(r); pattern != "" {
 			if !loggedIn(r) {
-				writeError(w, "Login required")
+				writeError(w, "Login required", http.StatusUnauthorized)
 				return
 			}
 			h.ServeHTTP(w, r)
@@ -69,8 +69,8 @@ func MainHandler() http.Handler {
 	return handlers.RecoveryHandler( /*handlers.PrintRecoveryStack(true)*/ )(getMux())
 }
 
-func writeError(w http.ResponseWriter, errorMsg string) {
-	w.WriteHeader(http.StatusUnauthorized)
+func writeError(w http.ResponseWriter, errorMsg string, httpStatus int) {
+	w.WriteHeader(httpStatus)
 	data := jsonMap{
 		"success": false,
 		"msg":     errorMsg,
