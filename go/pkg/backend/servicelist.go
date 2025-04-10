@@ -18,10 +18,6 @@ import (
 type jsonMap map[string]any
 
 func (s *state) generateServiceList(w http.ResponseWriter, r *http.Request) []jsonMap {
-	if !loggedIn(r) {
-		w.WriteHeader(http.StatusUnauthorized)
-		return []jsonMap{}
-	}
 	history := s.getHistoryParamOrCurrentPolicy(r)
 	owner := r.FormValue("active_owner")
 	relation := r.FormValue("relation")

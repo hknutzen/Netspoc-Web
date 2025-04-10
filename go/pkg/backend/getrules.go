@@ -6,10 +6,6 @@ import (
 )
 
 func (s *state) getRules(w http.ResponseWriter, r *http.Request) {
-	if !loggedIn(r) {
-		w.WriteHeader(http.StatusUnauthorized)
-		return
-	}
 	history := s.getHistoryParamOrCurrentPolicy(r)
 	owner := r.FormValue("active_owner")
 	service := r.FormValue("service")

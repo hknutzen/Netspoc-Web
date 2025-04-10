@@ -52,10 +52,6 @@ func (s *state) getNetworkResourcesForNetworks(r *http.Request, selected string)
 }
 
 func (s *state) getNetworkResources(w http.ResponseWriter, r *http.Request) {
-	if !loggedIn(r) {
-		w.WriteHeader(http.StatusUnauthorized)
-		return
-	}
 	selected := r.FormValue("selected_networks")
 	result := s.getNetworkResourcesForNetworks(r, selected)
 	writeRecords(w, result)
@@ -63,10 +59,6 @@ func (s *state) getNetworkResources(w http.ResponseWriter, r *http.Request) {
 
 func (s *state) getNetworksAndResources(w http.ResponseWriter, r *http.Request) {
 	var result []jsonMap
-	if !loggedIn(r) {
-		w.WriteHeader(http.StatusUnauthorized)
-		return
-	}
 	networks := s.generateNetworks(r)
 	netsAsCSV := ""
 	for _, network := range networks {

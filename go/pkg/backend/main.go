@@ -1,6 +1,7 @@
 package backend
 
 import (
+	"encoding/json"
 	"fmt"
 	"net/http"
 	"net/http/httputil"
@@ -29,25 +30,54 @@ func getMux() *http.ServeMux {
 	if err != nil {
 		panic(err)
 	}
-	mux := http.NewServeMux()
-	mux.HandleFunc("/service_list", s.serviceList)
-	mux.HandleFunc("/get_admins", s.getAdmins)
-	mux.HandleFunc("/get_watchers", s.getWatchers)
-	mux.HandleFunc("/get_admins_watchers", s.getAdminsWatchers)
-	mux.HandleFunc("/get_rules", s.getRules)
-	mux.HandleFunc("/get_users", s.getUsers)
-	mux.HandleFunc("/get_services_and_rules", s.getServicesAndRules)
-	mux.HandleFunc("/get_networks", s.getNetworks)
-	mux.HandleFunc("/get_network_resources", s.getNetworkResources)
-	mux.HandleFunc("/get_networks_and_resources", s.getNetworksAndResources)
-	mux.HandleFunc("/get_policy", s.getPolicy)
-	mux.HandleFunc("/get_history", s.getHistory)
-	mux.Handle("/", httputil.NewSingleHostReverseProxy(perlServer))
-	return mux
+
+	needsLoginMux := http.NewServeMux()
+	needsLoginMux.HandleFunc("/get_admins", s.getAdmins)
+	needsLoginMux.HandleFunc("/get_watchers", s.getWatchers)
+	needsLoginMux.HandleFunc("/get_admins_watchers", s.getAdminsWatchers)
+	needsLoginMux.HandleFunc("/get_rules", s.getRules)
+	needsLoginMux.HandleFunc("/get_users", s.getUsers)
+	needsLoginMux.HandleFunc("/get_services_and_rules", s.getServicesAndRules)
+	needsLoginMux.HandleFunc("/get_networks", s.getNetworks)
+	needsLoginMux.HandleFunc("/get_network_resources", s.getNetworkResources)
+	needsLoginMux.HandleFunc("/get_networks_and_resources", s.getNetworksAndResources)
+	needsLoginMux.HandleFunc("/get_policy", s.getPolicy)
+	needsLoginMux.HandleFunc("/get_history", s.getHistory)
+	needsLoginMux.HandleFunc("/service_list", s.serviceList)
+
+	createCookieMux := http.NewServeMux()
+	//createCookieMux.HandleFunc("/register", s.register)
+
+	defaultMux := http.NewServeMux()
+	defaultMux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+		if h, pattern := needsLoginMux.Handler(r); pattern != "" {
+			if !loggedIn(r) {
+				writeError(w, "Login required")
+				return
+			}
+			h.ServeHTTP(w, r)
+		} else if h, pattern := createCookieMux.Handler(r); pattern != "" {
+			h.ServeHTTP(w, r)
+		} else {
+			httputil.NewSingleHostReverseProxy(perlServer).ServeHTTP(w, r)
+		}
+	})
+	return defaultMux
 }
 
 func MainHandler() http.Handler {
 	return handlers.RecoveryHandler( /*handlers.PrintRecoveryStack(true)*/ )(getMux())
+}
+
+func writeError(w http.ResponseWriter, errorMsg string) {
+	w.WriteHeader(http.StatusUnauthorized)
+	data := jsonMap{
+		"success": false,
+		"msg":     errorMsg,
+	}
+	enc := json.NewEncoder(w)
+	enc.SetIndent("", " ")
+	enc.Encode(data)
 }
 
 func abort(format string, args ...interface{}) {

@@ -7,10 +7,6 @@ import (
 )
 
 func (s *state) getAdminsWatchers(w http.ResponseWriter, r *http.Request) {
-	if !loggedIn(r) {
-		w.WriteHeader(http.StatusUnauthorized)
-		return
-	}
 	history := s.getHistoryParamOrCurrentPolicy(r)
 	owner := r.FormValue("owner")
 	watchers := s.loadWatchers(history, owner)

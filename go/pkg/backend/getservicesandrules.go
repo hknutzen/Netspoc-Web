@@ -5,10 +5,6 @@ import (
 )
 
 func (s *state) getServicesAndRules(w http.ResponseWriter, r *http.Request) {
-	if !loggedIn(r) {
-		w.WriteHeader(http.StatusUnauthorized)
-		return
-	}
 	expandUsers := r.FormValue("expand_users")
 	serviceRecords := s.generateServiceList(w, r)
 

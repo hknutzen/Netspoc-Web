@@ -5,10 +5,6 @@ import (
 )
 
 func (s *state) getWatchers(w http.ResponseWriter, r *http.Request) {
-	if !loggedIn(r) {
-		w.WriteHeader(http.StatusUnauthorized)
-		return
-	}
 	history := s.getHistoryParamOrCurrentPolicy(r)
 	owner := r.FormValue("active_owner")
 	emails := s.loadWatchers(history, owner)
