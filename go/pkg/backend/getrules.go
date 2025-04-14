@@ -178,6 +178,10 @@ func adaptNameIPUser(s *state, r *http.Request, rules []*rule, userNames []strin
 			res := []string{}
 			for _, name := range names {
 				res = append(res, name2IP(s, history, name, natSet))
+				ip6 := name2IP6(s, history, name)
+				if ip6 != "" {
+					res = append(res, ip6)
+				}
 			}
 			return slices.Compact(res)
 		} else if dispProp == "ip_and_name" {
@@ -186,6 +190,7 @@ func adaptNameIPUser(s *state, r *http.Request, rules []*rule, userNames []strin
 				m := make(map[string]string)
 				m["name"] = name
 				m["ip"] = name2IP(s, history, name, natSet)
+				m["ip6"] = name2IP6(s, history, name)
 				result = append(result, m)
 			}
 			return result
@@ -230,6 +235,18 @@ func name2IP(s *state, version string, objName string, natSet map[string]bool) s
 		}
 	}
 	return obj.IP
+}
+
+func name2IP6(s *state, version string, objName string) string {
+	objects := s.loadObjects(version)
+	obj := objects[objName]
+	if obj == nil {
+		abort("Unknown object '%s'", objName)
+	}
+	if obj.IP6 != "" {
+		return obj.IP6
+	}
+	return ""
 }
 
 func hasUser(rule *rule, what string) bool {
