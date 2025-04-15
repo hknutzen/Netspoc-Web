@@ -50,7 +50,7 @@ type object struct {
 	Name       string            `json:"name"`
 	IP         string            `json:"ip"`
 	IP6        string            `json:"ip6,omitempty"`
-	NAT        map[string]string `json:"nat"`
+	NAT        map[string]string `json:"nat,omitempty"`
 	Zone       string            `json:"zone"`
 	IsSupernet int               `json:"is_supernet,omitempty"`
 	Owner      string            `json:"owner"`
