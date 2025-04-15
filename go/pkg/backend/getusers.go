@@ -10,8 +10,7 @@ func (s *state) getUsers(w http.ResponseWriter, r *http.Request) {
 	owner := r.FormValue("active_owner")
 	service := r.FormValue("service")
 	_, users := getMatchingRulesAndUsers(s, r, service)
-	result := getCombinedObjList(s, users, owner, history)
-	writeRecords(w, result)
+	writeRecords(w, getCombinedObjList(s, users, owner, history))
 }
 
 func getNatObjList(s *state, objNames []string, owner string, history string) []*object {
@@ -28,7 +27,9 @@ func getIP6ObjList(s *state, objNames []string, history string) []*object {
 	var result []*object
 	for _, objName := range objNames {
 		obj := getIP6Obj(s, objName, history)
-		result = append(result, obj)
+		if obj != nil {
+			result = append(result, obj)
+		}
 	}
 	return result
 }

@@ -20,7 +20,7 @@ func (s *state) generateNetworks(r *http.Request) []*object {
 	if chosen != "" {
 		networkNames = untaintNetworks(chosen, assets)
 	}
-	return getNatObjList(s, networkNames, owner, history)
+	return getCombinedObjList(s, networkNames, owner, history)
 }
 
 func (s *state) getNetworkResourcesForNetworks(r *http.Request, selected string) []jsonMap {
