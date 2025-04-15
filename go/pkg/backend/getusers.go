@@ -2,6 +2,7 @@ package backend
 
 import (
 	"net/http"
+	"slices"
 )
 
 func (s *state) getUsers(w http.ResponseWriter, r *http.Request) {
@@ -9,7 +10,8 @@ func (s *state) getUsers(w http.ResponseWriter, r *http.Request) {
 	owner := r.FormValue("active_owner")
 	service := r.FormValue("service")
 	_, users := getMatchingRulesAndUsers(s, r, service)
-	writeRecords(w, getNatObjList(s, users, owner, history))
+	result := getCombinedObjList(s, users, owner, history)
+	writeRecords(w, result)
 }
 
 func getNatObjList(s *state, objNames []string, owner string, history string) []*object {
@@ -20,6 +22,23 @@ func getNatObjList(s *state, objNames []string, owner string, history string) []
 		result = append(result, obj)
 	}
 	return result
+}
+
+func getIP6ObjList(s *state, objNames []string, history string) []*object {
+	var result []*object
+	for _, objName := range objNames {
+		obj := getIP6Obj(s, objName, history)
+		result = append(result, obj)
+	}
+	return result
+}
+
+// Return natObjList and IP6ObjList combined as []*object.
+// The IP6ObjList is a seperate list of objects carrying the
+// same name as the natObjList but with IP6 address in the attribute 'ip'.
+func getCombinedObjList(s *state, objNames []string, owner string, history string) []*object {
+	result := getNatObjList(s, objNames, owner, history)
+	return slices.Concat(result, getIP6ObjList(s, objNames, history))
 }
 
 func getNatObj(s *state, objName string, natSet map[string]bool, history string) *object {
@@ -34,6 +53,17 @@ func getNatObj(s *state, objName string, natSet map[string]bool, history string)
 		}
 	}
 	return obj
+}
+
+func getIP6Obj(s *state, objName string, history string) *object {
+	objects := s.loadObjects(history)
+	obj := getObject(objects, objName)
+	if obj.IP6 != "" {
+		obj2 := *obj
+		obj2.IP = obj.IP6
+		return &obj2
+	}
+	return nil
 }
 
 func getObject(objects map[string]*object, name string) *object {
