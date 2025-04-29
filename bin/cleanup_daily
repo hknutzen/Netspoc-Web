@@ -1,6 +1,6 @@
 #!/bin/sh
 
-# (C) 2020 by Heinz Knutzen     <heinz.knutzen@gmail.com>
+# (C) 2025 by Heinz Knutzen     <heinz.knutzen@gmail.com>
 #
 # https://github.com/hknutzen/Netspoc-Web
 #
@@ -59,6 +59,11 @@ rsync -c -a --no-times --link-dest $dir/history/$previous $current/* $next
 # Orignal time stamp of this file must be preserved,
 # because this time value is shown to user.
 touch -r $current/POLICY $next/POLICY
+# Remove visible services from lists to fill less disk space.
+for f in $next/owner/*/service_lists; do
+    jq '.visible=[]' $f > $f.tmp
+    mv $f.tmp $f
+done
 
 # Mark owners that are changed.
 for owner in $changed; do
