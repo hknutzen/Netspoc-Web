@@ -190,7 +190,10 @@ func adaptNameIPUser(s *state, r *http.Request, rules []*rule, userNames []strin
 				m := make(map[string]string)
 				m["name"] = name
 				m["ip"] = name2IP(s, history, name, natSet)
-				m["ip6"] = name2IP6(s, history, name)
+				ip6 := name2IP6(s, history, name)
+				if ip6 != "" {
+					m["ip6"] = name2IP6(s, history, name)
+				}
 				result = append(result, m)
 			}
 			return result
