@@ -469,6 +469,7 @@ func intersect(s1, s2 []string) []string {
 }
 
 func writeRecords(w http.ResponseWriter, records any) {
+	w.Header().Set("Content-Type", "text/x-json")
 	data := jsonMap{
 		"success": true,
 	}
