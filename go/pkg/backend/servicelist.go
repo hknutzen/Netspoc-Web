@@ -255,11 +255,6 @@ func (s *state) buildIPSearchMap(r *http.Request, p netip.Prefix,
 ) map[string]bool {
 	sub := r.FormValue("search_subnet") != ""
 
-	// Prefix len 0 matches all.
-	if p.Bits() == 0 && sub {
-		return nil
-	}
-
 	history := s.getHistoryParamOrCurrentPolicy(r)
 	owner := r.FormValue("active_owner")
 	super := r.FormValue("search_supernet") != ""
@@ -295,7 +290,11 @@ func (s *state) buildIPSearchMap(r *http.Request, p netip.Prefix,
 			}
 		}
 		if ip == "" {
-			ip = obj.IP
+			if p.Addr().Is4() {
+				ip = obj.IP
+			} else {
+				ip = obj.IP6
+			}
 		}
 
 		// Handle host range separately.
