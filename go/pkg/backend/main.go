@@ -31,6 +31,9 @@ func getMux() *http.ServeMux {
 		panic(err)
 	}
 
+	noLoginMux := http.NewServeMux()
+	noLoginMux.HandleFunc("/get_policy", s.getPolicy)
+
 	needsLoginMux := http.NewServeMux()
 	needsLoginMux.HandleFunc("/get_admins", s.getAdmins)
 	needsLoginMux.HandleFunc("/get_watchers", s.getWatchers)
@@ -41,7 +44,6 @@ func getMux() *http.ServeMux {
 	needsLoginMux.HandleFunc("/get_networks", s.getNetworks)
 	needsLoginMux.HandleFunc("/get_network_resources", s.getNetworkResources)
 	needsLoginMux.HandleFunc("/get_networks_and_resources", s.getNetworksAndResources)
-	needsLoginMux.HandleFunc("/get_policy", s.getPolicy)
 	needsLoginMux.HandleFunc("/get_history", s.getHistory)
 	needsLoginMux.HandleFunc("/service_list", s.serviceList)
 
@@ -55,6 +57,8 @@ func getMux() *http.ServeMux {
 				writeError(w, "Login required", http.StatusInternalServerError)
 				return
 			}
+			h.ServeHTTP(w, r)
+		} else if h, pattern := noLoginMux.Handler(r); pattern != "" {
 			h.ServeHTTP(w, r)
 		} else if h, pattern := createCookieMux.Handler(r); pattern != "" {
 			h.ServeHTTP(w, r)
