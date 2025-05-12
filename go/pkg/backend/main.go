@@ -76,6 +76,14 @@ func MainHandler() http.Handler {
 func writeError(w http.ResponseWriter, errorMsg string, httpStatus int) {
 	w.Header().Set("Content-Type", "text/x-json")
 	w.WriteHeader(httpStatus)
+	// Flusher is only needed temporarily.
+	// TODO: remove this when we have a better way to handle HTTP Status
+	// and encoding.
+	flusher, ok := w.(http.Flusher)
+	if !ok {
+		errorMsg = "Error: http.Flusher not supported"
+		abort(errorMsg)
+	}
 	data := jsonMap{
 		"success": false,
 		"msg":     errorMsg,
@@ -83,6 +91,7 @@ func writeError(w http.ResponseWriter, errorMsg string, httpStatus int) {
 	enc := json.NewEncoder(w)
 	enc.SetIndent("", " ")
 	enc.Encode(data)
+	flusher.Flush()
 }
 
 func abort(format string, args ...interface{}) {
