@@ -293,7 +293,12 @@ func (s *state) buildIPSearchMap(r *http.Request, p netip.Prefix,
 			if p.Addr().Is4() {
 				ip = obj.IP
 			} else {
-				ip = obj.IP6
+				// v6 addresses can be stored in obj.IP6 OR in obj.IP.
+				if obj.IP6 == "" {
+					ip = obj.IP
+				} else {
+					ip = obj.IP6
+				}
 			}
 		}
 
