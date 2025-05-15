@@ -45,6 +45,18 @@ func (s *state) getNetworkResourcesForNetworks(r *http.Request, selected string)
 					},
 				}
 				data = append(data, entry)
+				ip6 := name2IP6(s, history, childName)
+				if ip6 != "" {
+					entry := jsonMap{
+						"name":       networkName,
+						"child_ip":   ip6,
+						"child_name": childName,
+						"child_owner": map[string]string{
+							"owner": obj.Owner,
+						},
+					}
+					data = append(data, entry)
+				}
 			}
 		}
 	}
