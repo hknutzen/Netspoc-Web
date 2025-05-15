@@ -17,7 +17,7 @@ import (
 
 type jsonMap map[string]any
 
-func (s *state) generateServiceList(w http.ResponseWriter, r *http.Request) []jsonMap {
+func (s *state) generateServiceList(r *http.Request) []jsonMap {
 	history := s.getHistoryParamOrCurrentPolicy(r)
 	owner := r.FormValue("active_owner")
 	relation := r.FormValue("relation")
@@ -78,7 +78,7 @@ func (s *state) generateServiceList(w http.ResponseWriter, r *http.Request) []js
 }
 
 func (s *state) serviceList(w http.ResponseWriter, r *http.Request) {
-	records := s.generateServiceList(w, r)
+	records := s.generateServiceList(r)
 	writeRecords(w, records)
 }
 
