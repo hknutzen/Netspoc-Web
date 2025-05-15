@@ -82,7 +82,7 @@ func (s *state) getNetworksAndResources(w http.ResponseWriter, r *http.Request) 
 		Owner    string    `json:"owner"`
 		Children []jsonMap `json:"children"`
 	}
-	data := s.getNetworkResourcesForNetworks(r, netsAsCSV)
+	networkResources := s.getNetworkResourcesForNetworks(r, netsAsCSV)
 	net2data := make(map[string]Network)
 	for _, network := range networks {
 		net2data[network.Name] = Network{
@@ -92,7 +92,7 @@ func (s *state) getNetworksAndResources(w http.ResponseWriter, r *http.Request) 
 			Children: []jsonMap{},
 		}
 	}
-	for _, resource := range data {
+	for _, resource := range networkResources {
 		child := jsonMap{
 			"ip":    resource["child_ip"],
 			"name":  resource["child_name"],

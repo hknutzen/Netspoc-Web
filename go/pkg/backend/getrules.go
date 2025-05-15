@@ -189,12 +189,17 @@ func adaptNameIPUser(s *state, r *http.Request, rules []*rule, userNames []strin
 			for _, name := range names {
 				m := make(map[string]string)
 				m["name"] = name
-				m["ip"] = name2IP(s, history, name, natSet)
+				ip := name2IP(s, history, name, natSet)
+				if ip != "" {
+					m["ip"] = ip
+					result = append(result, m)
+				}
+				// Add IPv6 address if available
 				ip6 := name2IP6(s, history, name)
 				if ip6 != "" {
-					m["ip6"] = name2IP6(s, history, name)
+					m["ip"] = ip6
+					result = append(result, m)
 				}
-				result = append(result, m)
 			}
 			return result
 		} else {

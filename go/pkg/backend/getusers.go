@@ -53,6 +53,11 @@ func getNatObj(s *state, objName string, natSet map[string]bool, history string)
 			break
 		}
 	}
+	if obj.IP != "" && obj.IP6 != "" {
+		obj2 := *obj
+		obj2.IP6 = ""
+		return &obj2
+	}
 	return obj
 }
 
@@ -62,6 +67,7 @@ func getIP6Obj(s *state, objName string, history string) *object {
 	if obj.IP6 != "" {
 		obj2 := *obj
 		obj2.IP = obj.IP6
+		obj2.IP6 = ""
 		return &obj2
 	}
 	return nil

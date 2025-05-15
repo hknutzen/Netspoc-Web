@@ -6,7 +6,7 @@ import (
 
 func (s *state) getServicesAndRules(w http.ResponseWriter, r *http.Request) {
 	expandUsers := r.FormValue("expand_users")
-	serviceRecords := s.generateServiceList(w, r)
+	serviceRecords := s.generateServiceList(r)
 
 	var result []jsonMap
 	for _, service := range serviceRecords {
