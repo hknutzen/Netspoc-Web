@@ -185,7 +185,7 @@ func adaptNameIPUser(s *state, r *http.Request, rules []*rule, userNames []strin
 			}
 			return slices.Compact(res)
 		} else if dispProp == "ip_and_name" {
-			var result []map[string]string
+			result := []map[string]string{}
 			for _, name := range names {
 				m := make(map[string]string)
 				m["name"] = name

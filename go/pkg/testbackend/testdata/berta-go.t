@@ -128,7 +128,7 @@ service:s5 = {
      "prt" : [
         "tcp 80"
      ],
-     "dst" : null
+     "dst" : []
    }
 ]
 =STATUS=200
@@ -159,7 +159,7 @@ service:s5 = {
      "prt" : [
          "tcp 80"
          ],
-     "src" : null
+     "src" : []
    }
 ]
 =STATUS=200
