@@ -13,12 +13,14 @@ func (s *state) getAdmins(w http.ResponseWriter, r *http.Request) {
 	if owner == "" {
 		abort("Missing owner parameter")
 	}
-	emails := s.loadEmails(history, owner)
 	records := make([]jsonMap, 0)
-	for _, e := range emails {
-		records = append(records, jsonMap{
-			"email": e.Email,
-		})
+	if owner != ":unknown" {
+		emails := s.loadEmails(history, owner)
+		for _, e := range emails {
+			records = append(records, jsonMap{
+				"email": e.Email,
+			})
+		}
 	}
 	writeRecords(w, records)
 }
