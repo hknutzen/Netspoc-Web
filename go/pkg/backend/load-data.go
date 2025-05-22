@@ -183,10 +183,15 @@ func (c *cache) loadObjects(version string) map[string]*object {
 	entry.objectsMu.Lock()
 	defer entry.objectsMu.Unlock()
 	if entry.objects == nil {
+		serveIP6 := os.Getenv("SERVE_IP6")
 		c.readPart(version, "objects", &entry.objects)
 		// Fill attribute 'name' of each object.
 		for name, object := range entry.objects {
 			object.Name = name
+			if serveIP6 == "" {
+				// Remove IPv6 address if not needed.
+				object.IP6 = ""
+			}
 		}
 	}
 	return entry.objects
