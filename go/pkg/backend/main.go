@@ -7,8 +7,7 @@ import (
 	"net/http/httputil"
 	"net/url"
 	"os"
-
-	"github.com/gorilla/handlers"
+	"time"
 )
 
 type state struct {
@@ -32,6 +31,7 @@ func getMux() *http.ServeMux {
 	}
 
 	noLoginMux := http.NewServeMux()
+	noLoginMux.HandleFunc("/login", s.loginHandler)
 	noLoginMux.HandleFunc("/get_policy", s.getPolicy)
 
 	needsLoginMux := http.NewServeMux()
@@ -70,7 +70,15 @@ func getMux() *http.ServeMux {
 }
 
 func MainHandler() http.Handler {
-	return handlers.RecoveryHandler( /*handlers.PrintRecoveryStack(true)*/ )(getMux())
+	sessionManager := NewSessionManager(
+		NewInMemorySessionStore(),
+		30*time.Minute,
+		1*time.Hour,
+		12*time.Hour,
+		"FOOBAR",
+	)
+	return sessionManager.Handle(getMux())
+	//return handlers.RecoveryHandler( /*handlers.PrintRecoveryStack(true)*/ )(getMux())
 }
 
 func writeError(w http.ResponseWriter, errorMsg string, httpStatus int) {

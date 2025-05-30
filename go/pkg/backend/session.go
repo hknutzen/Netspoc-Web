@@ -14,7 +14,7 @@ type session struct {
 	Owner    string
 }
 
-func getSession(r *http.Request) *session {
+func getSessionFromPerl(r *http.Request) *session {
 	addr := fmt.Sprintf("http://localhost:%s/get_session_data",
 		os.Getenv("PERLPORT"))
 	req, err := http.NewRequest("GET", addr, nil)
@@ -39,5 +39,5 @@ func getSession(r *http.Request) *session {
 }
 
 func loggedIn(r *http.Request) bool {
-	return getSession(r).LoggedIn
+	return getSessionFromPerl(r).LoggedIn
 }
