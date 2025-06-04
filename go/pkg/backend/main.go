@@ -71,7 +71,7 @@ func getMux() *http.ServeMux {
 
 func MainHandler() http.Handler {
 	sessionManager := NewSessionManager(
-		NewInMemorySessionStore(),
+		NewFileSystemSessionStore("/home/brunkhda/go-sessions-dir"),
 		30*time.Minute,
 		1*time.Hour,
 		12*time.Hour,

@@ -4,9 +4,11 @@ import (
 	"context"
 	"crypto/rand"
 	"encoding/base64"
+	"encoding/json"
 	"io"
 	"log"
 	"net/http"
+	"os"
 	"sync"
 	"time"
 )
@@ -247,57 +249,104 @@ func (m *SessionManager) migrate(session *GoSession) error {
 
 // ****************************************************************************
 //
-// # Implementing an In-Memory Session Store
+// # Implementing a File System Session Store
 //
 // ****************************************************************************
-type InMemorySessionStore struct {
-	mu       sync.RWMutex
-	sessions map[string]*GoSession
+type FileSystemSessionStore struct {
+	mu  sync.RWMutex
+	dir string
 }
 
-func NewInMemorySessionStore() *InMemorySessionStore {
-	return &InMemorySessionStore{
-		sessions: make(map[string]*GoSession),
+func NewFileSystemSessionStore(dir string) *FileSystemSessionStore {
+	return &FileSystemSessionStore{
+		dir: dir,
 	}
 }
 
-func (s *InMemorySessionStore) read(id string) (*GoSession, error) {
+func (s *FileSystemSessionStore) read(id string) (*GoSession, error) {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 
-	session, _ := s.sessions[id]
+	filePath := s.filePath(id)
+	data, err := os.ReadFile(filePath)
+	if err != nil {
+		if os.IsNotExist(err) {
+			return nil, nil
+		}
+		return nil, err
+	}
 
-	return session, nil
+	var session GoSession
+	err = json.Unmarshal(data, &session)
+	if err != nil {
+		return nil, err
+	}
+
+	return &session, nil
 }
 
-func (s *InMemorySessionStore) write(session *GoSession) error {
+func (s *FileSystemSessionStore) write(session *GoSession) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
-	s.sessions[session.id] = session
+	filePath := s.filePath(session.id)
+	data, err := json.Marshal(session)
+	if err != nil {
+		return err
+	}
+
+	err = os.WriteFile(filePath, data, 0644)
+	if err != nil {
+		return err
+	}
 
 	return nil
 }
 
-func (s *InMemorySessionStore) destroy(id string) error {
+func (s *FileSystemSessionStore) destroy(id string) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
-	delete(s.sessions, id)
+	filePath := s.filePath(id)
+	err := os.Remove(filePath)
+	if err != nil && !os.IsNotExist(err) {
+		return err
+	}
 
 	return nil
 }
 
-func (s *InMemorySessionStore) gc(idleExpiration, absoluteExpiration time.Duration) error {
+func (s *FileSystemSessionStore) gc(idleExpiration, absoluteExpiration time.Duration) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
-	for id, session := range s.sessions {
+	files, err := os.ReadDir(s.dir)
+	if err != nil {
+		return err
+	}
+
+	for _, file := range files {
+		filePath := s.dir + "/" + file.Name()
+		data, err := os.ReadFile(filePath)
+		if err != nil {
+			continue
+		}
+
+		var session GoSession
+		err = json.Unmarshal(data, &session)
+		if err != nil {
+			continue
+		}
+
 		if time.Since(session.lastActivityAt) > idleExpiration ||
 			time.Since(session.createdAt) > absoluteExpiration {
-			delete(s.sessions, id)
+			os.Remove(filePath)
 		}
 	}
 
 	return nil
+}
+
+func (s *FileSystemSessionStore) filePath(id string) string {
+	return s.dir + "/" + id + ".json"
 }
