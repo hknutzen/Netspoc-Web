@@ -1,5 +1,9 @@
 {{$NEXT}}
 
+ - Mixed go-Perl-backend.
+ - IPv6 displayed and searchable. v6 data is delivered
+   by the backend only if ENV var SERVE_IP6 is set.
+
 1.025     2025-03-25 09:24:50+01:00 Europe/Berlin
 
  - Fix bug introduced in go-backend (disabled field
