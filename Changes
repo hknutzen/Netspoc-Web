@@ -1,5 +1,7 @@
 {{$NEXT}}
 
+1.026     2025-06-11 11:14:13+02:00 Europe/Berlin
+
  - Mixed go-Perl-backend.
  - IPv6 displayed and searchable. v6 data is delivered
    by the backend only if ENV var SERVE_IP6 is set.
