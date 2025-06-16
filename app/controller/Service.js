@@ -532,37 +532,6 @@ Ext.define(
         );
 
         graph_window.show();
-
-        /*
-                    var data = Ext.encode(
-                        {
-                            data : store.getRange()
-                        }
-                    );
-
-                    Ext.Ajax.request(
-                        {
-                            url      : 'backend/get_connection_overview',
-                            method   : 'POST',
-                            jsonData : data,
-                            params   : params,
-                            success  : function ( response ) {
-                                var controller = PolicyWeb.getApplication().getController('Service');
-                                var response_data = Ext.decode(response.responseText);
-                                if ( display_as === 'list' ) {
-                                    controller.displayOverviewList(response_data);
-                                }
-                                else {
-                                    controller.displayOverviewGraph(response_data);
-                                }
-                            },
-                            failure  : function ( response ) {
-                                console.log('server-side failure with status code '
-                                            + response.status);
-                            }
-                        }
-                    );
-        */
     },
 
     drawGraph: function (dataset) {
