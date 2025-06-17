@@ -1,4 +1,6 @@
 {{$NEXT}}
+
+1.027     2025-06-17 11:59:57+02:00 Europe/Berlin
  - Changes in frontend code for double frontend
    with /backend and /backend6 was missing.
 
