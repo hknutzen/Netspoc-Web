@@ -21,6 +21,10 @@ func (s *state) getServicesAndRules(w http.ResponseWriter, r *http.Request) {
 		for _, rule := range rules {
 			// The service name on the rule is needed for grouping in the frontend.
 			rule["service"] = service
+			if rule["prt"] != nil && rule["prt"] != "" {
+				rule["proto"] = rule["prt"]
+				delete(rule, "prt")
+			}
 			if expandUsers != "1" {
 				if rule["has_user"] == "src" {
 					rule["src"] = []string{"User"}

@@ -1,4 +1,7 @@
 {{$NEXT}}
+ - Emergency release to fix problem with URL
+   /get_services_and_rules for external API
+   consumer.
 
 1.028     2025-06-17 18:34:50+02:00 Europe/Berlin
 
