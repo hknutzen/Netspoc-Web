@@ -478,8 +478,15 @@ func writeRecords(w http.ResponseWriter, records any) {
 		"success": true,
 	}
 	if v := reflect.ValueOf(records); v.Kind() == reflect.Slice {
-		data["records"] = records
-		data["totalCount"] = v.Len()
+		// If records is uninitialized or empty, return empty records and totalCount 0.
+		// Otherwise, return records and totalCount.
+		if v.IsNil() || v.Len() == 0 {
+			data["records"] = []jsonMap{}
+			data["totalCount"] = 0
+		} else {
+			data["records"] = records
+			data["totalCount"] = v.Len()
+		}
 	} else {
 		data["data"] = records
 	}
