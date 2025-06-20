@@ -20,7 +20,7 @@ my %conf_keys = (
         qw(netspoc_data noreply_address session_dir user_dir) ),
     map( { ( $_ => ':OPTIONAL' ) }
         qw(ldap_uri ldap_dn_template ldap_base_dn
-          ldap_filter_template ldap_email_attr
+          ldap_filter_template ldap_email_attr business_units
         ) ),
     mail_template       => "$base_dir/mail",
     html_template       => "$base_dir/html",
@@ -31,10 +31,11 @@ my %conf_keys = (
 );
 
 sub load {
-    my $conf_file =
-      glob( $ENV{'PW_FRONTEND_TEST'}
+    my $conf_file = glob(
+        $ENV{'PW_FRONTEND_TEST'}
         ? '~/policyweb-test.conf'
-        : '~/policyweb.conf' );
+        : '~/policyweb.conf'
+    );
     -f $conf_file or croak("$conf_file must be a plain file");
     my $result;
     open( my $fh, '<', $conf_file ) or croak("Can't open $conf_file: $!");
