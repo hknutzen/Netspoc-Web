@@ -1,5 +1,9 @@
 {{$NEXT}}
 
+ - Fix a bug in new go part of the backend.
+   Data returned for empty service list overview was
+   different from Perl. Now it's same again.
+
 1.029     2025-06-18 12:18:35+02:00 Europe/Berlin
  - Emergency release to fix problem with URL
    /get_services_and_rules for external API
