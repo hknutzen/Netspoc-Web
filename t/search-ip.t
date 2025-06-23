@@ -65,7 +65,7 @@ router:FW = {
  managed;
  model = IOS;
  interface:DMZ = { ip = 10.9.9.2; hardware = DMZ; }
- interface:Internet = { negotiated; hardware = Internet; bind_nat = inet; }
+ interface:Internet = { negotiated; hardware = Internet; nat_out = inet; }
 }
 
 network:Internet = {
