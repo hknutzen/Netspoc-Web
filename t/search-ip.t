@@ -957,7 +957,7 @@ $out = [
         action   => 'permit',
         dst      => ['0.0.0.0/0'],
         has_user => 'src',
-        proto    => ['udp 82'],
+        prt      => ['udp 82'],
         service  => 'Test7',
         src      => ['User']
     },
@@ -965,7 +965,7 @@ $out = [
         action   => 'permit',
         dst      => ['1.0.0.0/8'],
         has_user => 'src',
-        proto    => ['udp 82'],
+        prt      => ['udp 82'],
         service  => 'Test8',
         src      => ['User']
     }
