@@ -13,15 +13,15 @@ func (s *state) getRules(w http.ResponseWriter, r *http.Request) {
 	if !serviceLists.accessible[service] {
 		abort("Unknown service '%s'", service)
 	}
-	writeRecords(w, expandRules(s, r, service))
+	writeRecords(w, s.expandRules(r, service))
 }
 
-func expandRules(s *state, r *http.Request, service string) []jsonMap {
-	rules, users := getMatchingRulesAndUsers(s, r, service)
-	return adaptNameIPUser(s, r, rules, users)
+func (s *state) expandRules(r *http.Request, service string) []jsonMap {
+	rules, users := s.getMatchingRulesAndUsers(r, service)
+	return s.adaptNameIPUser(r, rules, users)
 }
 
-func getMatchingRulesAndUsers(s *state, r *http.Request, service string) ([]*rule, []string) {
+func (s *state) getMatchingRulesAndUsers(r *http.Request, service string) ([]*rule, []string) {
 	owner := r.FormValue("active_owner")
 	history := s.getHistoryParamOrCurrentPolicy(r)
 	services := s.loadServices(history)
@@ -162,7 +162,7 @@ RULE:
 Substitute objects in rules by ip or name.
 Substitute 'users' keyword by ip or name of users.
 */
-func adaptNameIPUser(s *state, r *http.Request, rules []*rule, userNames []string) []jsonMap {
+func (s *state) adaptNameIPUser(r *http.Request, rules []*rule, userNames []string) []jsonMap {
 	result := []jsonMap{}
 	history := s.getHistoryParamOrCurrentPolicy(r)
 	expandUsers := r.FormValue("expand_users")
@@ -177,8 +177,8 @@ func adaptNameIPUser(s *state, r *http.Request, rules []*rule, userNames []strin
 		if dispProp == "ip" {
 			res := []string{}
 			for _, name := range names {
-				res = append(res, name2IP(s, history, name, natSet))
-				ip6 := name2IP6(s, history, name)
+				res = append(res, s.name2IP(history, name, natSet))
+				ip6 := s.name2IP6(history, name)
 				if ip6 != "" {
 					res = append(res, ip6)
 				}
@@ -195,9 +195,9 @@ func adaptNameIPUser(s *state, r *http.Request, rules []*rule, userNames []strin
 				}
 			}
 			for _, name := range names {
-				addIP(name, name2IP(s, history, name, natSet))
+				addIP(name, s.name2IP(history, name, natSet))
 				// Add IPv6 address if available
-				addIP(name, name2IP6(s, history, name))
+				addIP(name, s.name2IP6(history, name))
 			}
 			return result
 		} else {
@@ -227,7 +227,7 @@ func adaptNameIPUser(s *state, r *http.Request, rules []*rule, userNames []strin
 	return result
 }
 
-func name2IP(s *state, version string, objName string, natSet map[string]bool) string {
+func (s *state) name2IP(version string, objName string, natSet map[string]bool) string {
 	objects := s.loadObjects(version)
 	obj := objects[objName]
 	if obj == nil {
@@ -243,7 +243,7 @@ func name2IP(s *state, version string, objName string, natSet map[string]bool) s
 	return obj.IP
 }
 
-func name2IP6(s *state, version string, objName string) string {
+func (s *state) name2IP6(version string, objName string) string {
 	objects := s.loadObjects(version)
 	obj := objects[objName]
 	if obj == nil {

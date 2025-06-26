@@ -17,7 +17,7 @@ func (s *state) getServicesAndRules(w http.ResponseWriter, r *http.Request) {
 			http.Error(w, "Invalid service name", http.StatusInternalServerError)
 			return
 		}
-		rules := expandRules(s, r, service)
+		rules := s.expandRules(r, service)
 
 		// Adapt multi service result.
 		for _, rule := range rules {
