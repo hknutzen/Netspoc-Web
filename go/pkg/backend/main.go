@@ -70,6 +70,10 @@ func getMux() *http.ServeMux {
 }
 
 func MainHandler() http.Handler {
+	return RecoveryHandler(SessionHandler(getMux()))
+}
+
+func SessionHandler(h http.Handler) http.Handler {
 	sessionManager := NewSessionManager(
 		NewFileSystemSessionStore("/home/brunkhda/go-sessions-dir"),
 		30*time.Minute,
@@ -77,11 +81,25 @@ func MainHandler() http.Handler {
 		12*time.Hour,
 		"FOOBAR",
 	)
-	return sessionManager.Handle(getMux())
-	//return handlers.RecoveryHandler( /*handlers.PrintRecoveryStack(true)*/ )(getMux())
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		sessionManager.Handle(h).ServeHTTP(w, r)
+	})
+}
+
+func RecoveryHandler(h http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		defer func() {
+			if err := recover(); err != nil {
+				msg := fmt.Errorf("%s", err)
+				writeError(w, msg.Error(), http.StatusInternalServerError)
+			}
+		}()
+		h.ServeHTTP(w, r)
+	})
 }
 
 func writeError(w http.ResponseWriter, errorMsg string, httpStatus int) {
+	w.Header().Set("Connection", "close")
 	w.Header().Set("Content-Type", "text/x-json")
 	w.WriteHeader(httpStatus)
 	// Flusher is only needed temporarily.

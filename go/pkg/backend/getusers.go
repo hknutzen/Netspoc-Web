@@ -9,24 +9,24 @@ func (s *state) getUsers(w http.ResponseWriter, r *http.Request) {
 	history := s.getHistoryParamOrCurrentPolicy(r)
 	owner := r.FormValue("active_owner")
 	service := r.FormValue("service")
-	_, users := getMatchingRulesAndUsers(s, r, service)
-	writeRecords(w, getCombinedObjList(s, users, owner, history))
+	_, users := s.getMatchingRulesAndUsers(r, service)
+	writeRecords(w, s.getCombinedObjList(users, owner, history))
 }
 
-func getNatObjList(s *state, objNames []string, owner string, history string) []*object {
+func (s *state) getNatObjList(objNames []string, owner string, history string) []*object {
 	var result []*object
 	natSet := s.loadNATSet(history, owner)
 	for _, objName := range objNames {
-		obj := getNatObj(s, objName, natSet, history)
+		obj := s.getNatObj(objName, natSet, history)
 		result = append(result, obj)
 	}
 	return result
 }
 
-func getIP6ObjList(s *state, objNames []string, history string) []*object {
+func (s *state) getIP6ObjList(objNames []string, history string) []*object {
 	var result []*object
 	for _, objName := range objNames {
-		obj := getIP6Obj(s, objName, history)
+		obj := s.getIP6Obj(objName, history)
 		if obj != nil {
 			result = append(result, obj)
 		}
@@ -37,12 +37,12 @@ func getIP6ObjList(s *state, objNames []string, history string) []*object {
 // Return natObjList and IP6ObjList combined as []*object.
 // The IP6ObjList is a seperate list of objects carrying the
 // same name as the natObjList but with IP6 address in the attribute 'ip'.
-func getCombinedObjList(s *state, objNames []string, owner string, history string) []*object {
-	result := getNatObjList(s, objNames, owner, history)
-	return slices.Concat(result, getIP6ObjList(s, objNames, history))
+func (s *state) getCombinedObjList(objNames []string, owner string, history string) []*object {
+	result := s.getNatObjList(objNames, owner, history)
+	return slices.Concat(result, s.getIP6ObjList(objNames, history))
 }
 
-func getNatObj(s *state, objName string, natSet map[string]bool, history string) *object {
+func (s *state) getNatObj(objName string, natSet map[string]bool, history string) *object {
 	objects := s.loadObjects(history)
 	obj := getObject(objects, objName)
 	nat := obj.NAT
@@ -61,7 +61,7 @@ func getNatObj(s *state, objName string, natSet map[string]bool, history string)
 	return obj
 }
 
-func getIP6Obj(s *state, objName string, history string) *object {
+func (s *state) getIP6Obj(objName string, history string) *object {
 	objects := s.loadObjects(history)
 	obj := getObject(objects, objName)
 	if obj.IP6 != "" {

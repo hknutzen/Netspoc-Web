@@ -8,14 +8,16 @@ func (s *state) getServicesAndRules(w http.ResponseWriter, r *http.Request) {
 	expandUsers := r.FormValue("expand_users")
 	serviceRecords := s.generateServiceList(r)
 
-	var result []jsonMap
+	// If no services are found, return an empty result.
+	result := []jsonMap{}
+
 	for _, service := range serviceRecords {
 		service, ok := service["name"].(string)
 		if !ok {
 			http.Error(w, "Invalid service name", http.StatusInternalServerError)
 			return
 		}
-		rules := expandRules(s, r, service)
+		rules := s.expandRules(r, service)
 
 		// Adapt multi service result.
 		for _, rule := range rules {

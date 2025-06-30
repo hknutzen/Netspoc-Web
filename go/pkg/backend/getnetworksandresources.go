@@ -20,7 +20,7 @@ func (s *state) generateNetworks(r *http.Request) []*object {
 	if chosen != "" {
 		networkNames = untaintNetworks(chosen, assets)
 	}
-	return getCombinedObjList(s, networkNames, owner, history)
+	return s.getCombinedObjList(networkNames, owner, history)
 }
 
 func (s *state) getNetworkResourcesForNetworks(r *http.Request, selected string) []jsonMap {
@@ -38,14 +38,14 @@ func (s *state) getNetworkResourcesForNetworks(r *http.Request, selected string)
 				obj := getObject(objects, childName)
 				entry := jsonMap{
 					"name":       networkName,
-					"child_ip":   name2IP(s, history, childName, natSet),
+					"child_ip":   s.name2IP(history, childName, natSet),
 					"child_name": childName,
 					"child_owner": map[string]string{
 						"owner": obj.Owner,
 					},
 				}
 				data = append(data, entry)
-				ip6 := name2IP6(s, history, childName)
+				ip6 := s.name2IP6(history, childName)
 				if ip6 != "" {
 					entry := jsonMap{
 						"name":       networkName,

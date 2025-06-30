@@ -1,5 +1,31 @@
 {{$NEXT}}
 
+1.030     2025-06-23 15:19:19+02:00 Europe/Berlin
+
+ - Fix a bug in new go part of the backend.
+   Data returned for empty service list overview was
+   different from Perl. Now it's same again.
+
+1.029     2025-06-18 12:18:35+02:00 Europe/Berlin
+ - Emergency release to fix problem with URL
+   /get_services_and_rules for external API
+   consumer.
+
+1.028     2025-06-17 18:34:50+02:00 Europe/Berlin
+
+ - Some endpoints for double backend were missing
+   in last release. Should be complete now.
+
+1.027     2025-06-17 11:59:57+02:00 Europe/Berlin
+ - Changes in frontend code for double frontend
+   with /backend and /backend6 was missing.
+
+1.026     2025-06-11 11:14:13+02:00 Europe/Berlin
+
+ - Mixed go-Perl-backend.
+ - IPv6 displayed and searchable. v6 data is delivered
+   by the backend only if ENV var SERVE_IP6 is set.
+
 1.025     2025-03-25 09:24:50+01:00 Europe/Berlin
 
  - Fix bug introduced in go-backend (disabled field

@@ -39,10 +39,7 @@ func GetMux(originalHome string) (*http.ServeMux, *exec.Cmd, io.WriteCloser) {
 	rootDir := path.Clean(path.Join(binPath, ".."))
 	mux.Handle("/", stripIndex(http.FileServer(http.Dir(rootDir))))
 	mux.Handle("/backend/", http.StripPrefix("/backend", backend.MainHandler()))
-	/*
-		fd, _ := os.Create("log")
-		ts := httptest.NewServer(handlers.LoggingHandler(fd, mux))
-	*/
+	mux.Handle("/backend6/", http.StripPrefix("/backend6", backend.MainHandler()))
 	return mux, perlCmd, perlStdin
 }
 

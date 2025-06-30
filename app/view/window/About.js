@@ -19,106 +19,107 @@
 Ext.define(
     'PolicyWeb.view.window.About',
     {
-        extend  : 'Ext.window.Window',
-        alias   : 'widget.aboutwindow',
+        extend: 'Ext.window.Window',
+        alias: 'widget.aboutwindow',
 
-        initComponent : function() {
+        initComponent: function () {
             // Force defaults
             Ext.apply(
                 this,
                 {
-                    width       : 520,
-                    height      : 540,
-                    closeAction : 'hide',
-                    autoScroll  : true,
-                    resizable   : false,
-                    border      : false,
-                    frame       : false,
-                    header      : false,
-                    bodyStyle   : {
-                        background : '#fff'
+                    width: 520,
+                    height: 540,
+                    closeAction: 'hide',
+                    autoScroll: true,
+                    resizable: false,
+                    border: false,
+                    frame: false,
+                    header: false,
+                    bodyStyle: {
+                        background: '#fff'
                     },
-                    loader      : {
-                        url        : 'backend/get_about_info',
-                        autoLoad   : true,
-                        baseParams : {
-                            history      : appstate.getHistory(),
-                            active_owner : appstate.getOwner()
+                    loader: {
+                        url: 'backend6/get_about_info',
+                        autoLoad: true,
+                        baseParams: {
+                            history: appstate.getHistory(),
+                            active_owner: appstate.getOwner()
                         }
                     },
-                    dockedItems : this.buildBottomButton()
+                    dockedItems: this.buildBottomButton()
                 }
             );
             this.callParent(arguments);
         },
 
-        buildBottomButton : function() {
+        buildBottomButton: function () {
             var button = {
                 xtype: 'container',
                 layout: 'hbox',
                 dock: 'bottom',
                 items: [
                     {
-                        xtype : 'container',
-                        flex  : 1
+                        xtype: 'container',
+                        flex: 1
                     },
                     {
-                        xtype    : 'button',
-                        text     : 'Schließen',
-                        minWidth : 50,
-                        handler  : function() {
+                        xtype: 'button',
+                        text: 'Schließen',
+                        minWidth: 50,
+                        handler: function () {
                             this.previousNode('window').hide();
-                        }                    },
+                        }
+                    },
                     {
-                        xtype : 'container',
-                        flex  : 1
+                        xtype: 'container',
+                        flex: 1
                     }
                 ]
             };
             return button;
         },
-        
-        buildTimeoutChooser : function() {
-            
+
+        buildTimeoutChooser: function () {
+
         },
 
-        buildThemeChooser : function() {
+        buildThemeChooser: function () {
             function getQueryParam(name, queryString) {
                 var match = RegExp(name + '=([^&]*)').exec(
                     queryString || location.search
                 );
                 return match && decodeURIComponent(match[1]);
             }
-            
+
             function hasOption(opt) {
                 var s = window.location.search;
                 var re = new RegExp('(?:^|[&?])' + opt +
-                                    '(?:[=]([^&]*))?(?:$|[&])', 'i');
+                    '(?:[=]([^&]*))?(?:$|[&])', 'i');
                 var m = re.exec(s);
-                
+
                 return m ? (m[1] === undefined ? true : m[1]) : false;
             }
 
             var scriptTags = document.getElementsByTagName('script'),
-            defaultTheme = 'neptune',
-            i = scriptTags.length,
-            comboWidth = {
-                classic         : 160,
-                gray            : 160,
-                neptune         : 180,
-                crisp           : 180,
-                'neptune-touch' : 220,
-                'crisp-touch'   : 220
-            },
-            labelWidth = {
-                classic         : 40,
-                gray            : 40,
-                neptune         : 45,
-                crisp           : 45,
-                'neptune-touch' : 55,
-                'crisp-touch'   : 55
-            },
-            defaultQueryString, src, theme;
+                defaultTheme = 'neptune',
+                i = scriptTags.length,
+                comboWidth = {
+                    classic: 160,
+                    gray: 160,
+                    neptune: 180,
+                    crisp: 180,
+                    'neptune-touch': 220,
+                    'crisp-touch': 220
+                },
+                labelWidth = {
+                    classic: 40,
+                    gray: 40,
+                    neptune: 45,
+                    crisp: 45,
+                    'neptune-touch': 55,
+                    'crisp-touch': 55
+                },
+                defaultQueryString, src, theme;
 
             while (i--) {
                 src = scriptTags[i].src;
@@ -131,21 +132,21 @@ Ext.define(
                     break;
                 }
             }
-            
+
             Ext.themeName = theme = getQueryParam('theme') || defaultTheme;
 
             var theme_store = Ext.create(
                 'Ext.data.Store', {
-                    fields : ['value', 'name'],
-                    data   : [
-                        { value : 'neptune',       name: 'Neptune'       },
-                        { value : 'neptune-touch', name: 'Neptune Touch' },
-                        { value : 'crisp',         name: 'Crisp'         },
-                        { value : 'crisp-touch',   name: 'Crisp Touch'   },
-                        { value : 'classic',       name: 'Classic'       },
-                        { value : 'gray',          name: 'Gray'          }
-                    ]
-                }
+                fields: ['value', 'name'],
+                data: [
+                    { value: 'neptune', name: 'Neptune' },
+                    { value: 'neptune-touch', name: 'Neptune Touch' },
+                    { value: 'crisp', name: 'Crisp' },
+                    { value: 'crisp-touch', name: 'Crisp Touch' },
+                    { value: 'classic', name: 'Classic' },
+                    { value: 'gray', name: 'Gray' }
+                ]
+            }
             );
 
             function setParam(param) {
@@ -154,29 +155,29 @@ Ext.define(
                 );
                 location.search = queryString;
             }
-            
+
             function removeParam(paramName) {
                 var params = Ext.Object.fromQueryString(location.search);
-                
+
                 delete params[paramName];
-                
+
                 location.search = Ext.Object.toQueryString(params);
             }
 
             var combo = Ext.create(
                 'Ext.form.ComboBox',
                 {
-                    width        : comboWidth[Ext.themeName],
-                    labelWidth   : labelWidth[Ext.themeName],
-                    fieldLabel   : 'Theme auswählen',
-                    displayField : 'name',
-                    valueField   : 'value',
-                    labelStyle   : 'cursor:move;',
-                    margin       : '0 5 0 0',
-                    store        : theme_store,
-                    value        : theme,
-                    listeners    : {
-                        select : function(combo) {
+                    width: comboWidth[Ext.themeName],
+                    labelWidth: labelWidth[Ext.themeName],
+                    fieldLabel: 'Theme auswählen',
+                    displayField: 'name',
+                    valueField: 'value',
+                    labelStyle: 'cursor:move;',
+                    margin: '0 5 0 0',
+                    store: theme_store,
+                    value: theme,
+                    listeners: {
+                        select: function (combo) {
                             var theme = combo.getValue();
                             if (theme !== defaultTheme) {
                                 setParam({ theme: theme });
@@ -188,12 +189,12 @@ Ext.define(
                 }
             );
             var panel = {
-                xtype     : 'panel',
-                height    : 200,
-                defaults  : {
-                    bodyPadding : 10
+                xtype: 'panel',
+                height: 200,
+                defaults: {
+                    bodyPadding: 10
                 },
-                items : [
+                items: [
                     combo
                 ]
             };
