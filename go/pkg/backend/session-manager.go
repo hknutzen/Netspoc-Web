@@ -14,11 +14,10 @@ import (
 )
 
 type GoSession struct {
-	createdAt      time.Time
-	lastActivityAt time.Time
-	id             string
-	data           map[string]any
-	mu             sync.Mutex
+	CreatedAt      time.Time      `json:"created_at"`
+	LastActivityAt time.Time      `json:"last_activity_at"`
+	ID             string         `json:"id"`
+	Data           map[string]any `json:"data"`
 }
 
 type SessionStore interface {
@@ -95,7 +94,7 @@ func writeCookieIfNecessary(w *sessionResponseWriter) {
 
 	cookie := &http.Cookie{
 		Name:  w.sessionManager.cookieName,
-		Value: session.id,
+		Value: session.ID,
 		//Domain:   "localhost",
 		HttpOnly: true,
 		Path:     "/",
@@ -132,23 +131,23 @@ func generateSessionId() string {
 
 func newSession() *GoSession {
 	return &GoSession{
-		id:             generateSessionId(),
-		data:           make(map[string]any),
-		createdAt:      time.Now(),
-		lastActivityAt: time.Now(),
+		ID:             generateSessionId(),
+		Data:           make(map[string]any),
+		CreatedAt:      time.Now(),
+		LastActivityAt: time.Now(),
 	}
 }
 
 func (s *GoSession) Get(key string) any {
-	return s.data[key]
+	return s.Data[key]
 }
 
 func (s *GoSession) Put(key string, value any) {
-	s.data[key] = value
+	s.Data[key] = value
 }
 
 func (s *GoSession) Delete(key string) {
-	delete(s.data, key)
+	delete(s.Data, key)
 }
 
 func NewSessionManager(
@@ -179,11 +178,11 @@ func (m *SessionManager) gc(d time.Duration) {
 }
 
 func (m *SessionManager) validate(session *GoSession) bool {
-	if time.Since(session.createdAt) > m.absoluteExpiration ||
-		time.Since(session.lastActivityAt) > m.idleExpiration {
+	if time.Since(session.CreatedAt) > m.absoluteExpiration ||
+		time.Since(session.LastActivityAt) > m.idleExpiration {
 
 		// Delete the session from the store
-		err := m.store.destroy(session.id)
+		err := m.store.destroy(session.ID)
 		if err != nil {
 			panic(err)
 		}
@@ -223,26 +222,12 @@ func (m *SessionManager) start(r *http.Request) (*GoSession, *http.Request) {
 }
 
 func (m *SessionManager) save(session *GoSession) error {
-	session.lastActivityAt = time.Now()
+	session.LastActivityAt = time.Now()
 
 	err := m.store.write(session)
 	if err != nil {
 		return err
 	}
-
-	return nil
-}
-
-func (m *SessionManager) migrate(session *GoSession) error {
-	session.mu.Lock()
-	defer session.mu.Unlock()
-
-	err := m.store.destroy(session.id)
-	if err != nil {
-		return err
-	}
-
-	session.id = generateSessionId()
 
 	return nil
 }
@@ -289,7 +274,7 @@ func (s *FileSystemSessionStore) write(session *GoSession) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
-	filePath := s.filePath(session.id)
+	filePath := s.filePath(session.ID)
 	data, err := json.Marshal(session)
 	if err != nil {
 		return err
@@ -338,8 +323,8 @@ func (s *FileSystemSessionStore) gc(idleExpiration, absoluteExpiration time.Dura
 			continue
 		}
 
-		if time.Since(session.lastActivityAt) > idleExpiration ||
-			time.Since(session.createdAt) > absoluteExpiration {
+		if time.Since(session.LastActivityAt) > idleExpiration ||
+			time.Since(session.CreatedAt) > absoluteExpiration {
 			os.Remove(filePath)
 		}
 	}

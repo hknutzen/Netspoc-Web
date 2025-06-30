@@ -23,12 +23,12 @@ func (s *state) loginHandler(w http.ResponseWriter, r *http.Request) {
 	pass := r.FormValue("pass")
 	// Retrieve the session cookie
 	cookie := session.Get("cookieName")
-	log.Printf("Session data: %v\n", session.data)
+	log.Printf("Session data: %v\n", session.Data)
 	session.Put("email", email)
 	session.Put("pass", pass)
 	session.Put("loggedIn", true)
-	log.Printf("Session data: %v\n", session.data)
-	log.Printf("Session id: %v\n", session.id)
+	log.Printf("Session data: %v\n", session.Data)
+	log.Printf("Session id: %v\n", session.ID)
 
 	// Ensure the cookie is of type *http.Cookie
 	if cookie == nil {

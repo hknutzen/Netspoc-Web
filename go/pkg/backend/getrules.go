@@ -174,7 +174,8 @@ func (s *state) adaptNameIPUser(r *http.Request, rules []*rule, userNames []stri
 	natSet := s.loadNATSet(history, owner)
 
 	getVal := func(names []string) any {
-		if dispProp == "ip" {
+		switch dispProp {
+		case "ip":
 			res := []string{}
 			for _, name := range names {
 				res = append(res, s.name2IP(history, name, natSet))
@@ -184,7 +185,7 @@ func (s *state) adaptNameIPUser(r *http.Request, rules []*rule, userNames []stri
 				}
 			}
 			return slices.Compact(res)
-		} else if dispProp == "ip_and_name" {
+		case "ip_and_name":
 			result := []map[string]string{}
 			addIP := func(name, ip string) {
 				if ip != "" {
@@ -200,7 +201,7 @@ func (s *state) adaptNameIPUser(r *http.Request, rules []*rule, userNames []stri
 				addIP(name, s.name2IP6(history, name))
 			}
 			return result
-		} else {
+		default:
 			return names
 		}
 	}
@@ -257,9 +258,10 @@ func (s *state) name2IP6(version string, objName string) string {
 
 func hasUser(rule *rule, what string) bool {
 	result := false
-	if what == "src" {
+	switch what {
+	case "src":
 		result = rule.HasUser == "src" || rule.HasUser == "both"
-	} else if what == "dst" {
+	case "dst":
 		result = rule.HasUser == "dst" || rule.HasUser == "both"
 	}
 	return result
