@@ -114,12 +114,7 @@ SERVICE:
 		}
 		matchUsers := func(m map[string]bool) bool { return match(m, users) }
 		matchProto := func(prtList []string) bool {
-			for _, p := range prtList {
-				if protoMatcher(p) {
-					return true
-				}
-			}
-			return false
+			return slices.ContainsFunc(prtList, protoMatcher)
 		}
 		matchRules := func(m map[string]bool) bool {
 			if m == nil && protoMatcher == nil {
