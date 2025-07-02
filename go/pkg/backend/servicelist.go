@@ -211,7 +211,7 @@ func (s *state) selectIPSearch(svcNames []string, r *http.Request,
 // Build map having those object names as key which match
 // search request in "search_ip1|2", "search_subnet", "search_supernet".
 func (s *state) buildSearchMap(r *http.Request, key string) map[string]bool {
-	search := r.FormValue(key)
+	search := strings.Trim(r.FormValue(key), " \t\r\n")
 	if search == "" {
 		return nil
 	}
