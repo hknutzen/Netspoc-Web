@@ -34,6 +34,7 @@ func TestNetspocWeb(t *testing.T) {
 	originalHome := os.Getenv("HOME")
 	workDir := t.TempDir()
 	os.Setenv("HOME", workDir)
+	os.Setenv("SERVE_IP6", "1")
 
 	// Write policyweb.conf file in new HOME directory.
 	// This has to be done before perlTestServer() is called, so that
