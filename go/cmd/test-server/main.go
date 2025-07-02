@@ -15,7 +15,8 @@ import (
 func main() {
 
 	homeDir := strings.TrimSuffix(os.Getenv("NETSPOC_WEB_SRC_DIR"), "Netspoc-Web")
-	mux, perlCmd, perlStdin := testbackend.GetMux(homeDir)
+	perlCmd, perlStdin := testbackend.PerlTestServer(homeDir)
+	mux := testbackend.GetMux(homeDir)
 	ts := httptest.NewServer(mux)
 
 	// Print port number to STDOUT.

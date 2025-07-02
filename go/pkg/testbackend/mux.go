@@ -14,7 +14,7 @@ import (
 )
 
 // Start Perl test server.
-func perlTestServer(originalHome string) (*exec.Cmd, io.WriteCloser) {
+func PerlTestServer(originalHome string) (*exec.Cmd, io.WriteCloser) {
 	binPath := path.Join(originalHome, "Netspoc-Web", "bin")
 	perlCmd := exec.Command(path.Join(binPath, "test-server.pl"))
 	perlStdout, _ := perlCmd.StdoutPipe()

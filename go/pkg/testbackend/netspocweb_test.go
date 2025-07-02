@@ -39,7 +39,7 @@ func TestNetspocWeb(t *testing.T) {
 	// This has to be done before perlTestServer() is called, so that
 	// the config file is read by the Perl test-server.
 	PrepareConfig(workDir)
-	perlCmd, perlStdin := perlTestServer(originalHome)
+	perlCmd, perlStdin := PerlTestServer(originalHome)
 	defer func() {
 		// Stop Perl server.
 		perlStdin.Close()
