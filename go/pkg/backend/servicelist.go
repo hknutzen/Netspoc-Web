@@ -47,7 +47,7 @@ func (s *state) generateServiceList(r *http.Request) []jsonMap {
 		if r.FormValue("search_disable_at") != "" {
 			// Only services with attribute 'disable_at' will be searched.
 			svcNames = slices.DeleteFunc(svcNames, func(name string) bool {
-				return services[name].Details.DisableAt != ""
+				return services[name].Details.DisableAt == ""
 			})
 		}
 		sort.Strings(svcNames)

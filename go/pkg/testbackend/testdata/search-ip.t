@@ -1,3 +1,4 @@
+
 =TEMPL=topo
 owner:x = { admins = guest; show_all; }
 owner:y = { admins = guest; }
@@ -123,6 +124,7 @@ service:Test10 = {
 }
 
 service:Test11 = {
+ disable_at = 2025-06-02;
  user = network:Sub;
  permit src = user; dst = network:KUNDE1; prt = tcp 84, proto 82, icmp 4/13;
 }
@@ -907,3 +909,18 @@ search_used=1
     }
 ]
 =END=
+
+############################################################
+
+=TITLE=Show time limited services in search
+=NETSPOC=
+[[topo]]
+=URL=service_list
+=PARAMS=
+active_owner=x
+history=p1
+search_string=Test
+search_disable_at=1
+search_own=1
+search_used=1
+=RESPONSE_NAMES=["Test11"]
