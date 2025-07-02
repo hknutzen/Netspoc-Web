@@ -6,6 +6,7 @@ import (
 	"io"
 	"net/http"
 	"net/http/httptest"
+	"net/url"
 	"os"
 	"os/exec"
 	"path"
@@ -18,12 +19,13 @@ import (
 )
 
 type descr struct {
-	Title    string
-	Netspoc  string
-	URL      string
-	Params   string
-	Response string
-	Status   int
+	Title         string
+	Netspoc       string
+	URL           string
+	Params        string
+	Response      string
+	ResponseNames string
+	Status        int
 }
 
 func TestNetspocWeb(t *testing.T) {
@@ -34,14 +36,15 @@ func TestNetspocWeb(t *testing.T) {
 	os.Setenv("HOME", workDir)
 
 	// Write policyweb.conf file in new HOME directory.
-	// This has to be done before GetMux() is called, so that
-	// the config file is read by the Perl test-server that is
-	// started in GetMux().
+	// This has to be done before perlTestServer() is called, so that
+	// the config file is read by the Perl test-server.
 	PrepareConfig(workDir)
-
-	// Mux has to be created with original home directory.
-	// The new temp directory is saved as HOME env var.
-	mux, perlCmd, perlStdin := GetMux(originalHome)
+	perlCmd, perlStdin := perlTestServer(originalHome)
+	defer func() {
+		// Stop Perl server.
+		perlStdin.Close()
+		perlCmd.Wait()
+	}()
 
 	// Read test files before changing work directory.
 	dataFiles, _ := filepath.Glob("testdata/*.t")
@@ -55,19 +58,18 @@ func TestNetspocWeb(t *testing.T) {
 			}
 			for _, d := range l {
 				t.Run(d.Title, func(t *testing.T) {
-					testHandleFunc(t, d, "/backend/"+d.URL, mux.ServeHTTP)
+					testHandleFunc(t, d, "/backend/"+d.URL, originalHome)
 				})
 			}
 		})
 	}
-	// Stop Perl server.
-	perlStdin.Close()
-	perlCmd.Wait()
 }
 
-func testHandleFunc(t *testing.T, d descr,
-	url string, handler func(http.ResponseWriter, *http.Request),
-) {
+func testHandleFunc(t *testing.T, d descr, endpoint, originalHome string) {
+
+	// Mux needs original home directory
+	// to find the root directory.
+	mux := GetMux(originalHome)
 	policy := "p1"
 	home := os.Getenv("HOME")
 	netspocDir := filepath.Join(home, "netspoc")
@@ -84,28 +86,57 @@ func testHandleFunc(t *testing.T, d descr,
 	loginUrl := "/backend/login?email=guest&app=../app.html"
 	req := httptest.NewRequest(http.MethodPost, loginUrl, strings.NewReader(""))
 	resp := httptest.NewRecorder()
-	handler(resp, req)
+	mux.ServeHTTP(resp, req)
 	cookies := resp.Result().Cookies()
 
+	// Params can be written as single line
+	// a=b&c=d
+	// or as separate lines
+	// a=b
+	// c=d
+	params := d.Params
+	params = strings.TrimSuffix(params, "\n")
+	params = strings.ReplaceAll(params, "\n", "&")
+	params = url.PathEscape(params)
+
 	// Call given URL and handle response
-	//
-	req = httptest.NewRequest(http.MethodPost, url+"?"+d.Params, nil)
+	req = httptest.NewRequest(http.MethodPost, endpoint+"?"+params, nil)
 	// Add cookies of login request.
 	for _, c := range cookies {
 		req.AddCookie(c)
 	}
 	resp = httptest.NewRecorder()
-	handler(resp, req)
+	mux.ServeHTTP(resp, req)
 	body, _ := io.ReadAll(resp.Body)
 	type jsonData struct {
 		Success    bool
+		Msg        string
 		TotalCount int
 		Records    json.RawMessage
 	}
 	var data jsonData
 	json.Unmarshal(body, &data)
+	if data.Msg != "" {
+		t.Errorf("Unexpected response message: %s", data.Msg)
+	}
+	if d.Status == 0 {
+		d.Status = 200
+	}
 	if resp.Code != d.Status {
 		t.Errorf("Want status '%d', got '%d'", d.Status, resp.Code)
+	}
+	if d.ResponseNames != "" {
+		type named struct {
+			Name string
+		}
+		var l []named
+		json.Unmarshal(data.Records, &l)
+		sl := make([]string, len(l))
+		for i, e := range l {
+			sl[i] = e.Name
+		}
+		data.Records, _ = json.Marshal(sl)
+		d.Response = d.ResponseNames
 	}
 	jsonEq(t, d.Response, data.Records)
 }
