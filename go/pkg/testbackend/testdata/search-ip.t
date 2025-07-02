@@ -588,6 +588,20 @@ search_used=1
 =RESPONSE_NAMES=["Test1", "Test3", "Test3a", "Test6"]
 
 ############################################################
+=TITLE=Supernet IP search for host address finds enclosing network
+=NETSPOC=
+[[topo]]
+=URL=service_list
+=PARAMS=
+active_owner=x
+history=p1
+search_ip1=10.1.0.10
+search_supernet=1
+search_own=1
+search_used=1
+=RESPONSE_NAMES=["Test2", "Test4", "Test5", "Test6", "Test7", "Test8", "Test9"]
+
+############################################################
 =TITLE=Supernet IP search for aggregate
 =NETSPOC=
 [[topo]]

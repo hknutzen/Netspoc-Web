@@ -354,7 +354,24 @@ func (s *state) buildIPSearchMap(r *http.Request, p netip.Prefix,
 				result[name] = true
 			}
 		}
-	} else {
+	} else if supernets != nil {
+		if matchingZones[""] {
+			assets := s.loadAssets(history, owner)
+			for netName, childNames := range assets.net2childs {
+				z := objects[netName].Zone
+				for _, childName := range childNames {
+					objects[childName].Zone = z
+				}
+			}
+			for name := range result {
+				typ, _, _ := strings.Cut(name, ":")
+				switch typ {
+				case "host", "interface":
+					obj := objects[name]
+					matchingZones[obj.Zone] = true
+				}
+			}
+		}
 		for _, name := range supernets {
 			z := objects[name].Zone
 			if matchingZones[z] {
