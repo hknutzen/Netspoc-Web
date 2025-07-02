@@ -276,24 +276,19 @@ func (s *state) buildIPSearchMap(r *http.Request, p netip.Prefix,
 	result := make(map[string]bool)
 	for name, obj := range objects {
 
-		// Take NAT IP or real IP.
-		ip := ""
-		for tag, natIP := range obj.NAT {
-			if natSet[tag] {
-				ip = natIP
-				break
-			}
-		}
-		if ip == "" {
-			if p.Addr().Is4() {
-				ip = obj.IP
-			} else {
-				// v6 addresses can be stored in obj.IP6 OR in obj.IP.
-				if obj.IP6 == "" {
-					ip = obj.IP
-				} else {
-					ip = obj.IP6
+		ip := obj.IP
+		if p.Addr().Is4() {
+			// Take NAT IP if available.
+			for tag, natIP := range obj.NAT {
+				if natSet[tag] {
+					ip = natIP
+					break
 				}
+			}
+		} else {
+			// IPv6 address is stored in obj.IP6 for dual stack object.
+			if obj.IP6 != "" {
+				ip = obj.IP6
 			}
 		}
 
