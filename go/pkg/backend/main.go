@@ -7,6 +7,7 @@ import (
 	"net/http/httputil"
 	"net/url"
 	"os"
+	"runtime/debug"
 )
 
 type state struct {
@@ -75,7 +76,7 @@ func RecoveryHandler(h http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		defer func() {
 			if err := recover(); err != nil {
-				msg := fmt.Errorf("%s", err)
+				msg := fmt.Errorf("%s - %s", err, debug.Stack())
 				writeError(w, msg.Error(), http.StatusInternalServerError)
 			}
 		}()
