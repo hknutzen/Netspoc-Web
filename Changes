@@ -1,5 +1,9 @@
 {{$NEXT}}
 
+ - Last release failed in git-push-step, so we
+   provide another release without really changing
+   anything.
+
 1.031     2025-07-03 15:31:05+02:00 Europe/Berlin
  - Remove leading and trailing whitespace from
    search input.
