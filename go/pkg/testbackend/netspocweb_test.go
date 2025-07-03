@@ -26,6 +26,7 @@ type descr struct {
 	Response      string
 	ResponseNames string
 	Status        int
+	Todo          bool
 }
 
 func TestNetspocWeb(t *testing.T) {
@@ -67,6 +68,9 @@ func TestNetspocWeb(t *testing.T) {
 }
 
 func testHandleFunc(t *testing.T, d descr, endpoint, originalHome string) {
+	if d.Todo {
+		t.Skip("skipping TODO test")
+	}
 
 	// Mux needs original home directory
 	// to find the root directory.
