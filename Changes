@@ -1,4 +1,6 @@
 {{$NEXT}}
+
+1.031     2025-07-03 15:31:05+02:00 Europe/Berlin
  - Remove leading and trailing whitespace from
    search input.
  - Fix searching for terminable services.
