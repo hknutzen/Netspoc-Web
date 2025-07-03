@@ -15,7 +15,12 @@ router:r1 = {
  interface:n2 = { ip = 10.1.2.1; hardware = n2; }
  interface:n3 = { ip = 10.1.3.1; hardware = n3; }
 }
+=END=
 
+############################################################
+=TITLE=Take lexically first owner if multiple with same numbers
+=NETSPOC=
+[[topo]]
 service:s1 = {
  user = network:n2;
  permit src = user; dst = network:n1; prt = tcp 80;
@@ -28,12 +33,18 @@ service:s3a = {
  user = network:n1;
  permit src = user; dst = network:n3; prt = tcp 80;
 }
-=END=
+=URL=get_owner
+=RESPONSE_NAMES=["o1"]
 
 ############################################################
-=TITLE=Take lexically first owner if multiple with same numbers
+=TITLE=Leave owner unchanged if one was already selected
+=TODO=Fails currently for unknown reason
 =NETSPOC=
 [[topo]]
+service:s3a = {
+ user = network:n1;
+ permit src = user; dst = network:n3; prt = tcp 80;
+}
 =URL=get_owner
 =RESPONSE_NAMES=["o1"]
 

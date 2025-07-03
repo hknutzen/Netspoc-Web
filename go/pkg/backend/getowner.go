@@ -7,7 +7,7 @@ import (
 )
 
 func (s *state) getOwner(w http.ResponseWriter, r *http.Request) {
-	ow := r.FormValue("owner")
+	ow := getSession(r).Owner
 	l := s.findAuthorizedOwners(r)
 	// Selected owner was stored before.
 	if ow != "" && slices.Contains(l, ow) {
