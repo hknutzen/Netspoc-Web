@@ -37,6 +37,7 @@ func getMux() *http.ServeMux {
 	needsLoginMux.HandleFunc("/get_admins", s.getAdmins)
 	needsLoginMux.HandleFunc("/get_watchers", s.getWatchers)
 	needsLoginMux.HandleFunc("/get_admins_watchers", s.getAdminsWatchers)
+	needsLoginMux.HandleFunc("/get_owner", s.getOwner)
 	needsLoginMux.HandleFunc("/get_rules", s.getRules)
 	needsLoginMux.HandleFunc("/get_users", s.getUsers)
 	needsLoginMux.HandleFunc("/get_services_and_rules", s.getServicesAndRules)

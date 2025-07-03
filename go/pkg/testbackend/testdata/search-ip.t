@@ -27,18 +27,26 @@ router:asa = {
  model = ASA;
  routing = manual;
  interface:Big    = { ip = 10.1.0.1; hardware = outside; }
- interface:Kunde  = { ip = 10.2.2.1; hardware = inside; }
+ interface:Kunde  = { ip = 10.2.2.1; ip6 = 1000:abcd:2:2::1; hardware = inside; }
  interface:KUNDE  = { ip = 10.2.3.1; hardware = inside; }
  interface:KUNDE1 = { ip = 10.2.4.1; hardware = inside; }
- interface:DMZ    = { ip = 10.9.9.1; hardware = dmz; }
+ interface:DMZ    = { ip = 10.9.9.1;  ip6 = 1000:abcd:9:9::1; hardware = dmz; }
+ interface:n3     = { ip6 = 1000::abcd:0003:1; hardware = n3; }
 }
 
-network:Kunde  = { ip = 10.2.2.0/24; owner = y; host:k  = { ip = 10.2.2.2; } }
+network:Kunde  = {
+ ip = 10.2.2.0/24;
+ nat:inet = { ip = 2.2.2.0/24; }
+ ip6 = 1000:abcd:2:2::0/64;
+ owner = y;
+ auto_ipv6_hosts = readable;
+ host:k  = { ip = 10.2.2.2; }
+}
 network:KUNDE  = { ip = 10.2.3.0/24; owner = y; host:K  = { ip = 10.2.3.3; } }
 network:KUNDE1 = { ip = 10.2.4.0/24; owner = y; host:K1 = { ip = 10.2.4.4; } }
 any:Kunde = { link = network:Kunde; }
 
-network:DMZ = { ip = 10.9.9.0/24; }
+network:DMZ = { ip = 10.9.9.0/24; ip6 = 1000:abcd:9:9::0/64; }
 
 router:FW = {
  managed;
@@ -284,6 +292,19 @@ search_used=1
 active_owner=x
 history=p1
 search_ip1=10.2.2.0/24
+search_own=1
+search_used=1
+=RESPONSE_NAMES=["Test1", "Test3", "Test3a"]
+
+############################################################
+=TITLE=Exact IP search for IPv6 address of network with IPv4 NAT
+=NETSPOC=
+[[topo]]
+=URL=service_list
+=PARAMS=
+active_owner=x
+history=p1
+search_ip1=1000:abcd:2:2::0/64
 search_own=1
 search_used=1
 =RESPONSE_NAMES=["Test1", "Test3", "Test3a"]
@@ -756,7 +777,9 @@ service=Test4
 search_ip1=10.1.0.0/16
 search_ip2=10.2.2.2
 search_subnet=1
-=RESPONSE_NAMES=["host:B10", "host:Range", "interface:u.Big", "host:k"]
+=END=
+# Dual stack object "host:k" gives two entries with different IP addresses.
+=RESPONSE_NAMES=["host:B10", "host:Range", "interface:u.Big", "host:k", "host:k"]
 
 ############################################################
 =TITLE=Show matching users of service, 1x ip, chosen networks

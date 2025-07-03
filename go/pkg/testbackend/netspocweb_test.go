@@ -26,6 +26,7 @@ type descr struct {
 	Response      string
 	ResponseNames string
 	Status        int
+	Todo          bool
 }
 
 func TestNetspocWeb(t *testing.T) {
@@ -34,6 +35,7 @@ func TestNetspocWeb(t *testing.T) {
 	originalHome := os.Getenv("HOME")
 	workDir := t.TempDir()
 	os.Setenv("HOME", workDir)
+	os.Setenv("SERVE_IP6", "1")
 
 	// Write policyweb.conf file in new HOME directory.
 	// This has to be done before perlTestServer() is called, so that
@@ -66,6 +68,9 @@ func TestNetspocWeb(t *testing.T) {
 }
 
 func testHandleFunc(t *testing.T, d descr, endpoint, originalHome string) {
+	if d.Todo {
+		t.Skip("skipping TODO test")
+	}
 
 	// Mux needs original home directory
 	// to find the root directory.
