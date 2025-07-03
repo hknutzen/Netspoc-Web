@@ -1,5 +1,7 @@
 {{$NEXT}}
 
+1.032     2025-07-03 15:41:36+02:00 Europe/Berlin
+
  - Last release failed in git-push-step, so we
    provide another release without really changing
    anything.
