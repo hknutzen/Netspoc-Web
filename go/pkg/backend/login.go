@@ -21,29 +21,12 @@ func (s *state) loginHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	email := r.FormValue("email")
 	pass := r.FormValue("pass")
-	// Retrieve the session cookie
-	cookie := session.Get("cookieName")
 	log.Printf("Session data: %v\n", session.Data)
 	session.Put("email", email)
 	session.Put("pass", pass)
 	session.Put("loggedIn", true)
-	log.Printf("Session data: %v\n", session.Data)
+	log.Printf("Session data after PUT: %v\n", session.Data)
 	log.Printf("Session id: %v\n", session.ID)
-
-	// Ensure the cookie is of type *http.Cookie
-	if cookie == nil {
-		http.Error(w, "Session cookie is nil", http.StatusInternalServerError)
-		return
-	}
-	// Type assert the cookie to *http.Cookie
-	cookie, ok := cookie.(*http.Cookie)
-	if !ok {
-		http.Error(w, "Invalid session cookie type", http.StatusInternalServerError)
-		return
-	}
-
-	// Print the session cookie value to STDERR
-	log.Printf("Session Cookie: %v\n", cookie)
 
 	userFile := fmt.Sprintf("%s/%s.json", s.config.UserDir, email)
 
