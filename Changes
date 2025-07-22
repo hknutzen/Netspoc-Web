@@ -1,5 +1,7 @@
 {{$NEXT}}
 
+1.033     2025-07-22 20:00:18+02:00 Europe/Berlin
+
  - Remove leading and trailing whitespace from
    string search input (IP inout was fixed in a
    previous release.
