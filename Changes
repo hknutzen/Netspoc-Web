@@ -1,5 +1,11 @@
 {{$NEXT}}
 
+ - Remove leading and trailing whitespace from
+   string search input (IP inout was fixed in a
+   previous release.
+ - Change user-session-data format from CGI::Session
+   to JSON.
+
 1.032     2025-07-03 15:41:36+02:00 Europe/Berlin
 
  - Last release failed in git-push-step, so we
