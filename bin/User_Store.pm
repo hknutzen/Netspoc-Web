@@ -6,8 +6,8 @@ use Carp;
 use Fcntl qw(:flock);
 use JSON;
 use open qw(:std :utf8);
-
-use lib '~/Netspoc-Web/bin/';    # Replace with the actual path to CGI_Store.pm
+use FindBin;
+use lib "$FindBin::Bin";
 use CGI_Store;
 
 sub new {
