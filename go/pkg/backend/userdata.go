@@ -14,19 +14,19 @@ type UserStore struct {
 }
 
 // generatePassword generates a SHA256 hash of the given password
-func (u *UserStore) generatePassword(password string) {
+func (u *UserStore) GeneratePassword(password string) {
 	hash := sha256.Sum256([]byte(password))
 	u.Hash = hex.EncodeToString(hash[:])
 }
 
 // checkPassword checks if the given password matches the stored hash
-func (u *UserStore) checkPassword(password string) bool {
+func (u *UserStore) CheckPassword(password string) bool {
 	hash := sha256.Sum256([]byte(password))
 	return u.Hash == hex.EncodeToString(hash[:])
 }
 
 // readFromFile reads the UserStore data from a JSON file
-func (u *UserStore) readFromFile(userFile string) error {
+func (u *UserStore) ReadFromFile(userFile string) error {
 	file, err := os.Open(userFile)
 	if err != nil {
 		return err
@@ -42,7 +42,7 @@ func (u *UserStore) readFromFile(userFile string) error {
 }
 
 // writeToFile writes the UserStore data to a JSON file
-func (u *UserStore) writeToFile(userFile string) error {
+func (u *UserStore) WriteToFile(userFile string) error {
 	data, err := json.Marshal(u)
 	if err != nil {
 		return err
@@ -51,7 +51,7 @@ func (u *UserStore) writeToFile(userFile string) error {
 	return os.WriteFile(userFile, data, 0644)
 }
 
-func getUserStore(userFile string) (*UserStore, error) {
+func GetUserStore(userFile string) (*UserStore, error) {
 	userStore := &UserStore{}
 	if err := userStore.ensureUserFile(userFile); err != nil {
 		return nil, err
@@ -64,12 +64,12 @@ func getUserStore(userFile string) (*UserStore, error) {
 func (u *UserStore) ensureUserFile(userFile string) error {
 	if _, err := os.Stat(userFile); err == nil {
 		// File exists, read content
-		return u.readFromFile(userFile)
+		return u.ReadFromFile(userFile)
 	} else if os.IsNotExist(err) {
 		// File does not exist, create new UserStore
 		u.SendDiff = []string{} // initialize empty slice
 		u.Hash = ""             // initialize empty string
-		return u.writeToFile(userFile)
+		return u.WriteToFile(userFile)
 	} else {
 		// Other error
 		return err

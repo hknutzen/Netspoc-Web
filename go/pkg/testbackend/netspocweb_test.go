@@ -105,9 +105,9 @@ func testHandleFunc(t *testing.T, d descr, endpoint, originalHome string) {
 			t.Fatalf("Failed to get user store: %v", err)
 		}
 		if d.Password != "" {
-			store.generatePassword(d.Password)
+			store.GeneratePassword(d.Password)
 		}
-		if err := store.writeToFile(userFile); err != nil {
+		if err := store.WriteToFile(userFile); err != nil {
 			t.Fatalf("Failed to write user store: %v", err)
 		}
 		loginUrl = "/backend/login?email=" + url.QueryEscape(d.Email) + "&app=../app.html"
