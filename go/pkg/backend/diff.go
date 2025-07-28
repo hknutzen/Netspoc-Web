@@ -7,7 +7,7 @@ import (
 
 func (s *state) getDiffMail(w http.ResponseWriter, r *http.Request) {
 	owner := r.FormValue("active_owner")
-	store, err := getUserStore(s.getUserFile(r))
+	store, err := GetUserStore(s.getUserFile(r))
 	if err != nil {
 		writeError(w, "Failed to get user store: "+err.Error(), http.StatusInternalServerError)
 		return
@@ -23,7 +23,7 @@ func (s *state) getDiffMail(w http.ResponseWriter, r *http.Request) {
 func (s *state) setDiffMail(w http.ResponseWriter, r *http.Request) {
 	owner := r.FormValue("active_owner")
 	userFile := s.getUserFile(r)
-	store, err := getUserStore(userFile)
+	store, err := GetUserStore(userFile)
 	if err != nil {
 		writeError(w, "Failed to get user store: "+err.Error(), http.StatusInternalServerError)
 		return
@@ -37,7 +37,7 @@ func (s *state) setDiffMail(w http.ResponseWriter, r *http.Request) {
 		store.SendDiff = slices.Delete(store.SendDiff, 0, slices.Index(store.SendDiff, owner)+1)
 	}
 
-	if err := store.writeToFile(userFile); err != nil {
+	if err := store.WriteToFile(userFile); err != nil {
 		writeError(w, "Failed to write user store: "+err.Error(), http.StatusInternalServerError)
 		return
 	}

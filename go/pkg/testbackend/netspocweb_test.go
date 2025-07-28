@@ -15,6 +15,7 @@ import (
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
+	"github.com/hknutzen/Netspoc-Web/go/pkg/backend"
 	"github.com/hknutzen/testtxt"
 )
 
@@ -25,6 +26,8 @@ type descr struct {
 	Params        string
 	Response      string
 	ResponseNames string
+	Email         string
+	Password      string
 	Status        int
 	Todo          bool
 }
@@ -72,6 +75,10 @@ func testHandleFunc(t *testing.T, d descr, endpoint, originalHome string) {
 		t.Skip("skipping TODO test")
 	}
 
+	// Create config file. This needs to be done before creating the mux,
+	// so that the mux can find the config file policyweb.conf.
+	writeConfigFile(t)
+
 	// Mux needs original home directory
 	// to find the root directory.
 	mux := GetMux(originalHome)
@@ -89,6 +96,25 @@ func testHandleFunc(t *testing.T, d descr, endpoint, originalHome string) {
 
 	// Perform login
 	loginUrl := "/backend/login?email=guest&app=../app.html"
+	if d.Email != "" {
+
+		// Create user-session-file
+		userFile := filepath.Join(home, "users", d.Email)
+		store, err := backend.GetUserStore(userFile)
+		if err != nil {
+			t.Fatalf("Failed to get user store: %v", err)
+		}
+		if d.Password != "" {
+			store.generatePassword(d.Password)
+		}
+		if err := store.writeToFile(userFile); err != nil {
+			t.Fatalf("Failed to write user store: %v", err)
+		}
+		loginUrl = "/backend/login?email=" + url.QueryEscape(d.Email) + "&app=../app.html"
+		if d.Password != "" {
+			loginUrl += "&pass=" + url.QueryEscape(d.Password)
+		}
+	}
 	req := httptest.NewRequest(http.MethodPost, loginUrl, strings.NewReader(""))
 	resp := httptest.NewRecorder()
 	mux.ServeHTTP(resp, req)
@@ -169,5 +195,14 @@ func runCmd(t *testing.T, line string) {
 	cmd := exec.Command(args[0], args[1:]...)
 	if out, err := cmd.CombinedOutput(); err != nil {
 		t.Fatalf("Command failed: %q: %v", line, string(out))
+	}
+}
+
+func writeConfigFile(t *testing.T) {
+	workdir := os.Getenv("HOME")
+	content := "{ user_dir : " + workdir + "/users }"
+	configFile := filepath.Join(workdir, "policyweb.conf")
+	if err := os.WriteFile(configFile, []byte(content), 0644); err != nil {
+		t.Fatalf("Failed to write config file: %v", err)
 	}
 }
