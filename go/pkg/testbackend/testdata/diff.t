@@ -21,7 +21,32 @@ router:r1 = {
 =TITLE=Send_diff should be empty initially.
 =NETSPOC=
 [[topo]]
-=USER=x@example.com
+=EMAIL=x@example.com
 =PASSWORD=secret
 =URL=get_diff_mail
-=RESPONSE=[]
+
+=RESPONSE=
+[
+  {
+	"send": false
+  }
+]
+=END=
+
+############################################################
+
+=TITLE=Set send_diff for owner o1
+=NETSPOC=
+[[topo]]
+=EMAIL=x@example.com
+=PASSWORD=secret
+=PARAMS=active_owner=o1&history=p1&send=true
+=URL=set_diff_mail
+
+=RESPONSE=
+[
+  {
+    "success" : true
+  }
+]
+=END=
