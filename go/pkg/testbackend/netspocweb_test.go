@@ -97,18 +97,16 @@ func testHandleFunc(t *testing.T, d descr, endpoint, originalHome string) {
 	// Perform login
 	loginUrl := "/backend/login?email=guest&app=../app.html"
 	if d.Email != "" {
-
 		// Create user-session-file
-		userFile := filepath.Join(home, "users", d.Email)
-		store, err := backend.GetUserStore(userFile)
-		if err != nil {
-			t.Fatalf("Failed to get user store: %v", err)
-		}
 		if d.Password != "" {
-			store.GeneratePassword(d.Password)
-		}
-		if err := store.WriteToFile(userFile); err != nil {
-			t.Fatalf("Failed to write user store: %v", err)
+			script := filepath.Join(originalHome, "Netspoc-Web", "bin", "add_user_pass")
+			userDir := filepath.Join(home, "users")
+			err := backend.GeneratePasswordWithPerlScript(script, userDir, d.Email, d.Password)
+			if err != nil {
+				t.Fatalf("Failed to generate password: %v", err)
+			}
+		} else {
+			t.Fatalf("Missing mandatory password for this test: %v", t.Name())
 		}
 		loginUrl = "/backend/login?email=" + url.QueryEscape(d.Email) + "&app=../app.html"
 		if d.Password != "" {
@@ -200,7 +198,9 @@ func runCmd(t *testing.T, line string) {
 
 func writeConfigFile(t *testing.T) {
 	workdir := os.Getenv("HOME")
-	content := "{ user_dir : " + workdir + "/users }"
+	content := "{ \"user_dir\" : \"" + workdir + "/users\", \n" +
+		" \"netspoc_data\" : \"" + workdir + "/export\" }"
+
 	configFile := filepath.Join(workdir, "policyweb.conf")
 	if err := os.WriteFile(configFile, []byte(content), 0644); err != nil {
 		t.Fatalf("Failed to write config file: %v", err)
