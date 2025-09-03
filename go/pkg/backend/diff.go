@@ -34,7 +34,9 @@ func (s *state) setDiffMail(w http.ResponseWriter, r *http.Request) {
 			store.SendDiff = append(store.SendDiff, owner)
 		}
 	} else {
-		store.SendDiff = slices.Delete(store.SendDiff, 0, slices.Index(store.SendDiff, owner)+1)
+		index := slices.Index(store.SendDiff, owner)
+		store.SendDiff = slices.Delete(store.SendDiff, index,
+			index+1)
 	}
 
 	if err := store.WriteToFile(userFile); err != nil {
