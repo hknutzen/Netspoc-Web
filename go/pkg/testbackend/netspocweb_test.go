@@ -36,20 +36,6 @@ func TestNetspocWeb(t *testing.T) {
 
 	// We need the original HOME to find the bin-directory.
 	originalHome := os.Getenv("HOME")
-	workDir := t.TempDir()
-	os.Setenv("HOME", workDir)
-	os.Setenv("SERVE_IP6", "1")
-
-	// Write policyweb.conf file in new HOME directory.
-	// This has to be done before perlTestServer() is called, so that
-	// the config file is read by the Perl test-server.
-	PrepareConfig(workDir)
-	perlCmd, perlStdin := PerlTestServer(originalHome)
-	defer func() {
-		// Stop Perl server.
-		perlStdin.Close()
-		perlCmd.Wait()
-	}()
 
 	// Read test files before changing work directory.
 	dataFiles, _ := filepath.Glob("testdata/*.t")
@@ -74,6 +60,21 @@ func testHandleFunc(t *testing.T, d descr, endpoint, originalHome string) {
 	if d.Todo {
 		t.Skip("skipping TODO test")
 	}
+
+	workDir := t.TempDir()
+	os.Setenv("HOME", workDir)
+	os.Setenv("SERVE_IP6", "1")
+
+	// Write policyweb.conf file in new HOME directory.
+	// This has to be done before perlTestServer() is called, so that
+	// the config file is read by the Perl test-server.
+	PrepareConfig(workDir)
+	perlCmd, perlStdin := PerlTestServer(originalHome)
+	defer func() {
+		// Stop Perl server.
+		perlStdin.Close()
+		perlCmd.Wait()
+	}()
 
 	// Create config file. This needs to be done before creating the mux,
 	// so that the mux can find the config file policyweb.conf.
