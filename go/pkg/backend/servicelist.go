@@ -424,7 +424,7 @@ func getProtoMatcher(r *http.Request) func(string) bool {
 
 func (s *state) selectStringSearch(svcNames []string, r *http.Request,
 ) []string {
-	search := r.FormValue("search_string")
+	search := strings.Trim(r.FormValue("search_string"), " \t\r\n")
 	if search == "" {
 		return svcNames
 	}
