@@ -1,5 +1,9 @@
 {{$NEXT}}
 
+ - Migrate URLs /get_diff_mail and /set_diff_mail to go.
+   For that a UserStore is implemented, that manages a file
+   based store per user.
+
 1.033     2025-07-22 20:00:18+02:00 Europe/Berlin
 
  - Remove leading and trailing whitespace from
