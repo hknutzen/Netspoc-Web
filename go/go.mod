@@ -8,4 +8,7 @@ require (
 	go4.org/netipx v0.0.0-20231129151722-fdeea329fbba
 )
 
-require gopkg.in/yaml.v3 v3.0.1 // indirect
+require (
+	golang.org/x/crypto v0.40.0 // indirect
+	gopkg.in/yaml.v3 v3.0.1 // indirect
+)

@@ -6,6 +6,8 @@ import (
 	"encoding/json"
 	"io"
 	"os"
+	"os/exec"
+	"path/filepath"
 )
 
 type UserStore struct {
@@ -17,6 +19,15 @@ type UserStore struct {
 func (u *UserStore) GeneratePassword(password string) {
 	hash := sha256.Sum256([]byte(password))
 	u.Hash = hex.EncodeToString(hash[:])
+}
+
+// GeneratePasswordWithPerlScript calls an external Perl script to generate a password hash
+func GeneratePasswordWithPerlScript(script, dir, email, password string) error {
+	cmd := exec.Command(script, dir, email, password)
+	if err := cmd.Run(); err != nil {
+		return err
+	}
+	return nil
 }
 
 // checkPassword checks if the given password matches the stored hash
@@ -48,6 +59,11 @@ func (u *UserStore) WriteToFile(userFile string) error {
 		return err
 	}
 
+	// Ensure the directory exists
+	dir := filepath.Dir(userFile)
+	if err := os.MkdirAll(dir, 0755); err != nil {
+		return err
+	}
 	return os.WriteFile(userFile, data, 0644)
 }
 

@@ -34,6 +34,8 @@ func getMux() *http.ServeMux {
 	noLoginMux.HandleFunc("/get_policy", s.getPolicy)
 
 	needsLoginMux := http.NewServeMux()
+	needsLoginMux.HandleFunc("/get_diff_mail", s.getDiffMail)
+	needsLoginMux.HandleFunc("/set_diff_mail", s.setDiffMail)
 	needsLoginMux.HandleFunc("/get_admins", s.getAdmins)
 	needsLoginMux.HandleFunc("/get_watchers", s.getWatchers)
 	needsLoginMux.HandleFunc("/get_admins_watchers", s.getAdminsWatchers)
