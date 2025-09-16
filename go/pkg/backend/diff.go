@@ -29,19 +29,23 @@ func (s *state) setDiffMail(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	ln := len(store.SendDiff)
 	if r.FormValue("send") == "true" {
 		if !slices.Contains(store.SendDiff, owner) {
 			store.SendDiff = append(store.SendDiff, owner)
 		}
 	} else {
-		index := slices.Index(store.SendDiff, owner)
-		store.SendDiff = slices.Delete(store.SendDiff, index,
-			index+1)
+		store.SendDiff = slices.DeleteFunc(store.SendDiff, func(v string) bool {
+			return v == owner
+		})
 	}
 
-	if err := store.WriteToFile(userFile); err != nil {
-		writeError(w, "Failed to write user store: "+err.Error(), http.StatusInternalServerError)
-		return
+	if len(store.SendDiff) != ln {
+		if err := store.WriteToFile(userFile); err != nil {
+			writeError(w, "Failed to write user store: "+err.Error(),
+				http.StatusInternalServerError)
+			return
+		}
 	}
 	writeRecords(w, []map[string]bool{{"success": true}})
 }
