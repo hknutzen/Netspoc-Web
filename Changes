@@ -1,5 +1,7 @@
 {{$NEXT}}
 
+ - Fix bug in setDiffMail
+
 1.034     2025-09-12 13:05:42+02:00 Europe/Berlin
 
  - Migrate URLs /get_diff_mail and /set_diff_mail to go.
