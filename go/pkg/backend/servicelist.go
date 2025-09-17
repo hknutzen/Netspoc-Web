@@ -47,7 +47,7 @@ func (s *state) generateServiceList(r *http.Request) []jsonMap {
 		if r.FormValue("search_disable_at") != "" {
 			// Only services with attribute 'disable_at' will be searched.
 			svcNames = slices.DeleteFunc(svcNames, func(name string) bool {
-				return services[name].Details.DisableAt != ""
+				return services[name].Details.DisableAt == ""
 			})
 		}
 		sort.Strings(svcNames)
@@ -114,12 +114,7 @@ SERVICE:
 		}
 		matchUsers := func(m map[string]bool) bool { return match(m, users) }
 		matchProto := func(prtList []string) bool {
-			for _, p := range prtList {
-				if protoMatcher(p) {
-					return true
-				}
-			}
-			return false
+			return slices.ContainsFunc(prtList, protoMatcher)
 		}
 		matchRules := func(m map[string]bool) bool {
 			if m == nil && protoMatcher == nil {
@@ -211,7 +206,7 @@ func (s *state) selectIPSearch(svcNames []string, r *http.Request,
 // Build map having those object names as key which match
 // search request in "search_ip1|2", "search_subnet", "search_supernet".
 func (s *state) buildSearchMap(r *http.Request, key string) map[string]bool {
-	search := r.FormValue(key)
+	search := strings.Trim(r.FormValue(key), " \t\r\n")
 	if search == "" {
 		return nil
 	}
@@ -281,24 +276,19 @@ func (s *state) buildIPSearchMap(r *http.Request, p netip.Prefix,
 	result := make(map[string]bool)
 	for name, obj := range objects {
 
-		// Take NAT IP or real IP.
-		ip := ""
-		for tag, natIP := range obj.NAT {
-			if natSet[tag] {
-				ip = natIP
-				break
-			}
-		}
-		if ip == "" {
-			if p.Addr().Is4() {
-				ip = obj.IP
-			} else {
-				// v6 addresses can be stored in obj.IP6 OR in obj.IP.
-				if obj.IP6 == "" {
-					ip = obj.IP
-				} else {
-					ip = obj.IP6
+		ip := obj.IP
+		if p.Addr().Is4() {
+			// Take NAT IP if available.
+			for tag, natIP := range obj.NAT {
+				if natSet[tag] {
+					ip = natIP
+					break
 				}
+			}
+		} else {
+			// IPv6 address is stored in obj.IP6 for dual stack object.
+			if obj.IP6 != "" {
+				ip = obj.IP6
 			}
 		}
 
@@ -354,7 +344,24 @@ func (s *state) buildIPSearchMap(r *http.Request, p netip.Prefix,
 				result[name] = true
 			}
 		}
-	} else {
+	} else if supernets != nil {
+		if matchingZones[""] {
+			assets := s.loadAssets(history, owner)
+			for netName, childNames := range assets.net2childs {
+				z := objects[netName].Zone
+				for _, childName := range childNames {
+					objects[childName].Zone = z
+				}
+			}
+			for name := range result {
+				typ, _, _ := strings.Cut(name, ":")
+				switch typ {
+				case "host", "interface":
+					obj := objects[name]
+					matchingZones[obj.Zone] = true
+				}
+			}
+		}
 		for _, name := range supernets {
 			z := objects[name].Zone
 			if matchingZones[z] {
@@ -417,7 +424,7 @@ func getProtoMatcher(r *http.Request) func(string) bool {
 
 func (s *state) selectStringSearch(svcNames []string, r *http.Request,
 ) []string {
-	search := r.FormValue("search_string")
+	search := strings.Trim(r.FormValue("search_string"), " \t\r\n")
 	if search == "" {
 		return svcNames
 	}

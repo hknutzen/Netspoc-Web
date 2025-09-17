@@ -7,6 +7,7 @@ import (
 	"net/http/httputil"
 	"net/url"
 	"os"
+	"runtime/debug"
 	"time"
 )
 
@@ -35,9 +36,12 @@ func getMux() *http.ServeMux {
 	noLoginMux.HandleFunc("/get_policy", s.getPolicy)
 
 	needsLoginMux := http.NewServeMux()
+	needsLoginMux.HandleFunc("/get_diff_mail", s.getDiffMail)
+	needsLoginMux.HandleFunc("/set_diff_mail", s.setDiffMail)
 	needsLoginMux.HandleFunc("/get_admins", s.getAdmins)
 	needsLoginMux.HandleFunc("/get_watchers", s.getWatchers)
 	needsLoginMux.HandleFunc("/get_admins_watchers", s.getAdminsWatchers)
+	needsLoginMux.HandleFunc("/get_owner", s.getOwner)
 	needsLoginMux.HandleFunc("/get_rules", s.getRules)
 	needsLoginMux.HandleFunc("/get_users", s.getUsers)
 	needsLoginMux.HandleFunc("/get_services_and_rules", s.getServicesAndRules)
@@ -90,7 +94,7 @@ func RecoveryHandler(h http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		defer func() {
 			if err := recover(); err != nil {
-				msg := fmt.Errorf("%s", err)
+				msg := fmt.Errorf("%s - %s", err, debug.Stack())
 				writeError(w, msg.Error(), http.StatusInternalServerError)
 			}
 		}()

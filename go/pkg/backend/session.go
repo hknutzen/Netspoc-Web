@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"net/url"
 	"os"
 )
 
@@ -40,4 +41,24 @@ func getSessionFromPerl(r *http.Request) *session {
 
 func loggedIn(r *http.Request) bool {
 	return getSessionFromPerl(r).LoggedIn
+}
+
+func setOwner(r *http.Request, o string) {
+	q := url.Values{}
+	q.Set("owner", o)
+	addr := fmt.Sprintf("http://localhost:%s/set_session_data?%s",
+		os.Getenv("PERLPORT"), q.Encode())
+	req, err := http.NewRequest("GET", addr, nil)
+	if err != nil {
+		panic(err)
+	}
+	// Add cookies of original request.
+	for _, c := range r.Cookies() {
+		req.AddCookie(c)
+	}
+	resp, err := http.DefaultClient.Do(req)
+	if err != nil {
+		panic(err)
+	}
+	resp.Body.Close()
 }

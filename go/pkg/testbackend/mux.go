@@ -13,8 +13,8 @@ import (
 	"github.com/hknutzen/Netspoc-Web/go/pkg/backend"
 )
 
-func GetMux(originalHome string) (*http.ServeMux, *exec.Cmd, io.WriteCloser) {
-	// Start Perl test server.
+// Start Perl test server.
+func PerlTestServer(originalHome string) (*exec.Cmd, io.WriteCloser) {
 	binPath := path.Join(originalHome, "Netspoc-Web", "bin")
 	perlCmd := exec.Command(path.Join(binPath, "test-server.pl"))
 	perlStdout, _ := perlCmd.StdoutPipe()
@@ -29,18 +29,21 @@ func GetMux(originalHome string) (*http.ServeMux, *exec.Cmd, io.WriteCloser) {
 		panic(fmt.Errorf("reading port number of %s: %v", perlCmd, err))
 	}
 	os.Setenv("PERLPORT", perlPort)
+	return perlCmd, perlStdin
+}
 
+func GetMux(originalHome string) *http.ServeMux {
 	// Serve static files and backend.
 	mux := http.NewServeMux()
 	srcDir := cmp.Or(os.Getenv("NETSPOC_WEB_SRC_DIR"), ".")
 	htdocs := http.FileServer(http.Dir(path.Join(srcDir, "htdocs")))
 	mux.Handle("/extjs4/", htdocs)
 	mux.Handle("/silk-icons/", htdocs)
-	rootDir := path.Clean(path.Join(binPath, ".."))
+	rootDir := path.Clean(path.Join(originalHome, "Netspoc-Web"))
 	mux.Handle("/", stripIndex(http.FileServer(http.Dir(rootDir))))
 	mux.Handle("/backend/", http.StripPrefix("/backend", backend.MainHandler()))
 	mux.Handle("/backend6/", http.StripPrefix("/backend6", backend.MainHandler()))
-	return mux, perlCmd, perlStdin
+	return mux
 }
 
 // Replace /index.html with / to stop 301 redirect.

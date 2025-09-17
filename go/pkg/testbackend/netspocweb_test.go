@@ -6,6 +6,7 @@ import (
 	"io"
 	"net/http"
 	"net/http/httptest"
+	"net/url"
 	"os"
 	"os/exec"
 	"path"
@@ -14,34 +15,27 @@ import (
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
+	"github.com/hknutzen/Netspoc-Web/go/pkg/backend"
 	"github.com/hknutzen/testtxt"
 )
 
 type descr struct {
-	Title    string
-	Netspoc  string
-	URL      string
-	Params   string
-	Response string
-	Status   int
+	Title         string
+	Netspoc       string
+	URL           string
+	Params        string
+	Response      string
+	ResponseNames string
+	Email         string
+	Password      string
+	Status        int
+	Todo          bool
 }
 
 func TestNetspocWeb(t *testing.T) {
 
 	// We need the original HOME to find the bin-directory.
 	originalHome := os.Getenv("HOME")
-	workDir := t.TempDir()
-	os.Setenv("HOME", workDir)
-
-	// Write policyweb.conf file in new HOME directory.
-	// This has to be done before GetMux() is called, so that
-	// the config file is read by the Perl test-server that is
-	// started in GetMux().
-	PrepareConfig(workDir)
-
-	// Mux has to be created with original home directory.
-	// The new temp directory is saved as HOME env var.
-	mux, perlCmd, perlStdin := GetMux(originalHome)
 
 	// Read test files before changing work directory.
 	dataFiles, _ := filepath.Glob("testdata/*.t")
@@ -55,19 +49,40 @@ func TestNetspocWeb(t *testing.T) {
 			}
 			for _, d := range l {
 				t.Run(d.Title, func(t *testing.T) {
-					testHandleFunc(t, d, "/backend/"+d.URL, mux.ServeHTTP)
+					testHandleFunc(t, d, "/backend/"+d.URL, originalHome)
 				})
 			}
 		})
 	}
-	// Stop Perl server.
-	perlStdin.Close()
-	perlCmd.Wait()
 }
 
-func testHandleFunc(t *testing.T, d descr,
-	url string, handler func(http.ResponseWriter, *http.Request),
-) {
+func testHandleFunc(t *testing.T, d descr, endpoint, originalHome string) {
+	if d.Todo {
+		t.Skip("skipping TODO test")
+	}
+
+	workDir := t.TempDir()
+	os.Setenv("HOME", workDir)
+	os.Setenv("SERVE_IP6", "1")
+
+	// Write policyweb.conf file in new HOME directory.
+	// This has to be done before perlTestServer() is called, so that
+	// the config file is read by the Perl test-server.
+	PrepareConfig(workDir)
+	perlCmd, perlStdin := PerlTestServer(originalHome)
+	defer func() {
+		// Stop Perl server.
+		perlStdin.Close()
+		perlCmd.Wait()
+	}()
+
+	// Create config file. This needs to be done before creating the mux,
+	// so that the mux can find the config file policyweb.conf.
+	writeConfigFile(t)
+
+	// Mux needs original home directory
+	// to find the root directory.
+	mux := GetMux(originalHome)
 	policy := "p1"
 	home := os.Getenv("HOME")
 	netspocDir := filepath.Join(home, "netspoc")
@@ -82,30 +97,76 @@ func testHandleFunc(t *testing.T, d descr,
 
 	// Perform login
 	loginUrl := "/backend/login?email=guest&app=../app.html"
+	if d.Email != "" {
+		// Create user-session-file
+		if d.Password != "" {
+			script := filepath.Join(originalHome, "Netspoc-Web", "bin", "add_user_pass")
+			userDir := filepath.Join(home, "users")
+			err := backend.GeneratePasswordWithPerlScript(script, userDir, d.Email, d.Password)
+			if err != nil {
+				t.Fatalf("Failed to generate password: %v", err)
+			}
+		} else {
+			t.Fatalf("Missing mandatory password for this test: %v", t.Name())
+		}
+		loginUrl = "/backend/login?email=" + url.QueryEscape(d.Email) + "&app=../app.html"
+		if d.Password != "" {
+			loginUrl += "&pass=" + url.QueryEscape(d.Password)
+		}
+	}
 	req := httptest.NewRequest(http.MethodPost, loginUrl, strings.NewReader(""))
 	resp := httptest.NewRecorder()
-	handler(resp, req)
+	mux.ServeHTTP(resp, req)
 	cookies := resp.Result().Cookies()
 
+	// Params can be written as single line
+	// a=b&c=d
+	// or as separate lines
+	// a=b
+	// c=d
+	params := d.Params
+	params = strings.TrimSuffix(params, "\n")
+	params = strings.ReplaceAll(params, "\n", "&")
+	params = url.PathEscape(params)
+
 	// Call given URL and handle response
-	//
-	req = httptest.NewRequest(http.MethodPost, url+"?"+d.Params, nil)
+	req = httptest.NewRequest(http.MethodPost, endpoint+"?"+params, nil)
 	// Add cookies of login request.
 	for _, c := range cookies {
 		req.AddCookie(c)
 	}
 	resp = httptest.NewRecorder()
-	handler(resp, req)
+	mux.ServeHTTP(resp, req)
 	body, _ := io.ReadAll(resp.Body)
 	type jsonData struct {
 		Success    bool
+		Msg        string
 		TotalCount int
 		Records    json.RawMessage
 	}
 	var data jsonData
 	json.Unmarshal(body, &data)
+	if data.Msg != "" {
+		t.Errorf("Unexpected response message: %s", data.Msg)
+	}
+	if d.Status == 0 {
+		d.Status = 200
+	}
 	if resp.Code != d.Status {
 		t.Errorf("Want status '%d', got '%d'", d.Status, resp.Code)
+	}
+	if d.ResponseNames != "" {
+		type named struct {
+			Name string
+		}
+		var l []named
+		json.Unmarshal(data.Records, &l)
+		sl := make([]string, len(l))
+		for i, e := range l {
+			sl[i] = e.Name
+		}
+		data.Records, _ = json.Marshal(sl)
+		d.Response = d.ResponseNames
 	}
 	jsonEq(t, d.Response, data.Records)
 }
@@ -133,5 +194,16 @@ func runCmd(t *testing.T, line string) {
 	cmd := exec.Command(args[0], args[1:]...)
 	if out, err := cmd.CombinedOutput(); err != nil {
 		t.Fatalf("Command failed: %q: %v", line, string(out))
+	}
+}
+
+func writeConfigFile(t *testing.T) {
+	workdir := os.Getenv("HOME")
+	content := "{ \"user_dir\" : \"" + workdir + "/users\", \n" +
+		" \"netspoc_data\" : \"" + workdir + "/export\" }"
+
+	configFile := filepath.Join(workdir, "policyweb.conf")
+	if err := os.WriteFile(configFile, []byte(content), 0644); err != nil {
+		t.Fatalf("Failed to write config file: %v", err)
 	}
 }
