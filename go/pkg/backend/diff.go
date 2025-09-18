@@ -51,7 +51,7 @@ func (s *state) setDiffMail(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *state) getUserFile(r *http.Request) string {
-	email := getSession(r).Email
+	email := getSessionFromPerl(r).Email
 	userDir := s.config.UserDir
 	return userDir + "/" + email
 }

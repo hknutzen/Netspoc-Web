@@ -7,7 +7,7 @@ import (
 )
 
 func (s *state) getOwner(w http.ResponseWriter, r *http.Request) {
-	ow := getSession(r).Owner
+	ow := getSessionFromPerl(r).Owner
 	l := s.findAuthorizedOwners(r)
 	// Selected owner was stored before.
 	if ow != "" && slices.Contains(l, ow) {
@@ -36,7 +36,7 @@ func (s *state) getOwner(w http.ResponseWriter, r *http.Request) {
 
 func (s *state) findAuthorizedOwners(r *http.Request) []string {
 	m := s.loadEmail2Owners()
-	email := getSession(r).Email
+	email := getSessionFromPerl(r).Email
 	_, dom, _ := strings.Cut(email, "@")
 	wildcard := "[all]@" + dom
 	result := slices.Concat(m[wildcard], m[email])
