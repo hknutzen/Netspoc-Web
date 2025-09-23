@@ -78,12 +78,13 @@ func MainHandler() http.Handler {
 }
 
 func SessionHandler(h http.Handler) http.Handler {
+
 	sessionManager := NewSessionManager(
 		NewFileSystemSessionStore("/home/brunkhda/go-sessions-dir"),
 		30*time.Minute,
 		1*time.Hour,
 		12*time.Hour,
-		"FOOBAR",
+		"PWGOSESSID",
 	)
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		sessionManager.Handle(h).ServeHTTP(w, r)
