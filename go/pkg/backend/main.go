@@ -16,7 +16,7 @@ type state struct {
 	config *config
 }
 
-func getMux() *http.ServeMux {
+func getMux() (*http.ServeMux, *state) {
 	cfg := loadConfig()
 	s := &state{
 		config: cfg,
@@ -70,17 +70,18 @@ func getMux() *http.ServeMux {
 			httputil.NewSingleHostReverseProxy(perlServer).ServeHTTP(w, r)
 		}
 	})
-	return defaultMux
+	return defaultMux, s
 }
 
 func MainHandler() http.Handler {
-	return RecoveryHandler(SessionHandler(getMux()))
+	mux, s := getMux()
+	return RecoveryHandler(SessionHandler(s, mux))
 }
 
-func SessionHandler(h http.Handler) http.Handler {
+func SessionHandler(s *state, h http.Handler) http.Handler {
 
 	sessionManager := NewSessionManager(
-		NewFileSystemSessionStore("/home/brunkhda/go-sessions-dir"),
+		NewFileSystemSessionStore(s.config.SessionDir),
 		30*time.Minute,
 		1*time.Hour,
 		12*time.Hour,
