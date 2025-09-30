@@ -34,6 +34,8 @@ func getMux() (*http.ServeMux, *state) {
 	noLoginMux := http.NewServeMux()
 	noLoginMux.HandleFunc("/login", s.loginHandler)
 	noLoginMux.HandleFunc("/get_policy", s.getPolicy)
+	noLoginMux.HandleFunc("/register", s.register)
+	noLoginMux.HandleFunc("/verify", s.verify)
 
 	needsLoginMux := http.NewServeMux()
 	needsLoginMux.HandleFunc("/get_diff_mail", s.getDiffMail)
@@ -51,9 +53,6 @@ func getMux() (*http.ServeMux, *state) {
 	needsLoginMux.HandleFunc("/get_history", s.getHistory)
 	needsLoginMux.HandleFunc("/service_list", s.serviceList)
 
-	createCookieMux := http.NewServeMux()
-	//createCookieMux.HandleFunc("/register", s.register)
-
 	defaultMux := http.NewServeMux()
 	defaultMux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		if h, pattern := needsLoginMux.Handler(r); pattern != "" {
@@ -63,8 +62,6 @@ func getMux() (*http.ServeMux, *state) {
 			}
 			h.ServeHTTP(w, r)
 		} else if h, pattern := noLoginMux.Handler(r); pattern != "" {
-			h.ServeHTTP(w, r)
-		} else if h, pattern := createCookieMux.Handler(r); pattern != "" {
 			h.ServeHTTP(w, r)
 		} else {
 			httputil.NewSingleHostReverseProxy(perlServer).ServeHTTP(w, r)
