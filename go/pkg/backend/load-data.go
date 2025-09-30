@@ -87,8 +87,8 @@ type ownerData struct {
 	emailsMu       sync.Mutex
 	watchers       []emailEntry
 	watchersMu     sync.Mutex
-	extendedBy     []string
-	extendedByMu   sync.Mutex
+	//extendedBy     []string
+	//extendedByMu   sync.Mutex
 }
 type assets struct {
 	networkList []string
@@ -297,6 +297,7 @@ func (c *cache) loadWatchers(version, owner string) []emailEntry {
 	return entry.watchers
 }
 
+/*
 func (c *cache) loadExtendedBy(version, owner string) []string {
 	entry := c.getOwnerEntry(version, owner)
 	entry.extendedByMu.Lock()
@@ -306,6 +307,7 @@ func (c *cache) loadExtendedBy(version, owner string) []string {
 	}
 	return entry.extendedBy
 }
+*/
 
 func (c *cache) readPart(version, part string, result interface{}) {
 	dir := c.netspocDir
