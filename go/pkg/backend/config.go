@@ -7,10 +7,12 @@ import (
 )
 
 type config struct {
-	NetspocData    string `json:"netspoc_data"`
-	NoreplyAddress string `json:"noreply_address"`
-	SessionDir     string `json:"session_dir"`
-	UserDir        string `json:"user_dir"`
+	NetspocData     string `json:"netspoc_data"`
+	NoreplyAddress  string `json:"noreply_address"`
+	SessionDir      string `json:"session_dir"`
+	UserDir         string `json:"user_dir"`
+	SendmailCommand string `json:"sendmail_command"`
+	MailTemplate    string `json:"mail_template"`
 }
 
 func loadConfig() *config {
