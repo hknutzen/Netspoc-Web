@@ -1,0 +1,5 @@
+To: {{ .Email }}
+Subject: Policy-Web: Diff für {{ .Owner }} wird nicht mehr versandt
+Content-Type: text/plain; charset=UTF-8
+
+Keine Berechtigung für Zugriff auf Owner '{{ .Owner }}'.

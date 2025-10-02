@@ -1,0 +1,13 @@
+To: {{ .Email }}
+Subject: Policy-Web: Diff für {{ .Owner }}, {{ .NewVer }}
+Content-Type: text/plain; charset=UTF-8
+
+(+): etwas wurde hinzugefügt
+(-): etwas wurde entfernt
+(!): etwas wurde geändert
+➔ : trennt alten von neuem Wert
+
+Unterschiede für den Verantwortungsbereich {{ .Owner }}
+zwischen {{ .OldVer }} und {{ .NewVer }}.
+
+{{ .Diff }}
