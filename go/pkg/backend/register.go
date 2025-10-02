@@ -4,14 +4,16 @@ import (
 	"crypto/sha256"
 	"encoding/hex"
 	"fmt"
-	"html/template"
+	htmltemplate "html/template"
 	"math/rand"
 	"net"
 	"net/http"
 	"os"
 	"os/exec"
+	"path"
 	"strconv"
 	"strings"
+	texttemplate "text/template"
 	"time"
 )
 
@@ -52,7 +54,7 @@ func (s *state) register(w http.ResponseWriter, r *http.Request) {
 	}
 	url := fmt.Sprintf("%s/verify?email=%s&token=%s", base, email, token)
 	s.sendVerificationEmail(w, email, url, ip)
-	tmpl, err := template.ParseFiles("templates/show_password")
+	tmpl, err := htmltemplate.ParseFiles(path.Join(s.config.HTMLTemplate, "show_password"))
 	if err != nil {
 		writeError(w, "Failed to load template", http.StatusInternalServerError)
 		return
@@ -142,7 +144,7 @@ func (s *state) sendVerificationEmail(w http.ResponseWriter, email, url, ip stri
 }
 
 func (s *state) getTemplateContent(templatePath string, data map[string]string) (string, error) {
-	tmpl, err := template.ParseFiles(templatePath)
+	tmpl, err := texttemplate.ParseFiles(templatePath)
 	if err != nil {
 		return "", fmt.Errorf("failed to parse template: %w", err)
 	}
