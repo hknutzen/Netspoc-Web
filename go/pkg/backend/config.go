@@ -3,7 +3,7 @@ package backend
 import (
 	"encoding/json"
 	"os"
-	"path"
+	"path/filepath"
 )
 
 type config struct {
@@ -28,9 +28,9 @@ func loadConfig() *config {
 	home, _ := os.UserHomeDir()
 	var p string
 	if os.Getenv("PW_FRONTEND_TEST") != "" {
-		p = path.Join(home, "policyweb-test.conf")
+		p = filepath.Join(home, "policyweb-test.conf")
 	} else {
-		p = path.Join(home, "policyweb.conf")
+		p = filepath.Join(home, "policyweb.conf")
 	}
 	data, err := os.ReadFile(p)
 	if err != nil {
@@ -40,8 +40,8 @@ func loadConfig() *config {
 	// Set some defaults
 	var c config
 	c.SendmailCommand = "/usr/lib/sendmail"
-	c.MailTemplate = path.Join(home, "Netspoc-Web", "go", "pkg", "backend", "mail-templates")
-	c.HTMLTemplate = path.Join(home, "Netspoc-Web", "go", "pkg", "backend", "html-templates")
+	c.MailTemplate = filepath.Join(home, "Netspoc-Web", "go", "pkg", "backend", "mail-templates")
+	c.HTMLTemplate = filepath.Join(home, "Netspoc-Web", "go", "pkg", "backend", "html-templates")
 	c.ExpireLoggedIn = 480 // 8 hours
 	c.AboutInfoTemplate = c.HTMLTemplate + "/about_info"
 
