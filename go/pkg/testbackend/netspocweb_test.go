@@ -76,10 +76,6 @@ func testHandleFunc(t *testing.T, d descr, endpoint, originalHome string) {
 		perlCmd.Wait()
 	}()
 
-	// Create config file. This needs to be done before creating the mux,
-	// so that the mux can find the config file policyweb.conf.
-	writeConfigFile(t)
-
 	// Mux needs original home directory
 	// to find the root directory.
 	mux := GetMux(originalHome)
@@ -194,16 +190,5 @@ func runCmd(t *testing.T, line string) {
 	cmd := exec.Command(args[0], args[1:]...)
 	if out, err := cmd.CombinedOutput(); err != nil {
 		t.Fatalf("Command failed: %q: %v", line, string(out))
-	}
-}
-
-func writeConfigFile(t *testing.T) {
-	workdir := os.Getenv("HOME")
-	content := "{ \"user_dir\" : \"" + workdir + "/users\", \n" +
-		" \"netspoc_data\" : \"" + workdir + "/export\" }"
-
-	configFile := filepath.Join(workdir, "policyweb.conf")
-	if err := os.WriteFile(configFile, []byte(content), 0644); err != nil {
-		t.Fatalf("Failed to write config file: %v", err)
 	}
 }
