@@ -21,6 +21,12 @@ func (s *state) getDiffMail(w http.ResponseWriter, r *http.Request) {
 
 // setDiffMail updates the user's preference for receiving diff emails
 func (s *state) setDiffMail(w http.ResponseWriter, r *http.Request) {
+	email := r.FormValue("email")
+	if email == "guest" {
+		writeError(w, "Can't send diff for user 'guest'", http.StatusBadRequest)
+		return
+	}
+	s.validateOwner(r, true)
 	owner := r.FormValue("active_owner")
 	userFile := s.getUserFile(r)
 	store, err := GetUserStore(userFile)
@@ -51,7 +57,7 @@ func (s *state) setDiffMail(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *state) getUserFile(r *http.Request) string {
-	email := getSessionFromPerl(r).Email
+	email := GetGoSession(r).Get("email").(string)
 	userDir := s.config.UserDir
 	return userDir + "/" + email
 }
