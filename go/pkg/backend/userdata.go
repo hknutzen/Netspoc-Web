@@ -1,9 +1,13 @@
 package backend
 
 import (
+	"bytes"
+	"crypto/rand"
 	"crypto/sha256"
+	"encoding/base64"
 	"encoding/hex"
 	"encoding/json"
+	"fmt"
 	"io"
 	"os"
 	"os/exec"
@@ -15,9 +19,59 @@ type UserStore struct {
 	SendDiff []string `json:"send_diff"`
 }
 
+type SSHAEncoder struct{}
+
+// Encode takes a raw password phrase as input and encodes it using the SSHAEncoder.
+// It returns the encoded password as a byte slice or an error if the encoding fails.
+func (enc SSHAEncoder) Encode(rawPassPhrase []byte) ([]byte, error) {
+	hash := makeSHA256Hash(rawPassPhrase, makeSalt())
+	b64 := base64.StdEncoding.EncodeToString(hash)
+	return fmt.Appendf(nil, "{SSHA256}%s", b64), nil
+}
+
+// MatchesSHA256 matches the encoded password and the raw password
+func (enc SSHAEncoder) MatchesSHA256(encodedPassPhrase, rawPassPhrase []byte) bool {
+	//strip the {SSHA256} prefix
+	if len(encodedPassPhrase) < 9 || string(encodedPassPhrase[:9]) != "{SSHA256}" {
+		return false
+	}
+	//decode the base64 part
+	eppS := string(encodedPassPhrase)[9:]
+	hash, err := base64.StdEncoding.DecodeString(eppS)
+	if err != nil {
+		return false
+	}
+	salt := hash[len(hash)-4:]
+
+	sha256 := sha256.New()
+	sha256.Write(rawPassPhrase)
+	sha256.Write(salt)
+	sum := sha256.Sum(nil)
+
+	return bytes.Equal(sum, hash[:len(hash)-4])
+}
+
+// makeSalt make a 4 byte array containing random bytes.
+func makeSalt() []byte {
+	sbytes := make([]byte, 4)
+	rand.Read(sbytes)
+	return sbytes
+}
+
+// makeSSHAHash make hasing using SHA-256 with salt.
+// This is not the final output though. You need to append {SSHA}
+// string with base64 of this hash.
+func makeSHA256Hash(passphrase, salt []byte) []byte {
+	sha256 := sha256.New()
+	sha256.Write(passphrase)
+	sha256.Write(salt)
+	h := sha256.Sum(nil)
+	return append(h, salt...)
+}
+
 // generatePassword generates a SHA256 hash of the given password
-func (u *UserStore) GeneratePassword(password string) {
-	hash := sha256.Sum256([]byte(password))
+func (u *UserStore) GenerateSaltedHashFromPassword(password string) {
+	hash := makeSHA256Hash([]byte(password), makeSalt())
 	u.Hash = hex.EncodeToString(hash[:])
 }
 
@@ -30,10 +84,11 @@ func GeneratePasswordWithPerlScript(script, dir, email, password string) error {
 	return nil
 }
 
-// checkPassword checks if the given password matches the stored hash
+// CheckPassword checks if the given password matches the stored hash
 func (u *UserStore) CheckPassword(password string) bool {
-	hash := sha256.Sum256([]byte(password))
-	return u.Hash == hex.EncodeToString(hash[:])
+	encoder := SSHAEncoder{}
+	rawPassword := []byte(password)
+	return encoder.MatchesSHA256([]byte(u.Hash), rawPassword)
 }
 
 // readFromFile reads the UserStore data from a JSON file
