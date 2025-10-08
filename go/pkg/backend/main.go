@@ -43,6 +43,7 @@ func getMux() (*http.ServeMux, *state) {
 	needsLoginMux.HandleFunc("/get_admins", s.getAdmins)
 	needsLoginMux.HandleFunc("/get_watchers", s.getWatchers)
 	needsLoginMux.HandleFunc("/get_admins_watchers", s.getAdminsWatchers)
+	needsLoginMux.HandleFunc("/get_owners", s.getOwners)
 	needsLoginMux.HandleFunc("/get_owner", s.getOwner)
 	needsLoginMux.HandleFunc("/get_rules", s.getRules)
 	needsLoginMux.HandleFunc("/get_users", s.getUsers)
@@ -52,6 +53,7 @@ func getMux() (*http.ServeMux, *state) {
 	needsLoginMux.HandleFunc("/get_networks_and_resources", s.getNetworksAndResources)
 	needsLoginMux.HandleFunc("/get_history", s.getHistory)
 	needsLoginMux.HandleFunc("/service_list", s.serviceList)
+	needsLoginMux.HandleFunc("/set", s.setSessionData)
 
 	defaultMux := http.NewServeMux()
 	defaultMux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
