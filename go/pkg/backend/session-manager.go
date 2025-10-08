@@ -333,5 +333,5 @@ func (s *FileSystemSessionStore) gc(idleExpiration, absoluteExpiration time.Dura
 }
 
 func (s *FileSystemSessionStore) filePath(id string) string {
-	return s.dir + "/" + id + ".json"
+	return s.dir + "/" + id
 }
