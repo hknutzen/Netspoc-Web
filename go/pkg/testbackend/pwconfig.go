@@ -15,7 +15,9 @@ func PrepareConfig(homeDir string) {
 "session_dir" : "%s",
 "noreply_address" : "noreply"
 }
-`, filepath.Join(homeDir, "export"), filepath.Join(homeDir, "users"), filepath.Join(homeDir, "sessions")))
+`, filepath.Join(homeDir, "export"),
+		filepath.Join(homeDir, "users"),
+		filepath.Join(homeDir, "sessions")))
 	fname := filepath.Join(homeDir, "policyweb.conf")
 	err := os.WriteFile(fname, confData, 0666)
 	check(err)
