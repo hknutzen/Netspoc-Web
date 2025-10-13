@@ -9,6 +9,7 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"path/filepath"
 	"sync"
 	"time"
 )
@@ -279,12 +280,14 @@ func (s *FileSystemSessionStore) write(session *GoSession) error {
 	if err != nil {
 		return err
 	}
-
+	err = os.MkdirAll(filepath.Dir(filePath), 0700)
+	if err != nil {
+		return err
+	}
 	err = os.WriteFile(filePath, data, 0644)
 	if err != nil {
 		return err
 	}
-
 	return nil
 }
 
