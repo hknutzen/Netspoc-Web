@@ -10,7 +10,6 @@ import (
 	"fmt"
 	"io"
 	"os"
-	"os/exec"
 	"path/filepath"
 )
 
@@ -21,12 +20,20 @@ type UserStore struct {
 
 type SSHAEncoder struct{}
 
-// Encode takes a raw password phrase as input and encodes it using the SSHAEncoder.
-// It returns the encoded password as a byte slice or an error if the encoding fails.
+// Encode takes a raw password phrase as []byte input and encodes it using
+// the SSHAEncoder.
+// It returns the encoded password as a byte slice or an error if the
+// encoding fails.
 func (enc SSHAEncoder) Encode(rawPassPhrase []byte) ([]byte, error) {
 	hash := makeSHA256Hash(rawPassPhrase, makeSalt())
 	b64 := base64.StdEncoding.EncodeToString(hash)
 	return fmt.Appendf(nil, "{SSHA256}%s", b64), nil
+}
+
+func (enc SSHAEncoder) EncodeAsString(rawPassPhrase []byte) (string, error) {
+	hash := makeSHA256Hash(rawPassPhrase, makeSalt())
+	b64 := base64.StdEncoding.EncodeToString(hash)
+	return fmt.Sprintf("{SSHA256}%s", b64), nil
 }
 
 // MatchesSHA256 matches the encoded password and the raw password
@@ -73,15 +80,6 @@ func makeSHA256Hash(passphrase, salt []byte) []byte {
 func (u *UserStore) GenerateSaltedHashFromPassword(password string) {
 	hash := makeSHA256Hash([]byte(password), makeSalt())
 	u.Hash = hex.EncodeToString(hash[:])
-}
-
-// GeneratePasswordWithPerlScript calls an external Perl script to generate a password hash
-func GeneratePasswordWithPerlScript(script, dir, email, password string) error {
-	cmd := exec.Command(script, dir, email, password)
-	if err := cmd.Run(); err != nil {
-		return err
-	}
-	return nil
 }
 
 // CheckPassword checks if the given password matches the stored hash
