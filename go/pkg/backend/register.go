@@ -139,7 +139,7 @@ func (s *state) sendVerificationEmail(w http.ResponseWriter, email, url, ip stri
 
 	pipe.Close()
 	if err := cmd.Wait(); err != nil {
-		writeError(w, "Failed to close sendmail command: %v\n", err)
+		writeError(w, "Failed to close sendmail command: %v\n", http.StatusInternalServerError)
 	}
 }
 
