@@ -5,6 +5,7 @@ package backend
 import (
 	"fmt"
 	"net/http"
+	"strings"
 )
 
 func (s *state) setLogin(session *GoSession, email string) {
@@ -50,8 +51,8 @@ func (s *state) loginHandler(w http.ResponseWriter, r *http.Request) {
 	s.setLogin(session, email)
 
 	// Redirect to referer/app.html.
-	originalURL := r.Header.Get("Referer")
-	if originalURL == "" {
+	originalURL := strings.TrimSuffix(r.Header.Get("Referer"), "/index.html")
+	if !strings.Contains(originalURL, "/") {
 		originalURL = "/"
 	}
 	http.Redirect(w, r, originalURL+"/app.html", http.StatusSeeOther)
