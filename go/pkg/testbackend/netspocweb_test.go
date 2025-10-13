@@ -96,11 +96,19 @@ func testHandleFunc(t *testing.T, d descr, endpoint, originalHome string) {
 	if d.Email != "" {
 		// Create user-session-file
 		if d.Password != "" {
-			script := filepath.Join(originalHome, "Netspoc-Web", "bin", "add_user_pass")
 			userDir := filepath.Join(home, "users")
-			err := backend.GeneratePasswordWithPerlScript(script, userDir, d.Email, d.Password)
+			userFile := filepath.Join(userDir, d.Email)
+			store, err := backend.GetUserStore(userFile)
 			if err != nil {
-				t.Fatalf("Failed to generate password: %v", err)
+				t.Fatalf("Failed to create user store for %s: %v", userFile, err)
+			}
+			encoder := backend.SSHAEncoder{}
+			store.Hash, err = encoder.EncodeAsString([]byte(d.Password))
+			if store.Hash == "" {
+				t.Fatalf("Failed to set password for %s: %v", userFile, err)
+			}
+			if err := store.WriteToFile(userFile); err != nil {
+				t.Fatalf("Failed to write user store for %s: %v", userFile, err)
 			}
 		} else {
 			t.Fatalf("Missing mandatory password for this test: %v", t.Name())
