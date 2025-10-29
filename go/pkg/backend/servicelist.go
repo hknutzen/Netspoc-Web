@@ -345,6 +345,9 @@ func (s *state) buildIPSearchMap(r *http.Request, p netip.Prefix,
 			}
 		}
 	} else if supernets != nil {
+		// Attribute zone is only set for networks, but is empty string for
+		// hosts and interfaces.
+		// Reconstruct zone from zone of enclosing network.
 		if matchingZones[""] {
 			assets := s.loadAssets(history, owner)
 			for netName, childNames := range assets.net2childs {
