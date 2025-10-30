@@ -296,6 +296,7 @@ func (s *state) buildIPSearchMap(r *http.Request, p netip.Prefix,
 		if rg, err := netipx.ParseIPRange(ip); err == nil {
 			if rg.Contains(p.Addr()) ||
 				sub && (p.Contains(rg.From()) && p.Contains(rg.To())) {
+				addMatchingZone(obj)
 				result[name] = true
 			}
 			continue

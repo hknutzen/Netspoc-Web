@@ -625,6 +625,20 @@ search_used=1
 =RESPONSE_NAMES=["Test2", "Test4", "Test5", "Test6", "Test7", "Test8", "Test9"]
 
 ############################################################
+=TITLE=Supernet IP search for range finds enclosing network
+=NETSPOC=
+[[topo]]
+=URL=service_list
+=PARAMS=
+active_owner=x
+history=p1
+search_ip1=10.1.0.95
+search_supernet=1
+search_own=1
+search_used=1
+=RESPONSE_NAMES=["Test2", "Test4", "Test5"]
+
+############################################################
 =TITLE=Supernet IP search for aggregate
 =NETSPOC=
 [[topo]]
@@ -654,7 +668,7 @@ search_used=1
 =RESPONSE_NAMES=["Test7", "Test8"]
 
 ############################################################
-=TITLE=Supernet IP search for loopback
+=TITLE=Supernet IP search for loopback finds enclosing aggregate
 =NETSPOC=
 [[topo]]
 =URL=service_list
