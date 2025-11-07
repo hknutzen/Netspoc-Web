@@ -271,11 +271,7 @@ func (s *state) buildIPSearchMap(r *http.Request, p netip.Prefix,
 			matchingZones[obj.Zone] = true
 		}
 	}
-
-	// Collect names of matching objects.
-	result := make(map[string]bool)
-	for name, obj := range objects {
-
+	getIP := func(obj *object) string {
 		ip := obj.IP
 		if p.Addr().Is4() {
 			// Take NAT IP if available.
@@ -291,6 +287,13 @@ func (s *state) buildIPSearchMap(r *http.Request, p netip.Prefix,
 				ip = obj.IP6
 			}
 		}
+		return ip
+	}
+
+	// Collect names of matching objects.
+	result := make(map[string]bool)
+	for name, obj := range objects {
+		ip := getIP(obj)
 
 		// Handle host range separately.
 		if rg, err := netipx.ParseIPRange(ip); err == nil {
@@ -324,14 +327,7 @@ func (s *state) buildIPSearchMap(r *http.Request, p netip.Prefix,
 		} else if prefix.Bits() < p.Bits() {
 			if super && !strings.HasPrefix(name, "interface:") {
 				if prefix.Contains(p.Addr()) {
-					if obj.IsSupernet != 0 {
-						supernets = append(supernets, name)
-						continue
-					}
-					if !strings.HasPrefix(name, "any:") {
-						addMatchingZone(obj)
-					}
-					result[name] = true
+					supernets = append(supernets, name)
 				}
 			}
 		} else if sub && p.Contains(prefix.Addr()) {
@@ -339,38 +335,60 @@ func (s *state) buildIPSearchMap(r *http.Request, p netip.Prefix,
 		}
 	}
 
+	// No directly matching object found.
+	// Select smallest found supernet(s) and mark those zones.
 	if len(matchingZones) == 0 {
+		getBits := func(name string) int {
+			obj := objects[name]
+			// Since supernets have been collected, we are sure that
+			// prefix length is given.
+			_, bits, _ := strings.Cut(getIP(obj), "/")
+			n, _ := strconv.Atoi(bits)
+			return n
+		}
+		// Find smallest single network or smallest multiple networks
+		// with identical IP/bits and collect corresponding zones.
+		bits := -1
 		for _, name := range supernets {
 			if strings.HasPrefix(name, "network:") {
-				result[name] = true
+				n := getBits(name)
+				if n > bits {
+					bits = n
+					// Discard found zones, if a smaller network was found.
+					clear(matchingZones)
+				} else if n < bits {
+					continue
+				}
+				matchingZones[objects[name].Zone] = true
 			}
 		}
-	} else if supernets != nil {
+	} else if supernets != nil && matchingZones[""] {
+		// Some directly matching objects were found.
+		// Select supernets located in same zone as found objects.
+
 		// Attribute zone is only set for networks, but is empty string for
 		// hosts and interfaces.
 		// Reconstruct zone from zone of enclosing network.
-		if matchingZones[""] {
-			assets := s.loadAssets(history, owner)
-			for netName, childNames := range assets.net2childs {
-				z := objects[netName].Zone
-				for _, childName := range childNames {
-					objects[childName].Zone = z
-				}
-			}
-			for name := range result {
-				typ, _, _ := strings.Cut(name, ":")
-				switch typ {
-				case "host", "interface":
-					obj := objects[name]
-					matchingZones[obj.Zone] = true
-				}
+		assets := s.loadAssets(history, owner)
+		for netName, childNames := range assets.net2childs {
+			z := objects[netName].Zone
+			for _, childName := range childNames {
+				objects[childName].Zone = z
 			}
 		}
-		for _, name := range supernets {
-			z := objects[name].Zone
-			if matchingZones[z] {
-				result[name] = true
+		for name := range result {
+			typ, _, _ := strings.Cut(name, ":")
+			switch typ {
+			case "host", "interface":
+				obj := objects[name]
+				matchingZones[obj.Zone] = true
 			}
+		}
+	}
+	// Add supernets located in same zone(s).
+	for _, name := range supernets {
+		if matchingZones[objects[name].Zone] {
+			result[name] = true
 		}
 	}
 	return result

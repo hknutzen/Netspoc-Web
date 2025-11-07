@@ -10,8 +10,16 @@ any:Sub1 = { ip = 10.1.0.0/23; link = network:Big; }
 any:Sub2 = { ip = 10.1.1.0/25; link = network:Big; }
 
 network:Sub = { ip = 10.1.1.0/24; owner = z; subnet_of = network:Big; }
+network:Sub-k = {
+ ip = 10.2.2.128/25;
+ subnet_of = network:Kunde;
+ nat:inet = { ip = 2.2.2.2/31; dynamic; }
+ owner = z;
+}
+
 router:u = {
  interface:Sub;
+ interface:Sub-k;
  interface:L = { ip = 10.3.3.3; loopback; }
  interface:Big = { ip = 10.1.0.2; }
 }
@@ -30,13 +38,15 @@ router:asa = {
  interface:Kunde  = { ip = 10.2.2.1; ip6 = 1000:abcd:2:2::1; hardware = inside; }
  interface:KUNDE  = { ip = 10.2.3.1; hardware = inside; }
  interface:KUNDE1 = { ip = 10.2.4.1; hardware = inside; }
- interface:DMZ    = { ip = 10.9.9.1;  ip6 = 1000:abcd:9:9::1; hardware = dmz; }
+ interface:DMZ    = { ip = 10.9.9.1;  ip6 = 1000:abcd:9:9::1;
+  nat_in = h; nat_out = inet;
+  hardware = dmz; }
  interface:n3     = { ip6 = 1000::abcd:0003:1; hardware = n3; }
 }
 
 network:Kunde  = {
  ip = 10.2.2.0/24;
- nat:inet = { ip = 2.2.2.0/24; }
+ nat:inet = { ip = 2.2.2.2/31; dynamic; }
  ip6 = 1000:abcd:2:2::0/64;
  owner = y;
  auto_ipv6_hosts = readable;
@@ -52,7 +62,7 @@ router:FW = {
  managed;
  model = IOS;
  interface:DMZ = { ip = 10.9.9.2; hardware = DMZ; }
- interface:Internet = { negotiated; hardware = Internet; nat_out = inet; }
+ interface:Internet = { negotiated; hardware = Internet; }
 }
 
 network:Internet = {
@@ -64,10 +74,12 @@ network:Internet = {
 router:ext = {
  interface:Internet;
  interface:extern;
+ interface:ext-10-2-2;
 }
 
 network:extern = { ip = 1.2.0.0/16; }
 any:extern_1-8 = { ip = 1.0.0.0/8; link = network:extern; }
+network:ext-10-2-2 = { ip = 10.2.2.0/24; nat:h = { hidden; } }
 
 service:Test1 = {
  user = network:Sub;
@@ -149,6 +161,10 @@ service:NTP = {
         prt = udp 123;
 }
 
+service:Test13 = {
+ user = network:ext-10-2-2;
+ permit src = user; dst = network:DMZ; prt = udp 123;
+}
 
 area:all-ipv6 = { owner = x; anchor = network:n3; }
 any:n3 = { link = network:n3; }
@@ -294,7 +310,7 @@ history=p1
 search_ip1=10.2.2.0/24
 search_own=1
 search_used=1
-=RESPONSE_NAMES=["Test1", "Test3", "Test3a"]
+=RESPONSE_NAMES=["Test1", "Test13", "Test3", "Test3a"]
 
 ############################################################
 =TITLE=Exact IP search for IPv6 address of network with IPv4 NAT
@@ -597,20 +613,6 @@ chosen_networks=network:Sub,network:DMZ
 =RESPONSE_NAMES=["Test4"]
 
 ############################################################
-=TITLE=Supernet IP search for single address
-=NETSPOC=
-[[topo]]
-=URL=service_list
-=PARAMS=
-active_owner=x
-history=p1
-search_ip1=10.2.2.0/25
-search_supernet=1
-search_own=1
-search_used=1
-=RESPONSE_NAMES=["Test1", "Test3", "Test3a", "Test6"]
-
-############################################################
 =TITLE=Supernet IP search for host address finds enclosing network
 =NETSPOC=
 [[topo]]
@@ -694,6 +696,23 @@ search_supernet=1
 search_own=1
 search_used=1
 =RESPONSE_NAMES=["Test7"]
+
+############################################################
+=TITLE=Supernet IP search for unknown address of supernet having subnets
+# and matches two networks with identical address
+# - one has subnet,
+# - one has no visible subnet.
+=NETSPOC=
+[[topo]]
+=URL=service_list
+=PARAMS=
+active_owner=x
+history=p1
+search_ip1=10.2.2.9
+search_supernet=1
+search_own=1
+search_used=1
+=RESPONSE_NAMES=["Test1", "Test13", "Test3", "Test3a", "Test6", "Test7"]
 
 ############################################################
 =TITLE=Text search in rules and users
