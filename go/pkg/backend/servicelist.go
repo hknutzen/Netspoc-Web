@@ -332,6 +332,7 @@ func (s *state) buildIPSearchMap(r *http.Request, p netip.Prefix,
 			}
 		} else if sub && p.Contains(prefix.Addr()) {
 			result[name] = true
+			addMatchingZone(obj)
 		}
 	}
 

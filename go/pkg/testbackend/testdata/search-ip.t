@@ -715,6 +715,22 @@ search_used=1
 =RESPONSE_NAMES=["Test1", "Test13", "Test3", "Test3a", "Test6", "Test7"]
 
 ############################################################
+=TITLE=Subnet and supernet IP search for intermediate address
+# Must only find one supernet which is located in zone of subnet.
+=NETSPOC=
+[[topo]]
+=URL=service_list
+=PARAMS=
+active_owner=x
+history=p1
+search_ip1=10.2.2.2/31
+search_subnet=1
+search_supernet=1
+search_own=1
+search_used=1
+=RESPONSE_NAMES=["Test1", "Test2", "Test3", "Test3a", "Test4", "Test5", "Test6", "Test9"]
+
+############################################################
 =TITLE=Text search in rules and users
 =NETSPOC=
 [[topo]]
