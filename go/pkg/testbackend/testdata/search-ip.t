@@ -27,7 +27,9 @@ network:Big = {
  ip = 10.1.0.0/16;
  nat:inet = { ip = 1.1.0.0/16; }
  host:B10 = { ip = 10.1.0.10; owner = z; }
+ host:Sub-Range = { range = 10.1.0.92-10.1.0.97; }
  host:Range = { range = 10.1.0.90-10.1.0.99; }
+ host:big-Range = { range = 10.1.0.10-10.1.0.99; }
 }
 
 router:asa = {
@@ -231,6 +233,21 @@ search_used=1
 =RESPONSE_NAMES=["Test1", "Test3", "Test3a"]
 
 ############################################################
+=TITLE=Exact object search in used services
+=NETSPOC=
+[[topo]]
+=URL=service_list
+=PARAMS=
+active_owner=z
+history=p1
+search_ip1=network:Sub
+search_ip2=network:Kunde
+search_exact=1
+search_case_sensitive=1
+search_used=1
+=RESPONSE_NAMES=["Test1", "Test3", "Test3a"]
+
+############################################################
 =TITLE=Exact IP search in own services
 =NETSPOC=
 [[topo]]
@@ -348,6 +365,21 @@ active_owner=x
 history=p1
 search_ip1=0.0.0.0/0
 search_ip2=192.53.0.0/16
+search_own=1
+search_used=1
+search_subnet=1
+=RESPONSE_NAMES=["NTP"]
+
+############################################################
+=TITLE=Subnet object search for interface of internet with negotiated address
+=NETSPOC=
+[[topo]]
+=URL=service_list
+=PARAMS=
+active_owner=x
+history=p1
+search_ip1=network:Internet
+search_ip2=host:INTERNET_192_53_103_103
 search_own=1
 search_used=1
 search_subnet=1
@@ -613,6 +645,20 @@ chosen_networks=network:Sub,network:DMZ
 =RESPONSE_NAMES=["Test4"]
 
 ############################################################
+=TITLE=Object search for host and chosen network
+=NETSPOC=
+[[topo]]
+=URL=service_list
+=PARAMS=
+active_owner=x
+history=p1
+search_ip1=host:k
+search_own=1
+search_used=1
+chosen_networks=network:Sub,network:DMZ
+=RESPONSE_NAMES=["Test4"]
+
+############################################################
 =TITLE=Supernet IP search for host address finds enclosing network
 =NETSPOC=
 [[topo]]
@@ -621,6 +667,20 @@ chosen_networks=network:Sub,network:DMZ
 active_owner=y
 history=p1
 search_ip1=10.1.0.10
+search_supernet=1
+search_own=1
+search_used=1
+=RESPONSE_NAMES=["Test2", "Test4", "Test5", "Test6", "Test9"]
+
+############################################################
+=TITLE=Supernet object search finds enclosing network
+=NETSPOC=
+[[topo]]
+=URL=service_list
+=PARAMS=
+active_owner=y
+history=p1
+search_ip1=host:B10
 search_supernet=1
 search_own=1
 search_used=1
@@ -639,6 +699,49 @@ search_supernet=1
 search_own=1
 search_used=1
 =RESPONSE_NAMES=["Test2", "Test4", "Test5"]
+
+############################################################
+=TITLE=Supernet search for range object finds enclosing network
+=NETSPOC=
+[[topo]]
+=URL=service_list
+=PARAMS=
+active_owner=x
+history=p1
+search_ip1=host:range
+search_exact=1
+search_supernet=1
+search_own=1
+search_used=1
+=RESPONSE_NAMES=["Test2", "Test4", "Test5"]
+
+############################################################
+=TITLE=Supernet search for sub range object finds enclosing range and network
+=NETSPOC=
+[[topo]]
+=URL=service_list
+=PARAMS=
+active_owner=x
+history=p1
+search_ip1=host:sub-range
+search_supernet=1
+search_own=1
+search_used=1
+=RESPONSE_NAMES=["Test2", "Test4", "Test5"]
+
+############################################################
+=TITLE=Subnet search for enclosing range object finds range and host
+=NETSPOC=
+[[topo]]
+=URL=service_list
+=PARAMS=
+active_owner=x
+history=p1
+search_ip1=host:big-range
+search_subnet=1
+search_own=1
+search_used=1
+=RESPONSE_NAMES=["Test4", "Test6", "Test7", "Test8", "Test9"]
 
 ############################################################
 =TITLE=Supernet IP search for aggregate
@@ -684,6 +787,20 @@ search_used=1
 =RESPONSE_NAMES=["Test5"]
 
 ############################################################
+=TITLE=Supernet object search for loopback finds enclosing aggregate
+=NETSPOC=
+[[topo]]
+=URL=service_list
+=PARAMS=
+active_owner=x
+history=p1
+search_ip1=interface:u.L
+search_supernet=1
+search_own=1
+search_used=1
+=RESPONSE_NAMES=["Test5"]
+
+############################################################
 =TITLE=Supernet IP search for unknown internet address
 =NETSPOC=
 [[topo]]
@@ -699,7 +816,7 @@ search_used=1
 
 ############################################################
 =TITLE=Supernet IP search for unknown address of supernet having subnets
-# and matches two networks with identical address
+# that matches two networks with identical address
 # - one has subnet,
 # - one has no visible subnet.
 =NETSPOC=
@@ -845,6 +962,20 @@ chosen_networks=network:DMZ
 =RESPONSE_NAMES=["host:B10"]
 
 ############################################################
+=TITLE=Show matching users of service, 1x object, chosen networks
+=NETSPOC=
+[[topo]]
+=URL=get_users
+=PARAMS=
+active_owner=x
+history=p1
+service=Test9
+search_ip1=network:Big
+search_subnet=1
+chosen_networks=network:DMZ
+=RESPONSE_NAMES=["host:B10"]
+
+############################################################
 =TITLE=Show matching users of service, proto + 2x ip
 =NETSPOC=
 [[topo]]
@@ -855,6 +986,21 @@ history=p1
 service=Test4
 search_ip1=10.1.0.0/16
 search_ip2=10.2.2.2
+search_subnet=1
+search_proto=81
+=RESPONSE_NAMES=["host:B10", "host:Range", "interface:u.Big"]
+
+############################################################
+=TITLE=Show matching users of service, proto + 2x object
+=NETSPOC=
+[[topo]]
+=URL=get_users
+=PARAMS=
+active_owner=x
+history=p1
+service=Test4
+search_ip1=network:Big
+search_ip2=host:k
 search_subnet=1
 search_proto=81
 =RESPONSE_NAMES=["host:B10", "host:Range", "interface:u.Big"]

@@ -233,12 +233,89 @@ func (s *state) buildTextSearchMap(r *http.Request, search string,
 	history := s.getHistoryParamOrCurrentPolicy(r)
 	objects := s.loadObjects(history)
 	matcher := getStringMatcher(r, search)
+	sub := r.FormValue("search_subnet") != ""
+	super := r.FormValue("search_supernet") != ""
 
 	// Collect names of matching objects.
 	result := make(map[string]bool)
 	for name := range objects {
 		if matcher(name) {
 			result[name] = true
+		}
+	}
+	if !sub && !super {
+		return result
+	}
+	// Convert IP address string to netipx.IPRange or netip.Prefix
+	getIP := func(s string) any {
+		if rg, err := netipx.ParseIPRange(s); err == nil {
+			return rg
+		}
+		if p, err := netip.ParsePrefix(s); err == nil {
+			return p
+		} else if addr, err := netip.ParseAddr(s); err == nil {
+			return netip.PrefixFrom(addr, addr.BitLen())
+		} else {
+			// Zero value never matches.
+			return netip.Prefix{}
+		}
+	}
+	// Collect zones and found IP addresses inside a zone.
+	zone2ips := make(map[string][]any)
+	for name := range result {
+		obj := objects[name]
+		zone2ips[obj.Zone] = append(zone2ips[obj.Zone], getIP(obj.IP))
+	}
+
+	ippMatch := func(p1, p2 netip.Prefix) bool {
+		if p1.Bits() >= p2.Bits() {
+			return sub && p2.Contains(p1.Addr())
+		}
+		return super && p1.Contains(p2.Addr())
+	}
+	rgMatch := func(r1, r2 netipx.IPRange) bool {
+		if sub {
+			if r2.Contains(r1.From()) && r2.Contains(r1.To()) {
+				return true
+			}
+		}
+		return super && r1.Contains(r2.From()) && r1.Contains(r2.To())
+	}
+	// Collect subnets and supernets matching IP addresses located in zone.
+	for name := range objects {
+		if result[name] {
+			continue
+		}
+		obj := objects[name]
+		ips := zone2ips[obj.Zone]
+		if ips == nil {
+			continue
+		}
+		ip1 := getIP(obj.IP)
+		match := false
+		for _, ip2 := range ips {
+			if p1, ok := ip1.(netip.Prefix); ok {
+				if p2, ok := ip2.(netip.Prefix); ok {
+					match = ippMatch(p1, p2)
+				} else {
+					r1 := netipx.RangeOfPrefix(p1)
+					r2 := ip2.(netipx.IPRange)
+					match = rgMatch(r1, r2)
+				}
+			} else {
+				r1 := ip1.(netipx.IPRange)
+				var r2 netipx.IPRange
+				if p2, ok := ip2.(netip.Prefix); ok {
+					r2 = netipx.RangeOfPrefix(p2)
+				} else {
+					r2 = ip2.(netipx.IPRange)
+				}
+				match = rgMatch(r1, r2)
+			}
+			if match {
+				result[name] = true
+				break
+			}
 		}
 	}
 	return result
