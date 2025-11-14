@@ -440,28 +440,6 @@ func (s *state) buildIPSearchMap(r *http.Request, p netip.Prefix,
 				matchingZones[objects[name].Zone] = true
 			}
 		}
-	} else if supernets != nil && matchingZones[""] {
-		// Some directly matching objects were found.
-		// Select supernets located in same zone as found objects.
-
-		// Attribute zone is only set for networks, but is empty string for
-		// hosts and interfaces.
-		// Reconstruct zone from zone of enclosing network.
-		assets := s.loadAssets(history, owner)
-		for netName, childNames := range assets.net2childs {
-			z := objects[netName].Zone
-			for _, childName := range childNames {
-				objects[childName].Zone = z
-			}
-		}
-		for name := range result {
-			typ, _, _ := strings.Cut(name, ":")
-			switch typ {
-			case "host", "interface":
-				obj := objects[name]
-				matchingZones[obj.Zone] = true
-			}
-		}
 	}
 	// Add supernets located in same zone(s).
 	for _, name := range supernets {
