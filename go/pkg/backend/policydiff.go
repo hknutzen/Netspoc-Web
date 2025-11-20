@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"os"
-	"slices"
 
 	"github.com/pkg/diff/myers"
 )
@@ -116,25 +115,27 @@ func (c *cache) compareWithGlobalObjects(old, new map[string]*object, key string
 	}
 }
 
-func (c *cache) compareWithGlobalServices(old, new map[string]*service, key string) map[string]interface{} {
-	oldObj, ok1 := old[key]
-	newObj, ok2 := new[key]
-	if ok1 && !ok2 {
-		// deleted
-		return map[string]interface{}{
-			"-": oldObj,
-		}
-	} else if !ok1 && ok2 {
-		// added
-		return map[string]interface{}{
-			"+": newObj,
-		}
-	} else {
-		// compare
-		return c.diff(oldObj, newObj)
-	}
-}
+/*
+func (c *cache) compareWithGlobalServices(v1, v2 string) map[string]interface{} {
 
+		oldObj, ok1 := old[key]
+		newObj, ok2 := new[key]
+		if ok1 && !ok2 {
+			// deleted
+			return map[string]interface{}{
+				"-": oldObj,
+			}
+		} else if !ok1 && ok2 {
+			// added
+			return map[string]interface{}{
+				"+": newObj,
+			}
+		} else {
+			// compare
+			return c.diff(oldObj, newObj)
+		}
+	}
+*/
 func (c *cache) diffServiceLists(oldServices, newServices *serviceLists) map[string]interface{} {
 	oldOwnServices := oldServices.Owner
 	newOwnServices := newServices.Owner
@@ -152,85 +153,58 @@ func (c *cache) diffServiceLists(oldServices, newServices *serviceLists) map[str
 	return result
 }
 
-type rulesPair struct {
-	a []*rule
-	b []*rule
+func (c *cache) diffServices(v1, v2 string) map[string]interface{} {
+	oldGlobalServices := c.genGlobalServicesMap(c.loadServices(v1))
+	newGlobalServices := c.genGlobalServicesMap(c.loadServices(v2))
+	fmt.Fprintf(os.Stderr, "OLD GLOBAL SERVICES: %v\n",
+		oldGlobalServices["POL-MZED-ST_PROD_ST_ALG2WEB"].(map[string]any)["rules"])
+	fmt.Fprintf(os.Stderr, "NEW GLOBAL SERVICES: %v\n",
+		newGlobalServices["POL-MZED-ST_PROD_ST_ALG2WEB"].(map[string]any)["rules"])
+	return c.diff(oldGlobalServices, newGlobalServices)
 }
 
-func (ab *rulesPair) LenA() int { return len(ab.a) }
-func (ab *rulesPair) LenB() int { return len(ab.b) }
+func (c *cache) genGlobalServicesMap(services map[string]*service) map[string]any {
+	globalServices := make(map[string]any)
+	for serviceName, serviceObj := range services {
+		details := map[string]any{}
+		if serviceObj.Details.Description != "" {
+			details["desc"] = serviceObj.Details.Description
+		}
+		if len(serviceObj.Details.Owner) > 0 {
+			details["owner"] = serviceObj.Details.Owner
+		}
+		if serviceObj.Details.Disabled > 0 {
+			details["disabled"] = serviceObj.Details.Disabled
+		}
+		if serviceObj.Details.DisableAt != "" {
+			details["disable_at"] = serviceObj.Details.DisableAt
+		}
 
-func (ab *rulesPair) Equal(i, j int) bool {
-	return ab.a[i].Action == ab.b[j].Action &&
-		ab.a[i].Service == ab.b[j].Service &&
-		slices.Equal(ab.a[i].Src, ab.b[j].Src) &&
-		slices.Equal(ab.a[i].Dst, ab.b[j].Dst) &&
-		slices.Equal(ab.a[i].Prt, ab.b[j].Prt)
-}
-
-func (c *cache) diffServices(oldService *service, newService any) map[string]interface{} {
-	result := make(map[string]interface{})
-	oldRules := oldService.Rules
-	newServiceTyped, ok := newService.(*service)
-	if !ok {
-		abort("Not a service:", newServiceTyped)
-	} else {
-		newRules := newServiceTyped.Rules
-		ab := &rulesPair{a: oldRules, b: newRules}
-		s := myers.Diff(context.TODO(), ab)
-		ruleChanges := make(map[int]interface{})
-		for _, r := range s.Ranges {
-			if r.IsDelete() {
-				for i := r.LowA; i < r.HighA; i++ {
-					idx := i + 1 // start counting rules at 1
-					oRule := oldRules[i]
-					if oRule != nil {
-						if _, ok := ruleChanges[idx]; !ok {
-							ruleChanges[idx] = []interface{}{}
-						}
-						if rulesSlice, ok := ruleChanges[idx].([]interface{}); ok {
-							ruleChanges[idx] = append(rulesSlice, oRule)
-						} else {
-							newRulesSlice := []interface{}{oRule}
-							ruleChanges[idx] = newRulesSlice
-						}
-					}
+		globalServices[serviceName] = map[string]any{
+			"rules":   map[string]any{},
+			"details": details,
+		}
+		for i, rule := range serviceObj.Rules {
+			idx := fmt.Sprintf("%d", i)
+			rulesMap := globalServices[serviceName].(map[string]any)["rules"].(map[string]any)
+			if rulesMap[idx] == nil {
+				ruleData := map[string][]string{}
+				if len(rule.Src) > 0 {
+					ruleData["src"] = rule.Src
 				}
-			} else if r.IsInsert() {
-				for i := r.LowB; i < r.HighB; i++ {
-					idx := i + 1 // start counting rules at 1
-					nRule := newRules[i]
-					if nRule != nil {
-						if _, ok := ruleChanges[idx]; !ok {
-							ruleChanges[idx] = []interface{}{}
-						}
-						if rulesSlice, ok := ruleChanges[idx].([]interface{}); ok {
-							ruleChanges[idx] = append(rulesSlice, nRule)
-						} else {
-							newRulesSlice := []interface{}{nRule}
-							ruleChanges[idx] = newRulesSlice
-						}
-					}
+				if len(rule.Dst) > 0 {
+					ruleData["dst"] = rule.Dst
 				}
-			} else {
-				// handle equal
-				for i := r.LowA; i < r.HighA; i++ {
-					idx := i + 1 // start counting rules at 1
-					oRule := oldRules[i]
-					nRule := newRules[i]
-					ruleDiff := c.diff(oRule, nRule)
-					if len(ruleDiff) > 0 {
-						fmt.Fprintf(os.Stderr, "Rule diff for rule %d: %v\n", idx, ruleDiff)
-						ruleChanges[idx] = ruleDiff
-					}
+				if len(rule.Prt) > 0 {
+					ruleData["prt"] = rule.Prt
+				}
+				if len(ruleData) > 0 {
+					rulesMap[idx] = ruleData
 				}
 			}
 		}
-		if len(ruleChanges) > 0 {
-			result["rules"] = ruleChanges
-		}
 	}
-	return result
+	return globalServices
 }
 
 func (c *cache) diff(old, new any) map[string]interface{} {
@@ -257,6 +231,7 @@ func (c *cache) diff(old, new any) map[string]interface{} {
 			}
 		}
 	case map[string]interface{}:
+
 		for k, vOld := range oldType {
 			if ignore[k] {
 				continue
@@ -344,53 +319,6 @@ func (c *cache) diff(old, new any) map[string]interface{} {
 				}
 			}
 		}
-	case *service:
-		serviceDiff := c.diffServices(oldType, new)
-		if len(serviceDiff) > 0 {
-			for k, v := range serviceDiff {
-				result[k] = v
-			}
-		}
-	case *rule:
-		newRule, ok := new.(*rule)
-		if !ok {
-			abort("Not a rule:", newRule)
-		} else {
-			// Compare slices Src, Dst, Prt
-			sliceFields := map[string]struct {
-				old []string
-				new []string
-			}{
-				"src": {old: oldType.Src, new: newRule.Src},
-				"dst": {old: oldType.Dst, new: newRule.Dst},
-				"prt": {old: oldType.Prt, new: newRule.Prt},
-			}
-			for fieldName, slices := range sliceFields {
-				ab := &pair{a: slices.old, b: slices.new}
-				s := myers.Diff(context.TODO(), ab)
-				fieldChanges := make(map[string][]string)
-				for _, r := range s.Ranges {
-					if r.IsDelete() {
-						for i := r.LowA; i < r.HighA; i++ {
-							oVal := slices.old[i]
-							if oVal != "" {
-								fieldChanges["-"] = append(fieldChanges["-"], oVal)
-							}
-						}
-					} else if r.IsInsert() {
-						for i := r.LowB; i < r.HighB; i++ {
-							nVal := slices.new[i]
-							if nVal != "" {
-								fieldChanges["+"] = append(fieldChanges["+"], nVal)
-							}
-						}
-					}
-				}
-				if len(fieldChanges) > 0 {
-					result[fieldName] = fieldChanges
-				}
-			}
-		}
 	case []interface{}:
 		//oldSlice := old.([]interface{})
 		newSlice, ok := new.([]interface{})
@@ -439,46 +367,36 @@ func (c *cache) compare(v1, v2, owner string) (map[string]interface{}, error) {
 		}
 	}
 
-	/*
-		type service struct {
-			Details *struct {
-				Description string
-				Disabled    int    `json:"disabled,omitempty"`
-				DisableAt   string `json:"disable_at,omitempty"`
-				Owner       []string
-			}
-			Rules []*rule
-		}
-	*/
 	// Add changed services to result.
-	oldServices := c.loadServices(v1)
-	newServices := c.loadServices(v2)
-	serviceChanges := make(map[string]interface{})
-	for serviceName, oldService := range oldServices {
-		newService, ok := newServices[serviceName]
-		if !ok {
-			// Service deleted.
-			serviceChanges[serviceName] = map[string]interface{}{
-				"-": oldService,
-			}
-			continue
-		}
-		serviceDiff := c.diff(oldService, newService)
-		if len(serviceDiff) > 0 {
-			serviceChanges[serviceName] = serviceDiff
-		}
-	}
-	for serviceName, newService := range newServices {
-		_, ok := oldServices[serviceName]
-		if !ok {
-			// Service added.
-			serviceChanges[serviceName] = map[string]interface{}{
-				"+": newService,
-			}
-		}
-	}
+	serviceChanges := c.diffServices(v1, v2)
 	result["services"] = serviceChanges
-
+	fmt.Fprintf(os.Stderr, "SERVICE CHANGES: %v\n", serviceChanges)
+	/*
+		for serviceName, oldService := range oldServices {
+			newService, ok := newServices[serviceName]
+			if !ok {
+				// Service deleted.
+				serviceChanges[serviceName] = map[string]interface{}{
+					"-": oldService,
+				}
+				continue
+			}
+			serviceDiff := c.diff(oldService, newService)
+			if len(serviceDiff) > 0 {
+				serviceChanges[serviceName] = serviceDiff
+			}
+		}
+		for serviceName, newService := range newServices {
+			_, ok := oldServices[serviceName]
+			if !ok {
+				// Service added.
+				serviceChanges[serviceName] = map[string]interface{}{
+					"+": newService,
+				}
+			}
+		}
+		result["services"] = serviceChanges
+	*/
 	// Change result["service_list"][<key>] to result["service_list <key>"].
 	// <key> is either "user" or "owner".
 	if len(result) > 0 {
