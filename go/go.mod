@@ -1,6 +1,6 @@
 module github.com/hknutzen/Netspoc-Web/go
 
-go 1.23.1
+go 1.24.0
 
 require (
 	github.com/google/go-cmp v0.7.0
@@ -8,7 +8,4 @@ require (
 	go4.org/netipx v0.0.0-20231129151722-fdeea329fbba
 )
 
-require (
-	golang.org/x/crypto v0.40.0 // indirect
-	gopkg.in/yaml.v3 v3.0.1 // indirect
-)
+require gopkg.in/yaml.v3 v3.0.1 // indirect
