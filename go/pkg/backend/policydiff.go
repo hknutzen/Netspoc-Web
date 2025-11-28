@@ -8,9 +8,86 @@ import (
 	"github.com/pkg/diff/myers"
 )
 
-type globalDiffs struct {
-	Objects  map[string]interface{}
-	Services map[string]interface{}
+type globalData struct {
+	v1          string
+	v2          string
+	Old         map[string]any
+	New         map[string]any
+	DiffCache   map[string]any
+	OldObjects  map[string]any
+	NewObjects  map[string]any
+	OldServices map[string]any
+	NewServices map[string]any
+}
+
+func (c *cache) loadVersionForPath(version, path, owner string) map[string]any {
+	switch path {
+	case "objects":
+		objects := c.loadObjects(version)
+		convertedObjects := make(map[string]any)
+		for k, v := range objects {
+			convertedObjects[k] = v
+		}
+		return convertedObjects
+	case "service_lists":
+		serviceLists := c.loadServiceLists(version, owner)
+		convertedServiceLists := make(map[string]any)
+		convertedServiceLists["owner"] = serviceLists.Owner
+		convertedServiceLists["user"] = serviceLists.User
+		return convertedServiceLists
+	case "services":
+		services := c.loadServices(version)
+		convertedServices := make(map[string]any)
+		for k, v := range services {
+			convertedServices[k] = v
+		}
+		return convertedServices
+	case "users":
+		users := c.loadUsers(version, owner)
+		convertedUsers := make(map[string]any)
+		for k, v := range users {
+			convertedUsers[k] = v
+		}
+		return convertedUsers
+	default:
+		abort("Unknown path in loadVersionForPath:", path)
+	}
+	return nil
+}
+
+func (c *cache) compareGlobal(state globalData, path, key string) any {
+	cache := state.DiffCache
+	if cache[path] == nil {
+		cache[path] = make(map[string]any)
+	}
+	hash := cache[path].(map[string]any)
+	if val, ok := hash[key]; ok {
+		return val.(map[string]any)
+	}
+	old, ok1 := state.OldServices[key].(map[string]any)
+	new, ok2 := state.NewServices[key].(map[string]any)
+	if path == "objects" {
+		old, ok1 = state.OldObjects[key].(map[string]any)
+		new, ok2 = state.NewObjects[key].(map[string]any)
+	}
+	if !ok1 || !ok2 {
+		return nil
+	}
+	if new == nil {
+		hash[key] = "-"
+		return []string{"-"}
+	}
+	if old == nil {
+		hash[key] = "+"
+		return []string{"+"}
+	}
+	diff := c.diff(state, old, new, "")
+	if len(diff) == 0 {
+		cache[key] = nil
+		return nil
+	}
+	cache[key] = diff
+	return diff
 }
 
 type pair struct {
@@ -30,68 +107,67 @@ func newUsersPair(a, b []string) *pair {
 	return up
 }
 
-func (cache *cache) diffUsers(v1, v2 string,
-	oldUsers, newUsers map[string][]string) map[string]interface{} {
-
+func (c *cache) diffUsers(state globalData, old, new map[string][]string) map[string]any {
+	result := make(map[string]any)
 	usersMap := make(map[string]interface{})
-	for serviceName, oUsers := range oldUsers {
-		if newUsers[serviceName] == nil {
+	for key := range old {
+		oVal := old[key]
+		nVal, ok := new[key]
+		if !ok {
 			continue
 		}
-		nUsers := newUsers[serviceName]
-		ab := newUsersPair(oUsers, nUsers)
+		ab := newUsersPair(oVal, nVal)
 		s := myers.Diff(context.TODO(), ab)
 		for _, r := range s.Ranges {
 			if r.IsDelete() {
 				for i := r.LowA; i < r.HighA; i++ {
-					oUser := oUsers[i]
-					if oUser != "" {
-						if _, ok := usersMap[serviceName]; !ok {
-							usersMap[serviceName] = make(map[string][]string)
-						}
-						if userMap, ok := usersMap[serviceName].(map[string][]string); ok {
-							userMap["-"] = append(userMap["-"], oUser)
-						} else {
-							newUserMap := make(map[string][]string)
-							newUserMap["-"] = []string{oUser}
-							usersMap[serviceName] = newUserMap
-						}
+					userVal := oVal[i]
+					if _, ok := usersMap[key]; !ok {
+						usersMap[key] = make(map[string][]string)
+					}
+					if userMap, ok := usersMap[key].(map[string][]string); ok {
+						userMap["-"] = append(userMap["-"], userVal)
+					} else {
+						newUserMap := make(map[string][]string)
+						newUserMap["-"] = []string{userVal}
+						usersMap[key] = newUserMap
 					}
 				}
+				result[key] = usersMap[key]
 			} else if r.IsInsert() {
 				for i := r.LowB; i < r.HighB; i++ {
-					nUser := nUsers[i]
-					if nUser != "" {
-						if _, ok := usersMap[serviceName]; !ok {
-							usersMap[serviceName] = make(map[string][]string)
-						}
-						if userMap, ok := usersMap[serviceName].(map[string][]string); ok {
-							userMap["+"] = append(userMap["+"], nUser)
-						} else {
-							newUserMap := make(map[string][]string)
-							newUserMap["+"] = []string{nUser}
-							usersMap[serviceName] = newUserMap
-						}
+					userVal := nVal[i]
+					if _, ok := usersMap[key]; !ok {
+						usersMap[key] = make(map[string][]string)
+					}
+					if userMap, ok := usersMap[key].(map[string][]string); ok {
+						userMap["+"] = append(userMap["+"], userVal)
+					} else {
+						newUserMap := make(map[string][]string)
+						newUserMap["+"] = []string{userVal}
+						usersMap[key] = newUserMap
 					}
 				}
+				result[key] = usersMap[key]
 			} else {
 				// handle equal
-				old := cache.loadObjects(v1)
-				new := cache.loadObjects(v2)
+				//old := c.loadObjects(v1)
+				//new := c.loadObjects(v2)
 				for i := r.LowA; i < r.HighA; i++ {
-					userVal := oUsers[i]
-					cResult := cache.compareWithGlobalObjects(old, new, userVal)
-					if len(cResult) > 0 {
-						if _, ok := usersMap[serviceName]; !ok {
-							usersMap[serviceName] = make(map[string][]string)
+					userVal := oVal[i]
+					//cResult := c.compareWithGlobalObjects(old, new, userVal)
+					cResult := c.compareGlobal(state, "objects", userVal)
+					if cResult != nil {
+						if _, ok := usersMap[key]; !ok {
+							usersMap[key] = make(map[string][]string)
 						}
 						serializedResult := fmt.Sprintf("%v", cResult)
-						if userMap, ok := usersMap[serviceName].(map[string][]string); ok {
+						if userMap, ok := usersMap[key].(map[string][]string); ok {
 							userMap["!"] = append(userMap["!"], serializedResult)
 						} else {
 							newUserMap := make(map[string][]string)
 							newUserMap["!"] = []string{serializedResult}
-							usersMap[serviceName] = newUserMap
+							usersMap[key] = newUserMap
 						}
 					}
 				}
@@ -101,73 +177,38 @@ func (cache *cache) diffUsers(v1, v2 string,
 	return usersMap
 }
 
-func (c *cache) compareWithGlobalObjects(old, new map[string]*object, key string) map[string]interface{} {
-	oldObj, ok1 := old[key]
-	newObj, ok2 := new[key]
-	if ok1 && !ok2 {
-		// deleted
-		return map[string]interface{}{
-			"-": oldObj,
+/*
+	func (c *cache) compareWithGlobalObjects(old, new map[string]*object, key string) map[string]interface{} {
+		oldObj, ok1 := old[key]
+		newObj, ok2 := new[key]
+		if ok1 && !ok2 {
+			// deleted
+			return map[string]interface{}{
+				"-": oldObj,
+			}
+		} else if !ok1 && ok2 {
+			// added
+			return map[string]interface{}{
+				"+": newObj,
+			}
+		} else {
+			// compare
+			return c.diff(oldObj, newObj, globalData{})
 		}
-	} else if !ok1 && ok2 {
-		// added
-		return map[string]interface{}{
-			"+": newObj,
-		}
-	} else {
-		// compare
-		return c.diff(oldObj, newObj, map[string]interface{}{})
 	}
-}
+*/
 
-func (c *cache) compareGlobal(global globalDiffs, what, element string) map[string]interface{} {
-	// what is either "objects" or "services"
-	switch what {
-	case "objects":
-		if global.Objects[element] != nil {
-			return global.Objects[element].(map[string]interface{})
+func (c *cache) diffServiceLists(state globalData, owner string) map[string]any {
+	result := make(map[string]any)
+	for _, key := range []string{"owner", "user"} {
+		old := c.loadVersionForPath(state.v1, "service_lists", owner)[key]
+		new := c.loadVersionForPath(state.v2, "service_lists", owner)[key]
+		diff := c.diff(state, old, new, "services")
+		if len(diff) > 0 {
+			result[key] = diff
 		}
-	case "services":
-		if global.Services[element] != nil {
-			return global.Services[element].(map[string]interface{})
-		}
-	default:
-		abort("Unknown type (object|service) in compareGlobal:", what)
-	}
-	return nil
-}
-
-func (c *cache) diffServiceLists(oldServices, newServices *serviceLists) map[string]interface{} {
-	oldOwnServices := oldServices.Owner
-	newOwnServices := newServices.Owner
-	ownerDiff := c.diff(oldOwnServices, newOwnServices, map[string]interface{}{})
-	oldUserServices := oldServices.User
-	newUserServices := newServices.User
-	userDiff := c.diff(oldUserServices, newUserServices, map[string]interface{}{})
-	result := make(map[string]interface{})
-	if len(ownerDiff) > 0 {
-		result["owner"] = ownerDiff
-	}
-	if len(userDiff) > 0 {
-		result["user"] = userDiff
 	}
 	return result
-}
-
-func (c *cache) diffServices(v1, v2 string) map[string]interface{} {
-	oldGlobalServices := c.genGlobalServicesMap(c.loadServices(v1))
-	newGlobalServices := c.genGlobalServicesMap(c.loadServices(v2))
-	fmt.Fprintf(os.Stderr, "OLD GLOBAL SERVICES: %v\n",
-		oldGlobalServices["POL-MZED-ST_PROD_ST_ALG2WEB"].(map[string]any)["rules"])
-	fmt.Fprintf(os.Stderr, "NEW GLOBAL SERVICES: %v\n",
-		newGlobalServices["POL-MZED-ST_PROD_ST_ALG2WEB"].(map[string]any)["rules"])
-	return c.diff(oldGlobalServices, newGlobalServices, map[string]interface{}{})
-}
-
-func (c *cache) diffObjects(v1, v2 string) map[string]interface{} {
-	oldGlobalObjects := c.genGlobalObjectsMap(c.loadObjects(v1))
-	newGlobalObjects := c.genGlobalObjectsMap(c.loadObjects(v2))
-	return c.diff(oldGlobalObjects, newGlobalObjects, map[string]interface{}{})
 }
 
 func (c *cache) genGlobalObjectsMap(objects map[string]*object) map[string]any {
@@ -182,15 +223,6 @@ func (c *cache) genGlobalObjectsMap(objects map[string]*object) map[string]any {
 		}
 		if obj.Owner != "" {
 			details["owner"] = obj.Owner
-		}
-		if obj.IsSupernet > 0 {
-			details["is_supernet"] = obj.IsSupernet
-		}
-		if obj.Zone != "" {
-			details["zone"] = obj.Zone
-		}
-		if obj.NAT != nil {
-			details["nat"] = obj.NAT
 		}
 		globalObjects[name] = details
 	}
@@ -241,14 +273,10 @@ func (c *cache) genGlobalServicesMap(services map[string]*service) map[string]an
 	return globalServices
 }
 
-func (c *cache) diff(old, new any, global map[string]interface{}) map[string]interface{} {
-	ignore := map[string]bool{
-		"hash":        true,
-		"has_user":    true,
-		"name":        true,
-		"nat":         true,
-		"is_supernet": true,
-		"zone":        true,
+func (c *cache) diff(state globalData, old, new any, global string) map[string]interface{} {
+	lookup := map[string]string{
+		"src": "objects",
+		"dst": "objects",
 	}
 	result := make(map[string]interface{})
 	switch oldType := old.(type) {
@@ -267,9 +295,6 @@ func (c *cache) diff(old, new any, global map[string]interface{}) map[string]int
 	case map[string]interface{}:
 
 		for k, vOld := range oldType {
-			if ignore[k] {
-				continue
-			}
 			// Key has been removed in new version.
 			vNew, ok := new.(map[string]interface{})[k]
 			if !ok {
@@ -277,7 +302,7 @@ func (c *cache) diff(old, new any, global map[string]interface{}) map[string]int
 					"-": vOld,
 				}
 			} else {
-				subDiff := c.diff(vOld, vNew, global)
+				subDiff := c.diff(state, vOld, vNew, lookup[k])
 				if len(subDiff) > 0 {
 					fmt.Fprintf(os.Stderr, "SUBDIFF for key %s: %v\n", k, subDiff)
 					result[k] = subDiff
@@ -285,9 +310,6 @@ func (c *cache) diff(old, new any, global map[string]interface{}) map[string]int
 			}
 		}
 		for k, vNew := range new.(map[string]interface{}) {
-			if ignore[k] {
-				continue
-			}
 			// Key has been added in new version.
 			_, ok := oldType[k]
 			if !ok {
@@ -336,20 +358,21 @@ func (c *cache) diff(old, new any, global map[string]interface{}) map[string]int
 						}
 					}
 				} else {
-					if global == nil {
+					if global == "" {
 						continue
 					}
 					for i := r.LowA; i < r.HighA; i++ {
 						oVal := oldSlice[i]
 						nVal := newSlice[i]
 						if oVal != nVal {
-							arrow := "\u2794"
-							fmt.Fprintf(os.Stderr, "UNEQUAL: OLD:%v %s NEW:%v\n", oVal, arrow, nVal)
+							//arrow := "\u2794"
+							//fmt.Fprintf(os.Stderr, "UNEQUAL: OLD:%v %s NEW:%v\n", oVal, arrow, nVal)
 							continue
 						}
-						fmt.Fprintf(os.Stderr, "Equal: %v\n", oVal)
-						gd := c.compareGlobal(global, "objects", oVal)
-						if len(gd) > 0 {
+						//fmt.Fprintf(os.Stderr, "Equal: %v\n", oVal)
+						//fmt.Fprintf(os.Stderr, "Comparing with global data: %v\n", global.Old[oVal])
+						gd := c.compareGlobal(state, "", oVal)
+						if gd != nil {
 							if _, ok := result["!"]; !ok {
 								result["!"] = []string{}
 							}
@@ -370,38 +393,45 @@ func (c *cache) diff(old, new any, global map[string]interface{}) map[string]int
 	return result
 }
 
+func (c *cache) genGlobalCompareData(v1, v2 string) globalData {
+	oldObjects := c.genGlobalObjectsMap(c.loadObjects(v1))
+	newObjects := c.genGlobalObjectsMap(c.loadObjects(v2))
+	oldServices := c.genGlobalServicesMap(c.loadServices(v1))
+	newServices := c.genGlobalServicesMap(c.loadServices(v2))
+	mergedOld := make(map[string]any)
+	for k, v := range oldObjects {
+		mergedOld[k] = v
+	}
+	for k, v := range oldServices {
+		mergedOld[k] = v
+	}
+	mergedNew := make(map[string]any)
+	for k, v := range newObjects {
+		mergedNew[k] = v
+	}
+	for k, v := range newServices {
+		mergedNew[k] = v
+	}
+	return globalData{
+		v1:        v1,
+		v2:        v2,
+		DiffCache: make(map[string]any),
+	}
+}
+
 func (c *cache) compare(v1, v2, owner string) (map[string]interface{}, error) {
 	result := make(map[string]interface{})
-	globalDiffs := &globalDiffs{
-		Objects:  c.diffObjects(v1, v2),
-		Services: c.diffServices(v1, v2),
+	state := c.genGlobalCompareData(v1, v2)
+
+	diff := c.diffServiceLists(state, owner)
+	if len(diff) > 0 {
+		result["service_lists"] = diff
 	}
-	fmt.Fprintf(os.Stderr, "GLOBAL OBJECTS V1: %v\n", globalDiffs.Objects)
-	fmt.Fprintf(os.Stderr, "GLOBAL SERVICES V1: %v\n", globalDiffs.Services)
-	pathToDiffHandler := map[string]func(string, string) (map[string]interface{}, error){
-		"service_lists": func(v1, v2 string) (map[string]interface{}, error) {
-			oldServices := c.loadServiceLists(v1, owner)
-			newServices := c.loadServiceLists(v2, owner)
-			return c.diffServiceLists(oldServices, newServices), nil
-		},
-		"users": func(v1, v2 string) (map[string]interface{}, error) {
-			oldUsers := c.loadUsers(v1, owner)
-			newUsers := c.loadUsers(v2, owner)
-			return c.diffUsers(v1, v2, oldUsers, newUsers), nil
-		},
-	}
-	for _, what := range []string{"service_lists", "users"} {
-		if handler, ok := pathToDiffHandler[what]; ok {
-			diff, err := handler(v1, v2)
-			if err != nil {
-				return nil, err
-			}
-			if len(diff) > 0 {
-				result[what] = diff
-			}
-		} else {
-			return nil, fmt.Errorf("no diff handler for %s", what)
-		}
+	old := c.loadUsers(v1, owner)
+	new := c.loadUsers(v2, owner)
+	diff = c.diffUsers(state, old, new)
+	if len(diff) > 0 {
+		result["users"] = diff
 	}
 
 	// Change result["service_list"][<key>] to result["service_list <key>"].
@@ -416,43 +446,32 @@ func (c *cache) compare(v1, v2, owner string) (map[string]interface{}, error) {
 		}
 	}
 
-	// Add changed services to result.
-	// Only keep the actual changed services.
-	// Remove those that were added or removed, since they
-	// are already included in service_lists.
-	serviceChanges := c.diffServices(v1, v2)
-	fmt.Fprintf(os.Stderr, "SERVICE CHANGES: %v\n", serviceChanges)
-	/*
-		for k, v := range serviceChanges {
-			fmt.Fprint(os.Stderr, "-----> CHECKING SERVICE CHANGE KEY:", k, "\n")
-			if _, ok := result["service_lists owner"]; ok {
-				slOwner := result["service_lists owner"].(map[string]interface{})
-				if _, ok2 := slOwner["+"]; ok2 {
-					if _, ok3 := slOwner["+"].([]string); ok3 {
-						// Service was added -> skip
-						delete(serviceChanges, k)
-						continue
+	globalDiff := state.DiffCache
+	for _, what := range []string{"objects", "services"} {
+		hash, ok := globalDiff[what].(map[string]any)
+		if !ok || hash == nil || len(hash) < 1 {
+			continue
+		} else {
+			for key := range hash {
+				// If keys "object" or "services" in the cache are empty,
+				// delete the whole key.
+				if _, ok := hash[key]; ok {
+					if val, ok := hash[key].(map[string]any); ok && len(val) < 1 {
+						delete(hash, key)
 					}
-				} else if _, ok2 := slOwner["-"]; ok2 {
-					if _, ok3 := slOwner["-"].([]string); ok3 {
-						// Service was removed -> skip
-						delete(serviceChanges, k)
-						continue
-					}
-				} else {
-					// Service was modified -> keep
-					serviceChanges[k] = v
 				}
 			}
 		}
-	*/
-	result["services"] = serviceChanges
-
+		// Only add objects and services to result, if those hashes are non-empty.
+		if len(hash) > 0 {
+			result[what] = hash
+		}
+	}
 	// TODO: remove this!!
 	delete(result, "users")
 	//delete(result, "objects")
-	//delete(result, "service_lists user")
-	//delete(result, "service_lists owner")
+	delete(result, "service_lists user")
+	delete(result, "service_lists owner")
 
 	return result, nil
 }
