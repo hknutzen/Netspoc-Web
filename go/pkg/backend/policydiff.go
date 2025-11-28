@@ -211,68 +211,6 @@ func (c *cache) diffServiceLists(state globalData, owner string) map[string]any 
 	return result
 }
 
-func (c *cache) genGlobalObjectsMap(objects map[string]*object) map[string]any {
-	globalObjects := make(map[string]any)
-	for name, obj := range objects {
-		details := map[string]any{}
-		if obj.IP != "" {
-			details["ip"] = obj.IP
-		}
-		if obj.IP6 != "" {
-			details["ip6"] = obj.IP6
-		}
-		if obj.Owner != "" {
-			details["owner"] = obj.Owner
-		}
-		globalObjects[name] = details
-	}
-	return globalObjects
-}
-
-func (c *cache) genGlobalServicesMap(services map[string]*service) map[string]any {
-	globalServices := make(map[string]any)
-	for serviceName, serviceObj := range services {
-		details := map[string]any{}
-		if serviceObj.Details.Description != "" {
-			details["desc"] = serviceObj.Details.Description
-		}
-		if len(serviceObj.Details.Owner) > 0 {
-			details["owner"] = serviceObj.Details.Owner
-		}
-		if serviceObj.Details.Disabled > 0 {
-			details["disabled"] = serviceObj.Details.Disabled
-		}
-		if serviceObj.Details.DisableAt != "" {
-			details["disable_at"] = serviceObj.Details.DisableAt
-		}
-
-		globalServices[serviceName] = map[string]any{
-			"rules":   map[string]any{},
-			"details": details,
-		}
-		for i, rule := range serviceObj.Rules {
-			idx := fmt.Sprintf("%d", i)
-			rulesMap := globalServices[serviceName].(map[string]any)["rules"].(map[string]any)
-			if rulesMap[idx] == nil {
-				ruleData := map[string][]string{}
-				if len(rule.Src) > 0 {
-					ruleData["src"] = rule.Src
-				}
-				if len(rule.Dst) > 0 {
-					ruleData["dst"] = rule.Dst
-				}
-				if len(rule.Prt) > 0 {
-					ruleData["prt"] = rule.Prt
-				}
-				if len(ruleData) > 0 {
-					rulesMap[idx] = ruleData
-				}
-			}
-		}
-	}
-	return globalServices
-}
-
 func (c *cache) diff(state globalData, old, new any, global string) map[string]interface{} {
 	lookup := map[string]string{
 		"src": "objects",
@@ -394,24 +332,6 @@ func (c *cache) diff(state globalData, old, new any, global string) map[string]i
 }
 
 func (c *cache) genGlobalCompareData(v1, v2 string) globalData {
-	oldObjects := c.genGlobalObjectsMap(c.loadObjects(v1))
-	newObjects := c.genGlobalObjectsMap(c.loadObjects(v2))
-	oldServices := c.genGlobalServicesMap(c.loadServices(v1))
-	newServices := c.genGlobalServicesMap(c.loadServices(v2))
-	mergedOld := make(map[string]any)
-	for k, v := range oldObjects {
-		mergedOld[k] = v
-	}
-	for k, v := range oldServices {
-		mergedOld[k] = v
-	}
-	mergedNew := make(map[string]any)
-	for k, v := range newObjects {
-		mergedNew[k] = v
-	}
-	for k, v := range newServices {
-		mergedNew[k] = v
-	}
 	return globalData{
 		v1:        v1,
 		v2:        v2,
@@ -470,8 +390,8 @@ func (c *cache) compare(v1, v2, owner string) (map[string]interface{}, error) {
 	// TODO: remove this!!
 	delete(result, "users")
 	//delete(result, "objects")
-	delete(result, "service_lists user")
-	delete(result, "service_lists owner")
+	//delete(result, "service_lists user")
+	//delete(result, "service_lists owner")
 
 	return result, nil
 }
