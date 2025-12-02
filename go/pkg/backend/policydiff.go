@@ -11,8 +11,6 @@ import (
 type globalData struct {
 	v1          string
 	v2          string
-	Old         map[string]any
-	New         map[string]any
 	DiffCache   map[string]any
 	OldObjects  map[string]any
 	NewObjects  map[string]any
@@ -42,13 +40,6 @@ func (c *cache) loadVersionForPath(version, path, owner string) map[string]any {
 			convertedServices[k] = v
 		}
 		return convertedServices
-	case "users":
-		users := c.loadUsers(version, owner)
-		convertedUsers := make(map[string]any)
-		for k, v := range users {
-			convertedUsers[k] = v
-		}
-		return convertedUsers
 	default:
 		abort("Unknown path in loadVersionForPath:", path)
 	}
@@ -62,7 +53,7 @@ func (c *cache) compareGlobal(state globalData, path, key string) any {
 	}
 	hash := cache[path].(map[string]any)
 	if val, ok := hash[key]; ok {
-		return val.(map[string]any)
+		return val
 	}
 	old, ok1 := state.OldServices[key].(map[string]any)
 	new, ok2 := state.NewServices[key].(map[string]any)
@@ -75,19 +66,18 @@ func (c *cache) compareGlobal(state globalData, path, key string) any {
 	}
 	if new == nil {
 		hash[key] = "-"
-		return []string{"-"}
+		return "-"
 	}
 	if old == nil {
 		hash[key] = "+"
-		return []string{"+"}
+		return "+"
 	}
 	diff := c.diff(state, old, new, "")
-	if len(diff) == 0 {
-		cache[key] = nil
-		return nil
+	if len(diff) > 0 {
+		hash[key] = diff
+		return diff
 	}
-	cache[key] = diff
-	return diff
+	return ""
 }
 
 type pair struct {
@@ -151,13 +141,10 @@ func (c *cache) diffUsers(state globalData, old, new map[string][]string) map[st
 				result[key] = usersMap[key]
 			} else {
 				// handle equal
-				//old := c.loadObjects(v1)
-				//new := c.loadObjects(v2)
 				for i := r.LowA; i < r.HighA; i++ {
 					userVal := oVal[i]
-					//cResult := c.compareWithGlobalObjects(old, new, userVal)
 					cResult := c.compareGlobal(state, "objects", userVal)
-					if cResult != nil {
+					if cResult != "" {
 						if _, ok := usersMap[key]; !ok {
 							usersMap[key] = make(map[string][]string)
 						}
@@ -176,27 +163,6 @@ func (c *cache) diffUsers(state globalData, old, new map[string][]string) map[st
 	}
 	return usersMap
 }
-
-/*
-	func (c *cache) compareWithGlobalObjects(old, new map[string]*object, key string) map[string]interface{} {
-		oldObj, ok1 := old[key]
-		newObj, ok2 := new[key]
-		if ok1 && !ok2 {
-			// deleted
-			return map[string]interface{}{
-				"-": oldObj,
-			}
-		} else if !ok1 && ok2 {
-			// added
-			return map[string]interface{}{
-				"+": newObj,
-			}
-		} else {
-			// compare
-			return c.diff(oldObj, newObj, globalData{})
-		}
-	}
-*/
 
 func (c *cache) diffServiceLists(state globalData, owner string) map[string]any {
 	result := make(map[string]any)
@@ -251,7 +217,7 @@ func (c *cache) genGlobalServicesMap(services map[string]*service) map[string]an
 			"details": details,
 		}
 		for i, rule := range serviceObj.Rules {
-			idx := fmt.Sprintf("%d", i)
+			idx := fmt.Sprintf("%d", i+1)
 			rulesMap := globalServices[serviceName].(map[string]any)["rules"].(map[string]any)
 			if rulesMap[idx] == nil {
 				ruleData := map[string][]string{}
@@ -289,7 +255,7 @@ func (c *cache) diff(state globalData, old, new any, global string) map[string]i
 			if oldStr != newStr {
 				arrow := "\u2794"
 				r := fmt.Sprintf("%s %s %s", oldStr, arrow, newStr)
-				result[r] = r
+				result[r] = ""
 			}
 		}
 	case map[string]interface{}:
@@ -304,7 +270,7 @@ func (c *cache) diff(state globalData, old, new any, global string) map[string]i
 			} else {
 				subDiff := c.diff(state, vOld, vNew, lookup[k])
 				if len(subDiff) > 0 {
-					fmt.Fprintf(os.Stderr, "SUBDIFF for key %s: %v\n", k, subDiff)
+					//fmt.Fprintf(os.Stderr, "SUBDIFF for key %s: %v\n", k, subDiff)
 					result[k] = subDiff
 				}
 			}
@@ -314,6 +280,31 @@ func (c *cache) diff(state globalData, old, new any, global string) map[string]i
 			_, ok := oldType[k]
 			if !ok {
 				result[k] = map[string]interface{}{
+					"+": vNew,
+				}
+			}
+		}
+	case map[string][]string:
+		//fmt.Fprintf(os.Stderr, "OLD map[string][]string: %v\n", oldType)
+		//fmt.Fprintf(os.Stderr, "NEW map[string][]string: %v\n", new)
+		for k, vOld := range oldType {
+			vNew, ok := new.(map[string][]string)[k]
+			if !ok {
+				result[k] = map[string][]string{
+					"-": vOld,
+				}
+			} else {
+				subDiff := c.diff(state, vOld, vNew, lookup[k])
+				if len(subDiff) > 0 {
+					//fmt.Fprintf(os.Stderr, "SUBDIFF for key %s: %v\n", k, subDiff)
+					result[k] = subDiff
+				}
+			}
+		}
+		for k, vNew := range new.(map[string][]string) {
+			_, ok := oldType[k]
+			if !ok {
+				result[k] = map[string][]string{
 					"+": vNew,
 				}
 			}
@@ -358,21 +349,14 @@ func (c *cache) diff(state globalData, old, new any, global string) map[string]i
 						}
 					}
 				} else {
+					// Equal case. Find diffs against global data.
 					if global == "" {
 						continue
 					}
 					for i := r.LowA; i < r.HighA; i++ {
 						oVal := oldSlice[i]
-						nVal := newSlice[i]
-						if oVal != nVal {
-							//arrow := "\u2794"
-							//fmt.Fprintf(os.Stderr, "UNEQUAL: OLD:%v %s NEW:%v\n", oVal, arrow, nVal)
-							continue
-						}
-						//fmt.Fprintf(os.Stderr, "Equal: %v\n", oVal)
-						//fmt.Fprintf(os.Stderr, "Comparing with global data: %v\n", global.Old[oVal])
-						gd := c.compareGlobal(state, "", oVal)
-						if gd != nil {
+						gd := c.compareGlobal(state, global, oVal)
+						if gd != "" {
 							if _, ok := result["!"]; !ok {
 								result["!"] = []string{}
 							}
@@ -387,8 +371,17 @@ func (c *cache) diff(state globalData, old, new any, global string) map[string]i
 				}
 			}
 		}
+	case int:
+		newInt := new.(int)
+		oldInt := old.(int)
+		if oldInt != newInt {
+			arrow := "\u2794"
+			r := fmt.Sprintf("%d %s %d", oldInt, arrow, newInt)
+			result[r] = r
+		}
 	default:
-		//fmt.Fprintf(os.Stderr, "Unhandled type in diff: %v", oldType)
+		fmt.Fprintf(os.Stderr, "Unhandled type in diff: %v \n", oldType)
+		os.Exit(1)
 	}
 	return result
 }
@@ -398,24 +391,14 @@ func (c *cache) genGlobalCompareData(v1, v2 string) globalData {
 	newObjects := c.genGlobalObjectsMap(c.loadObjects(v2))
 	oldServices := c.genGlobalServicesMap(c.loadServices(v1))
 	newServices := c.genGlobalServicesMap(c.loadServices(v2))
-	mergedOld := make(map[string]any)
-	for k, v := range oldObjects {
-		mergedOld[k] = v
-	}
-	for k, v := range oldServices {
-		mergedOld[k] = v
-	}
-	mergedNew := make(map[string]any)
-	for k, v := range newObjects {
-		mergedNew[k] = v
-	}
-	for k, v := range newServices {
-		mergedNew[k] = v
-	}
 	return globalData{
-		v1:        v1,
-		v2:        v2,
-		DiffCache: make(map[string]any),
+		v1:          v1,
+		v2:          v2,
+		OldObjects:  oldObjects,
+		NewObjects:  newObjects,
+		OldServices: oldServices,
+		NewServices: newServices,
+		DiffCache:   make(map[string]any),
 	}
 }
 
@@ -467,11 +450,19 @@ func (c *cache) compare(v1, v2, owner string) (map[string]interface{}, error) {
 			result[what] = hash
 		}
 	}
+	if len(globalDiff["objects"].(map[string]any)) > 0 {
+		result["objects"] = globalDiff["objects"]
+	}
+	if len(globalDiff["services"].(map[string]any)) > 0 {
+		result["services"] = globalDiff["services"]
+	}
+
 	// TODO: remove this!!
-	delete(result, "users")
+	//delete(result, "users")
+	//delete(result, "services")
+	//delete(result, "service_lists user")
+	//delete(result, "service_lists owner")
 	//delete(result, "objects")
-	delete(result, "service_lists user")
-	delete(result, "service_lists owner")
 
 	return result, nil
 }
