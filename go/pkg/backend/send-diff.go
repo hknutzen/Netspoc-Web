@@ -1,9 +1,11 @@
 package backend
 
 import (
+	"cmp"
 	"fmt"
+	"maps"
 	"os"
-	"sort"
+	"slices"
 	"strings"
 )
 
@@ -119,39 +121,22 @@ func SendDiff() {
 		}
 	}
 
-	// Compare files for each owner.
-	toplevelSort := map[string]int{
-		"objects":             1,
-		"services":            2,
-		"service_lists owner": 3,
-		"service_lists user":  4,
-		"users":               5,
-	}
 	for owner := range ownerToSend {
 		changes, err := s.compare(oldVer, newVer, owner)
 		if err != nil || changes == nil {
 			continue
 		}
-		fmt.Fprintf(os.Stderr, "CHANGES FOR OWNER %s:\n%v\n", owner, changes)
-
-		converted := Convert(changes, 0)
-		fmt.Fprintf(os.Stderr, "CHANGES AFTER CONVERT %s:\n%v\n", owner, converted)
 		diff := ""
-		for _, line := range converted {
-			diff += line + "\n"
+		// Sort changes by toplevel keys.
+		for _, key := range []string{"objects", "services", "service_lists owner", "service_lists user", "users"} {
+			block := make(map[string]interface{})
+			block[key] = changes[key]
+			//fmt.Fprintf(os.Stderr, "Processing diff block for key %s: %v\n", key, block[key])
+			for _, line := range Convert(block, 0) {
+				diff += line + "\n"
+			}
+			diff += "\n"
 		}
-
-		// Sort diff lines according to toplevelSort.
-		diffLines := strings.Split(diff, "\n")
-		sort.SliceStable(diffLines, func(i, j int) bool {
-			iParts := strings.SplitN(diffLines[i], " ", 2)
-			jParts := strings.SplitN(diffLines[j], " ", 2)
-			iRank := toplevelSort[strings.TrimSpace(iParts[0])]
-			jRank := toplevelSort[strings.TrimSpace(jParts[0])]
-			return iRank < jRank
-		})
-		diff = strings.Join(diffLines, "\n")
-
 		template := fmt.Sprintf("%s/diff", config.MailTemplate)
 		//fmt.Fprintln(os.Stderr, "Diff for owner", owner, ":\n", diff)
 		for _, email := range ownerToSend[owner] {
@@ -166,8 +151,6 @@ func SendDiff() {
 				fmt.Printf("Failed to get email template for %s: %v\n", email, err)
 				continue
 			}
-			//text = ""
-			//diff = ""
 			fmt.Fprintln(os.Stderr, "\n", text)
 			/*
 				err = s.sendEmail(text)
@@ -198,15 +181,19 @@ var replace = map[string]string{
 // nesting level (0: top-level, 1: inside objects/services, etc.).
 // Each replaced key should be prefixed with indentation spaces
 // according to the nesting level.
-// The result should be a flat list of strings representing the changes.
-// Each replaced key should be on a new separate line.
+// The result is a flat list of strings representing the changes.
+// Each replaced key is on a new separate line.
 func Convert(input interface{}, level int) []string {
 	var result []string
 	indent := strings.Repeat("  ", level)
 
 	switch v := input.(type) {
 	case map[string]interface{}:
-		for key, value := range v {
+		keys := slices.SortedFunc(maps.Keys(v), func(a, b string) int {
+			return cmp.Compare(strings.ToLower(a), strings.ToLower(b))
+		})
+		for _, key := range keys {
+			value := v[key]
 			replacedKey := replace[key]
 			if replacedKey == "" {
 				replacedKey = key
@@ -246,6 +233,8 @@ func Convert(input interface{}, level int) []string {
 					replacedValue = nestedValue
 				}
 				result = append(result, fmt.Sprintf("%s%s", indent+"  ", replacedValue))
+			case int:
+				result = append(result, fmt.Sprintf("%s%d", indent+"  ", nestedValue))
 			case map[int]interface{}:
 				result = append(result, Convert(nestedValue, level+1)...)
 			default:
