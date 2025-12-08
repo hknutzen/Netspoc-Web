@@ -104,6 +104,32 @@ func (s *state) storePassword(w http.ResponseWriter, email, hash string) {
 	}
 }
 
+func (s *state) sendEmail(text string) error {
+	sendmail := s.config.SendmailCommand
+	noreply := s.config.NoreplyAddress
+
+	cmd := exec.Command(sendmail, "-t", "-F", "''", "-f", noreply)
+	pipe, err := cmd.StdinPipe()
+	if err != nil {
+		return err
+	}
+
+	if err := cmd.Start(); err != nil {
+		return err
+	}
+
+	_, err = pipe.Write([]byte(text))
+	if err != nil {
+		return err
+	}
+
+	pipe.Close()
+	if err := cmd.Wait(); err != nil {
+		return err
+	}
+	return nil
+}
+
 func (s *state) sendVerificationEmail(w http.ResponseWriter, email, url, ip string) {
 	templatePath := fmt.Sprintf("%s/verify", s.config.MailTemplate)
 	text, err := s.getTemplateContent(templatePath, map[string]string{
@@ -115,31 +141,10 @@ func (s *state) sendVerificationEmail(w http.ResponseWriter, email, url, ip stri
 		writeError(w, "Failed to get email template: "+err.Error(), http.StatusInternalServerError)
 		return
 	}
-
-	sendmail := s.config.SendmailCommand
-	noreply := s.config.NoreplyAddress
-
-	cmd := exec.Command(sendmail, "-t", "-F", "''", "-f", noreply)
-	pipe, err := cmd.StdinPipe()
+	err = s.sendEmail(text)
 	if err != nil {
-		writeError(w, "Failed to open sendmail pipe: "+err.Error(), http.StatusInternalServerError)
+		writeError(w, "Failed to send email: "+err.Error(), http.StatusInternalServerError)
 		return
-	}
-
-	if err := cmd.Start(); err != nil {
-		writeError(w, "Failed to start sendmail command: "+err.Error(), http.StatusInternalServerError)
-		return
-	}
-
-	_, err = pipe.Write([]byte(text))
-	if err != nil {
-		writeError(w, "Failed to write to sendmail pipe: "+err.Error(), http.StatusInternalServerError)
-		return
-	}
-
-	pipe.Close()
-	if err := cmd.Wait(); err != nil {
-		writeError(w, "Failed to close sendmail command: %v\n", http.StatusInternalServerError)
 	}
 }
 
