@@ -72,7 +72,7 @@ func (s *state) findAuthorizedOwners(r *http.Request) []string {
 // Validate active owner.
 // Email could be removed from any owner role at any time in netspoc data.
 func (s *state) validateOwner(w http.ResponseWriter, r *http.Request, ownerNeeded bool) {
-	activeOwner := r.URL.Query().Get("active_owner")
+	activeOwner := r.FormValue("active_owner")
 	if activeOwner != "" {
 		if !ownerNeeded {
 			writeError(w, "Must not send parameter 'active_owner'", http.StatusBadRequest)
