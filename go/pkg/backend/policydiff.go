@@ -457,12 +457,5 @@ func (c *cache) compare(v1, v2, owner string) (map[string]interface{}, error) {
 		result["services"] = globalDiff["services"]
 	}
 
-	// TODO: remove this!!
-	//delete(result, "users")
-	//delete(result, "services")
-	//delete(result, "service_lists user")
-	//delete(result, "service_lists owner")
-	//delete(result, "objects")
-
 	return result, nil
 }
