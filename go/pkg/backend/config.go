@@ -24,7 +24,7 @@ type config struct {
 	AboutInfoTemplate  string   `json:"about_info_template"`
 }
 
-func loadConfig() *config {
+func LoadConfig() *config {
 	home, _ := os.UserHomeDir()
 	var p string
 	if os.Getenv("PW_FRONTEND_TEST") != "" {
