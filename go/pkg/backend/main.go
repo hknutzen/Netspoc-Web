@@ -17,7 +17,7 @@ type state struct {
 }
 
 func getMux() (*http.ServeMux, *state) {
-	cfg := loadConfig()
+	cfg := LoadConfig()
 	s := &state{
 		config: cfg,
 		cache:  newCache(cfg.NetspocData, 8),
