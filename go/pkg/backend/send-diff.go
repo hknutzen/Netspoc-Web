@@ -31,7 +31,7 @@ func SendDiff() {
 
 	userDir, err := os.Open(userStoreDir)
 	if err != nil {
-		fmt.Println("Error opening user directory:", err)
+		abort("Error opening user directory: %v\n", err)
 		os.Exit(1)
 	}
 	defer userDir.Close()
@@ -131,14 +131,12 @@ func SendDiff() {
 		for _, key := range []string{"objects", "services", "service_lists owner", "service_lists user", "users"} {
 			block := make(map[string]interface{})
 			block[key] = changes[key]
-			//fmt.Fprintf(os.Stderr, "Processing diff block for key %s: %v\n", key, block[key])
 			for _, line := range Convert(block, 0) {
 				diff += line + "\n"
 			}
 			diff += "\n"
 		}
 		template := fmt.Sprintf("%s/diff", config.MailTemplate)
-		//fmt.Fprintln(os.Stderr, "Diff for owner", owner, ":\n", diff)
 		for _, email := range ownerToSend[owner] {
 			text, err := s.getTemplateContent(template, map[string]string{
 				"Email":  email,
