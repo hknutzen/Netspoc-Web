@@ -52,8 +52,6 @@ func (s *state) loginHandler(w http.ResponseWriter, r *http.Request) {
 
 	// Redirect to referer/app.html.
 	originalURL := strings.TrimSuffix(r.Header.Get("Referer"), "/index.html")
-	if !strings.Contains(originalURL, "/") {
-		originalURL = "/"
-	}
+	originalURL = strings.TrimSuffix(originalURL, "/")
 	http.Redirect(w, r, originalURL+"/app.html", http.StatusSeeOther)
 }
