@@ -46,5 +46,9 @@ func (s *state) setSessionData(w http.ResponseWriter, r *http.Request) {
 }
 
 func loggedIn(r *http.Request) bool {
-	return GetGoSession(r).Get("loggedIn").(bool)
+	loggedIn := GetGoSession(r).Get("loggedIn")
+	if loggedInBool, ok := loggedIn.(bool); ok {
+		return loggedInBool
+	}
+	return false
 }
