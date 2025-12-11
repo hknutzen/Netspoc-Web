@@ -31,15 +31,13 @@ func SendDiff() {
 
 	userDir, err := os.Open(userStoreDir)
 	if err != nil {
-		abort("Error opening user directory: %v\n", err)
-		os.Exit(1)
+		abort("Error opening user directory: %v", err)
 	}
 	defer userDir.Close()
 
 	users, err := userDir.Readdirnames(0)
 	if err != nil {
-		fmt.Println("Error reading user directory:", err)
-		os.Exit(1)
+		abort("Error reading user directory: %v", err)
 	}
 
 	ownerToSend := make(map[string][]string)
