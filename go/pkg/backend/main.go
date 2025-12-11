@@ -38,6 +38,7 @@ func getMux() (*http.ServeMux, *state) {
 	noLoginMux.HandleFunc("/verify", s.verify)
 
 	needsLoginMux := http.NewServeMux()
+	needsLoginMux.HandleFunc("/get_diff", s.getDiff)
 	needsLoginMux.HandleFunc("/get_diff_mail", s.getDiffMail)
 	needsLoginMux.HandleFunc("/set_diff_mail", s.setDiffMail)
 	needsLoginMux.HandleFunc("/get_admins", s.getAdmins)
