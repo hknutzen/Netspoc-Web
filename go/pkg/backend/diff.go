@@ -1,9 +1,90 @@
 package backend
 
 import (
+	"encoding/json"
+	"fmt"
 	"net/http"
+	"reflect"
 	"slices"
 )
+
+func (s *state) getDiff(w http.ResponseWriter, r *http.Request) {
+	owner := r.FormValue("active_owner")
+	version := r.FormValue("version")
+	selectedHistory := s.getHistoryParamOrCurrentPolicy(r)
+	if version == "" {
+		writeError(w, "version parameter is required", http.StatusBadRequest)
+	}
+	c := s.cache
+	changed, err := c.compare(version, selectedHistory, owner)
+	if err != nil {
+		writeError(w, "Failed to get diff: "+err.Error(), http.StatusInternalServerError)
+		return
+	}
+	text2css := map[string]string{
+		"+": "icon-add",
+		"-": "icon-delete",
+		"!": "icon-page_edit",
+	}
+
+	// Convert to ExtJS tree.
+	// Node: Map with attributes "text" and
+	// - either "leaf: true"
+	// - or "children: [ .. ]"
+	// Add CSS class to special +,-,! nodes.
+	// Top-level: slice of nodes
+	node := func(text string, children any) any {
+		result := make(map[string]any)
+		if css, ok := text2css[text]; ok {
+			result["iconCls"] = css
+		} else {
+			result["text"] = text
+		}
+		if children != nil {
+			result["children"] = children
+		} else {
+			result["leaf"] = true
+		}
+		return result
+	}
+	var convert func(data any) any
+	convert = func(data any) any {
+		var result []any
+		switch v := data.(type) {
+		case map[string][]string:
+			for k, vv := range v {
+				childNodes := convert(vv)
+				result = append(result, node(k, childNodes))
+			}
+		case map[string]any:
+			for k, vv := range v {
+				childNodes := convert(vv)
+				l, ok := childNodes.([]string)
+				if ok {
+					result = append(result, node(k, l))
+				} else {
+					result = append(result, node(k, childNodes))
+				}
+			}
+		case []string:
+			for _, vv := range v {
+				childNodes := convert(vv)
+				result = append(result, node(vv, childNodes))
+			}
+		case string:
+			result = append(result, node(v, nil))
+		default:
+			msg := fmt.Sprintf("Unhandled default: %v TYPE: %v", v, reflect.TypeOf(v))
+			writeError(w, msg, http.StatusInternalServerError)
+		}
+		return result
+	}
+	tree := convert(changed)
+	w.Header().Set("Content-Type", "text/x-json")
+	enc := json.NewEncoder(w)
+	enc.SetIndent("", "  ")
+	enc.Encode(tree)
+}
 
 func (s *state) getDiffMail(w http.ResponseWriter, r *http.Request) {
 	owner := r.FormValue("active_owner")
