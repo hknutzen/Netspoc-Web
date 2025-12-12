@@ -450,12 +450,5 @@ func (c *cache) compare(v1, v2, owner string) (map[string]interface{}, error) {
 			result[what] = hash
 		}
 	}
-	if len(globalDiff["objects"].(map[string]any)) > 0 {
-		result["objects"] = globalDiff["objects"]
-	}
-	if len(globalDiff["services"].(map[string]any)) > 0 {
-		result["services"] = globalDiff["services"]
-	}
-
 	return result, nil
 }
