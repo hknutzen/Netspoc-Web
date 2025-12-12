@@ -129,6 +129,9 @@ func SendDiff() {
 		for _, key := range []string{"objects", "services", "service_lists owner", "service_lists user", "users"} {
 			block := make(map[string]interface{})
 			block[key] = changes[key]
+			if block[key] == nil {
+				continue
+			}
 			for _, line := range Convert(block, 0) {
 				diff += line + "\n"
 			}
