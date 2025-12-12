@@ -68,8 +68,7 @@ func (s *state) getDiff(w http.ResponseWriter, r *http.Request) {
 			}
 		case []string:
 			for _, vv := range v {
-				childNodes := convert(vv)
-				result = append(result, node(vv, childNodes))
+				result = append(result, node(vv, nil))
 			}
 		case string:
 			result = append(result, node(v, nil))
