@@ -33,6 +33,7 @@ func getMux() (*http.ServeMux, *state) {
 
 	noLoginMux := http.NewServeMux()
 	noLoginMux.HandleFunc("/login", s.loginHandler)
+	noLoginMux.HandleFunc("/ldap_login", s.ldapLoginHandler)
 	noLoginMux.HandleFunc("/get_policy", s.getPolicy)
 	noLoginMux.HandleFunc("/register", s.register)
 	noLoginMux.HandleFunc("/verify", s.verify)
@@ -54,6 +55,7 @@ func getMux() (*http.ServeMux, *state) {
 	needsLoginMux.HandleFunc("/get_networks_and_resources", s.getNetworksAndResources)
 	needsLoginMux.HandleFunc("/get_history", s.getHistory)
 	needsLoginMux.HandleFunc("/get_supervisors", s.getSupervisors)
+	needsLoginMux.HandleFunc("/logout", s.logoutHandler)
 	needsLoginMux.HandleFunc("/service_list", s.serviceList)
 	needsLoginMux.HandleFunc("/set", s.setSessionData)
 
@@ -112,11 +114,13 @@ func writeError(w http.ResponseWriter, errorMsg string, httpStatus int) {
 	// Flusher is only needed temporarily.
 	// TODO: remove this when we have a better way to handle HTTP Status
 	// and encoding.
-	flusher, ok := w.(http.Flusher)
-	if !ok {
-		errorMsg = "Error: http.Flusher not supported"
-		abort(errorMsg)
-	}
+	/*
+		flusher, ok := w.(http.Flusher)
+		if !ok {
+			errorMsg = "Error: http.Flusher not supported"
+			abort(errorMsg)
+		}
+	*/
 	data := jsonMap{
 		"success": false,
 		"msg":     errorMsg,
@@ -124,7 +128,7 @@ func writeError(w http.ResponseWriter, errorMsg string, httpStatus int) {
 	enc := json.NewEncoder(w)
 	enc.SetIndent("", " ")
 	enc.Encode(data)
-	flusher.Flush()
+	//flusher.Flush()
 }
 
 func abort(format string, args ...interface{}) {

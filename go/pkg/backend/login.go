@@ -6,11 +6,23 @@ import (
 	"fmt"
 	"net/http"
 	"strings"
+
+	"github.com/go-ldap/ldap/v3"
 )
 
 func (s *state) setLogin(session *GoSession, email string) {
 	session.Put("email", email)
 	session.Put("loggedIn", true)
+}
+
+func (s *state) logout(session *GoSession) {
+	session.Put("loggedIn", false)
+}
+
+func (s *state) logoutHandler(w http.ResponseWriter, r *http.Request) {
+	session := GetGoSession(r)
+	s.logout(session)
+	http.Redirect(w, r, "/", http.StatusSeeOther)
 }
 
 func (s *state) loginHandler(w http.ResponseWriter, r *http.Request) {
@@ -54,4 +66,70 @@ func (s *state) loginHandler(w http.ResponseWriter, r *http.Request) {
 	originalURL := strings.TrimSuffix(r.Header.Get("Referer"), "/index.html")
 	originalURL = strings.TrimSuffix(originalURL, "/")
 	http.Redirect(w, r, originalURL+"/app.html", http.StatusSeeOther)
+}
+
+func (s *state) ldapCheckPassGetEmail(w http.ResponseWriter, r *http.Request) string {
+	email := ""
+	user := r.FormValue("user")
+	if user == "" {
+		writeError(w, "Missing param 'user'", http.StatusBadRequest)
+	}
+	pass := r.FormValue("pass")
+	if pass == "" {
+		writeError(w, "Missing param 'pass'", http.StatusBadRequest)
+	}
+	s.checkAttack(w, r)
+	ldapURI := s.config.LdapURI
+	baseDN := s.config.LdapBaseDN
+	emailAttr := s.config.LdapEmailAttr
+	l, err := ldap.DialURL(ldapURI)
+	if err != nil {
+		writeError(w, "LDAP connection failed: "+err.Error(), http.StatusInternalServerError)
+	}
+	defer l.Close()
+
+	err = l.Bind(user, pass)
+	if err != nil {
+		s.setAttack(r)
+		writeError(w, "LDAP bind failed: "+err.Error(), http.StatusUnauthorized)
+	}
+	s.clearAttack(r)
+
+	searchRequest := ldap.NewSearchRequest(
+		baseDN,
+		ldap.ScopeWholeSubtree, ldap.NeverDerefAliases, 0, 0, false,
+		fmt.Sprintf("(%s=%s)", emailAttr, ldap.EscapeFilter(user)),
+		[]string{emailAttr},
+		nil,
+	)
+
+	result, err := l.Search(searchRequest)
+	if err != nil {
+		writeError(w, "LDAP search failed: "+err.Error(), http.StatusInternalServerError)
+	}
+	if len(result.Entries) != 1 {
+		writeError(w, "LDAP search returned unexpected number of entries", http.StatusUnauthorized)
+	}
+	email = result.Entries[0].GetAttributeValue(emailAttr)
+	if email == "" {
+		msg := fmt.Sprintf("Can't find email address for %v", searchRequest.Filter)
+		writeError(w, msg, http.StatusUnauthorized)
+	}
+	return email
+}
+
+func (s *state) redirectToLandingPage(w http.ResponseWriter, r *http.Request) {
+	// Redirect to referer/app.html.
+	originalURL := strings.TrimSuffix(r.Header.Get("Referer"), "/index.html")
+	originalURL = strings.TrimSuffix(originalURL, "/")
+	http.Redirect(w, r, originalURL+"/app.html", http.StatusSeeOther)
+}
+
+func (s *state) ldapLoginHandler(w http.ResponseWriter, r *http.Request) {
+	session := GetGoSession(r)
+	s.logout(session)
+	email := s.ldapCheckPassGetEmail(w, r)
+	s.checkEmailAuthorization(w, r, email)
+	s.setLogin(session, email)
+	s.redirectToLandingPage(w, r)
 }
