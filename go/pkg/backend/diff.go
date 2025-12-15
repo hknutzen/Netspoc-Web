@@ -52,12 +52,14 @@ func (s *state) getDiff(w http.ResponseWriter, r *http.Request) {
 		var result []any
 		switch v := data.(type) {
 		case map[string][]string:
-			for k, vv := range v {
+			for _, k := range sortedKeys(v) {
+				vv := v[k]
 				childNodes := convert(vv)
 				result = append(result, node(k, childNodes))
 			}
 		case map[string]any:
-			for k, vv := range v {
+			for _, k := range sortedKeys(v) {
+				vv := v[k]
 				childNodes := convert(vv)
 				l, ok := childNodes.([]string)
 				if ok {
@@ -67,6 +69,7 @@ func (s *state) getDiff(w http.ResponseWriter, r *http.Request) {
 				}
 			}
 		case []string:
+			slices.Sort(v)
 			for _, vv := range v {
 				result = append(result, node(vv, nil))
 			}
@@ -78,11 +81,62 @@ func (s *state) getDiff(w http.ResponseWriter, r *http.Request) {
 		}
 		return result
 	}
+	toplevelSort := map[string]int{"objects": 1, "services": 2}
 	tree := convert(changed)
+	if treeSlice, ok := tree.([]any); ok {
+		slices.SortFunc(treeSlice, func(a, b any) int {
+			aMap, aOk := a.(map[string]any)
+			bMap, bOk := b.(map[string]any)
+			if aOk && bOk {
+				aText, aTextOk := aMap["text"].(string)
+				bText, bTextOk := bMap["text"].(string)
+				if aTextOk && bTextOk {
+					aOrder, aOrderOk := toplevelSort[aText]
+					bOrder, bOrderOk := toplevelSort[bText]
+					if aOrderOk && bOrderOk {
+						return aOrder - bOrder
+					}
+					if aOrderOk {
+						return -1
+					}
+					if bOrderOk {
+						return 1
+					}
+					if aText < bText {
+						return -1
+					} else if aText > bText {
+						return 1
+					}
+				}
+			}
+			return 0
+		})
+		tree = treeSlice
+	}
 	w.Header().Set("Content-Type", "text/x-json")
 	enc := json.NewEncoder(w)
 	enc.SetIndent("", "  ")
 	enc.Encode(tree)
+}
+
+func sortedKeys(m any) []string {
+	var keys []string
+	switch v := m.(type) {
+	case map[string]any:
+		keys = make([]string, 0, len(v))
+		for k := range v {
+			keys = append(keys, k)
+		}
+	case map[string][]string:
+		keys = make([]string, 0, len(v))
+		for k := range v {
+			keys = append(keys, k)
+		}
+	default:
+		panic(fmt.Sprintf("unsupported map type: %T", m))
+	}
+	slices.Sort(keys)
+	return keys
 }
 
 func (s *state) getDiffMail(w http.ResponseWriter, r *http.Request) {
