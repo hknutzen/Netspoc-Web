@@ -184,9 +184,6 @@ func (c *cache) genGlobalObjectsMap(objects map[string]*object) map[string]any {
 		if obj.IP != "" {
 			details["ip"] = obj.IP
 		}
-		if obj.IP6 != "" {
-			details["ip6"] = obj.IP6
-		}
 		if obj.Owner != "" {
 			details["owner"] = obj.Owner
 		}
