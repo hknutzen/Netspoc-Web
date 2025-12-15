@@ -1,5 +1,12 @@
 {{$NEXT}}
 
+ - Enhanced IP search
+   - Supernet of IP range is found now (#63).
+   - Show better results when searching for IP without matching objects (#64).
+   - Supernet is only searched in zone of found subnet (#65).
+ - When searching for objects by name, subnets and supernets
+   are now found if requested (#66).
+
 1.035     2025-09-16 15:51:18+02:00 Europe/Berlin
 
  - Fix bug in setDiffMail
