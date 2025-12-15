@@ -2,10 +2,11 @@
 =TEMPL=topo
 owner:o1 = { admins = guest; }
 owner:o2 = { admins = guest; }
+owner:o3 = { admins = guest; }
 
 network:n1 = { ip = 10.1.1.0/24; owner = o1; }
 network:n2 = { ip = 10.1.2.0/24; owner = o2; }
-network:n3 = { ip = 10.1.3.0/24; }
+network:n3 = { ip = 10.1.3.0/24; owner = o3;}
 
 router:r1 = {
  managed;
@@ -14,19 +15,26 @@ router:r1 = {
  interface:n2 = { ip = 10.1.2.1; hardware = n2; }
  interface:n3 = { ip = 10.1.3.1; hardware = n3; }
 }
+=END=
 
-service:s1 = {
+=TEMPL=svc
+service:s{{.}} = {
  user = network:n1;
- permit src = user; dst = network:n2; prt = tcp 80;
+ permit src = user; dst = network:n2; prt = tcp 8{{.}};
  #add rule
 }
 =END=
 
+=TEMPL=netspoc
+[[topo]]
+[[svc 1]]
+=END=
+
 =TITLE=Change IP of user object
 =NETSPOC=
-[[topo]]
+[[netspoc]]
 =NETSPOC2=
-[[topo]]
+[[netspoc]]
 =SUBST=|10.1.1.0/24|10.1.1.0/25|
 =URL=get_diff
 =PARAMS=
@@ -64,10 +72,10 @@ version=p1
 
 =TITLE=Change name of user object
 =NETSPOC=
-[[topo]]
+[[netspoc]]
 =NETSPOC2=
-[[topo]]
-=SUBST=|n1|nx|
+[[netspoc]]
+=SUBST=/n1/nx/
 =URL=get_diff
 =PARAMS=
 active_owner=o1
@@ -98,10 +106,10 @@ version=p1
 
 =TITLE=Add user object
 =NETSPOC=
-[[topo]]
+[[netspoc]]
 =NETSPOC2=
-[[topo]]
-=SUBST=|user = network:n1|user = network:n1, network:n3|
+[[netspoc]]
+=SUBST=/user = network:n1/user = network:n1, network:n3/
 =URL=get_diff
 =PARAMS=
 active_owner=o2
@@ -126,10 +134,10 @@ version=p1
 
 =TITLE=Change protocol of rule
 =NETSPOC=
-[[topo]]
+[[netspoc]]
 =NETSPOC2=
-[[topo]]
-=SUBST=|tcp 80|tcp 8080|
+[[netspoc]]
+=SUBST=/tcp 81/tcp 8081/
 =URL=get_diff
 =PARAMS=
 active_owner=o1
@@ -149,13 +157,13 @@ version=p1
           "children": [
            {"iconCls": "icon-add",
             "children": [
-             {"text": "tcp 8080",
+             {"text": "tcp 8081",
               "leaf": true
              }]
            },
            {"iconCls": "icon-delete",
             "children": [
-             {"text": "tcp 80",
+             {"text": "tcp 81",
               "leaf": true
              }]
            }]
@@ -178,10 +186,10 @@ version=p1
 
 =TITLE=Change owner of rule object and thereby owner of service
 =NETSPOC=
-[[topo]]
+[[netspoc]]
 =NETSPOC2=
-[[topo]]
-=SUBST=|o2|ox|
+[[netspoc]]
+=SUBST=/o2/ox/
 =URL=get_diff
 =PARAMS=
 active_owner=o1
@@ -252,15 +260,70 @@ version=p1
 ]
 =END=
 
+=TITLE=Change owner of service to multi owner
+=NETSPOC=
+[[netspoc]]
+=NETSPOC2=
+[[netspoc]]
+=SUBST=/dst = network:n2/dst = network:n2, network:n3/
+=URL=get_diff
+=PARAMS=
+active_owner=o2
+history=p2
+version=p1
+=DIFF=
+[
+ {"text": "services",
+  "children": [
+   {"text": "s1",
+    "children": [
+     {"text": "details",
+      "children": [
+       {"text": "owner",
+        "children": [
+         {"iconCls": "icon-add",
+          "children": [
+           {"text": "o3",
+            "leaf": true
+           }]
+         }]
+       }]
+     },
+     {"text": "rules",
+      "children": [
+       {"text": "1",
+        "children": [
+         {"text": "dst",
+          "children": [
+           {"iconCls": "icon-add",
+            "children": [
+             {"text": "network:n3",
+              "leaf": true
+             }]
+           }]
+         }]
+       }]
+     }]
+  }]
+ },
+ {"text": "service_lists owner",
+  "children": [
+   {"iconCls": "icon-page_edit",
+    "children": [
+     {"text": "s1",
+      "leaf": true
+     }]
+   }]
+ }
+]
+=END=
+
 =TITLE=Add service
 =NETSPOC=
-[[topo]]
+[[netspoc]]
 =NETSPOC2=
-[[topo]]
-service:s2 = {
- user = network:n1;
- permit src = user; dst = network:n3; prt = tcp 88;
-}
+[[netspoc]]
+[[svc 2]]
 =URL=get_diff
 =PARAMS=
 active_owner=o1
@@ -282,13 +345,10 @@ version=p1
 
 =TITLE=Remove service
 =NETSPOC=
-[[topo]]
-service:s2 = {
- user = network:n1;
- permit src = user; dst = network:n3; prt = tcp 88;
-}
+[[netspoc]]
+[[svc 2]]
 =NETSPOC2=
-[[topo]]
+[[netspoc]]
 =URL=get_diff
 =PARAMS=
 active_owner=o1
@@ -310,9 +370,9 @@ version=p1
 
 =TITLE=Add rule
 =NETSPOC=
-[[topo]]
+[[netspoc]]
 =NETSPOC2=
-[[topo]]
+[[netspoc]]
 =SUBST=|#add rule|permit src = network:n2; dst = user; prt = icmp 3/13;|
 =URL=get_diff
 =PARAMS=
@@ -338,6 +398,48 @@ version=p1
    {"iconCls": "icon-page_edit",
     "children": [
      {"text": "s1",
+      "leaf": true
+     }]
+   }]
+ }
+]
+=END=
+
+=TITLE=Add and remove multiple services
+=NETSPOC=
+[[topo]]
+[[svc 3]]
+[[svc 5]]
+=NETSPOC2=
+[[topo]]
+[[svc 1]]
+[[svc 2]]
+[[svc 3]]
+[[svc 4]]
+=URL=get_diff
+=PARAMS=
+active_owner=o1
+history=p2
+version=p1
+=DIFF=
+[
+ {"text": "service_lists user",
+  "children": [
+   {"iconCls": "icon-add",
+    "children": [
+     {"text": "s1",
+      "leaf": true
+     },
+     {"text": "s2",
+      "leaf": true
+     },
+     {"text": "s4",
+      "leaf": true
+     }]
+   },
+   {"iconCls": "icon-delete",
+    "children": [
+     {"text": "s5",
       "leaf": true
      }]
    }]
