@@ -22,10 +22,12 @@ import (
 type descr struct {
 	Title         string
 	Netspoc       string
+	Netspoc2      string
 	URL           string
 	Params        string
 	Response      string
 	ResponseNames string
+	Diff          string
 	Email         string
 	Password      string
 	Status        int
@@ -79,17 +81,25 @@ func testHandleFunc(t *testing.T, d descr, endpoint, originalHome string) {
 	// Mux needs original home directory
 	// to find the root directory.
 	mux := GetMux(originalHome)
-	policy := "p1"
-	home := os.Getenv("HOME")
-	netspocDir := filepath.Join(home, "netspoc")
-	exportDir := filepath.Join(home, "export")
 
-	// Do export-netspoc
-	testtxt.PrepareInDir(t, netspocDir, "INPUT", d.Netspoc)
-	runCmd(t, "export-netspoc -q "+netspocDir+" "+exportDir+"/"+policy)
-	os.WriteFile(exportDir+"/"+policy+"/POLICY", []byte("# "+policy+" #\n"), 0444)
-	os.Remove(exportDir + "/current")
-	os.Symlink(policy, exportDir+"/current")
+	// Export one or two Netspoc policies.
+	home := os.Getenv("HOME")
+	export := func(input, policy string) {
+		netspocDir := filepath.Join(home, "netspoc")
+		exportDir := filepath.Join(home, "export")
+		// Do export-netspoc
+		testtxt.PrepareInDir(t, netspocDir, "INPUT", input)
+		runCmd(t, "export-netspoc -q "+netspocDir+" "+exportDir+"/"+policy)
+		os.WriteFile(filepath.Join(exportDir, policy, "POLICY"),
+			[]byte("# "+policy+" #\n"), 0444)
+		symLink := filepath.Join(exportDir, "current")
+		os.Remove(symLink)
+		os.Symlink(policy, symLink)
+	}
+	export(d.Netspoc, "p1")
+	if d.Netspoc2 != "" {
+		export(d.Netspoc2, "p2")
+	}
 
 	// Perform login
 	loginUrl := "/backend/login?email=guest&app=../app.html"
@@ -142,37 +152,47 @@ func testHandleFunc(t *testing.T, d descr, endpoint, originalHome string) {
 	resp = httptest.NewRecorder()
 	mux.ServeHTTP(resp, req)
 	body, _ := io.ReadAll(resp.Body)
-	type jsonData struct {
-		Success    bool
-		Msg        string
-		TotalCount int
-		Records    json.RawMessage
-	}
-	var data jsonData
-	json.Unmarshal(body, &data)
-	if data.Msg != "" {
-		t.Errorf("Unexpected response message: %s", data.Msg)
-	}
 	if d.Status == 0 {
 		d.Status = 200
 	}
 	if resp.Code != d.Status {
 		t.Errorf("Want status '%d', got '%d'", d.Status, resp.Code)
 	}
-	if d.ResponseNames != "" {
-		type named struct {
-			Name string
+	if d.Diff != "" {
+		/*type diffData struct {
+			Text     string
+			Children []*diffData
 		}
-		var l []named
-		json.Unmarshal(data.Records, &l)
-		sl := make([]string, len(l))
-		for i, e := range l {
-			sl[i] = e.Name
+		var data []*diffData
+		json.Unmarshal(body, &data)*/
+		jsonEq(t, d.Diff, body)
+	} else {
+		type jsonData struct {
+			Success    bool
+			Msg        string
+			TotalCount int
+			Records    json.RawMessage
 		}
-		data.Records, _ = json.Marshal(sl)
-		d.Response = d.ResponseNames
+		var data jsonData
+		json.Unmarshal(body, &data)
+		if data.Msg != "" {
+			t.Errorf("Unexpected response message: %s", data.Msg)
+		}
+		if d.ResponseNames != "" {
+			type named struct {
+				Name string
+			}
+			var l []named
+			json.Unmarshal(data.Records, &l)
+			sl := make([]string, len(l))
+			for i, e := range l {
+				sl[i] = e.Name
+			}
+			data.Records, _ = json.Marshal(sl)
+			d.Response = d.ResponseNames
+		}
+		jsonEq(t, d.Response, data.Records)
 	}
-	jsonEq(t, d.Response, data.Records)
 }
 
 func jsonEq(t *testing.T, expected string, got []byte) {

@@ -233,12 +233,89 @@ func (s *state) buildTextSearchMap(r *http.Request, search string,
 	history := s.getHistoryParamOrCurrentPolicy(r)
 	objects := s.loadObjects(history)
 	matcher := getStringMatcher(r, search)
+	sub := r.FormValue("search_subnet") != ""
+	super := r.FormValue("search_supernet") != ""
 
 	// Collect names of matching objects.
 	result := make(map[string]bool)
 	for name := range objects {
 		if matcher(name) {
 			result[name] = true
+		}
+	}
+	if !sub && !super {
+		return result
+	}
+	// Convert IP address string to netipx.IPRange or netip.Prefix
+	getIP := func(s string) any {
+		if rg, err := netipx.ParseIPRange(s); err == nil {
+			return rg
+		}
+		if p, err := netip.ParsePrefix(s); err == nil {
+			return p
+		} else if addr, err := netip.ParseAddr(s); err == nil {
+			return netip.PrefixFrom(addr, addr.BitLen())
+		} else {
+			// Zero value never matches.
+			return netip.Prefix{}
+		}
+	}
+	// Collect zones and found IP addresses inside a zone.
+	zone2ips := make(map[string][]any)
+	for name := range result {
+		obj := objects[name]
+		zone2ips[obj.Zone] = append(zone2ips[obj.Zone], getIP(obj.IP))
+	}
+
+	ippMatch := func(p1, p2 netip.Prefix) bool {
+		if p1.Bits() >= p2.Bits() {
+			return sub && p2.Contains(p1.Addr())
+		}
+		return super && p1.Contains(p2.Addr())
+	}
+	rgMatch := func(r1, r2 netipx.IPRange) bool {
+		if sub {
+			if r2.Contains(r1.From()) && r2.Contains(r1.To()) {
+				return true
+			}
+		}
+		return super && r1.Contains(r2.From()) && r1.Contains(r2.To())
+	}
+	// Collect subnets and supernets matching IP addresses located in zone.
+	for name := range objects {
+		if result[name] {
+			continue
+		}
+		obj := objects[name]
+		ips := zone2ips[obj.Zone]
+		if ips == nil {
+			continue
+		}
+		ip1 := getIP(obj.IP)
+		match := false
+		for _, ip2 := range ips {
+			if p1, ok := ip1.(netip.Prefix); ok {
+				if p2, ok := ip2.(netip.Prefix); ok {
+					match = ippMatch(p1, p2)
+				} else {
+					r1 := netipx.RangeOfPrefix(p1)
+					r2 := ip2.(netipx.IPRange)
+					match = rgMatch(r1, r2)
+				}
+			} else {
+				r1 := ip1.(netipx.IPRange)
+				var r2 netipx.IPRange
+				if p2, ok := ip2.(netip.Prefix); ok {
+					r2 = netipx.RangeOfPrefix(p2)
+				} else {
+					r2 = ip2.(netipx.IPRange)
+				}
+				match = rgMatch(r1, r2)
+			}
+			if match {
+				result[name] = true
+				break
+			}
 		}
 	}
 	return result
@@ -271,11 +348,7 @@ func (s *state) buildIPSearchMap(r *http.Request, p netip.Prefix,
 			matchingZones[obj.Zone] = true
 		}
 	}
-
-	// Collect names of matching objects.
-	result := make(map[string]bool)
-	for name, obj := range objects {
-
+	getIP := func(obj *object) string {
 		ip := obj.IP
 		if p.Addr().Is4() {
 			// Take NAT IP if available.
@@ -291,11 +364,19 @@ func (s *state) buildIPSearchMap(r *http.Request, p netip.Prefix,
 				ip = obj.IP6
 			}
 		}
+		return ip
+	}
+
+	// Collect names of matching objects.
+	result := make(map[string]bool)
+	for name, obj := range objects {
+		ip := getIP(obj)
 
 		// Handle host range separately.
 		if rg, err := netipx.ParseIPRange(ip); err == nil {
 			if rg.Contains(p.Addr()) ||
 				sub && (p.Contains(rg.From()) && p.Contains(rg.To())) {
+				addMatchingZone(obj)
 				result[name] = true
 			}
 			continue
@@ -323,50 +404,47 @@ func (s *state) buildIPSearchMap(r *http.Request, p netip.Prefix,
 		} else if prefix.Bits() < p.Bits() {
 			if super && !strings.HasPrefix(name, "interface:") {
 				if prefix.Contains(p.Addr()) {
-					if obj.IsSupernet != 0 {
-						supernets = append(supernets, name)
-						continue
-					}
-					if !strings.HasPrefix(name, "any:") {
-						addMatchingZone(obj)
-					}
-					result[name] = true
+					supernets = append(supernets, name)
 				}
 			}
 		} else if sub && p.Contains(prefix.Addr()) {
 			result[name] = true
+			addMatchingZone(obj)
 		}
 	}
 
+	// No directly matching object found.
+	// Select smallest found supernet(s) and mark those zones.
 	if len(matchingZones) == 0 {
+		getBits := func(name string) int {
+			obj := objects[name]
+			// Since supernets have been collected, we are sure that
+			// prefix length is given.
+			_, bits, _ := strings.Cut(getIP(obj), "/")
+			n, _ := strconv.Atoi(bits)
+			return n
+		}
+		// Find smallest single network or smallest multiple networks
+		// with identical IP/bits and collect corresponding zones.
+		bits := -1
 		for _, name := range supernets {
 			if strings.HasPrefix(name, "network:") {
-				result[name] = true
+				n := getBits(name)
+				if n > bits {
+					bits = n
+					// Discard found zones, if a smaller network was found.
+					clear(matchingZones)
+				} else if n < bits {
+					continue
+				}
+				matchingZones[objects[name].Zone] = true
 			}
 		}
-	} else if supernets != nil {
-		if matchingZones[""] {
-			assets := s.loadAssets(history, owner)
-			for netName, childNames := range assets.net2childs {
-				z := objects[netName].Zone
-				for _, childName := range childNames {
-					objects[childName].Zone = z
-				}
-			}
-			for name := range result {
-				typ, _, _ := strings.Cut(name, ":")
-				switch typ {
-				case "host", "interface":
-					obj := objects[name]
-					matchingZones[obj.Zone] = true
-				}
-			}
-		}
-		for _, name := range supernets {
-			z := objects[name].Zone
-			if matchingZones[z] {
-				result[name] = true
-			}
+	}
+	// Add supernets located in same zone(s).
+	for _, name := range supernets {
+		if matchingZones[objects[name].Zone] {
+			result[name] = true
 		}
 	}
 	return result
