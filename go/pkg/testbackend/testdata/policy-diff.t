@@ -6,7 +6,7 @@ owner:o3 = { admins = guest; }
 
 network:n1 = { ip = 10.1.1.0/24; owner = o1; }
 network:n2 = { ip = 10.1.2.0/24; owner = o2; }
-network:n3 = { ip = 10.1.3.0/24; owner = o3;}
+network:n3 = { ip = 10.1.3.0/24; owner = o3; }
 
 router:r1 = {
  managed;
@@ -126,6 +126,49 @@ version=p1
        {"text": "network:n3",
         "leaf": true
        }]
+     }]
+   }]
+ }
+]
+=END=
+
+=TITLE=Change action of rule
+=NETSPOC=
+[[netspoc]]
+=NETSPOC2=
+[[netspoc]]
+=SUBST=/permit/deny/
+=URL=get_diff
+=PARAMS=
+active_owner=o1
+history=p2
+version=p1
+=DIFF=
+[
+ {"text": "services",
+  "children": [
+   {"text": "s1",
+    "children": [
+     {"text": "rules",
+      "children": [
+       {"text": "1",
+        "children": [
+         {"text": "action",
+          "children": [
+           {"text": "permit ➔ deny",
+            "leaf": true
+           }]
+         }]
+       }]
+     }]
+   }]
+ },
+ {"text": "service_lists user",
+  "children": [
+   {"iconCls": "icon-page_edit",
+    "children": [
+     {"text": "s1",
+      "leaf": true
      }]
    }]
  }
@@ -443,6 +486,298 @@ version=p1
       "leaf": true
      }]
    }]
+ }
+]
+=END=
+
+=TITLE=Ignore NAT
+=NETSPOC=
+[[netspoc]]
+=NETSPOC2=
+owner:o1 = { admins = guest; }
+owner:o2 = { admins = guest; }
+
+network:n1 = { ip = 10.1.1.0/24; owner = o1; nat:n1 = { ip = 10.9.1.0/24; } }
+network:n2 = { ip = 10.1.2.0/24; owner = o2; }
+
+router:r1 = {
+ managed;
+ model = ASA;
+ interface:n1 = { ip = 10.1.1.1; hardware = n1; }
+ interface:n2 = { ip = 10.1.2.1; hardware = n2; nat_out = n1; }
+}
+[[svc 1]]
+=URL=get_diff
+=PARAMS=
+active_owner=o1
+history=p2
+version=p1
+=DIFF=
+[]
+=END=
+
+=TITLE=Changed attribute: disabled
+=NETSPOC=
+[[netspoc]]
+=NETSPOC2=
+[[netspoc]]
+=SUBST=/user =/disabled; user =/
+=URL=get_diff
+=PARAMS=
+active_owner=o1
+history=p2
+version=p1
+=DIFF=
+[
+ {"text": "services",
+  "children": [
+   {"text": "s1",
+    "children": [
+     {"text": "details",
+      "children": [
+       {"text": "disabled",
+        "children": [
+         {"iconCls": "icon-add",
+          "leaf": true
+         }]
+       }]
+     }]
+  }]
+ },
+ {"text": "service_lists user",
+  "children": [
+   {"iconCls": "icon-page_edit",
+    "children": [
+     {"text": "s1",
+      "leaf": true
+     }]
+   }]
+ }
+]
+=END=
+
+=TITLE=Changed attribute: disable_at
+=NETSPOC=
+[[netspoc]]
+=SUBST=/user =/disable_at = 2099-01-01; user =/
+=NETSPOC2=
+[[netspoc]]
+=SUBST=/user =/disable_at = 2099-12-31; user =/
+=URL=get_diff
+=PARAMS=
+active_owner=o1
+history=p2
+version=p1
+=DIFF=
+[
+ {"text": "services",
+  "children": [
+   {"text": "s1",
+    "children": [
+     {"text": "details",
+      "children": [
+       {"text": "disable_at",
+        "children": [
+         {"text": "2099-01-01 ➔ 2099-12-31",
+          "leaf": true
+         }]
+       }]
+     }]
+  }]
+ },
+ {"text": "service_lists user",
+  "children": [
+   {"iconCls": "icon-page_edit",
+    "children": [
+     {"text": "s1",
+      "leaf": true
+     }]
+   }]
+ }
+]
+=END=
+
+=TITLE=Changed attribute: description
+=NETSPOC=
+[[topo]]
+service:s1 = {
+ description = [ 123 ]
+ user = network:n1;
+ permit src = user; dst = network:n2; prt = tcp 81;
+}
+=NETSPOC2=
+[[topo]]
+service:s1 = {
+ description = abc
+ user = network:n1;
+ permit src = user; dst = network:n2; prt = tcp 81;
+}
+=URL=get_diff
+=PARAMS=
+active_owner=o1
+history=p2
+version=p1
+=DIFF=
+[
+ {"text": "services",
+  "children": [
+   {"text": "s1",
+    "children": [
+     {"text": "details",
+      "children": [
+       {"text": "description",
+        "children": [
+         {"text": "[ 123 ] ➔ abc",
+          "leaf": true
+         }]
+       }]
+     }]
+  }]
+ },
+ {"text": "service_lists user",
+  "children": [
+   {"iconCls": "icon-page_edit",
+    "children": [
+     {"text": "s1",
+      "leaf": true
+     }]
+   }]
+ }
+]
+=END=
+
+=TITLE=Changed position of user in rule
+=NETSPOC=
+[[topo]]
+service:s1 = {
+ user = network:n1;
+ permit src = user; dst = network:n2; prt = tcp 81;
+}
+=NETSPOC2=
+[[topo]]
+service:s1 = {
+ user = network:n1;
+ permit src = network:n2; dst = user; prt = tcp 81;
+}
+=URL=get_diff
+=PARAMS=
+active_owner=o1
+history=p2
+version=p1
+=DIFF=
+[
+ {"text": "services",
+  "children": [
+   {"text": "s1",
+    "children": [
+     {"text": "rules",
+      "children": [
+       {"text": "1",
+        "children": [
+         {"text": "dst",
+          "children": [
+           {"iconCls": "icon-delete",
+            "children": [
+             {"text": "network:n2",
+              "leaf": true
+             }]
+           }]
+         },
+         {"text": "src",
+          "children": [
+           {"iconCls": "icon-add",
+            "children": [
+             {"text": "network:n2",
+              "leaf": true
+             }]
+           }]
+         }]
+       }]
+     }]
+   }]
+ },
+ {"text": "service_lists user",
+  "children": [
+   {"iconCls": "icon-page_edit",
+    "children": [
+     {"text": "s1",
+      "leaf": true
+     }]
+   }]
+ }
+]
+=END=
+
+=TITLE=Ignore changed name of zone
+=NETSPOC=
+[[netspoc]]
+=NETSPOC2=
+any:n1 = { link = network:n1; }
+[[netspoc]]
+=URL=get_diff
+=PARAMS=
+active_owner=o1
+history=p2
+version=p1
+=DIFF=
+[]
+=END=
+
+=TEMPL=topo6
+owner:o1 = { admins = guest; }
+owner:o2 = { admins = guest; }
+
+network:n1 = { ip = 10.1.1.0/24; ip6 = 2001:db8:1:1::/64; owner = o1; }
+network:n2 = { ip = 10.1.2.0/24; ip6 = 2001:db8:1:2::/64; owner = o2; }
+
+router:r1 = {
+ managed;
+ model = ASA;
+ interface:n1 = { ip = 10.1.1.1; ip6 = 2001:db8:1:1::1; hardware = n1; }
+ interface:n2 = { ip = 10.1.2.1; ip6 = 2001:db8:1:2::1; hardware = n2; }
+}
+=END=
+
+=TITLE=Change IPv6 address of user object
+=NETSPOC=
+[[topo6]]
+[[svc 1]]
+=NETSPOC2=
+[[topo6]]
+[[svc 1]]
+=SUBST=/1:1::/9:1::/
+
+
+=URL=get_diff
+=PARAMS=
+active_owner=o1
+history=p2
+version=p1
+=DIFF=
+[
+ {"text": "objects",
+  "children": [
+  {"text": "network:n1",
+   "children": [
+   {"text": "ip6",
+    "children": [
+    {"text": "2001:db8:1:1::/64 ➔ 2001:db8:9:1::/64",
+     "leaf": true
+    }]
+   }]
+  }]
+ },
+ {"text": "users",
+  "children": [
+  {"text": "s1",
+   "children": [
+   {"iconCls": "icon-page_edit",
+    "children": [
+    {"text": "network:n1",
+     "leaf": true
+    }]
+   }]
+  }]
  }
 ]
 =END=
