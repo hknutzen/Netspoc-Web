@@ -73,7 +73,7 @@ func (c *cache) compareGlobal(state globalData, path, key string) any {
 		return "+"
 	}
 	diff := c.diff(state, old, new, "")
-	if len(diff) > 0 {
+	if diff != nil {
 		hash[key] = diff
 		return diff
 	}
@@ -148,12 +148,11 @@ func (c *cache) diffUsers(state globalData, old, new map[string][]string) map[st
 						if _, ok := usersMap[key]; !ok {
 							usersMap[key] = make(map[string][]string)
 						}
-						serializedResult := fmt.Sprintf("%v", cResult)
 						if userMap, ok := usersMap[key].(map[string][]string); ok {
-							userMap["!"] = append(userMap["!"], serializedResult)
+							userMap["!"] = append(userMap["!"], userVal)
 						} else {
-							newUserMap := make(map[string][]string)
-							newUserMap["!"] = []string{serializedResult}
+							newUserMap := make(map[string]string)
+							newUserMap["!"] = userVal
 							usersMap[key] = newUserMap
 						}
 					}
@@ -170,7 +169,7 @@ func (c *cache) diffServiceLists(state globalData, owner string) map[string]any 
 		old := c.loadVersionForPath(state.v1, "service_lists", owner)[key]
 		new := c.loadVersionForPath(state.v2, "service_lists", owner)[key]
 		diff := c.diff(state, old, new, "services")
-		if len(diff) > 0 {
+		if diff != nil {
 			result[key] = diff
 		}
 	}
@@ -184,9 +183,20 @@ func (c *cache) genGlobalObjectsMap(objects map[string]*object) map[string]any {
 		if obj.IP != "" {
 			details["ip"] = obj.IP
 		}
+		if obj.IP6 != "" {
+			details["ip6"] = obj.IP6
+		}
 		if obj.Owner != "" {
 			details["owner"] = obj.Owner
 		}
+		/*
+			if obj.NAT != nil {
+				details["nat"] = obj.NAT
+			}
+			if obj.Zone != "" {
+				details["zone"] = obj.Zone
+			}
+		*/
 		globalObjects[name] = details
 	}
 	return globalObjects
@@ -197,7 +207,7 @@ func (c *cache) genGlobalServicesMap(services map[string]*service) map[string]an
 	for serviceName, serviceObj := range services {
 		details := map[string]any{}
 		if serviceObj.Details.Description != "" {
-			details["desc"] = serviceObj.Details.Description
+			details["description"] = serviceObj.Details.Description
 		}
 		if len(serviceObj.Details.Owner) > 0 {
 			details["owner"] = serviceObj.Details.Owner
@@ -217,7 +227,10 @@ func (c *cache) genGlobalServicesMap(services map[string]*service) map[string]an
 			idx := fmt.Sprintf("%d", i+1)
 			rulesMap := globalServices[serviceName].(map[string]any)["rules"].(map[string]any)
 			if rulesMap[idx] == nil {
-				ruleData := map[string][]string{}
+				ruleData := map[string]any{}
+				if len(rule.Action) > 0 {
+					ruleData["action"] = rule.Action
+				}
 				if len(rule.Src) > 0 {
 					ruleData["src"] = rule.Src
 				}
@@ -236,12 +249,13 @@ func (c *cache) genGlobalServicesMap(services map[string]*service) map[string]an
 	return globalServices
 }
 
-func (c *cache) diff(state globalData, old, new any, global string) map[string]interface{} {
+func (c *cache) diff(state globalData, old, new any, global string) any {
 	lookup := map[string]string{
 		"src": "objects",
 		"dst": "objects",
 	}
-	result := make(map[string]interface{})
+	var result any
+	resultMap := make(map[string]any)
 	switch oldType := old.(type) {
 	case string:
 		newStr, ok := new.(string)
@@ -251,57 +265,54 @@ func (c *cache) diff(state globalData, old, new any, global string) map[string]i
 			oldStr := old.(string)
 			if oldStr != newStr {
 				arrow := "\u2794"
-				r := fmt.Sprintf("%s %s %s", oldStr, arrow, newStr)
-				result[r] = ""
+				result = fmt.Sprintf("%s %s %s", oldStr, arrow, newStr)
+				return result
 			}
 		}
-	case map[string]interface{}:
-
+	case map[string]any:
 		for k, vOld := range oldType {
 			// Key has been removed in new version.
-			vNew, ok := new.(map[string]interface{})[k]
+			vNew, ok := new.(map[string]any)[k]
 			if !ok {
-				result[k] = map[string]interface{}{
+				resultMap[k] = map[string]any{
 					"-": vOld,
 				}
 			} else {
 				subDiff := c.diff(state, vOld, vNew, lookup[k])
-				if len(subDiff) > 0 {
+				if subDiff != nil {
 					//fmt.Fprintf(os.Stderr, "SUBDIFF for key %s: %v\n", k, subDiff)
-					result[k] = subDiff
+					resultMap[k] = subDiff
 				}
 			}
 		}
-		for k, vNew := range new.(map[string]interface{}) {
+		for k, vNew := range new.(map[string]any) {
 			// Key has been added in new version.
 			_, ok := oldType[k]
 			if !ok {
-				result[k] = map[string]interface{}{
+				resultMap[k] = map[string]any{
 					"+": vNew,
 				}
 			}
 		}
 	case map[string][]string:
-		//fmt.Fprintf(os.Stderr, "OLD map[string][]string: %v\n", oldType)
-		//fmt.Fprintf(os.Stderr, "NEW map[string][]string: %v\n", new)
 		for k, vOld := range oldType {
 			vNew, ok := new.(map[string][]string)[k]
 			if !ok {
-				result[k] = map[string][]string{
+				resultMap[k] = map[string][]string{
 					"-": vOld,
 				}
 			} else {
 				subDiff := c.diff(state, vOld, vNew, lookup[k])
-				if len(subDiff) > 0 {
+				if subDiff != nil {
 					//fmt.Fprintf(os.Stderr, "SUBDIFF for key %s: %v\n", k, subDiff)
-					result[k] = subDiff
+					resultMap[k] = subDiff
 				}
 			}
 		}
 		for k, vNew := range new.(map[string][]string) {
 			_, ok := oldType[k]
 			if !ok {
-				result[k] = map[string][]string{
+				resultMap[k] = map[string][]string{
 					"+": vNew,
 				}
 			}
@@ -312,6 +323,7 @@ func (c *cache) diff(state globalData, old, new any, global string) map[string]i
 			abort("Not a slice:", newSlice)
 		} else {
 			oldSlice := old.([]string)
+
 			ab := &pair{a: oldSlice, b: newSlice}
 			s := myers.Diff(context.TODO(), ab)
 			for _, r := range s.Ranges {
@@ -319,14 +331,14 @@ func (c *cache) diff(state globalData, old, new any, global string) map[string]i
 					for i := r.LowA; i < r.HighA; i++ {
 						oVal := oldSlice[i]
 						if oVal != "" {
-							if _, ok := result["-"]; !ok {
-								result["-"] = []string{}
+							if _, ok := resultMap["-"]; !ok {
+								resultMap["-"] = []string{}
 							}
-							if vals, ok := result["-"].([]string); ok {
-								result["-"] = append(vals, oVal)
+							if vals, ok := resultMap["-"].([]string); ok {
+								resultMap["-"] = append(vals, oVal)
 							} else {
 								newVals := []string{oVal}
-								result["-"] = newVals
+								resultMap["-"] = newVals
 							}
 						}
 					}
@@ -334,14 +346,14 @@ func (c *cache) diff(state globalData, old, new any, global string) map[string]i
 					for i := r.LowB; i < r.HighB; i++ {
 						nVal := newSlice[i]
 						if nVal != "" {
-							if _, ok := result["+"]; !ok {
-								result["+"] = []string{}
+							if _, ok := resultMap["+"]; !ok {
+								resultMap["+"] = []string{}
 							}
-							if vals, ok := result["+"].([]string); ok {
-								result["+"] = append(vals, nVal)
+							if vals, ok := resultMap["+"].([]string); ok {
+								resultMap["+"] = append(vals, nVal)
 							} else {
 								newVals := []string{nVal}
-								result["+"] = newVals
+								resultMap["+"] = newVals
 							}
 						}
 					}
@@ -354,14 +366,14 @@ func (c *cache) diff(state globalData, old, new any, global string) map[string]i
 						oVal := oldSlice[i]
 						gd := c.compareGlobal(state, global, oVal)
 						if gd != "" {
-							if _, ok := result["!"]; !ok {
-								result["!"] = []string{}
+							if _, ok := resultMap["!"]; !ok {
+								resultMap["!"] = []string{}
 							}
-							if vals, ok := result["!"].([]string); ok {
-								result["!"] = append(vals, oVal)
+							if vals, ok := resultMap["!"].([]string); ok {
+								resultMap["!"] = append(vals, oVal)
 							} else {
 								newVals := []string{oVal}
-								result["!"] = newVals
+								resultMap["!"] = newVals
 							}
 						}
 					}
@@ -373,14 +385,18 @@ func (c *cache) diff(state globalData, old, new any, global string) map[string]i
 		oldInt := old.(int)
 		if oldInt != newInt {
 			arrow := "\u2794"
-			r := fmt.Sprintf("%d %s %d", oldInt, arrow, newInt)
-			result[r] = r
+			result = fmt.Sprintf("%d %s %d", oldInt, arrow, newInt)
 		}
 	default:
 		fmt.Fprintf(os.Stderr, "Unhandled type in diff: %v \n", oldType)
-		os.Exit(1)
 	}
-	return result
+	if result != nil {
+		return result
+	}
+	if len(resultMap) > 0 {
+		return resultMap
+	}
+	return nil
 }
 
 func (c *cache) genGlobalCompareData(v1, v2 string) globalData {
@@ -427,6 +443,7 @@ func (c *cache) compare(v1, v2, owner string) (map[string]interface{}, error) {
 	}
 
 	globalDiff := state.DiffCache
+	//fmt.Fprintf(os.Stderr, "GLOBAL DIFF: %v\n", globalDiff)
 	for _, what := range []string{"objects", "services"} {
 		hash, ok := globalDiff[what].(map[string]any)
 		if !ok || hash == nil || len(hash) < 1 {

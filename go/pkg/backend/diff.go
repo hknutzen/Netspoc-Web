@@ -49,7 +49,7 @@ func (s *state) getDiff(w http.ResponseWriter, r *http.Request) {
 	}
 	var convert func(data any) any
 	convert = func(data any) any {
-		var result []any
+		result := []any{}
 		switch v := data.(type) {
 		case map[string][]string:
 			for _, k := range sortedKeys(v) {
