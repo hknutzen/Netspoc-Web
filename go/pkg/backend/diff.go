@@ -75,6 +75,9 @@ func (s *state) getDiff(w http.ResponseWriter, r *http.Request) {
 			}
 		case string:
 			result = append(result, node(v, nil))
+		case int:
+			s := fmt.Sprintf("%d", v)
+			result = append(result, node(s, nil))
 		default:
 			msg := fmt.Sprintf("Unhandled default: %v TYPE: %v", v, reflect.TypeOf(v))
 			writeError(w, msg, http.StatusInternalServerError)
