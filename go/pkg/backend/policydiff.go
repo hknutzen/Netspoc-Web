@@ -271,8 +271,19 @@ func (c *cache) diff(state globalData, old, new any, global string) any {
 		}
 	case map[string]any:
 		for k, vOld := range oldType {
-			// Key has been removed in new version.
 			vNew, ok := new.(map[string]any)[k]
+			// Special handling for "rules" key: if rules are added/removed,
+			// just mark with "!"
+			if k == "rules" {
+				oldRules, okOld := vOld.(map[string]any)
+				newRules, okNew := vNew.(map[string]any)
+				if okOld && okNew {
+					if len(oldRules) != len(newRules) {
+						resultMap[k] = "!"
+						continue
+					}
+				}
+			}
 			if !ok {
 				resultMap[k] = map[string]any{
 					"-": vOld,
@@ -280,15 +291,18 @@ func (c *cache) diff(state globalData, old, new any, global string) any {
 			} else {
 				subDiff := c.diff(state, vOld, vNew, lookup[k])
 				if subDiff != nil {
-					//fmt.Fprintf(os.Stderr, "SUBDIFF for key %s: %v\n", k, subDiff)
 					resultMap[k] = subDiff
 				}
 			}
 		}
 		for k, vNew := range new.(map[string]any) {
-			// Key has been added in new version.
 			_, ok := oldType[k]
 			if !ok {
+				// Special handling for "rules" key: if rules are added, just mark with "!"
+				if k == "rules" {
+					resultMap[k] = "!"
+					continue
+				}
 				resultMap[k] = map[string]any{
 					"+": vNew,
 				}
