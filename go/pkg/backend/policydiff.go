@@ -298,13 +298,13 @@ func (c *cache) diff(state globalData, old, new any, global string) any {
 		for k, vNew := range new.(map[string]any) {
 			_, ok := oldType[k]
 			if !ok {
-				// Special handling for "rules" key: if rules are added, just mark with "!"
-				if k == "rules" {
-					resultMap[k] = "!"
-					continue
-				}
-				resultMap[k] = map[string]any{
-					"+": vNew,
+				switch vNew.(type) {
+				case string, int, float64, bool:
+					resultMap[k] = "+"
+				default:
+					resultMap[k] = map[string]any{
+						"+": vNew,
+					}
 				}
 			}
 		}
