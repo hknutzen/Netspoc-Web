@@ -2,6 +2,7 @@ package testbackend
 
 import (
 	"bytes"
+	"cmp"
 	"encoding/json"
 	"io"
 	"net/http"
@@ -14,7 +15,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/google/go-cmp/cmp"
+	go_cmp "github.com/google/go-cmp/cmp"
 	"github.com/hknutzen/Netspoc-Web/go/pkg/backend"
 	"github.com/hknutzen/testtxt"
 )
@@ -23,14 +24,17 @@ type descr struct {
 	Title         string
 	Netspoc       string
 	Netspoc2      string
+	SetSendDiff   string
+	Email         string
+	Password      string
 	URL           string
 	Params        string
 	Response      string
 	ResponseNames string
 	Diff          string
-	Email         string
-	Password      string
+	Error         string
 	Status        int
+	GetSendDiff   string
 	Todo          bool
 }
 
@@ -101,33 +105,31 @@ func testHandleFunc(t *testing.T, d descr, endpoint, originalHome string) {
 		export(d.Netspoc2, "p2")
 	}
 
-	// Perform login
-	loginUrl := "/backend/login?email=guest&app=../app.html"
-	if d.Email != "" {
-		// Create user-session-file
-		if d.Password != "" {
-			userDir := filepath.Join(home, "users")
-			userFile := filepath.Join(userDir, d.Email)
-			store, err := backend.GetUserStore(userFile)
-			if err != nil {
-				t.Fatalf("Failed to create user store for %s: %v", userFile, err)
-			}
-			encoder := backend.SSHAEncoder{}
-			store.Hash, err = encoder.EncodeAsString([]byte(d.Password))
-			if store.Hash == "" {
-				t.Fatalf("Failed to set password for %s: %v", userFile, err)
-			}
-			if err := store.WriteToFile(userFile); err != nil {
-				t.Fatalf("Failed to write user store for %s: %v", userFile, err)
-			}
-		} else {
-			t.Fatalf("Missing mandatory password for this test: %v", t.Name())
-		}
-		loginUrl = "/backend/login?email=" + url.QueryEscape(d.Email) + "&app=../app.html"
-		if d.Password != "" {
-			loginUrl += "&pass=" + url.QueryEscape(d.Password)
-		}
+	// Prepare login
+	loginUrl := "/backend/login?app=../app.html"
+	email := cmp.Or(d.Email, "guest")
+	loginUrl += "&email=" + url.QueryEscape(email)
+	// Create user-session-file
+	userFile := filepath.Join(home, "users", email)
+	store, err := backend.GetUserStore(userFile)
+	if err != nil {
+		t.Fatalf("Failed to create user store for %s: %v", userFile, err)
 	}
+	if d.Password != "" {
+		encoder := backend.SSHAEncoder{}
+		store.Hash, err = encoder.EncodeAsString([]byte(d.Password))
+		if err != nil {
+			t.Fatalf("Failed to set password for %s: %v", userFile, err)
+		}
+		loginUrl += "&pass=" + url.QueryEscape(d.Password)
+	}
+	if d.SetSendDiff != "" {
+		store.SendDiff = strings.Fields(d.SetSendDiff)
+	}
+	if err := store.WriteToFile(userFile); err != nil {
+		t.Fatalf("Failed to write user store for %s: %v", userFile, err)
+	}
+	// Perform login
 	req := httptest.NewRequest(http.MethodPost, loginUrl, strings.NewReader(""))
 	resp := httptest.NewRecorder()
 	mux.ServeHTTP(resp, req)
@@ -158,13 +160,29 @@ func testHandleFunc(t *testing.T, d descr, endpoint, originalHome string) {
 	if resp.Code != d.Status {
 		t.Errorf("Want status '%d', got '%d'", d.Status, resp.Code)
 	}
-	if d.Diff != "" {
-		/*type diffData struct {
-			Text     string
-			Children []*diffData
+	if d.GetSendDiff != "" {
+		t.Run("send diff", func(t *testing.T) {
+			store, _ := backend.GetUserStore(userFile)
+			l := strings.Fields(d.GetSendDiff)
+			if d := go_cmp.Diff(l, store.SendDiff); d != "" {
+				t.Error(d)
+			}
+		})
+	}
+	if d.Error != "" {
+		msg := ""
+		var data struct {
+			Msg string
 		}
-		var data []*diffData
-		json.Unmarshal(body, &data)*/
+		if json.Unmarshal(body, &data) == nil {
+			msg = data.Msg
+		} else {
+			msg = string(body)
+		}
+		if d := go_cmp.Diff(d.Error, msg); d != "" {
+			t.Error(d)
+		}
+	} else if d.Diff != "" {
 		jsonEq(t, d.Diff, body)
 	} else {
 		type jsonData struct {
@@ -208,7 +226,7 @@ func jsonEq(t *testing.T, expected string, got []byte) {
 		enc.Encode(v)
 		return b.String()
 	}
-	if d := cmp.Diff(normalize([]byte(expected)), normalize(got)); d != "" {
+	if d := go_cmp.Diff(normalize([]byte(expected)), normalize(got)); d != "" {
 		t.Error(d)
 	}
 }
