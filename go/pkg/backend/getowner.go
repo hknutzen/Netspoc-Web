@@ -1,6 +1,7 @@
 package backend
 
 import (
+	"errors"
 	"net/http"
 	"slices"
 	"strings"
@@ -71,20 +72,21 @@ func (s *state) findAuthorizedOwners(r *http.Request) []string {
 
 // Validate active owner.
 // Email could be removed from any owner role at any time in netspoc data.
-func (s *state) validateOwner(w http.ResponseWriter, r *http.Request, ownerNeeded bool) {
+func (s *state) validateOwner(r *http.Request, ownerNeeded bool) error {
 	activeOwner := r.FormValue("active_owner")
 	if activeOwner != "" {
 		if !ownerNeeded {
-			writeError(w, "Must not send parameter 'active_owner'", http.StatusBadRequest)
+			return errors.New("must not send parameter 'active_owner'")
 		}
 		if !s.canAccessOwner(r, activeOwner) {
-			writeError(w, "Not authorized to access owner '"+activeOwner+"'", http.StatusBadRequest)
+			return errors.New("Not authorized to access owner '" + activeOwner + "'")
 		}
 	} else {
 		if ownerNeeded {
-			writeError(w, "Missing parameter 'active_owner'", http.StatusBadRequest)
+			return errors.New("missing parameter 'active_owner'")
 		}
 	}
+	return nil
 }
 
 func (s *state) canAccessOwner(r *http.Request, owner string) bool {

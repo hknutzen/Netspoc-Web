@@ -163,7 +163,11 @@ func (s *state) setDiffMail(w http.ResponseWriter, r *http.Request) {
 		writeError(w, "Can't send diff for user 'guest'", http.StatusBadRequest)
 		return
 	}
-	s.validateOwner(w, r, true)
+	err := s.validateOwner(r, true)
+	if err != nil {
+		writeError(w, err.Error(), http.StatusBadRequest)
+		return
+	}
 	owner := r.FormValue("active_owner")
 	userFile := s.getUserFile(r)
 	store, err := GetUserStore(userFile)
