@@ -157,6 +157,5 @@ send=false
 =PARAMS=
 active_owner=o4
 send=true
-=ERROR=
-Not authorized to access owner 'o4'
+=ERROR=Not authorized to access owner 'o4'
 =STATUS=400
