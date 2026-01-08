@@ -75,12 +75,6 @@ func testHandleFunc(t *testing.T, d descr, endpoint, originalHome string) {
 	// This has to be done before perlTestServer() is called, so that
 	// the config file is read by the Perl test-server.
 	PrepareConfig(workDir)
-	perlCmd, perlStdin := PerlTestServer(originalHome)
-	defer func() {
-		// Stop Perl server.
-		perlStdin.Close()
-		perlCmd.Wait()
-	}()
 
 	// Mux needs original home directory
 	// to find the root directory.

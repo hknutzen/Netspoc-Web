@@ -2,35 +2,13 @@ package testbackend
 
 import (
 	"cmp"
-	"fmt"
-	"io"
 	"net/http"
 	"os"
-	"os/exec"
 	"path"
 	"strings"
 
 	"github.com/hknutzen/Netspoc-Web/go/pkg/backend"
 )
-
-// Start Perl test server.
-func PerlTestServer(originalHome string) (*exec.Cmd, io.WriteCloser) {
-	binPath := path.Join(originalHome, "Netspoc-Web", "bin")
-	perlCmd := exec.Command(path.Join(binPath, "test-server.pl"))
-	perlStdout, _ := perlCmd.StdoutPipe()
-	perlStdin, _ := perlCmd.StdinPipe()
-	if err := perlCmd.Start(); err != nil {
-		panic(err)
-	}
-
-	// Read port number of Perl test server from stdout.
-	var perlPort string
-	if _, err := fmt.Fscanln(perlStdout, &perlPort); err != nil {
-		panic(fmt.Errorf("reading port number of %s: %v", perlCmd, err))
-	}
-	os.Setenv("PERLPORT", perlPort)
-	return perlCmd, perlStdin
-}
 
 func GetMux(originalHome string) *http.ServeMux {
 	// Serve static files and backend.

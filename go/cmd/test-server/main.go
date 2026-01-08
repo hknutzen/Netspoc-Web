@@ -15,7 +15,6 @@ import (
 func main() {
 
 	homeDir := strings.TrimSuffix(os.Getenv("NETSPOC_WEB_SRC_DIR"), "Netspoc-Web")
-	perlCmd, perlStdin := testbackend.PerlTestServer(homeDir)
 	mux := testbackend.GetMux(homeDir)
 	ts := httptest.NewServer(mux)
 
@@ -26,7 +25,4 @@ func main() {
 	io.ReadAll(os.Stdin)
 	// Stop Go server.
 	ts.Close()
-	// Stop Perl server.
-	perlStdin.Close()
-	perlCmd.Wait()
 }

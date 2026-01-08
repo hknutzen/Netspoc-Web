@@ -4,9 +4,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
-	"net/http/httputil"
-	"net/url"
-	"os"
 	"runtime/debug"
 	"time"
 )
@@ -22,15 +19,6 @@ func getMux() (*http.ServeMux, *state) {
 		config: cfg,
 		cache:  newCache(cfg.NetspocData, 8),
 	}
-	port := os.Getenv("PERLPORT")
-	if port == "" {
-		abort("PERLPORT must be set")
-	}
-	perlServer, err := url.Parse("http://localhost:" + port)
-	if err != nil {
-		panic(err)
-	}
-
 	noLoginMux := http.NewServeMux()
 	noLoginMux.HandleFunc("/login", s.loginHandler)
 	noLoginMux.HandleFunc("/ldap_login", s.ldapLoginHandler)
@@ -69,8 +57,6 @@ func getMux() (*http.ServeMux, *state) {
 			h.ServeHTTP(w, r)
 		} else if h, pattern := noLoginMux.Handler(r); pattern != "" {
 			h.ServeHTTP(w, r)
-		} else {
-			httputil.NewSingleHostReverseProxy(perlServer).ServeHTTP(w, r)
 		}
 	})
 	return defaultMux, s
