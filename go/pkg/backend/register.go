@@ -54,7 +54,7 @@ func (s *state) register(w http.ResponseWriter, r *http.Request) {
 	}
 	url := fmt.Sprintf("%s/verify?email=%s&token=%s", base, email, token)
 	s.sendVerificationEmail(w, email, url, ip)
-	tmplPath := path.Join(s.config.HTMLTemplate, "show_password")
+	tmplPath := path.Join(s.config.HTMLTemplate, "show_passwd")
 	tmpl, err := htmltemplate.ParseFiles(tmplPath)
 	if err != nil {
 		writeError(w, "Failed to load template "+tmplPath, http.StatusInternalServerError)
