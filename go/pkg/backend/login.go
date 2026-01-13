@@ -73,10 +73,12 @@ func (s *state) ldapCheckPassGetEmail(w http.ResponseWriter, r *http.Request) st
 	user := r.FormValue("user")
 	if user == "" {
 		writeError(w, "Missing param 'user'", http.StatusBadRequest)
+		return ""
 	}
 	pass := r.FormValue("pass")
 	if pass == "" {
 		writeError(w, "Missing param 'pass'", http.StatusBadRequest)
+		return ""
 	}
 	s.checkAttack(w, r)
 	ldapURI := s.config.LdapURI
@@ -85,6 +87,7 @@ func (s *state) ldapCheckPassGetEmail(w http.ResponseWriter, r *http.Request) st
 	l, err := ldap.DialURL(ldapURI)
 	if err != nil {
 		writeError(w, "LDAP connection failed: "+err.Error(), http.StatusInternalServerError)
+		return ""
 	}
 	defer l.Close()
 
@@ -92,6 +95,7 @@ func (s *state) ldapCheckPassGetEmail(w http.ResponseWriter, r *http.Request) st
 	if err != nil {
 		s.setAttack(r)
 		writeError(w, "LDAP bind failed: "+err.Error(), http.StatusUnauthorized)
+		return ""
 	}
 	s.clearAttack(r)
 
@@ -106,14 +110,17 @@ func (s *state) ldapCheckPassGetEmail(w http.ResponseWriter, r *http.Request) st
 	result, err := l.Search(searchRequest)
 	if err != nil {
 		writeError(w, "LDAP search failed: "+err.Error(), http.StatusInternalServerError)
+		return ""
 	}
 	if len(result.Entries) != 1 {
 		writeError(w, "LDAP search returned unexpected number of entries", http.StatusUnauthorized)
+		return ""
 	}
 	email = result.Entries[0].GetAttributeValue(emailAttr)
 	if email == "" {
 		msg := fmt.Sprintf("Can't find email address for %v", searchRequest.Filter)
 		writeError(w, msg, http.StatusUnauthorized)
+		return ""
 	}
 	return email
 }
