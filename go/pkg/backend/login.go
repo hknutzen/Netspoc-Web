@@ -80,7 +80,7 @@ func (s *state) ldapCheckPassGetEmail(w http.ResponseWriter, r *http.Request) st
 		writeError(w, "Missing param 'pass'", http.StatusBadRequest)
 		return ""
 	}
-	s.checkAttack(w, r)
+	s.checkAttack(r)
 	ldapURI := s.config.LdapURI
 	baseDN := s.config.LdapBaseDN
 	emailAttr := s.config.LdapEmailAttr
@@ -136,7 +136,14 @@ func (s *state) ldapLoginHandler(w http.ResponseWriter, r *http.Request) {
 	session := GetGoSession(r)
 	s.logout(session)
 	email := s.ldapCheckPassGetEmail(w, r)
-	s.checkEmailAuthorization(w, r, email)
+	if email == "" {
+		return
+	}
+	err := s.checkEmailAuthorization(r, email)
+	if err != nil {
+		writeError(w, err.Error(), http.StatusForbidden)
+		return
+	}
 	s.setLogin(session, email)
 	s.redirectToLandingPage(w, r)
 }

@@ -59,9 +59,20 @@ func (s *state) getOwner(w http.ResponseWriter, r *http.Request) {
 	writeRecords(w, []jsonMap{})
 }
 
+func getEmailFromSession(r *http.Request) string {
+	email := GetGoSession(r).Get("email")
+	if email == nil {
+		return ""
+	}
+	return email.(string)
+}
+
 func (s *state) findAuthorizedOwners(r *http.Request) []string {
 	m := s.loadEmail2Owners()
-	email := GetGoSession(r).Get("email").(string)
+	email := getEmailFromSession(r)
+	if email == "" {
+		return []string{}
+	}
 	_, dom, _ := strings.Cut(email, "@")
 	wildcard := "[all]@" + dom
 	result := slices.Concat(m[wildcard], m[email])

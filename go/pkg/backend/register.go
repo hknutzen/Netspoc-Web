@@ -29,9 +29,17 @@ func (s *state) register(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	email = strings.ToLower(email)
-	s.checkEmailAuthorization(w, r, email)
+	err := s.checkEmailAuthorization(r, email)
+	if err != nil {
+		writeError(w, err.Error(), http.StatusForbidden)
+		return
+	}
 	// Why do we need to check base URL in Perl?
-	s.checkAttack(w, r)
+	err = s.checkAttack(r)
+	if err != nil {
+		writeError(w, err.Error(), http.StatusTooManyRequests)
+		return
+	}
 
 	password := generatePassword(10, true, true, true)
 	hash := sha256.Sum256([]byte(password))
@@ -53,7 +61,11 @@ func (s *state) register(w http.ResponseWriter, r *http.Request) {
 		base = "https://" + base
 	}
 	url := fmt.Sprintf("%s/verify?email=%s&token=%s", base, email, token)
-	s.sendVerificationEmail(w, email, url, ip)
+	err = s.sendVerificationEmail(email, url, ip)
+	if err != nil {
+		writeError(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
 	tmplPath := path.Join(s.config.HTMLTemplate, "show_passwd")
 	tmpl, err := htmltemplate.ParseFiles(tmplPath)
 	if err != nil {
@@ -131,7 +143,7 @@ func (s *state) sendEmail(text string) error {
 	return nil
 }
 
-func (s *state) sendVerificationEmail(w http.ResponseWriter, email, url, ip string) {
+func (s *state) sendVerificationEmail(email, url, ip string) error {
 	templatePath := fmt.Sprintf("%s/verify", s.config.MailTemplate)
 	text, err := s.getTemplateContent(templatePath, map[string]string{
 		"email": email,
@@ -139,14 +151,13 @@ func (s *state) sendVerificationEmail(w http.ResponseWriter, email, url, ip stri
 		"ip":    ip,
 	})
 	if err != nil {
-		writeError(w, "Failed to get email template: "+err.Error(), http.StatusInternalServerError)
-		return
+		return fmt.Errorf("failed to get email template: %w", err)
 	}
 	err = s.sendEmail(text)
 	if err != nil {
-		writeError(w, "Failed to send email: "+err.Error(), http.StatusInternalServerError)
-		return
+		return fmt.Errorf("failed to send email to %s: %w", email, err)
 	}
+	return nil
 }
 
 func (s *state) getTemplateContent(templatePath string, data map[string]string) (string, error) {
@@ -164,12 +175,12 @@ func (s *state) getTemplateContent(templatePath string, data map[string]string) 
 	return builder.String(), nil
 }
 
-func (s *state) checkEmailAuthorization(w http.ResponseWriter, r *http.Request, email string) {
+func (s *state) checkEmailAuthorization(r *http.Request, email string) error {
 	owners := s.findAuthorizedOwners(r)
 	if len(owners) == 0 {
-		writeError(w, "Email "+email+" is not authorized", http.StatusForbidden)
-		return
+		return fmt.Errorf("email %s is not authorized", email)
 	}
+	return nil
 }
 
 const (
@@ -235,14 +246,14 @@ func (s *state) setAttack(r *http.Request) {
 	_ = s.storeAttackCount(r, count)
 }
 
-func (s *state) checkAttack(w http.ResponseWriter, r *http.Request) {
+func (s *state) checkAttack(r *http.Request) error {
 	count := s.readAttackCount(r)
 	if count == 0 {
-		return
+		return nil
 	}
 	modified, err := s.readAttackModified(r)
 	if err != nil {
-		return
+		return err
 	}
 	wait := count * 10
 	if wait > 120 {
@@ -250,8 +261,9 @@ func (s *state) checkAttack(w http.ResponseWriter, r *http.Request) {
 	}
 	remain := int(time.Until(modified.Add(time.Duration(wait) * time.Second)).Seconds())
 	if remain > 0 {
-		http.Error(w, fmt.Sprintf("Wait for %d seconds after wrong password", remain), http.StatusTooManyRequests)
+		return fmt.Errorf("wait for %d seconds after wrong password", remain)
 	}
+	return nil
 }
 
 func (s *state) clearAttack(r *http.Request) {
