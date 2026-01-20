@@ -10,7 +10,8 @@ import (
 func (s *state) getOwners(w http.ResponseWriter, r *http.Request) {
 	// Return all owners that the logged-in user is authorized to access.
 	// This is used to populate the owner selection dropdown.
-	authorizedOwners := s.findAuthorizedOwners(r)
+	email := getEmailFromSession(r)
+	authorizedOwners := s.findAuthorizedOwners(email)
 	if len(authorizedOwners) == 0 {
 		writeRecords(w, []jsonMap{})
 		return
@@ -34,7 +35,8 @@ func (s *state) getOwner(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 	}
-	l := s.findAuthorizedOwners(r)
+	email := getEmailFromSession(r)
+	l := s.findAuthorizedOwners(email)
 	// Selected owner was stored before.
 	if ow != "" && slices.Contains(l, ow) {
 		writeRecords(w, []jsonMap{{"name": ow}})
@@ -67,9 +69,8 @@ func getEmailFromSession(r *http.Request) string {
 	return email.(string)
 }
 
-func (s *state) findAuthorizedOwners(r *http.Request) []string {
+func (s *state) findAuthorizedOwners(email string) []string {
 	m := s.loadEmail2Owners()
-	email := getEmailFromSession(r)
 	if email == "" {
 		return []string{}
 	}
@@ -101,7 +102,8 @@ func (s *state) validateOwner(r *http.Request, ownerNeeded bool) error {
 }
 
 func (s *state) canAccessOwner(r *http.Request, owner string) bool {
-	for _, authorizedOwner := range s.findAuthorizedOwners(r) {
+	email := getEmailFromSession(r)
+	for _, authorizedOwner := range s.findAuthorizedOwners(email) {
 		if owner == authorizedOwner {
 			return true
 		}

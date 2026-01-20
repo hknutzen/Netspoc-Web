@@ -139,7 +139,7 @@ func (s *state) ldapLoginHandler(w http.ResponseWriter, r *http.Request) {
 	if email == "" {
 		return
 	}
-	err := s.checkEmailAuthorization(r, email)
+	err := s.checkEmailAuthorization(email)
 	if err != nil {
 		writeError(w, err.Error(), http.StatusForbidden)
 		return
