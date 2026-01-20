@@ -63,9 +63,7 @@ func (s *state) loginHandler(w http.ResponseWriter, r *http.Request) {
 	s.setLogin(session, email)
 
 	// Redirect to referer/app.html.
-	originalURL := strings.TrimSuffix(r.Header.Get("Referer"), "/index.html")
-	originalURL = strings.TrimSuffix(originalURL, "/")
-	http.Redirect(w, r, originalURL+"/app.html", http.StatusSeeOther)
+	s.redirectToLandingPage(w, r)
 }
 
 func (s *state) ldapCheckPassGetEmail(w http.ResponseWriter, r *http.Request) string {
@@ -91,7 +89,8 @@ func (s *state) ldapCheckPassGetEmail(w http.ResponseWriter, r *http.Request) st
 	}
 	defer l.Close()
 
-	err = l.Bind(user, pass)
+	dn := fmt.Sprintf(s.config.LdapDNTemplate, user)
+	err = l.Bind(dn, pass)
 	if err != nil {
 		s.setAttack(r)
 		writeError(w, "LDAP bind failed: "+err.Error(), http.StatusUnauthorized)
@@ -99,10 +98,11 @@ func (s *state) ldapCheckPassGetEmail(w http.ResponseWriter, r *http.Request) st
 	}
 	s.clearAttack(r)
 
+	filter := fmt.Sprintf("("+s.config.LdapFilterTemplate+")", ldap.EscapeFilter(user))
 	searchRequest := ldap.NewSearchRequest(
 		baseDN,
 		ldap.ScopeWholeSubtree, ldap.NeverDerefAliases, 0, 0, false,
-		fmt.Sprintf("(%s=%s)", emailAttr, ldap.EscapeFilter(user)),
+		filter,
 		[]string{emailAttr},
 		nil,
 	)
@@ -127,9 +127,12 @@ func (s *state) ldapCheckPassGetEmail(w http.ResponseWriter, r *http.Request) st
 
 func (s *state) redirectToLandingPage(w http.ResponseWriter, r *http.Request) {
 	// Redirect to referer/app.html.
-	originalURL := strings.TrimSuffix(r.Header.Get("Referer"), "/index.html")
+	originalURL := r.Header.Get("Referer")
+	originalURL = strings.TrimSuffix(originalURL, "/index.html")
+	originalURL = strings.TrimSuffix(originalURL, "/ldap-login.html")
 	originalURL = strings.TrimSuffix(originalURL, "/")
-	http.Redirect(w, r, originalURL+"/app.html", http.StatusSeeOther)
+	redirURL := originalURL + "/app.html"
+	http.Redirect(w, r, redirURL, http.StatusSeeOther)
 }
 
 func (s *state) ldapLoginHandler(w http.ResponseWriter, r *http.Request) {

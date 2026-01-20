@@ -64,7 +64,6 @@ func (s *state) register(w http.ResponseWriter, r *http.Request) {
 		writeError(w, "Missing Referer in header", http.StatusBadRequest)
 		return
 	}
-	fmt.Fprintf(os.Stderr, "Base URL: %s\n", base)
 	verifyUrl := fmt.Sprintf("backend6/verify?email=%s&token=%s", email, token)
 	url := strings.Replace(base, "passwd.html", verifyUrl, 1)
 	err = s.sendVerificationEmail(email, url, ip)
