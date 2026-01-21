@@ -10,14 +10,23 @@ import (
 
 type state struct {
 	*cache
-	config *config
+	config         *config
+	sessionManager *SessionManager
 }
 
 func getMux() (*http.ServeMux, *state) {
 	cfg := LoadConfig()
+	sm := NewSessionManager(
+		NewFileSystemSessionStore(cfg.SessionDir),
+		30*time.Minute,
+		1*time.Hour,
+		12*time.Hour,
+		"PWGOSESSID",
+	)
 	s := &state{
-		config: cfg,
-		cache:  newCache(cfg.NetspocData, 8),
+		config:         cfg,
+		cache:          newCache(cfg.NetspocData, 8),
+		sessionManager: sm,
 	}
 	noLoginMux := http.NewServeMux()
 	noLoginMux.HandleFunc("/login", s.loginHandler)
@@ -69,13 +78,17 @@ func MainHandler() http.Handler {
 
 func SessionHandler(s *state, h http.Handler) http.Handler {
 
-	sessionManager := NewSessionManager(
-		NewFileSystemSessionStore(s.config.SessionDir),
-		30*time.Minute,
-		1*time.Hour,
-		12*time.Hour,
-		"PWGOSESSID",
-	)
+	sessionManager := s.sessionManager
+	if sessionManager == nil {
+		sessionManager = NewSessionManager(
+			NewFileSystemSessionStore(s.config.SessionDir),
+			30*time.Minute,
+			1*time.Hour,
+			12*time.Hour,
+			"PWGOSESSID",
+		)
+		s.sessionManager = sessionManager
+	}
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		sessionManager.Handle(h).ServeHTTP(w, r)
 	})
