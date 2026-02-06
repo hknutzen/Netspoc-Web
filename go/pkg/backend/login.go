@@ -22,7 +22,7 @@ func (s *state) logout(session *GoSession) {
 func (s *state) logoutHandler(w http.ResponseWriter, r *http.Request) {
 	session := GetGoSession(r)
 	s.logout(session)
-	http.Redirect(w, r, "/", http.StatusSeeOther)
+	http.Redirect(w, r, "/", http.StatusFound)
 }
 
 func (s *state) loginHandler(w http.ResponseWriter, r *http.Request) {
@@ -132,7 +132,7 @@ func (s *state) redirectToLandingPage(w http.ResponseWriter, r *http.Request) {
 	originalURL = strings.TrimSuffix(originalURL, "/ldap-login.html")
 	originalURL = strings.TrimSuffix(originalURL, "/")
 	redirURL := originalURL + "/app.html"
-	http.Redirect(w, r, redirURL, http.StatusSeeOther)
+	http.Redirect(w, r, redirURL, http.StatusFound)
 }
 
 func (s *state) ldapLoginHandler(w http.ResponseWriter, r *http.Request) {
