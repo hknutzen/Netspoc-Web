@@ -20,6 +20,9 @@ type jsonMap map[string]any
 func (s *state) generateServiceList(r *http.Request) []jsonMap {
 	history := s.getHistoryParamOrCurrentPolicy(r)
 	owner := r.FormValue("active_owner")
+	if owner == "" {
+		return []jsonMap{}
+	}
 	relation := r.FormValue("relation")
 	serviceLists := s.loadServiceLists(history, owner)
 	services := s.loadServices(history)
