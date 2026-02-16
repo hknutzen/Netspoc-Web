@@ -55,6 +55,26 @@ func (d *diffState) diffServiceLists(owner string) map[string]any {
 	return result
 }
 
+func (d *diffState) diffUsersLists(owner string) any {
+	a := d.cache.loadUsers(d.v1, owner)
+	b := d.cache.loadUsers(d.v2, owner)
+	result := make(map[string]any)
+	// Iterate over service names.
+	// Ignore removed or added services,
+	// which are found when comparing service_lists.
+	for sName, aL := range a {
+		if bL, found := b[sName]; found {
+			if df := d.diffObjectList(aL, bL); df != nil {
+				result[sName] = df
+			}
+		}
+	}
+	if len(result) == 0 {
+		return nil
+	}
+	return result
+}
+
 func (d *diffState) diffServiceList(a, b []string) any {
 	result := make(map[string][]string)
 	ab := newPair(a, b)
@@ -78,17 +98,20 @@ func (d *diffState) diffServiceList(a, b []string) any {
 	return result
 }
 
-func (d *diffState) diffUsersLists(owner string) any {
-	a := d.cache.loadUsers(d.v1, owner)
-	b := d.cache.loadUsers(d.v2, owner)
-	result := make(map[string]any)
-	// Iterate over service names.
-	// Ignore removed or added services,
-	// which are found when comparing service_lists.
-	for sName, aL := range a {
-		if bL, found := b[sName]; found {
-			if df := d.compareObjectList(aL, bL); df != nil {
-				result[sName] = df
+func (d *diffState) diffObjectList(a, b []string) any {
+	result := make(map[string][]string)
+	ab := newPair(a, b)
+	s := myers.Diff(nil, ab)
+	for _, r := range s.Ranges {
+		if r.IsDelete() {
+			result["-"] = append(result["-"], a[r.LowA:r.HighA]...)
+		} else if r.IsInsert() {
+			result["+"] = append(result["+"], b[r.LowB:r.HighB]...)
+		} else {
+			for _, name := range a[r.LowA:r.HighA] {
+				if d.diffObject(name) {
+					result["!"] = append(result["!"], a[r.LowA:r.HighA]...)
+				}
 			}
 		}
 	}
@@ -198,10 +221,10 @@ func (d *diffState) compareRule(a, b *rule) any {
 	if df := compareString(a.Action, b.Action); df != "" {
 		result["action"] = df
 	}
-	if df := d.compareObjectList(a.Src, b.Src); df != nil {
+	if df := d.diffObjectList(a.Src, b.Src); df != nil {
 		result["src"] = df
 	}
-	if df := d.compareObjectList(a.Dst, b.Dst); df != nil {
+	if df := d.diffObjectList(a.Dst, b.Dst); df != nil {
 		result["dst"] = df
 	}
 	if df := compareStringList(a.Prt, b.Prt); df != nil {
@@ -240,29 +263,6 @@ func compareStringList(a, b []string) any {
 			result["-"] = append(result["-"], a[r.LowA:r.HighA]...)
 		} else if r.IsInsert() {
 			result["+"] = append(result["+"], b[r.LowB:r.HighB]...)
-		}
-	}
-	if len(result) == 0 {
-		return nil
-	}
-	return result
-}
-
-func (d *diffState) compareObjectList(a, b []string) any {
-	result := make(map[string][]string)
-	ab := newPair(a, b)
-	s := myers.Diff(nil, ab)
-	for _, r := range s.Ranges {
-		if r.IsDelete() {
-			result["-"] = append(result["-"], a[r.LowA:r.HighA]...)
-		} else if r.IsInsert() {
-			result["+"] = append(result["+"], b[r.LowB:r.HighB]...)
-		} else {
-			for _, name := range a[r.LowA:r.HighA] {
-				if d.diffObject(name) {
-					result["!"] = append(result["!"], a[r.LowA:r.HighA]...)
-				}
-			}
 		}
 	}
 	if len(result) == 0 {
