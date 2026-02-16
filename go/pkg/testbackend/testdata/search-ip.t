@@ -185,7 +185,7 @@ network:n5 = { ip6 = 1000::abcd:0005:0/112; }
 router:r1 = {
  managed;
  model = ASA;
- interface:n3 = {ip6 = 1000::abcd:0003:0001; hardware = n3; }
+ interface:n3 = {ip6 = 1000::abcd:0003:00ff; hardware = n3; }
  interface:n4 = {ip6 = 1000::abcd:0004:0001; hardware = n4; }
  interface:n5 = {ip6 = 1000::abcd:0005:0001; hardware = n5; }
 }
