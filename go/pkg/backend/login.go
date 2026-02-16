@@ -5,7 +5,6 @@ package backend
 import (
 	"fmt"
 	"net/http"
-	"strings"
 
 	"github.com/go-ldap/ldap/v3"
 )
@@ -127,11 +126,12 @@ func (s *state) ldapCheckPassGetEmail(w http.ResponseWriter, r *http.Request) st
 
 func (s *state) redirectToLandingPage(w http.ResponseWriter, r *http.Request) {
 	// Redirect to referer/app.html.
-	originalURL := r.Header.Get("Referer")
-	originalURL = strings.TrimSuffix(originalURL, "/index.html")
-	originalURL = strings.TrimSuffix(originalURL, "/ldap-login.html")
-	originalURL = strings.TrimSuffix(originalURL, "/")
-	redirURL := originalURL + "/app.html"
+	//originalURL := r.Header.Get("Referer")
+	//originalURL = strings.TrimSuffix(originalURL, "/index.html")
+	//originalURL = strings.TrimSuffix(originalURL, "/ldap-login.html")
+	//originalURL = strings.TrimSuffix(originalURL, "/")
+	//redirURL := originalURL + "/app.html"
+	redirURL := "../app.html"
 	http.Redirect(w, r, redirURL, http.StatusFound)
 }
 
