@@ -126,24 +126,18 @@ func (d *diffState) diffObject(name string) bool {
 	if !found {
 		a := d.cache.loadObjects(d.v1)[name]
 		b := d.cache.loadObjects(d.v2)[name]
-		if b == nil {
-			diff = "-"
-		} else if a == nil {
-			diff = "+"
-		} else {
-			m := make(map[string]any)
-			if df := compareString(a.IP, b.IP); df != "" {
-				m["ip"] = df
-			}
-			if df := compareString(a.IP6, b.IP6); df != "" {
-				m["ip6"] = df
-			}
-			if df := compareString(a.Owner, b.Owner); df != "" {
-				m["owner"] = df
-			}
-			if len(m) != 0 {
-				diff = m
-			}
+		m := make(map[string]any)
+		if df := compareString(a.IP, b.IP); df != "" {
+			m["ip"] = df
+		}
+		if df := compareString(a.IP6, b.IP6); df != "" {
+			m["ip6"] = df
+		}
+		if df := compareString(a.Owner, b.Owner); df != "" {
+			m["owner"] = df
+		}
+		if len(m) != 0 {
+			diff = m
 		}
 		d.objects[name] = diff
 	}
@@ -155,21 +149,15 @@ func (d *diffState) diffService(name string) bool {
 	if !found {
 		a := d.cache.loadServices(d.v1)[name]
 		b := d.cache.loadServices(d.v2)[name]
-		if b == nil {
-			diff = "-"
-		} else if a == nil {
-			diff = "+"
-		} else {
-			m := make(map[string]any)
-			if df := compareDetails(a, b); df != nil {
-				m["details"] = df
-			}
-			if df := d.compareRules(a, b); df != nil {
-				m["rules"] = df
-			}
-			if len(m) != 0 {
-				diff = m
-			}
+		m := make(map[string]any)
+		if df := compareDetails(a, b); df != nil {
+			m["details"] = df
+		}
+		if df := d.compareRules(a, b); df != nil {
+			m["rules"] = df
+		}
+		if len(m) != 0 {
+			diff = m
 		}
 		d.services[name] = diff
 	}
