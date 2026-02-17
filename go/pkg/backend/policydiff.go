@@ -1,6 +1,7 @@
 package backend
 
 import (
+	"context"
 	"fmt"
 	"strconv"
 
@@ -78,7 +79,7 @@ func (d *diffState) diffUsersLists(owner string) any {
 func (d *diffState) diffServiceList(a, b []string) any {
 	result := make(map[string][]string)
 	ab := newPair(a, b)
-	s := myers.Diff(nil, ab)
+	s := myers.Diff(context.Background(), ab)
 	for _, r := range s.Ranges {
 		if r.IsDelete() {
 			result["-"] = append(result["-"], a[r.LowA:r.HighA]...)
@@ -101,7 +102,7 @@ func (d *diffState) diffServiceList(a, b []string) any {
 func (d *diffState) diffObjectList(a, b []string) any {
 	result := make(map[string][]string)
 	ab := newPair(a, b)
-	s := myers.Diff(nil, ab)
+	s := myers.Diff(context.Background(), ab)
 	for _, r := range s.Ranges {
 		if r.IsDelete() {
 			result["-"] = append(result["-"], a[r.LowA:r.HighA]...)
@@ -245,7 +246,7 @@ func compareBool(a, b int) string {
 func compareStringList(a, b []string) any {
 	result := make(map[string][]string)
 	ab := newPair(a, b)
-	s := myers.Diff(nil, ab)
+	s := myers.Diff(context.Background(), ab)
 	for _, r := range s.Ranges {
 		if r.IsDelete() {
 			result["-"] = append(result["-"], a[r.LowA:r.HighA]...)
