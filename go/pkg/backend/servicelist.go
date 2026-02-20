@@ -24,6 +24,9 @@ func (s *state) generateServiceList(r *http.Request) []jsonMap {
 		return []jsonMap{}
 	}
 	relation := r.FormValue("relation")
+	if err := s.validateOwner(r, true); err != nil {
+		return []jsonMap{}
+	}
 	serviceLists := s.loadServiceLists(history, owner)
 	services := s.loadServices(history)
 
