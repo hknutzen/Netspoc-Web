@@ -41,21 +41,60 @@ func (s *state) getOwner(w http.ResponseWriter, r *http.Request) {
 	if ow != "" && slices.Contains(l, ow) {
 		writeRecords(w, []jsonMap{{"name": ow}})
 	}
-	// Automatically select owner with most number of own services.
-	best := ""
-	maxSize := 0
-	h := s.getHistoryParamOrCurrentPolicy(r)
-	for _, ow := range l {
-		sl := s.loadServiceLists(h, ow)
-		size := len(sl.Owner)
-		if size > maxSize {
-			maxSize = size
-			best = ow
+
+	/* Automatically select owner with most number of own services.
+	1.	bestimme zunächst aus „services“ eine Map OwnerAnzahl, die angibt, wie viele Services einem Owner gehören.
+		Hierbei werden Multi-Owner-Dienste mehrfach gezählt.
+	2.	Dann bestimme die Liste der Owner, die der aktuelle Benutzer sehen darf, mittels findAuthorizedOwners.
+	3.	Bestimme aus 1 und 2 den Owner, dem die meisten Services gehören.
+	4.	Schaue für diesen Owner x in owner/x/extended_by
+		und prüfe, ob einer dieser übergeordneten Owner in der Liste von Schritt 2 enthalten ist.
+		Dann nimm diesen, sonst den Owner aus Schritt 3.
+	5.  Falls mehrere Owner bei 4. eingetragen sind, bestimme den besten Owner aus der Anzahl
+	    der Services in ower/x/service_list.
+	*/
+	authorizedOwners := s.findAuthorizedOwners(email)
+
+	// Create a map of owner to number of services first.
+	histPar := s.getHistoryParamOrCurrentPolicy(r)
+	services := s.loadServices(histPar)
+	ownerToServiceCount := make(map[string]int)
+	for _, service := range services {
+		for _, owner := range service.Details.Owner {
+			ownerToServiceCount[owner]++
 		}
 	}
-	if best != "" {
-		session.Put("owner", best)
-		writeRecords(w, []jsonMap{{"name": best}})
+	// Find owner with most services.
+	bestOwner := ""
+	maxServices := 0
+	for owner, count := range ownerToServiceCount {
+		if count > maxServices {
+			maxServices = count
+			bestOwner = owner
+		}
+	}
+	if bestOwner != "" {
+		extBy := s.loadExtendedBy(histPar, bestOwner)
+		if len(extBy) == 1 {
+			best := extBy[0].Name
+			if slices.Contains(authorizedOwners, best) {
+				bestOwner = best
+			}
+		} else if len(extBy) > 1 {
+			maxSize := 0
+			for _, ow := range extBy {
+				sl := s.loadServiceLists(histPar, ow.Name)
+				size := len(sl.Owner)
+				if size > maxSize {
+					maxSize = size
+					if slices.Contains(authorizedOwners, ow.Name) {
+						bestOwner = ow.Name
+					}
+				}
+			}
+		}
+		session.Put("owner", bestOwner)
+		writeRecords(w, []jsonMap{{"name": bestOwner}})
 		return
 	}
 	writeRecords(w, []jsonMap{})
