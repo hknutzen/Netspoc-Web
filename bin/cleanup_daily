@@ -49,7 +49,7 @@ elif [ -d $next ] ; then
 else
     # Find and mark changed owners.
     # Compare current version with previous version.
-    changed=$($path/diff.pl . $previous $current)
+    changed=$($path/cleanup-diff $previous $current)
 fi
 
 # Copy current policy to history, preserve date.
@@ -72,7 +72,7 @@ done
 
 # Send diff per mail
 if [ -n "$previous" ] ; then
-    $path/send_diff.pl $previous $curr_date
+    $path/send-diff $previous $curr_date
 fi
 
 $path/cleanup_history $dir
@@ -85,7 +85,7 @@ find . -maxdepth 1 -name 'p*' ! -name $current ! -newer $current | xargs rm -rf
 # Delete file only if it is older than a week in order to make it possible
 # to revert erroneous recent changes to admins or watchers
 # without anybody noticing.
-$path/del_obsolete_users.pl
+$path/delete-obsolete-users
 
 
 # Remove session files older than a year.
