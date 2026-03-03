@@ -13,19 +13,20 @@ import (
 )
 
 func FindOwnerDiffs() {
-	config := LoadConfig()
-	s := &state{
-		cache: newCache(config.NetspocData, 8),
-	}
 	// Argument processing.
 	// 2 params expected: old_version new_version
-	if len(os.Args) != 3 {
+	if len(os.Args) != 4 {
 		fmt.Fprintf(os.Stderr, "Usage: find-owner-diffs old_version new_version\nARGS:%v\n",
 			os.Args)
 		return
 	}
-	oldVersion := os.Args[1]
-	newVersion := os.Args[2]
+	path := os.Args[1]
+	oldVersion := os.Args[2]
+	newVersion := os.Args[3]
+
+	s := &state{
+		cache: newCache(path, 8),
+	}
 
 	// Find active owners
 	ownersMap := make(map[string]string)
@@ -39,7 +40,6 @@ func FindOwnerDiffs() {
 	// Compare files for each owner
 	for owner := range ownersMap {
 		changed, err := s.cache.compare(oldVersion, newVersion, owner)
-		fmt.Fprintf(os.Stderr, "Compared owner %s: err=%v, changed=%v\n", owner, err, changed)
 		if err != nil && len(changed) > 0 {
 			fmt.Println(owner)
 		}

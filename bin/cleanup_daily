@@ -49,7 +49,7 @@ elif [ -d $next ] ; then
 else
     # Find and mark changed owners.
     # Compare current version with previous version.
-    changed=$($path/cleanup-diff $previous $current)
+    changed=$($path/cleanup-diff . $previous $current)
 fi
 
 # Copy current policy to history, preserve date.
