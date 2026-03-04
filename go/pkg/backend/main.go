@@ -20,7 +20,7 @@ func getMux() (*http.ServeMux, *state) {
 		NewFileSystemSessionStore(cfg.SessionDir),
 		30*time.Minute,
 		1*time.Hour,
-		12*time.Hour,
+		8*time.Hour,
 		"PWGOSESSID",
 	)
 	s := &state{
@@ -84,7 +84,7 @@ func SessionHandler(s *state, h http.Handler) http.Handler {
 			NewFileSystemSessionStore(s.config.SessionDir),
 			30*time.Minute,
 			1*time.Hour,
-			12*time.Hour,
+			8*time.Hour,
 			"PWGOSESSID",
 		)
 		s.sessionManager = sessionManager
