@@ -71,6 +71,11 @@ func (s *state) getOwner(w http.ResponseWriter, r *http.Request) {
 		if count > maxServices {
 			maxServices = count
 			bestOwner = owner
+		} else if count == maxServices {
+			// Tie-breaker: lexicographical order.
+			if owner < bestOwner {
+				bestOwner = owner
+			}
 		}
 	}
 	if bestOwner != "" {
