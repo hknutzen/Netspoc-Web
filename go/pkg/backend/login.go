@@ -5,7 +5,6 @@ package backend
 import (
 	"fmt"
 	"net/http"
-	"strings"
 
 	"github.com/go-ldap/ldap/v3"
 )
@@ -29,18 +28,18 @@ func (s *state) loginHandler(w http.ResponseWriter, r *http.Request) {
 
 	session := GetGoSession(r)
 	if session == nil {
-		http.Error(w, "Session not found", http.StatusInternalServerError)
+		writeError(w, "Session not found", http.StatusInternalServerError)
 		return
 	}
 	email := r.FormValue("email")
 	if email == "" {
-		http.Error(w, "Email is required", http.StatusBadRequest)
+		writeError(w, "Email is required", http.StatusBadRequest)
 		return
 	}
 	if email != "guest" {
 		pass := r.FormValue("pass")
 		if pass == "" {
-			http.Error(w, "Password is required", http.StatusBadRequest)
+			writeError(w, "Password is required", http.StatusBadRequest)
 			return
 		}
 		userFile := fmt.Sprintf("%s/%s", s.config.UserDir, email)
@@ -55,7 +54,8 @@ func (s *state) loginHandler(w http.ResponseWriter, r *http.Request) {
 		}
 		if !ustore.CheckPassword(pass) {
 			s.setAttack(r)
-			writeError(w, "Login failed", http.StatusUnauthorized)
+			//writeError(w, "Login failed", http.StatusUnauthorized)
+			writeHTMLError(w, "Login failed")
 			return
 		}
 		s.clearAttack(r)
@@ -63,7 +63,7 @@ func (s *state) loginHandler(w http.ResponseWriter, r *http.Request) {
 	s.setLogin(session, email)
 
 	// Redirect to referer/app.html.
-	s.redirectToLandingPage(w, r)
+	s.redirectToLandingPage(w)
 }
 
 func (s *state) ldapCheckPassGetEmail(w http.ResponseWriter, r *http.Request) string {
@@ -84,7 +84,8 @@ func (s *state) ldapCheckPassGetEmail(w http.ResponseWriter, r *http.Request) st
 	emailAttr := s.config.LdapEmailAttr
 	l, err := ldap.DialURL(ldapURI)
 	if err != nil {
-		writeError(w, "LDAP connection failed: "+err.Error(), http.StatusInternalServerError)
+		//writeError(w, "LDAP connection failed: "+err.Error(), http.StatusInternalServerError)
+		writeHTMLError(w, "Login failed")
 		return ""
 	}
 	defer l.Close()
@@ -93,7 +94,8 @@ func (s *state) ldapCheckPassGetEmail(w http.ResponseWriter, r *http.Request) st
 	err = l.Bind(dn, pass)
 	if err != nil {
 		s.setAttack(r)
-		writeError(w, "LDAP bind failed: "+err.Error(), http.StatusUnauthorized)
+		//writeError(w, "LDAP bind failed: "+err.Error(), http.StatusUnauthorized)
+		writeHTMLError(w, "Login failed")
 		return ""
 	}
 	s.clearAttack(r)
@@ -125,20 +127,21 @@ func (s *state) ldapCheckPassGetEmail(w http.ResponseWriter, r *http.Request) st
 	return email
 }
 
-func (s *state) redirectToLandingPage(w http.ResponseWriter, r *http.Request) {
-	app := r.FormValue("app")
-	if app != "" {
-		http.Redirect(w, r, app, http.StatusFound)
-		return
-	} else {
-		// Redirect to referer/app.html.
-		originalURL := r.Header.Get("Referer")
-		originalURL = strings.TrimSuffix(originalURL, "/index.html")
-		originalURL = strings.TrimSuffix(originalURL, "/ldap-login.html")
-		originalURL = strings.TrimSuffix(originalURL, "/")
-		redirURL := originalURL + "/app.html"
-		http.Redirect(w, r, redirURL, http.StatusFound)
-	}
+func (s *state) redirectToLandingPage(w http.ResponseWriter) {
+	// Redirect to ../app.html.
+	// It is built this way to comply how it was implemented using Perl.
+	// It works around the fact that the Redirect function from package http transforms
+	// the relative URL into an absolute one, which can cause issues if the Referer
+	// header is missing or malformed or modified.
+	// The referrer header is modified by mod_proxy in Apache and this causes
+	// the http.Redirect function to redirect to the wrong URL.
+	// The following three lines are the essence of what is going on in the http.Redirect
+	// function, but it doesn't transform the relative URL into an absolute one.
+	// And it ignores the GET special cases and the generation of the HTML body for
+	// non-GET requests, which is not needed in our case.
+	h := w.Header()
+	h.Set("Location", "../app.html")
+	w.WriteHeader(http.StatusFound)
 }
 
 func (s *state) ldapLoginHandler(w http.ResponseWriter, r *http.Request) {
@@ -150,9 +153,21 @@ func (s *state) ldapLoginHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	err := s.checkEmailAuthorization(email)
 	if err != nil {
-		writeError(w, err.Error(), http.StatusForbidden)
+		//writeError(w, err.Error(), http.StatusForbidden)
 		return
 	}
 	s.setLogin(session, email)
-	s.redirectToLandingPage(w, r)
+	s.redirectToLandingPage(w)
+}
+
+func writeHTMLError(w http.ResponseWriter, errorMsg string) {
+	s := &state{
+		config: LoadConfig(),
+	}
+	w.Header().Set("Connection", "close")
+	w.WriteHeader(http.StatusInternalServerError)
+	err := s.renderHtmlTemplate(w, "error", errorMsg)
+	if err != nil {
+		writeError(w, err.Error(), http.StatusInternalServerError)
+	}
 }

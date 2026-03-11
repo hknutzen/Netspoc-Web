@@ -60,7 +60,11 @@ func getMux() (*http.ServeMux, *state) {
 	defaultMux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		if h, pattern := needsLoginMux.Handler(r); pattern != "" {
 			if !loggedIn(r) {
-				writeError(w, "Login required", http.StatusInternalServerError)
+				err := s.renderHtmlTemplate(w, "error", "Login required")
+				if err != nil {
+					writeError(w, err.Error(), http.StatusInternalServerError)
+					return
+				}
 				return
 			}
 			h.ServeHTTP(w, r)

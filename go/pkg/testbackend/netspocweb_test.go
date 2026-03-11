@@ -203,6 +203,12 @@ func testHandleFunc(t *testing.T, d descr, endpoint, originalHome string) {
 			data.Records, _ = json.Marshal(sl)
 			d.Response = d.ResponseNames
 		}
+		if data.Records == nil {
+			if d.Response != "" {
+				t.Errorf("Expected empty response, got '%s'", d.Response)
+			}
+			return
+		}
 		jsonEq(t, d.Response, data.Records)
 	}
 }
