@@ -19,8 +19,8 @@ func getMux() (*http.ServeMux, *state) {
 	sm := NewSessionManager(
 		NewFileSystemSessionStore(cfg.SessionDir),
 		30*time.Minute,
-		1*time.Hour,
 		8*time.Hour,
+		24*time.Hour,
 		"PWGOSESSID",
 	)
 	s := &state{
@@ -60,11 +60,8 @@ func getMux() (*http.ServeMux, *state) {
 	defaultMux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		if h, pattern := needsLoginMux.Handler(r); pattern != "" {
 			if !loggedIn(r) {
-				err := s.renderHtmlTemplate(w, "error", "Login required")
-				if err != nil {
-					writeError(w, err.Error(), http.StatusInternalServerError)
-					return
-				}
+				// Should be 401 or 500, but for legacy reasons 200 for now.
+				writeError(w, "Login required", http.StatusOK)
 				return
 			}
 			h.ServeHTTP(w, r)
@@ -84,14 +81,7 @@ func SessionHandler(s *state, h http.Handler) http.Handler {
 
 	sessionManager := s.sessionManager
 	if sessionManager == nil {
-		sessionManager = NewSessionManager(
-			NewFileSystemSessionStore(s.config.SessionDir),
-			30*time.Minute,
-			1*time.Hour,
-			8*time.Hour,
-			"PWGOSESSID",
-		)
-		s.sessionManager = sessionManager
+		abort("No session Manager in SessionHandler", fmt.Sprintf("%v", h))
 	}
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		sessionManager.Handle(h).ServeHTTP(w, r)
