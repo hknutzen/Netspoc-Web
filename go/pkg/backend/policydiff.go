@@ -3,6 +3,8 @@ package backend
 import (
 	"context"
 	"fmt"
+	"os"
+	"path/filepath"
 	"strconv"
 
 	"github.com/pkg/diff/myers"
@@ -43,8 +45,20 @@ func (c *cache) compare(v1, v2, owner string) (map[string]any, error) {
 	return result, nil
 }
 
+func (d *diffState) checkPath(part, owner string) bool {
+	path := filepath.Join(d.cache.netspocDir, "history")
+	path = filepath.Join(path, d.v1, "owner", owner, part)
+	if _, err := os.Stat(path); os.IsNotExist(err) {
+		return false
+	}
+	return true
+}
+
 func (d *diffState) diffServiceLists(owner string) map[string]any {
-	a := d.cache.loadServiceLists(d.v1, owner)
+	a := &serviceLists{}
+	if d.checkPath("service_lists", owner) {
+		a = d.cache.loadServiceLists(d.v1, owner)
+	}
 	b := d.cache.loadServiceLists(d.v2, owner)
 	result := make(map[string]any)
 	if df := d.diffServiceList(a.Owner, b.Owner); df != nil {
@@ -57,7 +71,10 @@ func (d *diffState) diffServiceLists(owner string) map[string]any {
 }
 
 func (d *diffState) diffUsersLists(owner string) any {
-	a := d.cache.loadUsers(d.v1, owner)
+	a := make(map[string][]string)
+	if d.checkPath("users", owner) {
+		a = d.cache.loadUsers(d.v1, owner)
+	}
 	b := d.cache.loadUsers(d.v2, owner)
 	result := make(map[string]any)
 	// Iterate over service names.
