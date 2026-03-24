@@ -1,5 +1,5 @@
 To: {{ .Email }}
-Subject: Policy-Web: Diff für {{ .Owner }} wird nicht mehr versandt
+Subject: {{mimeEncode "Policy-Web: Diff für .Owner wird nicht mehr versandt"}}
 Content-Type: text/plain; charset=UTF-8
 
 Owner '{{ .Owner }}' existiert nicht mehr.
