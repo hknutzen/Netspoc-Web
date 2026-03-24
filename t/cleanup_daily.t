@@ -20,13 +20,15 @@ my $export_dir = tempdir( CLEANUP => 1 );
 my $home_dir   = tempdir( CLEANUP => 1 );
 my $user_dir   = "$home_dir/users";
 my $conf_file  = "$home_dir/policyweb.conf";
+my $home       = $ENV{HOME};
 my $conf_data  = <<"END";
 {
  "netspoc_data"  : "$export_dir",
  "user_dir"           : "$user_dir",
  "session_dir"        : "$home_dir/sessions",
  "noreply_address"    : "noreply",
- "sendmail_command"   : "$home_dir/sendmail"
+ "sendmail_command"   : "$home_dir/sendmail",
+ "mail_template"   : "$home/Netspoc-Web/go/pkg/backend/mail-templates"
 }
 END
 
