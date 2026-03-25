@@ -1,5 +1,5 @@
 To: {{ .Email }}
-Subject: Policy-Web: {{ mimeEncode "Diff für" }} {{ .Owner }}, {{ .NewVer }}
+Subject: Policy-Web: Diff für {{ .Owner }}, {{ .NewVer }}
 Content-Type: text/plain; charset=UTF-8
 
 (+): etwas wurde hinzugefügt

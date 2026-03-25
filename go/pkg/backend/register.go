@@ -2,7 +2,6 @@ package backend
 
 import (
 	"crypto/sha256"
-	"encoding/base64"
 	"encoding/hex"
 	"fmt"
 	htmltemplate "html/template"
@@ -17,72 +16,6 @@ import (
 	texttemplate "text/template"
 	"time"
 )
-
-// mimeEncode encodes a string for use in email headers (RFC 2047)
-// It splits long strings into multiple encoded words with line folding
-func mimeEncode(s string) string {
-	// Check if encoding is needed
-	needsEncoding := false
-	for _, r := range s {
-		if r > 127 {
-			needsEncoding = true
-			break
-		}
-	}
-	if !needsEncoding {
-		return s
-	}
-
-	// Split string into chunks that will fit within 76 char line limit when encoded
-	// Base64 encoding expands by 4/3, plus we need room for "=?UTF-8?B?" prefix and "?=" suffix (12 + 2 = 14 chars)
-	// So max chunk size is about (76 - 14) * 3 / 4 = 46 bytes, use 40 to be safe
-	const maxChunkBytes = 40
-
-	bytes := []byte(s)
-	var parts []string
-
-	i := 0
-	for i < len(bytes) {
-		end := i + maxChunkBytes
-		if end > len(bytes) {
-			end = len(bytes)
-		}
-
-		// Don't split in the middle of a UTF-8 character
-		for end < len(bytes) && (bytes[end]&0xC0) == 0x80 {
-			end++
-		}
-
-		// Try to split at a space boundary if possible
-		// Look for the last space in the chunk (but keep the space for the next chunk)
-		if end < len(bytes) {
-			lastSpace := -1
-			for j := end - 1; j > i; j-- {
-				if bytes[j] == ' ' {
-					lastSpace = j
-					break
-				}
-			}
-			// If we found a space, split before it (space goes to next chunk)
-			if lastSpace > i {
-				end = lastSpace
-			}
-		}
-
-		chunk := bytes[i:end]
-		encoded := base64.StdEncoding.EncodeToString(chunk)
-		parts = append(parts, "=?UTF-8?B?"+encoded+"?=")
-
-		i = end
-	}
-
-	return strings.Join(parts, "\r\n ")
-}
-
-// Template functions for email templates
-var emailFuncs = texttemplate.FuncMap{
-	"mimeEncode": mimeEncode,
-}
 
 func (s *state) register(w http.ResponseWriter, r *http.Request) {
 	session := GetGoSession(r)
@@ -249,7 +182,7 @@ func (s *state) sendVerificationEmail(email, url, ip string) error {
 }
 
 func (s *state) getTemplateContent(templatePath string, data map[string]string) (string, error) {
-	tmpl, err := texttemplate.New(path.Base(templatePath)).Funcs(emailFuncs).ParseFiles(templatePath)
+	tmpl, err := texttemplate.ParseFiles(templatePath)
 	if err != nil {
 		return "", fmt.Errorf("failed to parse template: %w", err)
 	}
