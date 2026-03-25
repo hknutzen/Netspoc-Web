@@ -43,15 +43,18 @@ func (s *state) getOwner(w http.ResponseWriter, r *http.Request) {
 	}
 
 	/* Automatically select owner with most number of own services.
-	1.	bestimme zunächst aus „services“ eine Map OwnerAnzahl, die angibt, wie viele Services einem Owner gehören.
+	1.	bestimme zunächst aus „services“ eine Map Owner->Anzahl, die angibt,
+		wie viele Services einem Owner gehören.
 		Hierbei werden Multi-Owner-Dienste mehrfach gezählt.
-	2.	Dann bestimme die Liste der Owner, die der aktuelle Benutzer sehen darf, mittels findAuthorizedOwners.
+	2.	Dann bestimme die Liste der Owner, die der aktuelle Benutzer sehen darf,
+		mittels findAuthorizedOwners.
 	3.	Bestimme aus 1 und 2 den Owner, dem die meisten Services gehören.
 	4.	Schaue für diesen Owner x in owner/x/extended_by
-		und prüfe, ob einer dieser übergeordneten Owner in der Liste von Schritt 2 enthalten ist.
+		und prüfe, ob einer dieser übergeordneten Owner in der Liste von Schritt 2
+		enthalten ist.
 		Dann nimm diesen, sonst den Owner aus Schritt 3.
-	5.  Falls mehrere Owner bei 4. eingetragen sind, bestimme den besten Owner aus der Anzahl
-	    der Services in ower/x/service_list.
+	5.  Falls mehrere Owner bei 4. eingetragen sind, bestimme den besten Owner
+		aus der Anzahl der Services in ower/x/service_list.
 	*/
 	authorizedOwners := s.findAuthorizedOwners(email)
 
@@ -68,7 +71,10 @@ func (s *state) getOwner(w http.ResponseWriter, r *http.Request) {
 	bestOwner := ""
 	maxServices := 0
 	for owner, count := range ownerToServiceCount {
-		if count > maxServices {
+		// If there are multiple owners with the same number of services, we
+		// will select the one with the lexicographically smaller name.
+		// This is to ensure a deterministic selection in case of ties.
+		if count > maxServices || (count == maxServices && owner < bestOwner) {
 			maxServices = count
 			bestOwner = owner
 		}
@@ -83,12 +89,14 @@ func (s *state) getOwner(w http.ResponseWriter, r *http.Request) {
 		} else if len(extBy) > 1 {
 			maxSize := 0
 			for _, ow := range extBy {
-				sl := s.loadServiceLists(histPar, ow.Name)
+				name := ow.Name
+				sl := s.loadServiceLists(histPar, name)
 				size := len(sl.Owner)
-				if size > maxSize {
+				// Take lexically first on same size case.
+				if size > maxSize || (size == maxSize && name < bestOwner) {
 					maxSize = size
-					if slices.Contains(authorizedOwners, ow.Name) {
-						bestOwner = ow.Name
+					if slices.Contains(authorizedOwners, name) {
+						bestOwner = name
 					}
 				}
 			}
