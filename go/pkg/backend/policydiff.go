@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"regexp"
 	"strconv"
 
 	"github.com/pkg/diff/myers"
@@ -56,7 +57,9 @@ func (d *diffState) checkPath(part, owner string) bool {
 
 func (d *diffState) diffServiceLists(owner string) map[string]any {
 	a := &serviceLists{}
-	if d.checkPath("service_lists", owner) {
+	rx := `^\d\d\d\d-\d\d-\d\d$`
+	matches, _ := regexp.Match(rx, []byte(d.v1))
+	if !matches || d.checkPath("service_lists", owner) {
 		a = d.cache.loadServiceLists(d.v1, owner)
 	}
 	b := d.cache.loadServiceLists(d.v2, owner)
@@ -72,7 +75,9 @@ func (d *diffState) diffServiceLists(owner string) map[string]any {
 
 func (d *diffState) diffUsersLists(owner string) any {
 	a := make(map[string][]string)
-	if d.checkPath("users", owner) {
+	rx := `^\d\d\d\d-\d\d-\d\d$`
+	matches, _ := regexp.Match(rx, []byte(d.v1))
+	if !matches || d.checkPath("users", owner) {
 		a = d.cache.loadUsers(d.v1, owner)
 	}
 	b := d.cache.loadUsers(d.v2, owner)
