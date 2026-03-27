@@ -229,6 +229,12 @@ func compareString(a, b string) string {
 	if a == b {
 		return ""
 	}
+	if a == "" {
+		return "+"
+	}
+	if b == "" {
+		return "-"
+	}
 	arrow := "\u2794"
 	return fmt.Sprintf("%s %s %s", a, arrow, b)
 }
