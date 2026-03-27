@@ -213,9 +213,9 @@ test_history( $title, 'owner/y', <<END);
 END
 test_removed( $title, 'p1' );
 test_mail( $title, $mail, <<'END');
+Mime-Version: 1.0
 To: y@example.com
-Subject: UTF-8:Policy-Web: Diff für x wird nicht mehr
- UTF-8: versandt
+Subject: UTF-8:Policy-Web: Diff für x wird nicht mehr versandt
 
 Keine Berechtigung f=C3=BCr Zugriff auf Owner 'x'.
 END
@@ -252,47 +252,50 @@ test_history( $title, 'owner/y', <<END);
 END
 test_removed( $title, 'p2' );
 test_mail( $title, $mail, <<'END');
+Mime-Version: 1.0
 To: x@example.com
 Subject: UTF-8:Policy-Web: Diff für x, 1970-01-03
 
 (+): etwas wurde hinzugef=C3=BCgt
 (-): etwas wurde entfernt
 (!): etwas wurde ge=C3=A4ndert
- =E2=9E=94 : trennt alten von neuem Wert
+=E2=9E=94 : trennt alten von neuem Wert
 
 Unterschiede f=C3=BCr den Verantwortungsbereich x
 zwischen 1970-01-02 und 1970-01-03.
 
 Liste genutzter Dienste
- (+)
+(+)
   s1
+Mime-Version: 1.0
 To: x@example.com
 Subject: UTF-8:Policy-Web: Diff für y, 1970-01-03
 
 (+): etwas wurde hinzugef=C3=BCgt
 (-): etwas wurde entfernt
 (!): etwas wurde ge=C3=A4ndert
- =E2=9E=94 : trennt alten von neuem Wert
+=E2=9E=94 : trennt alten von neuem Wert
 
 Unterschiede f=C3=BCr den Verantwortungsbereich y
 zwischen 1970-01-02 und 1970-01-03.
 
 Liste eigener Dienste
- (+)
+(+)
   s1
+Mime-Version: 1.0
 To: y@example.com
 Subject: UTF-8:Policy-Web: Diff für y, 1970-01-03
 
 (+): etwas wurde hinzugef=C3=BCgt
 (-): etwas wurde entfernt
 (!): etwas wurde ge=C3=A4ndert
- =E2=9E=94 : trennt alten von neuem Wert
+=E2=9E=94 : trennt alten von neuem Wert
 
 Unterschiede f=C3=BCr den Verantwortungsbereich y
 zwischen 1970-01-02 und 1970-01-03.
 
 Liste eigener Dienste
- (+)
+(+)
   s1
 END
 
@@ -312,51 +315,52 @@ test_user_ok( $title, 'x@example.com' );
 test_user_ok( $title, 'y@example.com' );
 test_user_removed( $title, 'z@example.com' );
 test_mail( $title, $mail, <<"END");
+Mime-Version: 1.0
 To: x\@example.com
-Subject: UTF-8:Policy-Web: Diff für y wird nicht mehr
- UTF-8: versandt
+Subject: UTF-8:Policy-Web: Diff für y wird nicht mehr versandt
 
 Owner 'y' existiert nicht mehr.
+Mime-Version: 1.0
 To: y\@example.com
-Subject: UTF-8:Policy-Web: Diff für x wird nicht mehr
- UTF-8: versandt
+Subject: UTF-8:Policy-Web: Diff für x wird nicht mehr versandt
 
 Keine Berechtigung f=C3=BCr Zugriff auf Owner 'x'.
+Mime-Version: 1.0
 To: y\@example.com
-Subject: UTF-8:Policy-Web: Diff für y wird nicht mehr
- UTF-8: versandt
+Subject: UTF-8:Policy-Web: Diff für y wird nicht mehr versandt
 
 Owner 'y' existiert nicht mehr.
+Mime-Version: 1.0
 To: x\@example.com
 Subject: UTF-8:Policy-Web: Diff für x, 1970-01-04
 
 (+): etwas wurde hinzugef=C3=BCgt
 (-): etwas wurde entfernt
 (!): etwas wurde ge=C3=A4ndert
- =E2=9E=94 : trennt alten von neuem Wert
+=E2=9E=94 : trennt alten von neuem Wert
 
 Unterschiede f=C3=BCr den Verantwortungsbereich x
 zwischen 1970-01-03 und 1970-01-04.
 
 Objekte
- network:n2
-  owner
-  (-)
+  network:n2
+    owner
+    (-)
 Dienste
- s1
-  details
+  s1
+    details
    owner
     (+)
      :unknown
     (-)
      y
-  rules
-   1
-    dst
-     (!)
-      network:n2
+    rules
+      1
+        dst
+        (!)
+          network:n2
 Liste genutzter Dienste
- (!)
+(!)
   s1
 END
 

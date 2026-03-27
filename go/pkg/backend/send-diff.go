@@ -2,11 +2,16 @@ package backend
 
 import (
 	"cmp"
+	"encoding/base64"
 	"fmt"
 	"maps"
 	"os"
+	"os/exec"
 	"slices"
 	"strings"
+	texttemplate "text/template"
+
+	"gopkg.in/gomail.v2"
 )
 
 func usage() {
@@ -39,6 +44,7 @@ func SendDiff() {
 	if err != nil {
 		abort("Error reading user directory: %v", err)
 	}
+	slices.Sort(users)
 
 	ownerToSend := make(map[string][]string)
 	for _, email := range users {
@@ -88,15 +94,14 @@ func SendDiff() {
 		}
 		for _, removed := range store.SendDiff {
 			if !valid[removed] {
-				fmt.Printf("Not sending diff to %s for removed owner %s\n", email, removed)
-
+				//fmt.Printf("Not sending diff to %s for removed owner %s\n", email, removed)
 				var template string
 				if _, err := os.Stat(fmt.Sprintf("%s/current/owner/%s", path, removed)); err == nil {
 					template = fmt.Sprintf("%s/diff_owner_invisible", config.MailTemplate)
 				} else {
 					template = fmt.Sprintf("%s/diff_owner_unknown", config.MailTemplate)
 				}
-				text, err := s.getTemplateContent(template, map[string]string{
+				text, err := s.getMailTemplateContent(template, map[string]string{
 					"Email": email,
 					"Owner": removed,
 				})
@@ -104,7 +109,8 @@ func SendDiff() {
 					fmt.Printf("Failed to get email template for %s: %v\n", email, err)
 					continue
 				}
-				err = s.sendEmail(text)
+				err = s.sendEncodedEmail(text)
+				//err = s.sendEmail(text)
 				if err != nil {
 					fmt.Printf("Failed to send email to %s: %v\n", email, err)
 					continue
@@ -119,9 +125,9 @@ func SendDiff() {
 		}
 	}
 
-	for owner := range ownerToSend {
+	for _, owner := range slices.Sorted(maps.Keys(ownerToSend)) {
 		changes, err := s.compare(oldVer, newVer, owner)
-		if err != nil || changes == nil {
+		if err != nil || changes == nil || len(changes) == 0 {
 			continue
 		}
 		diff := ""
@@ -135,11 +141,10 @@ func SendDiff() {
 			for _, line := range Convert(block, 0) {
 				diff += line + "\n"
 			}
-			diff += "\n"
 		}
 		template := fmt.Sprintf("%s/diff", config.MailTemplate)
 		for _, email := range ownerToSend[owner] {
-			text, err := s.getTemplateContent(template, map[string]string{
+			text, err := s.getMailTemplateContent(template, map[string]string{
 				"Email":  email,
 				"Owner":  owner,
 				"OldVer": oldVer,
@@ -150,16 +155,112 @@ func SendDiff() {
 				fmt.Printf("Failed to get email template for %s: %v\n", email, err)
 				continue
 			}
-			fmt.Fprintln(os.Stderr, "\n", text)
-			/*
-				err = s.sendEmail(text)
-				if err != nil {
-					fmt.Printf("Failed to send email to %s: %v\n", email, err)
-					continue
-				}
-			*/
+			err = s.sendEncodedEmail(text)
+			if err != nil {
+				fmt.Printf("Failed to send email to %s: %v\n", email, err)
+				continue
+			}
 		}
 	}
+}
+
+func constructMessage(text string) (*gomail.Message, error) {
+	var to, subject, contentType, body string
+	lines := strings.SplitN(text, "\n\n", 2)
+	headers := strings.Split(lines[0], "\n")
+	for _, line := range headers {
+		if strings.HasPrefix(line, "To:") {
+			to = strings.TrimSpace(strings.TrimPrefix(line, "To:"))
+		} else if strings.HasPrefix(line, "Subject:") {
+			subject = strings.TrimSpace(strings.TrimPrefix(line, "Subject:"))
+		} else if strings.HasPrefix(line, "Content-Type:") {
+			contentType = strings.TrimSpace(strings.TrimPrefix(line, "Content-Type:"))
+		}
+	}
+	if len(lines) > 1 {
+		body = lines[1]
+	}
+	// Use QuotedPrintable encoding for the body
+	m := gomail.NewMessage(gomail.SetEncoding(gomail.QuotedPrintable))
+	if to == "" {
+		return nil, fmt.Errorf("missing To header in email text")
+	}
+	if subject == "" {
+		return nil, fmt.Errorf("missing Subject header in email text")
+	}
+	if contentType == "" {
+		return nil, fmt.Errorf("missing Content-Type header in email text")
+	}
+	m.SetHeader("To", to)
+	body = strings.ReplaceAll(body, "\r\n", "\n")
+	// Encode Subject as Base64 (RFC 2047 MIME encoded-word)
+	encodedSubject := mimeEncodeBase64(subject)
+	m.SetHeader("Subject", encodedSubject)
+	m.SetBody("text/plain", body)
+	return m, nil
+}
+
+// mimeEncodeBase64 encodes a string using Base64 MIME encoded-word format (RFC 2047)
+func mimeEncodeBase64(s string) string {
+	encoded := base64.StdEncoding.EncodeToString([]byte(s))
+	return "=?UTF-8?B?" + encoded + "?="
+}
+
+func (s *state) sendEncodedEmail(text string) error {
+	m, err := constructMessage(text)
+	if err != nil {
+		return fmt.Errorf("failed to construct email message: %w", err)
+	}
+	return s.submitMail(m)
+}
+
+// Source - https://stackoverflow.com/a/35521846
+// Posted by kostix, modified by community. See post 'Timeline' for change history
+// Retrieved 2026-03-26, License - CC BY-SA 4.0
+
+func (s *state) submitMail(m *gomail.Message) (err error) {
+	sendmail := s.config.SendmailCommand
+	noreply := s.config.NoreplyAddress
+
+	cmd := exec.Command(sendmail, "-t", "-F", "''", "-f", noreply)
+	cmd.Stdout = os.Stdout
+	cmd.Stderr = os.Stderr
+
+	pw, err := cmd.StdinPipe()
+	if err != nil {
+		return
+	}
+
+	err = cmd.Start()
+	if err != nil {
+		return
+	}
+
+	var errs [3]error
+	_, errs[0] = m.WriteTo(pw)
+	errs[1] = pw.Close()
+	errs[2] = cmd.Wait()
+	for _, err = range errs {
+		if err != nil {
+			return
+		}
+	}
+	return
+}
+
+func (s *state) getMailTemplateContent(templatePath string, data map[string]string) (string, error) {
+	tmpl, err := texttemplate.ParseFiles(templatePath)
+	if err != nil {
+		return "", fmt.Errorf("failed to parse template: %w", err)
+	}
+
+	var builder strings.Builder
+	err = tmpl.Execute(&builder, data)
+	if err != nil {
+		return "", fmt.Errorf("failed to execute template: %w", err)
+	}
+
+	return builder.String(), nil
 }
 
 var replace = map[string]string{
