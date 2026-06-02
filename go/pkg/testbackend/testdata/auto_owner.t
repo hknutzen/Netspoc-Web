@@ -15,12 +15,6 @@ router:r1 = {
  interface:n2 = { ip = 10.1.2.1; hardware = n2; }
  interface:n3 = { ip = 10.1.3.1; hardware = n3; }
 }
-=END=
-
-############################################################
-=TITLE=Take lexically first owner if multiple with same numbers
-=NETSPOC=
-[[topo]]
 service:s1 = {
  user = network:n2;
  permit src = user; dst = network:n1; prt = tcp 80;
@@ -33,16 +27,22 @@ service:s3a = {
  user = network:n1;
  permit src = user; dst = network:n3; prt = tcp 80;
 }
+=END=
+
+############################################################
+=TITLE=Take lexically first owner if multiple with same numbers
+=NETSPOC=
+[[topo]]
 =URL=get_owner
 =RESPONSE_NAMES=["o1"]
 
 ############################################################
 =TITLE=Leave owner unchanged if one was already selected
-=TODO=Fails currently for unknown reason
+=TODO=Fails since we can't preselect owner in tests
 =NETSPOC=
 [[topo]]
-service:s3a = {
- user = network:n1;
+service:s3b = {
+ user = network:n2;
  permit src = user; dst = network:n3; prt = tcp 80;
 }
 =URL=get_owner
@@ -66,3 +66,34 @@ service:s3b = {
 }
 =URL=get_owner
 =RESPONSE_NAMES=["o3"]
+
+############################################################
+=TITLE=Take owner from single surrounding area
+=NETSPOC=
+owner:o9 = { admins = guest; }
+area:all = { anchor = network:n1; owner = o9; }
+[[topo]]
+=URL=get_owner
+=RESPONSE_NAMES=["o9"]
+
+############################################################
+=TITLE=Take largest owner from surrounding areas
+=NETSPOC=
+owner:o0 = { admins = guest; }
+owner:o9 = { admins = guest; }
+area:all = { anchor = network:n1; owner = o9; }
+area:a12 = { inclusive_border = interface:r1.n3; owner = o0; }
+[[topo]]
+=URL=get_owner
+=RESPONSE_NAMES=["o9"]
+
+############################################################
+=TITLE=Take largest authorized owner from surrounding areas
+=NETSPOC=
+owner:o0 = { admins = guest; }
+owner:o9 = { admins = a9@example.com; }
+area:all = { anchor = network:n1; owner = o9; }
+area:a12 = { inclusive_border = interface:r1.n3; owner = o0; }
+[[topo]]
+=URL=get_owner
+=RESPONSE_NAMES=["o0"]

@@ -13,7 +13,7 @@ import (
 /*
 COPYRIGHT AND DISCLAIMER
 
-(C) 2024 by Heinz Knutzen <heinz.knutzengmail.com>
+(C) 2026 by Heinz Knutzen <heinz.knutzengmail.com>
 
 https://github.com/hknutzen/Netspoc-Web
 
@@ -87,7 +87,7 @@ type ownerData struct {
 	emailsMu       sync.Mutex
 	watchers       []emailEntry
 	watchersMu     sync.Mutex
-	extendedBy     []string
+	extendedBy     []nameEntry
 	extendedByMu   sync.Mutex
 }
 type assets struct {
@@ -102,6 +102,9 @@ type serviceLists struct {
 }
 type emailEntry struct {
 	Email string
+}
+type nameEntry struct {
+	Name string
 }
 
 // Creates a new cache object.
@@ -297,7 +300,7 @@ func (c *cache) loadWatchers(version, owner string) []emailEntry {
 	return entry.watchers
 }
 
-func (c *cache) loadExtendedBy(version, owner string) []string {
+func (c *cache) loadExtendedBy(version, owner string) []nameEntry {
 	entry := c.getOwnerEntry(version, owner)
 	entry.extendedByMu.Lock()
 	defer entry.extendedByMu.Unlock()
