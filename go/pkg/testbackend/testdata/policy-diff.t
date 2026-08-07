@@ -646,6 +646,88 @@ version=p1
 ]
 =END=
 
+=TITLE=Add and delete service details
+=NETSPOC=
+[[topo]]
+service:s1 = {
+ description = abc;
+ disable_at = 2099-03-04;
+ user = network:n1;
+ permit src = user; dst = network:n2; prt = tcp 80;
+}
+=NETSPOC2=
+[[topo]]
+service:s1 = {
+ disabled;
+ user = network:n1;
+ permit src = user; dst = network:n2; prt = tcp 80;
+}
+=URL=get_diff
+=PARAMS=
+active_owner=o1
+history=p2
+version=p1
+=DIFF=
+[
+ {
+  "text": "services",
+  "children": [
+   {
+    "text": "s1",
+    "children": [
+     {
+      "text": "details",
+      "children": [
+       {
+        "text": "description",
+        "children": [
+         {
+          "iconCls": "icon-delete",
+          "leaf": true
+         }
+        ]
+       },
+       {
+        "text": "disable_at",
+        "children": [
+         {
+          "iconCls": "icon-delete",
+          "leaf": true
+         }
+        ]
+       },
+       {
+        "text": "disabled",
+        "children": [
+         {
+          "iconCls": "icon-add",
+          "leaf": true
+         }
+        ]
+       }
+      ]
+     }
+    ]
+   }
+  ]
+ },
+ {
+  "text": "service_lists user",
+  "children": [
+   {
+    "iconCls": "icon-page_edit",
+    "children": [
+     {
+      "text": "s1",
+      "leaf": true
+     }
+    ]
+   }
+  ]
+ }
+]
+=END=
+
 =TITLE=Changed position of user in rule
 =NETSPOC=
 [[topo]]
@@ -778,6 +860,118 @@ version=p1
     }]
    }]
   }]
+ }
+]
+=END=
+
+=TITLE=Remove owner
+=NETSPOC=
+[[netspoc]]
+=NETSPOC2=
+[[netspoc]]
+=SUBST=/^owner:o2 =/#/
+=SUBST=/owner = o2;//
+=URL=get_diff
+=PARAMS=
+active_owner=o1
+history=p2
+version=p1
+=DIFF=
+[
+ {
+  "text": "objects",
+  "children": [
+   {
+    "text": "network:n2",
+    "children": [
+     {
+      "text": "owner",
+      "children": [
+       {
+        "iconCls": "icon-delete",
+        "leaf": true
+       }
+      ]
+     }
+    ]
+   }
+  ]
+ },
+ {
+  "text": "services",
+  "children": [
+   {
+    "text": "s1",
+    "children": [
+     {
+      "text": "details",
+      "children": [
+       {
+        "text": "owner",
+        "children": [
+         {
+          "iconCls": "icon-add",
+          "children": [
+           {
+            "text": ":unknown",
+            "leaf": true
+           }
+          ]
+         },
+         {
+          "iconCls": "icon-delete",
+          "children": [
+           {
+            "text": "o2",
+            "leaf": true
+           }
+          ]
+         }
+        ]
+       }
+      ]
+     },
+     {
+      "text": "rules",
+      "children": [
+       {
+        "text": "1",
+        "children": [
+         {
+          "text": "dst",
+          "children": [
+           {
+            "iconCls": "icon-page_edit",
+            "children": [
+             {
+              "text": "network:n2",
+              "leaf": true
+             }
+            ]
+           }
+          ]
+         }
+        ]
+       }
+      ]
+     }
+    ]
+   }
+  ]
+ },
+ {
+  "text": "service_lists user",
+  "children": [
+   {
+    "iconCls": "icon-page_edit",
+    "children": [
+     {
+      "text": "s1",
+      "leaf": true
+     }
+    ]
+   }
+  ]
  }
 ]
 =END=
