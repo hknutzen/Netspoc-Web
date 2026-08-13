@@ -60,3 +60,11 @@ func getOwnerFromSession(r *http.Request) string {
 	}
 	return ""
 }
+
+func getEmailFromSession(r *http.Request) string {
+	email := GetGoSession(r).Get("email")
+	if email == nil {
+		return ""
+	}
+	return email.(string)
+}

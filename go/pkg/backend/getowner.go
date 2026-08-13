@@ -90,14 +90,6 @@ func (s *state) getOwner(w http.ResponseWriter, r *http.Request) {
 	writeRecords(w, []jsonMap{})
 }
 
-func getEmailFromSession(r *http.Request) string {
-	email := GetGoSession(r).Get("email")
-	if email == nil {
-		return ""
-	}
-	return email.(string)
-}
-
 func (s *state) findAuthorizedOwners(email string) []string {
 	m := s.loadEmail2Owners()
 	if email == "" {
