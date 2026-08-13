@@ -53,18 +53,18 @@ func loggedIn(r *http.Request) bool {
 	return false
 }
 
-func getOwnerFromSession(r *http.Request) string {
-	owner := GetGoSession(r).Get("owner")
-	if ownerStr, ok := owner.(string); ok {
-		return ownerStr
+func getStringFromSession(r *http.Request, key string) string {
+	value := GetGoSession(r).Get(key)
+	if valueStr, ok := value.(string); ok {
+		return valueStr
 	}
 	return ""
 }
 
+func getOwnerFromSession(r *http.Request) string {
+	return getStringFromSession(r, "owner")
+}
+
 func getEmailFromSession(r *http.Request) string {
-	email := GetGoSession(r).Get("email")
-	if email == nil {
-		return ""
-	}
-	return email.(string)
+	return getStringFromSession(r, "email")
 }
