@@ -52,3 +52,11 @@ func loggedIn(r *http.Request) bool {
 	}
 	return false
 }
+
+func getOwnerFromSession(r *http.Request) string {
+	owner := GetGoSession(r).Get("owner")
+	if ownerStr, ok := owner.(string); ok {
+		return ownerStr
+	}
+	return ""
+}
