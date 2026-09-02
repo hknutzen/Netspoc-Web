@@ -52,6 +52,11 @@ func (s *state) loginHandler(w http.ResponseWriter, r *http.Request) {
 			writeError(w, "Empty user store for: "+email, http.StatusUnauthorized)
 			return
 		}
+		err = s.checkAttack(r)
+		if err != nil {
+			writeError(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
 		if !ustore.CheckPassword(pass) {
 			s.setAttack(r)
 			//writeError(w, "Login failed", http.StatusUnauthorized)
