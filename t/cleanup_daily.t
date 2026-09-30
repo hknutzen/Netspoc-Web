@@ -349,11 +349,11 @@ Objekte
 Dienste
   s1
     details
-   owner
-    (+)
-     :unknown
-    (-)
-     y
+      owner
+      (+)
+        :unknown
+      (-)
+        y
     rules
       1
         dst

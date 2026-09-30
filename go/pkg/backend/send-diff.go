@@ -303,7 +303,12 @@ func Convert(input interface{}, level int) []string {
 			case map[string]interface{}:
 				result = append(result, Convert(nestedValue, level+1)...)
 			case map[string][]string:
-				for key, values := range nestedValue {
+				order := []string{"+", "-", "!"}
+				for _, key := range order {
+					values, ok := nestedValue[key]
+					if !ok {
+						continue
+					}
 					replacedKey := replace[key]
 					if replacedKey == "" {
 						replacedKey = key
