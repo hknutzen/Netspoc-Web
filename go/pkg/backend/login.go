@@ -89,8 +89,8 @@ func (s *state) ldapCheckPassGetEmail(w http.ResponseWriter, r *http.Request) st
 	emailAttr := s.config.LdapEmailAttr
 	l, err := ldap.DialURL(ldapURI)
 	if err != nil {
-		//writeError(w, "LDAP connection failed: "+err.Error(), http.StatusInternalServerError)
-		writeHTMLError(w, "Login failed")
+		writeError(w, "Login failed: "+err.Error(), http.StatusUnauthorized)
+		//writeHTMLError(w, "Login failed")
 		return ""
 	}
 	defer l.Close()
@@ -99,8 +99,8 @@ func (s *state) ldapCheckPassGetEmail(w http.ResponseWriter, r *http.Request) st
 	err = l.Bind(dn, pass)
 	if err != nil {
 		s.setAttack(r)
-		//writeError(w, "LDAP bind failed: "+err.Error(), http.StatusUnauthorized)
-		writeHTMLError(w, "Login failed")
+		writeError(w, "Login failed: "+err.Error(), http.StatusUnauthorized)
+		//writeHTMLError(w, "Login failed")
 		return ""
 	}
 	s.clearAttack(r)
@@ -116,7 +116,7 @@ func (s *state) ldapCheckPassGetEmail(w http.ResponseWriter, r *http.Request) st
 
 	result, err := l.Search(searchRequest)
 	if err != nil {
-		writeError(w, "LDAP search failed: "+err.Error(), http.StatusInternalServerError)
+		writeError(w, "LDAP search failed: "+err.Error(), http.StatusUnauthorized)
 		return ""
 	}
 	if len(result.Entries) != 1 {
