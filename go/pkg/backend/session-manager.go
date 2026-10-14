@@ -97,12 +97,10 @@ func writeCookieIfNecessary(w *sessionResponseWriter) {
 		Name:  w.sessionManager.cookieName,
 		Value: session.ID,
 		//Domain:   "localhost",
-		HttpOnly: true,
-		Path:     "/",
-		Secure:   false,
-		SameSite: http.SameSiteLaxMode,
-		Expires:  time.Now().Add(w.sessionManager.idleExpiration),
-		MaxAge:   int(w.sessionManager.idleExpiration / time.Second),
+		Path:    "/",
+		Secure:  false,
+		Expires: time.Now().Add(w.sessionManager.idleExpiration),
+		MaxAge:  int(w.sessionManager.idleExpiration / time.Second),
 	}
 
 	http.SetCookie(w.ResponseWriter, cookie)
