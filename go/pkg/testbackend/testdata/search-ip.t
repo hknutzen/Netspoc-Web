@@ -168,7 +168,6 @@ service:Test13 = {
  permit src = user; dst = network:DMZ; prt = udp 123;
 }
 
-area:all-ipv6 = { owner = x; anchor = network:n3; }
 any:n3 = { link = network:n3; }
 any:n4 = { link = network:n4; }
 network:n3 = {
