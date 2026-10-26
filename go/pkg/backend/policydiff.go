@@ -150,13 +150,13 @@ func (d *diffState) diffObject(name string) bool {
 		a := d.cache.loadObjects(d.v1)[name]
 		b := d.cache.loadObjects(d.v2)[name]
 		m := make(map[string]any)
-		if df := compareString(a.IP, b.IP); df != "" {
+		if df := compareString(&a.IP, &b.IP); df != "" {
 			m["ip"] = df
 		}
-		if df := compareString(a.IP6, b.IP6); df != "" {
+		if df := compareString(&a.IP6, &b.IP6); df != "" {
 			m["ip6"] = df
 		}
-		if df := compareOwner(a, b); df != "" {
+		if df := compareString(a.Owner, b.Owner); df != "" {
 			m["owner"] = df
 		}
 		if len(m) != 0 {
@@ -191,13 +191,13 @@ func compareDetails(a, b *service) any {
 	aD := a.Details
 	bD := b.Details
 	result := make(map[string]any)
-	if df := compareString(aD.Description, bD.Description); df != "" {
+	if df := compareString(&aD.Description, &bD.Description); df != "" {
 		result["description"] = df
 	}
 	if df := compareBool(aD.Disabled, bD.Disabled); df != "" {
 		result["disabled"] = df
 	}
-	if df := compareString(aD.DisableAt, bD.DisableAt); df != "" {
+	if df := compareString(&aD.DisableAt, &bD.DisableAt); df != "" {
 		result["disable_at"] = df
 	}
 	if df := compareStringList(aD.Owner, bD.Owner); df != nil {
@@ -229,7 +229,7 @@ func (d *diffState) compareRules(a, b *service) any {
 
 func (d *diffState) compareRule(a, b *rule) any {
 	result := make(map[string]any)
-	if df := compareString(a.Action, b.Action); df != "" {
+	if df := compareString(&a.Action, &b.Action); df != "" {
 		result["action"] = df
 	}
 	if df := d.diffObjectList(a.Src, b.Src); df != nil {
@@ -247,25 +247,20 @@ func (d *diffState) compareRule(a, b *rule) any {
 	return result
 }
 
-func compareString(a, b string) string {
-	if a == b {
-		return ""
-	}
-	arrow := "\u2794"
-	return fmt.Sprintf("%s %s %s", a, arrow, b)
-}
-
-// compareOwner distinguishes a removed/added "owner" key from a changed value.
-func compareOwner(a, b *object) string {
+// compareString distinguishes a removed/added key (nil) from a changed value.
+func compareString(a, b *string) string {
 	switch {
-	case a.hasOwner && !b.hasOwner:
-		return "-"
-	case !a.hasOwner && b.hasOwner:
-		return "+"
-	case a.hasOwner && b.hasOwner:
-		return compareString(a.Owner, b.Owner)
-	default:
+	case a == nil && b == nil:
 		return ""
+	case a != nil && b == nil:
+		return "-"
+	case a == nil && b != nil:
+		return "+"
+	case *a == *b:
+		return ""
+	default:
+		arrow := "\u2794"
+		return fmt.Sprintf("%s %s %s", *a, arrow, *b)
 	}
 }
 

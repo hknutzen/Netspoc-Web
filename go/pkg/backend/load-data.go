@@ -47,28 +47,13 @@ type netspocData struct {
 	ownersMu   sync.Mutex
 }
 type object struct {
-	Name  string            `json:"name"`
-	IP    string            `json:"ip"`
-	IP6   string            `json:"ip6,omitempty"`
-	NAT   map[string]string `json:"nat,omitempty"`
-	Zone  string            `json:"zone"`
-	Owner string            `json:"owner"`
-	// Whether key "owner" was present in source JSON, distinct from an empty value.
-	hasOwner bool
-}
-
-// UnmarshalJSON additionally records presence of key "owner".
-func (o *object) UnmarshalJSON(data []byte) error {
-	type alias object
-	if err := json.Unmarshal(data, (*alias)(o)); err != nil {
-		return err
-	}
-	var raw map[string]json.RawMessage
-	if err := json.Unmarshal(data, &raw); err != nil {
-		return err
-	}
-	_, o.hasOwner = raw["owner"]
-	return nil
+	Name string            `json:"name"`
+	IP   string            `json:"ip"`
+	IP6  string            `json:"ip6,omitempty"`
+	NAT  map[string]string `json:"nat,omitempty"`
+	Zone string            `json:"zone"`
+	// Pointer distinguishes a missing key from a present, empty value.
+	Owner *string `json:"owner"`
 }
 
 type service struct {
