@@ -3,6 +3,9 @@ package backend
 import (
 	"context"
 	"fmt"
+	"os"
+	"path/filepath"
+	"regexp"
 	"strconv"
 
 	"github.com/pkg/diff/myers"
@@ -43,8 +46,22 @@ func (c *cache) compare(v1, v2, owner string) (map[string]any, error) {
 	return result, nil
 }
 
+func (d *diffState) checkPath(part, owner string) bool {
+	path := filepath.Join(d.cache.netspocDir, "history")
+	path = filepath.Join(path, d.v1, "owner", owner, part)
+	if _, err := os.Stat(path); os.IsNotExist(err) {
+		return false
+	}
+	return true
+}
+
 func (d *diffState) diffServiceLists(owner string) map[string]any {
-	a := d.cache.loadServiceLists(d.v1, owner)
+	a := &serviceLists{}
+	rx := `^\d\d\d\d-\d\d-\d\d$`
+	matches, _ := regexp.Match(rx, []byte(d.v1))
+	if !matches || d.checkPath("service_lists", owner) {
+		a = d.cache.loadServiceLists(d.v1, owner)
+	}
 	b := d.cache.loadServiceLists(d.v2, owner)
 	result := make(map[string]any)
 	if df := d.diffServiceList(a.Owner, b.Owner); df != nil {
@@ -57,7 +74,12 @@ func (d *diffState) diffServiceLists(owner string) map[string]any {
 }
 
 func (d *diffState) diffUsersLists(owner string) any {
-	a := d.cache.loadUsers(d.v1, owner)
+	a := make(map[string][]string)
+	rx := `^\d\d\d\d-\d\d-\d\d$`
+	matches, _ := regexp.Match(rx, []byte(d.v1))
+	if !matches || d.checkPath("users", owner) {
+		a = d.cache.loadUsers(d.v1, owner)
+	}
 	b := d.cache.loadUsers(d.v2, owner)
 	result := make(map[string]any)
 	// Iterate over service names.
@@ -128,10 +150,10 @@ func (d *diffState) diffObject(name string) bool {
 		a := d.cache.loadObjects(d.v1)[name]
 		b := d.cache.loadObjects(d.v2)[name]
 		m := make(map[string]any)
-		if df := compareString(a.IP, b.IP); df != "" {
+		if df := compareString(&a.IP, &b.IP); df != "" {
 			m["ip"] = df
 		}
-		if df := compareString(a.IP6, b.IP6); df != "" {
+		if df := compareString(&a.IP6, &b.IP6); df != "" {
 			m["ip6"] = df
 		}
 		if df := compareString(a.Owner, b.Owner); df != "" {
@@ -169,13 +191,13 @@ func compareDetails(a, b *service) any {
 	aD := a.Details
 	bD := b.Details
 	result := make(map[string]any)
-	if df := compareString(aD.Description, bD.Description); df != "" {
+	if df := compareString(&aD.Description, &bD.Description); df != "" {
 		result["description"] = df
 	}
 	if df := compareBool(aD.Disabled, bD.Disabled); df != "" {
 		result["disabled"] = df
 	}
-	if df := compareString(aD.DisableAt, bD.DisableAt); df != "" {
+	if df := compareString(&aD.DisableAt, &bD.DisableAt); df != "" {
 		result["disable_at"] = df
 	}
 	if df := compareStringList(aD.Owner, bD.Owner); df != nil {
@@ -207,7 +229,7 @@ func (d *diffState) compareRules(a, b *service) any {
 
 func (d *diffState) compareRule(a, b *rule) any {
 	result := make(map[string]any)
-	if df := compareString(a.Action, b.Action); df != "" {
+	if df := compareString(&a.Action, &b.Action); df != "" {
 		result["action"] = df
 	}
 	if df := d.diffObjectList(a.Src, b.Src); df != nil {
@@ -225,18 +247,22 @@ func (d *diffState) compareRule(a, b *rule) any {
 	return result
 }
 
-func compareString(a, b string) string {
-	if a == b {
+// compareString distinguishes a removed/added key (nil) from a changed value.
+// That's why the params need to be pointers.
+func compareString(a, b *string) string {
+	switch {
+	case a == nil && b == nil:
 		return ""
-	}
-	if a == "" {
-		return "+"
-	}
-	if b == "" {
+	case a != nil && b == nil:
 		return "-"
+	case a == nil && b != nil:
+		return "+"
+	case *a == *b:
+		return ""
+	default:
+		arrow := "\u2794"
+		return fmt.Sprintf("%s %s %s", *a, arrow, *b)
 	}
-	arrow := "\u2794"
-	return fmt.Sprintf("%s %s %s", a, arrow, b)
 }
 
 func compareBool(a, b int) string {
