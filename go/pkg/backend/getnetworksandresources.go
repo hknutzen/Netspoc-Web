@@ -11,13 +11,6 @@ func (s *state) getNetworks(w http.ResponseWriter, r *http.Request) {
 	writeRecords(w, networks)
 }
 
-func ownerString(o *string) string {
-	if o == nil {
-		return ""
-	}
-	return *o
-}
-
 func (s *state) generateNetworks(r *http.Request) []*object {
 	owner := r.FormValue("active_owner")
 	chosen := r.FormValue("chosen_networks")
@@ -48,7 +41,7 @@ func (s *state) getNetworkResourcesForNetworks(r *http.Request, selected string)
 					"child_ip":   s.name2IP(history, childName, natSet),
 					"child_name": childName,
 					"child_owner": map[string]string{
-						"owner": ownerString(obj.Owner),
+						"owner": derefString(obj.Owner),
 					},
 				}
 				data = append(data, entry)
@@ -59,7 +52,7 @@ func (s *state) getNetworkResourcesForNetworks(r *http.Request, selected string)
 						"child_ip":   ip6,
 						"child_name": childName,
 						"child_owner": map[string]string{
-							"owner": ownerString(obj.Owner),
+							"owner": derefString(obj.Owner),
 						},
 					}
 					data = append(data, entry)
@@ -95,7 +88,7 @@ func (s *state) getNetworksAndResources(w http.ResponseWriter, r *http.Request) 
 		net2data[network.Name] = Network{
 			Name:     network.Name,
 			IP:       network.IP,
-			Owner:    ownerString(network.Owner),
+			Owner:    derefString(network.Owner),
 			Children: []jsonMap{},
 		}
 	}

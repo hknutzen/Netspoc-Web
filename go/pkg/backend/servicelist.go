@@ -53,7 +53,7 @@ func (s *state) generateServiceList(r *http.Request) []jsonMap {
 		if r.FormValue("search_disable_at") != "" {
 			// Only services with attribute 'disable_at' will be searched.
 			svcNames = slices.DeleteFunc(svcNames, func(name string) bool {
-				return services[name].Details.DisableAt == ""
+				return derefString(services[name].Details.DisableAt) == ""
 			})
 		}
 		sort.Strings(svcNames)
@@ -66,9 +66,9 @@ func (s *state) generateServiceList(r *http.Request) []jsonMap {
 		j := make(jsonMap)
 		j["name"] = name
 		d := services[name].Details
-		j["description"] = d.Description
-		if d.DisableAt != "" {
-			j["disable_at"] = d.DisableAt
+		j["description"] = derefString(d.Description)
+		if disableAt := derefString(d.DisableAt); disableAt != "" {
+			j["disable_at"] = disableAt
 		}
 		if d.Disabled != 0 {
 			j["disabled"] = d.Disabled
@@ -519,7 +519,7 @@ func (s *state) selectStringSearch(svcNames []string, r *http.Request,
 	var result []string
 	for _, name := range svcNames {
 		if matcher(name) ||
-			inDesc && matcher(services[name].Details.Description) {
+			inDesc && matcher(derefString(services[name].Details.Description)) {
 			result = append(result, name)
 		}
 	}

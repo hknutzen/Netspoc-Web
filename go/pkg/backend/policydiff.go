@@ -191,13 +191,13 @@ func compareDetails(a, b *service) any {
 	aD := a.Details
 	bD := b.Details
 	result := make(map[string]any)
-	if df := compareString(&aD.Description, &bD.Description); df != "" {
+	if df := compareString(aD.Description, bD.Description); df != "" {
 		result["description"] = df
 	}
 	if df := compareBool(aD.Disabled, bD.Disabled); df != "" {
 		result["disabled"] = df
 	}
-	if df := compareString(&aD.DisableAt, &bD.DisableAt); df != "" {
+	if df := compareString(aD.DisableAt, bD.DisableAt); df != "" {
 		result["disable_at"] = df
 	}
 	if df := compareStringList(aD.Owner, bD.Owner); df != nil {

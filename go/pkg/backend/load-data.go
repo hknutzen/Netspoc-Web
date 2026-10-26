@@ -58,9 +58,10 @@ type object struct {
 
 type service struct {
 	Details *struct {
-		Description string
-		Disabled    int    `json:"disabled,omitempty"`
-		DisableAt   string `json:"disable_at,omitempty"`
+		// Pointer distinguishes a missing key from a present, empty value.
+		Description *string
+		Disabled    int     `json:"disabled,omitempty"`
+		DisableAt   *string `json:"disable_at,omitempty"`
 		Owner       []string
 	}
 	Rules []*rule
@@ -72,6 +73,14 @@ type rule struct {
 	Src     []string `json:"src"`
 	Dst     []string `json:"dst"`
 	Prt     []string `json:"prt"`
+}
+
+// derefString returns the empty string for a nil pointer.
+func derefString(s *string) string {
+	if s == nil {
+		return ""
+	}
+	return *s
 }
 type ownerData struct {
 	assets   *assets
