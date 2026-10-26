@@ -53,7 +53,24 @@ type object struct {
 	NAT   map[string]string `json:"nat,omitempty"`
 	Zone  string            `json:"zone"`
 	Owner string            `json:"owner"`
+	// Whether key "owner" was present in source JSON, distinct from an empty value.
+	hasOwner bool
 }
+
+// UnmarshalJSON additionally records presence of key "owner".
+func (o *object) UnmarshalJSON(data []byte) error {
+	type alias object
+	if err := json.Unmarshal(data, (*alias)(o)); err != nil {
+		return err
+	}
+	var raw map[string]json.RawMessage
+	if err := json.Unmarshal(data, &raw); err != nil {
+		return err
+	}
+	_, o.hasOwner = raw["owner"]
+	return nil
+}
+
 type service struct {
 	Details *struct {
 		Description string

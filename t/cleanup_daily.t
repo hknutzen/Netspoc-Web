@@ -345,7 +345,7 @@ zwischen 1970-01-03 und 1970-01-04.
 Objekte
   network:n2
     owner
-    (-)
+      (-)
 Dienste
   s1
     details

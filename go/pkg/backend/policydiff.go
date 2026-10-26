@@ -156,7 +156,7 @@ func (d *diffState) diffObject(name string) bool {
 		if df := compareString(a.IP6, b.IP6); df != "" {
 			m["ip6"] = df
 		}
-		if df := compareString(a.Owner, b.Owner); df != "" {
+		if df := compareOwner(a, b); df != "" {
 			m["owner"] = df
 		}
 		if len(m) != 0 {
@@ -253,6 +253,20 @@ func compareString(a, b string) string {
 	}
 	arrow := "\u2794"
 	return fmt.Sprintf("%s %s %s", a, arrow, b)
+}
+
+// compareOwner distinguishes a removed/added "owner" key from a changed value.
+func compareOwner(a, b *object) string {
+	switch {
+	case a.hasOwner && !b.hasOwner:
+		return "-"
+	case !a.hasOwner && b.hasOwner:
+		return "+"
+	case a.hasOwner && b.hasOwner:
+		return compareString(a.Owner, b.Owner)
+	default:
+		return ""
+	}
 }
 
 func compareBool(a, b int) string {
