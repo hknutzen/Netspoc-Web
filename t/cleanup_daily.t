@@ -65,7 +65,6 @@ sub prepare {
     make_visible( $home_dir, 'mail' );
 
     # Create users directory
-    # - to calm down del_obsolete_users.pl and
     # - to store attribute 'send_diff'
     mkdir $user_dir or die $!;
 
